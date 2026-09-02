@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "cf:preview": "npm install --no-save @opennextjs/cloudflare@latest wrangler@latest && opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "npm install --no-save @opennextjs/cloudflare@latest wrangler@latest && opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "next": "14.2.5",
@@ -22,8 +22,6 @@
     "zod": "3.23.8"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "0.6.0",
-    "wrangler": "^3.114.1",
     "typescript": "5.5.4",
     "@types/node": "20.14.15",
     "@types/react": "18.3.4",
