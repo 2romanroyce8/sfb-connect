@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCurrentCustomerContext } from "@/lib/dashboardData";
 import StatusTracker from "@/components/dashboard/StatusTracker";
-import { PROJECT_STATUS_LABELS } from "@/lib/types";
+import { PROJECT_STATUS_LABELS, ProjectStatus } from "@/lib/types";
 
 export default async function DashboardOverviewPage() {
   const ctx = await getCurrentCustomerContext();
@@ -46,7 +46,7 @@ export default async function DashboardOverviewPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         <div className="glass rounded-2xl p-5">
           <div className="text-[12px] text-medium-gray mb-2 font-mono uppercase">Status</div>
-          <div className="text-lg font-semibold">{PROJECT_STATUS_LABELS[project.status]}</div>
+          <div className="text-lg font-semibold">{PROJECT_STATUS_LABELS[project.status as ProjectStatus]}</div>
         </div>
         <div className="glass rounded-2xl p-5">
           <div className="text-[12px] text-medium-gray mb-2 font-mono uppercase">Days Remaining</div>
