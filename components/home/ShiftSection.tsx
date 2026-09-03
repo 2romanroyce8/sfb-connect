@@ -12,7 +12,10 @@ export default function ShiftSection() {
               <>
                 Search gave people choices.
                 <br />
-                AI gives people answers.
+                AI gives people{" "}
+                <span className="font-serif-accent italic font-normal">
+                  answers.
+                </span>
               </>
             }
           />

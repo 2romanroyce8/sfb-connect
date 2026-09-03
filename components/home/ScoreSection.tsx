@@ -7,7 +7,17 @@ export default function ScoreSection() {
     <section className="py-24 md:py-32 section-band" id="score">
       <div className="max-w-[1200px] mx-auto px-8">
         <Reveal>
-          <SectionHead label="The Diagnostic" title="Your AI Presence Score." />
+          <SectionHead
+            label="The Diagnostic"
+            title={
+              <>
+                Your AI{" "}
+                <span className="font-serif-accent italic font-normal">
+                  Presence Score.
+                </span>
+              </>
+            }
+          />
         </Reveal>
         <Reveal>
           <ScoreRing />

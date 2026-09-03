@@ -3,6 +3,7 @@ import Hero from "@/components/home/Hero";
 import ShiftSection from "@/components/home/ShiftSection";
 import ShortlistSection from "@/components/home/ShortlistSection";
 import AlgorithmSection from "@/components/home/AlgorithmSection";
+import MissionSection from "@/components/home/MissionSection";
 import MythSection from "@/components/home/MythSection";
 import ScoreSection from "@/components/home/ScoreSection";
 import ProcessSection from "@/components/home/ProcessSection";
@@ -21,6 +22,7 @@ export default function HomePage() {
       <ShiftSection />
       <ShortlistSection />
       <AlgorithmSection />
+      <MissionSection />
       <MythSection />
       <ScoreSection />
       <ProcessSection />

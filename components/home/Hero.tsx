@@ -1,46 +1,96 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Hero() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("sfb_lead_email", email);
+      }
+      router.push("/pay");
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  }
+
   return (
-    <section className="min-h-screen flex flex-col justify-center pt-36 pb-20 relative bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(255,255,255,0.08),transparent_60%)]">
-      <div className="max-w-[1200px] mx-auto px-8 w-full">
+    <section className="relative h-screen w-full overflow-hidden">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-70"
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4"
+      />
+      <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background to-transparent" />
+
+      <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6 pt-28 md:pt-32">
         <div className="flex items-center gap-2.5 font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-7">
           <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
           AI PRESENCE / 2026
         </div>
-        <h1 className="text-[44px] sm:text-[64px] md:text-[84px] lg:text-[108px] font-extrabold leading-[1.02] tracking-[-0.03em] max-w-[1000px]">
-          Your customers
-          <br />
-          are asking AI
-          <br />
-          <span className="bg-gradient-to-b from-white to-[#a0a0a5] bg-clip-text text-transparent">
+
+        <h1 className="text-[40px] sm:text-[56px] md:text-[76px] lg:text-[92px] font-extrabold leading-[1.02] tracking-[-0.03em] max-w-4xl">
+          Your customers are asking AI{" "}
+          <span className="font-serif-accent italic font-normal">
             who to choose.
           </span>
         </h1>
-        <div className="text-[28px] sm:text-[40px] md:text-[52px] font-bold tracking-[-0.02em] mt-3 text-medium-gray">
+
+        <div className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-[-0.02em] mt-4 text-medium-gray">
           Make sure it can find you.
         </div>
-        <p className="max-w-[560px] text-lg leading-relaxed text-[#c7c7cc] mt-8">
+
+        <p
+          className="max-w-xl text-lg mt-7 leading-relaxed"
+          style={{ color: "hsl(var(--hero-subtitle))" }}
+        >
           We analyze and optimize how your business is represented across the
           digital signals AI systems can use when answering local and
           commercial recommendations.
         </p>
-        <div className="flex items-center gap-5 mt-11 flex-wrap">
-          <Link
-            href="#pricing"
-            className="bg-white text-black px-8 py-4 rounded-full text-base font-semibold inline-flex items-center gap-2 hover:scale-[1.03] transition-transform"
+
+        <form
+          onSubmit={handleSubmit}
+          className="liquid-glass rounded-full p-2 max-w-lg w-full mx-auto mt-9 flex items-center gap-2"
+        >
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your business email"
+            className="flex-1 bg-transparent border-none outline-none px-5 text-sm placeholder:text-medium-gray"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-white text-black rounded-full px-7 py-3 text-sm font-semibold whitespace-nowrap hover:scale-[1.03] active:scale-[0.98] transition-transform disabled:opacity-60"
           >
-            Analyze My Business →
-          </Link>
-          <Link
-            href="#process"
-            className="glass text-white px-8 py-4 rounded-full text-base font-medium hover:bg-white/10 transition-colors"
-          >
-            How AI Discovery Works
-          </Link>
-        </div>
-        <div className="mt-14 flex items-baseline gap-4 flex-wrap">
-          <div className="font-mono text-xl font-semibold tracking-wide">
+            {loading ? "…" : "ANALYZE MY BUSINESS"}
+          </button>
+        </form>
+        {error && <p className="text-sm text-red-400 mt-3">{error}</p>}
+
+        <div className="mt-8 flex items-baseline gap-4 flex-wrap justify-center">
+          <div className="font-mono text-lg font-semibold tracking-wide">
             $200 / YEAR
           </div>
           <div className="text-[13px] text-medium-gray">

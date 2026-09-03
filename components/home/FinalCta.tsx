@@ -1,17 +1,42 @@
+"use client";
+
+import { useRef } from "react";
 import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
+import { useHlsVideo } from "@/lib/useHlsVideo";
+
+const HLS_SRC =
+  "https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8";
 
 export default function FinalCta() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useHlsVideo(videoRef, HLS_SRC);
+
   return (
-    <section className="text-center py-32 md:py-40">
-      <div className="max-w-[1200px] mx-auto px-8">
+    <section className="relative text-center py-32 md:py-40 border-t border-white/10 overflow-hidden">
+      <video
+        ref={videoRef}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+      <div className="absolute inset-0 bg-black/45 z-[1]" />
+
+      <div className="relative z-10 max-w-[1200px] mx-auto px-8">
         <Reveal>
-          <div className="flex justify-center items-center gap-2.5 font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-7">
-            YOUR CUSTOMERS ARE ALREADY ASKING.
+          <div className="w-10 h-10 rounded-full border-2 border-white/60 flex items-center justify-center mx-auto mb-8">
+            <div className="w-5 h-5 rounded-full border border-white/60" />
           </div>
-          <h2 className="text-[36px] sm:text-[48px] md:text-[68px] font-extrabold tracking-[-0.03em] max-w-[800px] mx-auto leading-[1.08]">
+
+          <h2 className="text-[36px] sm:text-[48px] md:text-[68px] font-serif-accent italic font-normal tracking-[-0.01em] max-w-[800px] mx-auto leading-[1.08]">
             Make sure AI knows who you are.
           </h2>
+          <p className="text-medium-gray text-lg mt-6 max-w-[560px] mx-auto">
+            Your customers are already asking AI who to choose. Every day you
+            wait is another day the algorithm answers without you.
+          </p>
           <div className="font-mono text-2xl text-medium-gray my-9">
             $200 / YEAR
           </div>
