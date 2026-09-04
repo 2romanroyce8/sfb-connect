@@ -1,26 +1,21 @@
 "use client";
 
-import { useRef } from "react";
 import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
-import { useHlsVideo } from "@/lib/useHlsVideo";
 
-const HLS_SRC =
-  "https://stream.mux.com/8wrHPCX2dC3msyYU9ObwqNdm00u3ViXvOSHUMRYSEe5Q.m3u8";
+const BG_SRC =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4";
 
 export default function FinalCta() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useHlsVideo(videoRef, HLS_SRC);
-
   return (
     <section className="relative text-center py-32 md:py-40 border-t border-white/10 overflow-hidden">
       <video
-        ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover z-0"
+        src={BG_SRC}
       />
       <div className="absolute inset-0 bg-black/45 z-[1]" />
 
