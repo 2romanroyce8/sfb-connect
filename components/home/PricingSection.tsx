@@ -17,8 +17,8 @@ const FEATURES = [
 
 export default function PricingSection() {
   return (
-    <section className="relative overflow-hidden" id="pricing">
-      <div className="py-24 md:py-32 section-band relative">
+    <section className="relative overflow-hidden section-band pt-24 md:pt-32 pb-20 md:pb-24" id="pricing">
+      <div className="relative">
         <div className="max-w-[1200px] mx-auto px-8">
           <Reveal>
             <SectionHead
@@ -29,7 +29,7 @@ export default function PricingSection() {
           </Reveal>
 
           <Reveal>
-            <div className="relative w-full max-w-[760px] mx-auto mt-14 h-[430px] md:h-[470px]">
+            <div className="relative w-full max-w-[760px] mx-auto mt-14 h-[380px] md:h-[410px]">
               {/* Subtle arc graphic behind the cards */}
               <svg
                 className="absolute left-1/2 bottom-0 -translate-x-1/2 w-[92%] max-w-[720px] pointer-events-none"
@@ -136,18 +136,16 @@ export default function PricingSection() {
           </Reveal>
 
           <Reveal>
-            <div className="text-center text-[12.5px] text-medium-gray mt-8">
+            <div className="text-center text-[12.5px] text-medium-gray mt-6">
               Pay via Cash App, PayPal, or Zelle. Renews annually.
             </div>
           </Reveal>
-        </div>
-      </div>
 
-      {/* Features section beneath the pricing cards */}
-      <div className="relative border-t border-white/[0.06] py-20 md:py-28">
-        <div className="max-w-[1200px] mx-auto px-8">
+          {/* Features — same section, no gap/border break */}
           <Reveal>
-            <SectionHead label="Features" title="What's included?" />
+            <div className="mt-14 md:mt-16">
+              <SectionHead label="Features" title="What's included?" />
+            </div>
           </Reveal>
           <Reveal>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[720px]">
