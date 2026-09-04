@@ -11,8 +11,8 @@ const SUBSCORES = [
 ];
 
 const TARGET = 64;
-const RADIUS = 118;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const TICK_COUNT = 64;
+const ACCENT_ANGLES = [78, 90, 102, 114, 126, 138, 150, 162, 174, 186, 198, 210];
 
 export default function ScoreRing() {
   const ref = useRef<HTMLDivElement>(null);
@@ -40,50 +40,59 @@ export default function ScoreRing() {
     return () => observer.disconnect();
   }, [animated]);
 
-  const offset = animated
-    ? CIRCUMFERENCE - (TARGET / 100) * CIRCUMFERENCE
-    : CIRCUMFERENCE;
-
   return (
     <div
       ref={ref}
-      className="grid md:grid-cols-[340px_1fr] gap-12 md:gap-16 items-center"
+      className="grid md:grid-cols-[440px_1fr] gap-12 md:gap-16 items-center"
     >
-      <div className="flex justify-center">
-        <div className="relative w-[280px] h-[280px]">
-          <svg width="280" height="280" viewBox="0 0 280 280">
-            <circle
-              cx="140"
-              cy="140"
-              r={RADIUS}
-              fill="none"
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth="16"
+      <div className="score-orbit">
+        <div className="score-orbit__halo" />
+        <div className="score-orbit__glow" />
+        <div className="score-orbit__hot-edge" />
+        <div className="score-orbit__outer" />
+        <div className="score-orbit__inner" />
+
+        {Array.from({ length: TICK_COUNT }).map((_, i) => {
+          const angle = i * (360 / TICK_COUNT) - 90;
+          return (
+            <div
+              key={i}
+              className="score-orbit__tick"
+              style={{ transform: `rotate(${angle}deg) translateY(-191px)` }}
             />
-            <circle
-              cx="140"
-              cy="140"
-              r={RADIUS}
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="16"
-              strokeLinecap="round"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={offset}
-              transform="rotate(-90 140 140)"
-              style={{ transition: "stroke-dashoffset 1.4s ease" }}
-            />
-          </svg>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-            <div className="font-mono text-[64px] font-semibold">
-              {display}
-            </div>
-            <div className="text-[13px] text-medium-gray mt-1">
-              OUT OF 100
-            </div>
-          </div>
-        </div>
+          );
+        })}
+        {ACCENT_ANGLES.map((angle, i) => (
+          <div
+            key={`accent-${i}`}
+            className="score-orbit__tick score-orbit__tick--accent"
+            style={{ transform: `rotate(${angle}deg) translateY(-191px)` }}
+          />
+        ))}
+
+        <svg
+          className="absolute inset-0"
+          width="420"
+          height="420"
+          viewBox="0 0 420 420"
+        >
+          <path
+            id="scoreArcPath"
+            d="M 100 190 A 150 150 0 0 1 320 190"
+            fill="none"
+          />
+          <text className="score-orbit__arc-text" textAnchor="middle">
+            <textPath href="#scoreArcPath" startOffset="50%">
+              AI PRESENCE SCORE
+            </textPath>
+          </text>
+        </svg>
+
+        <div className="score-orbit__core" />
+        <div className="score-orbit__number">{display}</div>
+        <div className="score-orbit__of">OUT OF 100</div>
       </div>
+
       <div>
         <div className="flex flex-col gap-6">
           {SUBSCORES.map((s) => (

@@ -190,3 +190,160 @@ body {
 .neon-card:hover::after {
   opacity: 0.68;
 }
+
+/* ============================================================
+   Score orbit — glowing radial-tick dial with warm bottom-arc
+   glow, per spec ("OrbitalCountdownPoster" technique).
+   ============================================================ */
+.score-orbit {
+  position: relative;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .score-orbit {
+    width: 86vw;
+    height: 86vw;
+    max-width: 380px;
+    max-height: 380px;
+  }
+}
+
+.score-orbit__halo {
+  position: absolute;
+  inset: -18px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 80%,
+    rgba(255, 81, 0, 0.22) 0%,
+    rgba(255, 81, 0, 0.08) 30%,
+    rgba(255, 255, 255, 0.03) 58%,
+    rgba(255, 255, 255, 0) 75%
+  );
+  filter: blur(16px);
+}
+
+.score-orbit__outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 0 18px rgba(255, 255, 255, 0.13),
+    inset 0 0 16px rgba(255, 255, 255, 0.03);
+}
+
+.score-orbit__inner {
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.score-orbit__tick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 13px;
+  background: rgba(242, 242, 242, 0.55);
+  transform-origin: 50% 191px;
+}
+
+.score-orbit__tick--accent {
+  width: 1.5px;
+  height: 11px;
+  opacity: 0.95;
+}
+
+.score-orbit__glow {
+  position: absolute;
+  left: 50%;
+  bottom: -30px;
+  transform: translateX(-50%);
+  width: 360px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 95%,
+    rgba(255, 183, 64, 0.95) 0%,
+    rgba(255, 113, 0, 0.85) 15%,
+    rgba(255, 46, 0, 0.68) 32%,
+    rgba(126, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0) 68%
+  );
+  filter: blur(16px);
+  opacity: 0.9;
+}
+
+.score-orbit__hot-edge {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: 280px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 90, 0, 0),
+    rgba(255, 168, 45, 1),
+    rgba(255, 74, 0, 1),
+    rgba(255, 172, 54, 1),
+    rgba(255, 90, 0, 0)
+  );
+  filter: blur(9px);
+  opacity: 0.9;
+}
+
+.score-orbit__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 285px;
+  height: 285px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #050505 0%, #030303 60%, rgba(0, 0, 0, 0.98) 100%);
+}
+
+.score-orbit__number {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono, monospace);
+  font-size: 116px;
+  font-weight: 700;
+  line-height: 0.82;
+  letter-spacing: -0.03em;
+  background: linear-gradient(180deg, #efefef 0%, #bdbdbd 58%, #8c8c8c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  z-index: 6;
+  text-align: center;
+}
+
+.score-orbit__of {
+  position: absolute;
+  left: 50%;
+  top: 68%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 6;
+}
+
+.score-orbit__arc-text {
+  fill: #dcdcdc;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
