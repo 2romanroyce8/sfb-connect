@@ -209,8 +209,8 @@ body {
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 80%,
-    rgba(255, 81, 0, 0.22) 0%,
-    rgba(255, 81, 0, 0.08) 30%,
+    rgba(0, 153, 255, 0.22) 0%,
+    rgba(0, 153, 255, 0.08) 30%,
     rgba(255, 255, 255, 0.03) 58%,
     rgba(255, 255, 255, 0) 75%
   );
@@ -260,10 +260,10 @@ body {
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 95%,
-    rgba(255, 183, 64, 0.95) 0%,
-    rgba(255, 113, 0, 0.85) 15%,
-    rgba(255, 46, 0, 0.68) 32%,
-    rgba(126, 0, 0, 0.4) 50%,
+    rgba(160, 224, 255, 0.95) 0%,
+    rgba(56, 176, 255, 0.85) 15%,
+    rgba(0, 122, 255, 0.68) 32%,
+    rgba(0, 40, 120, 0.4) 50%,
     rgba(0, 0, 0, 0) 68%
   );
   filter: blur(11px);
@@ -280,11 +280,11 @@ body {
   border-radius: 50%;
   background: linear-gradient(
     90deg,
-    rgba(255, 90, 0, 0),
-    rgba(255, 168, 45, 1),
-    rgba(255, 74, 0, 1),
-    rgba(255, 172, 54, 1),
-    rgba(255, 90, 0, 0)
+    rgba(0, 140, 255, 0),
+    rgba(140, 220, 255, 1),
+    rgba(0, 140, 255, 1),
+    rgba(140, 220, 255, 1),
+    rgba(0, 140, 255, 0)
   );
   filter: blur(6px);
   opacity: 0.9;
