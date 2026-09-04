@@ -53,8 +53,8 @@ function FaqItem({
     <div
       className="rounded-[11px] overflow-hidden border transition-colors duration-200"
       style={{
-        background: isOpen ? "#140d0b" : "#120c0a",
-        borderColor: isOpen ? "rgba(255,255,255,0.14)" : "#000000",
+        background: isOpen ? "#111111" : "#0c0c0c",
+        borderColor: isOpen ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
       }}
     >
       <button
@@ -103,13 +103,17 @@ export default function FaqSection() {
       <Reveal>
         <div
           className="max-w-[1180px] mx-auto grid md:grid-cols-[0.9fr_1.1fr] gap-12 md:gap-[110px] items-start rounded-[18px]"
-          style={{ background: "#0b0604", padding: "56px 32px" }}
+          style={{
+            background: "#050505",
+            border: "1px solid rgba(255,255,255,0.045)",
+            padding: "56px 32px",
+          }}
         >
           <div className="pt-0.5">
             <span
               className="inline-flex items-center justify-center h-6 px-[9px] rounded-[5px] text-[10px] font-medium mb-[22px]"
               style={{
-                background: "#17110f",
+                background: "#101010",
                 border: "1px solid rgba(255,255,255,0.08)",
                 color: "rgba(255,255,255,0.68)",
               }}
