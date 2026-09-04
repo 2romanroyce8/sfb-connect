@@ -54,7 +54,7 @@ function FaqItem({
       className="rounded-[11px] overflow-hidden border transition-colors duration-200"
       style={{
         background: isOpen ? "#140d0b" : "#120c0a",
-        borderColor: isOpen ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.08)",
+        borderColor: isOpen ? "#5c3a22" : "#3d2716",
       }}
     >
       <button
@@ -98,7 +98,7 @@ export default function FaqSection() {
     <section
       className="py-20 md:py-28 px-6"
       id="faq"
-      style={{ background: "#eae8e6" }}
+      style={{ background: "#000000" }}
     >
       <Reveal>
         <div
