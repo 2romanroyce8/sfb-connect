@@ -462,17 +462,17 @@ body {
 .iceberg__body--right {
   top: 164px;
   clip-path: polygon(
-    42% 0%,
-    58% 0%,
-    78% 10%,
-    88% 32%,
-    82% 62%,
-    66% 88%,
+    46% 0%,
+    54% 0%,
+    82% 10%,
+    96% 32%,
+    90% 62%,
+    70% 90%,
     50% 100%,
-    34% 88%,
-    20% 62%,
-    14% 32%,
-    24% 10%
+    30% 90%,
+    10% 62%,
+    4% 32%,
+    18% 10%
   );
   background: linear-gradient(160deg, #ffb347 0%, #ff7a3d 55%, #ff4e4e 100%);
   opacity: 0.94;
@@ -492,7 +492,12 @@ body {
   align-content: center;
   justify-content: center;
   gap: 6px;
-  padding: 22px;
+  padding: 22px 34px;
+}
+
+.iceberg__body--right .iceberg__tags {
+  padding: 20px 8px;
+  gap: 5px;
 }
 
 .iceberg__tag {
@@ -511,7 +516,7 @@ body {
 }
 
 .iceberg__tag--large {
-  font-size: 12.5px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 7px 14px;
+  padding: 5.5px 10px;
 }
