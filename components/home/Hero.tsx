@@ -42,11 +42,6 @@ export default function Hero() {
       <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background to-transparent" />
 
       <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6 pt-28 md:pt-32">
-        <div className="flex items-center gap-2.5 font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-7">
-          <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
-          AI PRESENCE / 2026
-        </div>
-
         <h1 className="text-[40px] sm:text-[56px] md:text-[76px] lg:text-[92px] font-extrabold leading-[1.02] tracking-[-0.03em] max-w-4xl">
           Your customers are asking AI{" "}
           <span className="font-serif-accent italic font-normal">
