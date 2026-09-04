@@ -4,7 +4,6 @@ import ShiftSection from "@/components/home/ShiftSection";
 import ShortlistSection from "@/components/home/ShortlistSection";
 import AlgorithmSection from "@/components/home/AlgorithmSection";
 import MissionSection from "@/components/home/MissionSection";
-import MythSection from "@/components/home/MythSection";
 import ScoreSection from "@/components/home/ScoreSection";
 import ProcessSection from "@/components/home/ProcessSection";
 import AnalyzeSection from "@/components/home/AnalyzeSection";
@@ -23,7 +22,6 @@ export default function HomePage() {
       <ShortlistSection />
       <AlgorithmSection />
       <MissionSection />
-      <MythSection />
       <ScoreSection />
       <ProcessSection />
       <AnalyzeSection />
