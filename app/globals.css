@@ -530,3 +530,19 @@ body {
   font-weight: 600;
   padding: 5.5px 10px;
 }
+
+/* ============================================================
+   AI chat comparison panel — staggered fade/rise for the 2026
+   AI-assistant mock conversation ("SearchVsAIComparison" spec).
+   ============================================================ */
+.ai-chat-fade {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ai-chat-panel.is-visible .ai-chat-fade {
+  opacity: 1;
+  transform: translateY(0);
+}
