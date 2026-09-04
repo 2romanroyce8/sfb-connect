@@ -2,7 +2,6 @@ import Navbar from "@/components/home/Navbar";
 import Hero from "@/components/home/Hero";
 import ShiftSection from "@/components/home/ShiftSection";
 import AlgorithmSection from "@/components/home/AlgorithmSection";
-import ScoreSection from "@/components/home/ScoreSection";
 import ProcessSection from "@/components/home/ProcessSection";
 import AnalyzeSection from "@/components/home/AnalyzeSection";
 import PlatformsSection from "@/components/home/PlatformsSection";
@@ -20,7 +19,6 @@ export default function HomePage() {
       <ShiftSection />
       <AnalyzeSection />
       <AlgorithmSection />
-      <ScoreSection />
       <ProcessSection />
       <PricingSection />
       <FaqSection />
