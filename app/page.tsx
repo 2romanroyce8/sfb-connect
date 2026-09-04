@@ -18,12 +18,12 @@ export default function HomePage() {
       <Navbar />
       <Hero />
       <ShiftSection />
+      <AnalyzeSection />
+      <PlatformsSection />
       <AlgorithmSection />
       <MissionSection />
       <ScoreSection />
       <ProcessSection />
-      <AnalyzeSection />
-      <PlatformsSection />
       <PricingSection />
       <FaqSection />
       <FinalCta />
