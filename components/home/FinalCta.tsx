@@ -4,18 +4,14 @@ import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
 
 const BG_SRC =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4";
+  "https://pub.hyperagent.com/api/published/pbf01M1PYE7MN_BNVYVBE1D6Z2DECN/crystal_frame.jpg";
 
 export default function FinalCta() {
   return (
     <section className="relative text-center py-32 md:py-40 border-t border-white/10 overflow-hidden">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
-        src={BG_SRC}
+      <div
+        className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
+        style={{ backgroundImage: `url(${BG_SRC})` }}
       />
       <div className="absolute inset-0 bg-black/45 z-[1]" />
 
