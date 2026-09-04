@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import SectionHead from "@/components/home/SectionHead";
+import { useBusinessLookup } from "@/lib/businessLookupContext";
+import type { AISummary } from "@/lib/businessLookupContext";
 
 const OLD_RESULTS = [
   {
@@ -82,7 +84,7 @@ type LookupState =
   | { status: "researching" }
   | { status: "needs_link"; message: string }
   | { status: "failed"; message: string }
-  | { status: "completed"; result: LookupResult };
+  | { status: "completed"; result: LookupResult; summary: AISummary | null };
 
 async function runLookup(query: string, location: string): Promise<LookupState> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -101,7 +103,8 @@ async function runLookup(query: string, location: string): Promise<LookupState> 
       body: JSON.stringify({ query, location: location || undefined }),
     });
     const data = await res.json();
-    if (data.status === "completed") return { status: "completed", result: data.result };
+    if (data.status === "completed")
+      return { status: "completed", result: data.result, summary: data.summary ?? null };
     if (data.status === "needs_link")
       return { status: "needs_link", message: data.message };
     return { status: "failed", message: data.message || "Something went wrong." };
@@ -199,6 +202,7 @@ function ScoreBar({ label, score, delay }: { label: string; score: number; delay
 }
 
 function AiChatPanel() {
+  const { setLookupResult, pendingChatMessage, clearPendingChatMessage } = useBusinessLookup();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState("");
@@ -234,9 +238,15 @@ function AiChatPanel() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim()) return;
+    clearPendingChatMessage();
     setState({ status: "researching" });
     const result = await runLookup(query, location);
     setState(result);
+    if (result.status === "completed") {
+      setLookupResult(result.result, result.summary);
+    } else {
+      setLookupResult(null, null);
+    }
   }
 
   return (
@@ -456,6 +466,24 @@ function AiChatPanel() {
               </div>
             </div>
 
+            {/* Follow-up question, e.g. from "Improve My Score" */}
+            {pendingChatMessage && state.summary && (
+              <div className="mt-4">
+                <div className="ml-auto mb-2 max-w-[85%] inline-block bg-[#2A2A2A] text-[#F3F3F3] rounded-[14px_14px_4px_14px] px-3 py-2 text-[12px] block w-fit">
+                  {pendingChatMessage}
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">
+                    AI
+                  </div>
+                  <div className="text-[12px] leading-relaxed text-white/80">
+                    Based on your researched result, start here:{" "}
+                    {state.summary.recommendedNextSteps.join(" Then, ")}.
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 8. Full audit CTA */}
             <div className="mt-[18px] pt-4 border-t border-white/[0.06]">
               <a
@@ -469,6 +497,8 @@ function AiChatPanel() {
                   setQuery("");
                   setLocation("");
                   setState({ status: "idle" });
+                  setLookupResult(null, null);
+                  clearPendingChatMessage();
                 }}
                 className="w-full mt-3 h-[24px] text-[11px] text-white/[0.36] hover:text-white transition-colors"
               >
