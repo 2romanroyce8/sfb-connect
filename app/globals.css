@@ -90,3 +90,103 @@ body {
   background: #ffffff;
   color: #1d1d1f;
 }
+
+/* ============================================================
+   Neon glass cards — compact dark cards with a thin multicolor
+   neon border + soft outer glow, per spec.
+   ============================================================ */
+.neon-cards-wrap {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 18px;
+  position: relative;
+  z-index: 2;
+  flex-wrap: wrap;
+}
+
+.neon-card {
+  width: 172px;
+  height: 172px;
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+  background: linear-gradient(180deg, rgba(25, 25, 27, 0.98), rgba(9, 9, 10, 0.99));
+  overflow: visible;
+  transition: transform 0.22s ease;
+}
+
+.neon-card:hover {
+  transform: translateY(-3px);
+}
+
+.neon-card__inner {
+  position: absolute;
+  inset: 2px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #171719 0%, #0c0c0d 100%);
+  z-index: 1;
+}
+
+.neon-card__content {
+  position: relative;
+  z-index: 3;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.neon-card__logo {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+}
+
+.neon-card__title {
+  margin-top: auto;
+  margin-bottom: 5px;
+  font-size: 14px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: #fff;
+}
+
+.neon-card__description {
+  max-width: 130px;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.neon-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  padding: 2px;
+  background: var(--neon-border-gradient);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.neon-card::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 24px;
+  background: var(--neon-glow-gradient);
+  filter: blur(17px);
+  opacity: 0.55;
+  z-index: -1;
+  transition: opacity 0.22s ease;
+}
+
+.neon-card:hover::after {
+  opacity: 0.68;
+}
