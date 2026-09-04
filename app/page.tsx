@@ -17,9 +17,9 @@ export default function HomePage() {
     <main>
       <Navbar />
       <Hero />
+      <PlatformsSection />
       <ShiftSection />
       <AnalyzeSection />
-      <PlatformsSection />
       <AlgorithmSection />
       <MissionSection />
       <ScoreSection />
