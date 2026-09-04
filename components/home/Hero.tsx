@@ -54,8 +54,16 @@ export default function Hero() {
             "radial-gradient(circle at 50% 43%, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.36) 100%)",
         }}
       />
+      {/* Smooth fade into the next section — no blur/opacity on the media itself */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-[140px] pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 60%, #000000 100%)",
+        }}
+      />
 
-      <div className="relative z-10 w-full max-w-[1120px] mx-auto flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-[1120px] mx-auto flex flex-col items-center md:-translate-y-3">
         <span
           className="mb-5 text-[11px] font-semibold tracking-[0.24em] uppercase text-white/[0.62]"
           style={{ textShadow: "0 1px 14px rgba(0,0,0,0.55)" }}
@@ -83,8 +91,8 @@ export default function Hero() {
         </div>
 
         <p
-          className="max-w-[690px] mt-[22px] text-[17px] leading-relaxed text-white/80"
-          style={{ textShadow: "0 2px 18px rgba(0,0,0,0.45)" }}
+          className="max-w-[690px] mt-[22px] text-[17px] leading-relaxed text-white/[0.86]"
+          style={{ textShadow: "0 2px 18px rgba(0,0,0,0.55)" }}
         >
           See how clearly AI can understand your business, what it can
           verify, and what may be keeping you from being recommended.
@@ -136,7 +144,7 @@ export default function Hero() {
           )}
         </div>
 
-        <div className="mt-[15px] flex items-center justify-center gap-2 text-[11px] text-white/55 flex-wrap max-w-[320px] sm:max-w-none">
+        <div className="mt-[15px] flex items-center justify-center gap-2 text-[11px] text-white/[0.62] flex-wrap max-w-[320px] sm:max-w-none">
           <span>Public business data only</span>
           <span>•</span>
           <span>No login required to preview</span>
@@ -149,7 +157,7 @@ export default function Hero() {
           <span className="text-[13px] font-semibold tracking-[0.08em] text-white/[0.86]">
             / YEAR
           </span>
-          <span className="text-[12px] text-white/50">
+          <span className="text-[12px] text-white/[0.62]">
             Full annual AI Presence service
           </span>
         </div>
