@@ -5,7 +5,7 @@ const PLATFORMS: { name: string; logo?: string }[] = [
   { name: "ChatGPT", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETQF1_GKWEVZM81T4F7F3S/logo-chatgpt.png" },
   { name: "Claude", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETRF8_1VFNQ24D15D436CX/logo-claude.png" },
   { name: "Perplexity", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETS6Q_3S0CNHDN0W2C8QKA/logo-perplexity.png" },
-  { name: "Grok", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETSN3_WRD1VYQ7QCSEHAP8/logo-grok.png" },
+  { name: "Grok", logo: "https://pub.hyperagent.com/api/published/pbf01M1PF3J1R_M6JWR0WGPFACS77B/grok3.png" },
   { name: "Gemini", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETT0N_69SGZJMWZP0BTXWH/logo-gemini.png" },
   { name: "AI Search" },
   { name: "AI Assistants" },
