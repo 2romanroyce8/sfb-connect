@@ -1,7 +1,6 @@
 import Navbar from "@/components/home/Navbar";
 import Hero from "@/components/home/Hero";
 import ShiftSection from "@/components/home/ShiftSection";
-import ShortlistSection from "@/components/home/ShortlistSection";
 import AlgorithmSection from "@/components/home/AlgorithmSection";
 import MissionSection from "@/components/home/MissionSection";
 import ScoreSection from "@/components/home/ScoreSection";
@@ -19,7 +18,6 @@ export default function HomePage() {
       <Navbar />
       <Hero />
       <ShiftSection />
-      <ShortlistSection />
       <AlgorithmSection />
       <MissionSection />
       <ScoreSection />
