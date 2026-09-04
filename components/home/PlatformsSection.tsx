@@ -1,7 +1,4 @@
 import Reveal from "@/components/ui/Reveal";
-import SectionLabel from "@/components/ui/SectionLabel";
-import EditorialHeading from "@/components/ui/EditorialHeading";
-import PlatformCard from "@/components/ui/PlatformCard";
 
 const PLATFORMS = [
   "ChatGPT",
@@ -18,15 +15,22 @@ export default function PlatformsSection() {
     <section className="py-24 md:py-28 section-band" id="platforms">
       <div className="max-w-[1200px] mx-auto px-8 text-center">
         <Reveal>
-          <SectionLabel>AI Discovery</SectionLabel>
-          <EditorialHeading size="md">
+          <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-5 block">
+            AI Discovery
+          </span>
+          <h2 className="text-[28px] sm:text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em]">
             Built for the new discovery layer.
-          </EditorialHeading>
+          </h2>
         </Reveal>
         <Reveal>
-          <div className="flex flex-wrap gap-4 justify-center items-center mt-14">
+          <div className="flex flex-wrap gap-10 md:gap-12 justify-center items-center mt-12">
             {PLATFORMS.map((p) => (
-              <PlatformCard key={p} name={p} />
+              <div
+                key={p}
+                className="text-xl md:text-2xl font-semibold text-medium-gray tracking-tight hover:text-white transition-colors"
+              >
+                {p}
+              </div>
             ))}
           </div>
         </Reveal>

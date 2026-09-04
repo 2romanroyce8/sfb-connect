@@ -9,7 +9,6 @@ import ScoreSection from "@/components/home/ScoreSection";
 import ProcessSection from "@/components/home/ProcessSection";
 import AnalyzeSection from "@/components/home/AnalyzeSection";
 import PlatformsSection from "@/components/home/PlatformsSection";
-import PosterSection from "@/components/home/PosterSection";
 import PricingSection from "@/components/home/PricingSection";
 import FaqSection from "@/components/home/FaqSection";
 import FinalCta from "@/components/home/FinalCta";
@@ -29,7 +28,6 @@ export default function HomePage() {
       <ProcessSection />
       <AnalyzeSection />
       <PlatformsSection />
-      <PosterSection />
       <PricingSection />
       <FaqSection />
       <FinalCta />

@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Reveal from "@/components/ui/Reveal";
-import SectionLabel from "@/components/ui/SectionLabel";
-import EditorialHeading from "@/components/ui/EditorialHeading";
-import OrbitalNode from "@/components/ui/OrbitalNode";
-import AmbientOrb from "@/components/ui/AmbientOrb";
+import SectionHead from "@/components/home/SectionHead";
 
 const SIGNALS = [
   "Location",
@@ -13,6 +10,7 @@ const SIGNALS = [
   "Intent",
   "Relevance",
   "Business Information",
+  "Authority",
   "Freshness",
   "Consistency",
   "Availability",
@@ -21,7 +19,9 @@ const SIGNALS = [
 
 export default function AlgorithmSection() {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [positions, setPositions] = useState<{ x: number; y: number }[] | null>(null);
+  const [positions, setPositions] = useState<
+    { x: number; y: number }[] | null
+  >(null);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -51,10 +51,10 @@ export default function AlgorithmSection() {
     <section className="py-24 md:py-32 section-band" id="algorithm">
       <div className="max-w-[1200px] mx-auto px-8">
         <Reveal>
-          <SectionLabel>Why This Matters</SectionLabel>
-          <EditorialHeading size="md" className="mb-16 max-w-2xl">
-            The same internet does not look the same to everyone.
-          </EditorialHeading>
+          <SectionHead
+            label="Why This Matters"
+            title="The same internet does not look the same to everyone."
+          />
         </Reveal>
         <Reveal>
           <p className="max-w-[700px] text-lg leading-relaxed text-[#c7c7cc] mb-16">
@@ -69,24 +69,22 @@ export default function AlgorithmSection() {
           {!isMobile ? (
             <div
               ref={mapRef}
-              className="relative flex items-center justify-center min-h-[520px]"
+              className="relative flex items-center justify-center min-h-[480px]"
             >
-              <AmbientOrb color="cyan" size={200} className="left-[20%] top-[10%]" />
-              <AmbientOrb color="violet" size={220} className="right-[15%] top-[15%]" />
               <div className="absolute rounded-full border border-dashed border-white/10 w-[340px] h-[340px]" />
               <div className="absolute rounded-full border border-dashed border-white/10 w-[520px] h-[520px]" />
-              <div className="glass-edge w-[130px] h-[130px] rounded-full flex items-center justify-center font-extrabold text-xl z-10">
+              <div className="w-[120px] h-[120px] rounded-full bg-white text-black flex items-center justify-center font-extrabold text-xl z-10 shadow-[0_0_80px_rgba(255,255,255,0.25)]">
                 AI
               </div>
               {positions &&
                 SIGNALS.map((s, i) => (
-                  <OrbitalNode
+                  <div
                     key={s}
-                    label={s}
-                    x={positions[i].x}
-                    y={positions[i].y}
-                    delay={i * 0.4}
-                  />
+                    className="absolute font-mono text-[12.5px] bg-white/[0.06] border border-white/10 backdrop-blur-md px-4 py-2 rounded-full whitespace-nowrap -translate-x-1/2 -translate-y-1/2"
+                    style={{ left: positions[i].x, top: positions[i].y }}
+                  >
+                    {s}
+                  </div>
                 ))}
             </div>
           ) : (
@@ -94,7 +92,7 @@ export default function AlgorithmSection() {
               {SIGNALS.map((s) => (
                 <div
                   key={s}
-                  className="font-mono text-[12.5px] glass-edge px-4 py-2 rounded-full"
+                  className="font-mono text-[12.5px] bg-white/[0.06] border border-white/10 px-4 py-2 rounded-full"
                 >
                   {s}
                 </div>

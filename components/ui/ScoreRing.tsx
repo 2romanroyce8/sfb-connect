@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import MetricBar from "@/components/ui/MetricBar";
-import AmbientOrb from "@/components/ui/AmbientOrb";
 
 const SUBSCORES = [
   { name: "Identity", val: 92 },
@@ -49,12 +47,9 @@ export default function ScoreRing() {
   return (
     <div
       ref={ref}
-      className="glass-edge relative overflow-hidden rounded-[36px] p-10 md:p-14 grid md:grid-cols-[340px_1fr] gap-12 md:gap-16 items-center"
+      className="grid md:grid-cols-[340px_1fr] gap-12 md:gap-16 items-center"
     >
-      <AmbientOrb color="cyan" size={280} className="-bottom-24 -left-16" />
-      <AmbientOrb color="violet" size={220} className="-top-16 -right-10" />
-
-      <div className="relative flex justify-center z-10">
+      <div className="flex justify-center">
         <div className="relative w-[280px] h-[280px]">
           <svg width="280" height="280" viewBox="0 0 280 280">
             <circle
@@ -89,10 +84,23 @@ export default function ScoreRing() {
           </div>
         </div>
       </div>
-      <div className="relative z-10">
+      <div>
         <div className="flex flex-col gap-6">
           {SUBSCORES.map((s) => (
-            <MetricBar key={s.name} name={s.name} value={s.val} />
+            <div key={s.name} className="flex items-center gap-5">
+              <span className="w-[170px] shrink-0 text-[14.5px] text-[#d4d4d8]">
+                {s.name}
+              </span>
+              <div className="flex-1 h-1.5 rounded-md bg-white/[0.08] overflow-hidden">
+                <div
+                  className="h-full bg-white rounded-md transition-[width] duration-[1200ms] ease-out"
+                  style={{ width: animated ? `${s.val}%` : "0%" }}
+                />
+              </div>
+              <span className="font-mono text-sm text-medium-gray w-8 text-right">
+                {s.val}
+              </span>
+            </div>
           ))}
         </div>
         <div className="mt-10">
