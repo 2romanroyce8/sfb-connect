@@ -54,7 +54,7 @@ function FaqItem({
       className="rounded-[11px] overflow-hidden border transition-colors duration-200"
       style={{
         background: isOpen ? "#140d0b" : "#120c0a",
-        borderColor: isOpen ? "#5c3a22" : "#3d2716",
+        borderColor: isOpen ? "rgba(255,255,255,0.14)" : "#000000",
       }}
     >
       <button
