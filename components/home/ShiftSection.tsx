@@ -123,47 +123,77 @@ function ScoreDial({ score }: { score: number }) {
         setDisplay(score);
         clearInterval(interval);
       } else setDisplay(cur);
-    }, 16);
+    }, 14);
     return () => clearInterval(interval);
   }, [score]);
+  const r = 42;
+  const c = 2 * Math.PI * r;
   return (
-    <div className="relative w-[76px] h-[76px] shrink-0">
-      <svg viewBox="0 0 76 76" className="w-full h-full -rotate-90">
-        <circle cx="38" cy="38" r="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
+    <div className="relative w-[92px] h-[92px] shrink-0">
+      <svg viewBox="0 0 92 92" className="w-full h-full -rotate-90">
+        <circle cx="46" cy="46" r={r} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="8" />
         <circle
-          cx="38"
-          cy="38"
-          r="32"
+          cx="46"
+          cy="46"
+          r={r}
           fill="none"
           stroke="#ffffff"
-          strokeWidth="6"
+          strokeWidth="8"
           strokeLinecap="round"
-          strokeDasharray={2 * Math.PI * 32}
-          strokeDashoffset={2 * Math.PI * 32 * (1 - display / 100)}
-          style={{ transition: "stroke-dashoffset 0.3s ease" }}
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - display / 100)}
+          style={{ transition: "stroke-dashoffset 0.4s ease" }}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-[18px] font-bold text-white">
-        {display}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[26px] font-semibold text-white leading-none">{display}</span>
+        <span className="text-[9px] tracking-wide text-white/[0.34] mt-0.5">AI PRESENCE</span>
       </div>
     </div>
   );
 }
 
-function FieldRow({ label, field }: { label: string; field: VerifiedField<string> }) {
-  const icon =
-    field.status === "confirmed" ? (
-      <Check size={12} className="text-[#30D158]" />
-    ) : field.status === "uncertain" ? (
-      <AlertCircle size={12} className="text-[#FFD60A]" />
-    ) : (
-      <X size={12} className="text-[#FF453A]" />
-    );
+const STATUS_COLOR: Record<VerifiedField<string>["status"], string> = {
+  confirmed: "#30D158",
+  uncertain: "#FFD60A",
+  not_found: "#FF453A",
+};
+
+function VerificationCard({ label, field }: { label: string; field: VerifiedField<string> }) {
   return (
-    <div className="flex items-center gap-2 text-[12px] text-white/70">
-      {icon}
-      <span className="text-white/45">{label}:</span>
-      <span className="text-white/85 truncate">{field.value || "Not found"}</span>
+    <div className="p-[11px] rounded-[12px] bg-[#151515] border border-white/[0.07]">
+      <div className="flex items-center justify-between">
+        <span className="text-[9px] uppercase tracking-[0.08em] text-white/30">{label}</span>
+        <span
+          className="w-[6px] h-[6px] rounded-full shrink-0"
+          style={{ background: STATUS_COLOR[field.status] }}
+        />
+      </div>
+      <div className="mt-[5px] text-[12px] font-medium text-white truncate">
+        {field.value || "Not found"}
+      </div>
+    </div>
+  );
+}
+
+function ScoreBar({ label, score, delay }: { label: string; score: number; delay: number }) {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setWidth(score), 100 + delay);
+    return () => clearTimeout(t);
+  }, [score, delay]);
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] text-white/[0.46]">{label}</span>
+        <span className="text-[10px] text-white/[0.46]">{score}</span>
+      </div>
+      <div className="h-[7px] rounded-full bg-[#1d1d1d] overflow-hidden">
+        <div
+          className="h-full rounded-full bg-white transition-[width] duration-700 ease-out"
+          style={{ width: `${width}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -217,9 +247,13 @@ function AiChatPanel() {
       } bg-[#111111] border border-white/[0.14] rounded-[24px] overflow-hidden min-h-[500px] shadow-[0_30px_100px_rgba(0,0,0,0.45)] flex flex-col`}
     >
       <div className="flex items-center justify-between h-[58px] px-[18px] border-b border-white/[0.08] shrink-0">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-white/80">
-          <MessageSquare size={15} strokeWidth={1.75} />
-          AI Assistant
+        <div className="flex items-center gap-2 text-[13px] font-medium text-white/[0.74]">
+          {state.status === "completed" ? (
+            <Sparkles size={15} strokeWidth={1.75} />
+          ) : (
+            <MessageSquare size={15} strokeWidth={1.75} />
+          )}
+          {state.status === "completed" ? "SFB AI Presence" : "AI Assistant"}
         </div>
         <MoreHorizontal size={16} className="text-white/40" />
       </div>
@@ -313,98 +347,134 @@ function AiChatPanel() {
 
         {state.status === "completed" && (
           <div className="ai-chat-fade flex-1 flex flex-col overflow-y-auto" style={{ transitionDelay: "0.05s" }}>
-            <div className="flex items-center gap-1.5 text-[11px] text-white/40 mb-3">
-              <Sparkles size={12} />
-              SFB AI Presence Preview
-            </div>
-
-            <div className="flex items-center gap-3 p-3 rounded-[14px] bg-[#171717] border border-white/[0.08] mb-3">
+            {/* 1. Business + score */}
+            <div className="grid grid-cols-[92px_1fr] gap-[18px] items-center p-[18px] rounded-[18px] bg-[#171717] border border-white/[0.09] mb-4">
               <ScoreDial score={state.result.scores.overall} />
-              <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-semibold text-white truncate">
+              <div className="min-w-0">
+                <div className="text-[20px] font-semibold tracking-[-0.025em] text-white truncate">
                   {state.result.business.name.value || "Unknown business"}
                 </div>
-                <div className="text-[11px] text-white/45 truncate">
+                <div className="mt-1 text-[12px] text-white/[0.38] truncate">
                   {state.result.business.website.value}
                 </div>
+                <span className="inline-flex mt-[10px] px-2 py-[5px] rounded-full bg-white/[0.05] border border-white/[0.08] text-[9px] text-white/[0.54]">
+                  AI Presence Preview
+                </span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5 mb-3">
-              <FieldRow label="Phone" field={state.result.business.phone} />
-              <FieldRow label="Location" field={state.result.business.location} />
-              <FieldRow label="Category" field={state.result.business.category} />
+            {/* 2. Verified business information */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <VerificationCard label="Phone" field={state.result.business.phone} />
+              <VerificationCard label="Location" field={state.result.business.location} />
+              <VerificationCard label="Category" field={state.result.business.category} />
             </div>
 
-            {state.result.strengths.length > 0 && (
-              <div className="mb-3">
-                <div className="text-[10px] uppercase tracking-wide text-white/35 mb-1.5">
-                  AI can clearly understand
-                </div>
-                {state.result.strengths.map((s) => (
-                  <div key={s} className="flex items-start gap-1.5 text-[12px] text-white/70 mb-1">
-                    <Check size={12} className="text-[#30D158] mt-[2px] shrink-0" />
-                    {s}
+            {/* 3. Five AI presence category scores */}
+            <div className="mb-4">
+              <div className="text-[12px] font-medium text-white/[0.62] mb-3">
+                How AI understands this business
+              </div>
+              <div className="flex flex-col gap-[11px]">
+                <ScoreBar label="Identity" score={state.result.scores.identity} delay={0} />
+                <ScoreBar label="Knowledge" score={state.result.scores.knowledge} delay={60} />
+                <ScoreBar label="Authority" score={state.result.scores.authority} delay={120} />
+                <ScoreBar label="Location" score={state.result.scores.location} delay={180} />
+                <ScoreBar
+                  label="Machine Readability"
+                  score={state.result.scores.machineReadability}
+                  delay={240}
+                />
+              </div>
+            </div>
+
+            {/* 4 & 5. AI understands / AI may struggle with */}
+            {(state.result.strengths.length > 0 || state.result.gaps.length > 0) && (
+              <div className="grid grid-cols-2 gap-[10px] mb-3">
+                {state.result.strengths.length > 0 && (
+                  <div className="p-[14px] rounded-[14px] bg-[#141414] border border-[rgba(48,209,88,0.10)]">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-white/[0.42] mb-2">
+                      AI understands
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {state.result.strengths.map((s) => (
+                        <div key={s} className="flex items-start gap-1.5 text-[12px] leading-[1.45] text-white/[0.72]">
+                          <Check size={12} className="text-[#30D158] mt-[2px] shrink-0" />
+                          {s}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
+                {state.result.gaps.length > 0 && (
+                  <div className="p-[14px] rounded-[14px] bg-[#141414] border border-[rgba(255,214,10,0.10)]">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-white/[0.42] mb-2">
+                      AI may struggle with
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {state.result.gaps.map((g) => (
+                        <div key={g} className="flex items-start gap-1.5 text-[12px] leading-[1.45] text-white/[0.72]">
+                          <AlertCircle size={12} className="text-[#FFD60A] mt-[2px] shrink-0" />
+                          {g}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {state.result.gaps.length > 0 && (
-              <div className="mb-3">
-                <div className="text-[10px] uppercase tracking-wide text-white/35 mb-1.5">
-                  AI may struggle with
-                </div>
-                {state.result.gaps.map((g) => (
-                  <div key={g} className="flex items-start gap-1.5 text-[12px] text-white/70 mb-1">
-                    <AlertCircle size={12} className="text-[#FFD60A] mt-[2px] shrink-0" />
-                    {g}
-                  </div>
-                ))}
-              </div>
-            )}
-
+            {/* 6. Unverified signals */}
             {state.result.missing.length > 0 && (
-              <div className="mb-3">
-                <div className="text-[10px] uppercase tracking-wide text-white/35 mb-1.5">
+              <div className="p-[13px_14px] rounded-[14px] bg-[#121212] border border-[rgba(255,69,58,0.10)] mb-3">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-white/[0.42] mb-2">
                   Unable to verify
                 </div>
-                {state.result.missing.map((m) => (
-                  <div key={m} className="flex items-start gap-1.5 text-[12px] text-white/70 mb-1">
-                    <X size={12} className="text-[#FF453A] mt-[2px] shrink-0" />
-                    {m}
-                  </div>
-                ))}
+                <div className="flex flex-col gap-1">
+                  {state.result.missing.map((m) => (
+                    <div key={m} className="flex items-start gap-1.5 text-[11px] text-white/[0.56]">
+                      <X size={11} className="text-[#FF453A] mt-[2px] shrink-0" />
+                      {m}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            <div className="flex gap-1.5 flex-wrap mb-4">
-              {state.result.sources.map((s) => (
-                <span
-                  key={s}
-                  className="text-[10px] px-[9px] py-[5px] rounded-full bg-[#1A1A1A] border border-white/[0.08] text-white/[0.52] capitalize"
-                >
-                  {s}
-                </span>
-              ))}
+            {/* 7. Sources */}
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-white/[0.34]">Signals checked</span>
+              <div className="flex gap-1.5 flex-wrap justify-end">
+                {state.result.sources.map((s) => (
+                  <span
+                    key={s}
+                    className="h-6 px-2 inline-flex items-center rounded-full bg-[#171717] border border-white/[0.07] text-[9px] text-white/[0.44] capitalize"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
             </div>
 
-            <a
-              href="#pricing"
-              className="h-[42px] rounded-[12px] bg-white text-black text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:scale-[1.01] transition-transform"
-            >
-              Get My Full AI Presence Audit
-            </a>
-            <button
-              onClick={() => {
-                setQuery("");
-                setLocation("");
-                setState({ status: "idle" });
-              }}
-              className="mt-2 h-[36px] text-[12px] text-white/45"
-            >
-              Check another business
-            </button>
+            {/* 8. Full audit CTA */}
+            <div className="mt-[18px] pt-4 border-t border-white/[0.06]">
+              <a
+                href="#pricing"
+                className="h-[48px] rounded-[12px] bg-white text-black text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:scale-[1.01] transition-transform"
+              >
+                Get My Full AI Presence Audit
+              </a>
+              <button
+                onClick={() => {
+                  setQuery("");
+                  setLocation("");
+                  setState({ status: "idle" });
+                }}
+                className="w-full mt-3 h-[24px] text-[11px] text-white/[0.36] hover:text-white transition-colors"
+              >
+                Check another business
+              </button>
+            </div>
           </div>
         )}
       </div>
