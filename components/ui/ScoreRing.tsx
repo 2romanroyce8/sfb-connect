@@ -43,7 +43,7 @@ export default function ScoreRing() {
   return (
     <div
       ref={ref}
-      className="grid md:grid-cols-[440px_1fr] gap-12 md:gap-16 items-center"
+      className="grid md:grid-cols-[340px_1fr] gap-12 md:gap-16 items-center"
     >
       <div className="score-orbit">
         <div className="score-orbit__halo" />
@@ -58,7 +58,7 @@ export default function ScoreRing() {
             <div
               key={i}
               className="score-orbit__tick"
-              style={{ transform: `rotate(${angle}deg) translateY(-191px)` }}
+              style={{ transform: `rotate(${angle}deg) translateY(-127px)` }}
             />
           );
         })}
@@ -66,19 +66,19 @@ export default function ScoreRing() {
           <div
             key={`accent-${i}`}
             className="score-orbit__tick score-orbit__tick--accent"
-            style={{ transform: `rotate(${angle}deg) translateY(-191px)` }}
+            style={{ transform: `rotate(${angle}deg) translateY(-127px)` }}
           />
         ))}
 
         <svg
           className="absolute inset-0"
-          width="420"
-          height="420"
-          viewBox="0 0 420 420"
+          width="280"
+          height="280"
+          viewBox="0 0 280 280"
         >
           <path
             id="scoreArcPath"
-            d="M 100 190 A 150 150 0 0 1 320 190"
+            d="M 67 127 A 100 100 0 0 1 213 127"
             fill="none"
           />
           <text className="score-orbit__arc-text" textAnchor="middle">

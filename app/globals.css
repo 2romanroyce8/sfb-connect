@@ -197,24 +197,15 @@ body {
    ============================================================ */
 .score-orbit {
   position: relative;
-  width: 420px;
-  height: 420px;
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
   margin: 0 auto;
 }
 
-@media (max-width: 640px) {
-  .score-orbit {
-    width: 86vw;
-    height: 86vw;
-    max-width: 380px;
-    max-height: 380px;
-  }
-}
-
 .score-orbit__halo {
   position: absolute;
-  inset: -18px;
+  inset: -12px;
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 80%,
@@ -238,7 +229,7 @@ body {
 
 .score-orbit__inner {
   position: absolute;
-  inset: 18px;
+  inset: 12px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -248,24 +239,24 @@ body {
   left: 50%;
   top: 50%;
   width: 1px;
-  height: 13px;
+  height: 9px;
   background: rgba(242, 242, 242, 0.55);
   transform-origin: center;
 }
 
 .score-orbit__tick--accent {
-  width: 1.5px;
-  height: 11px;
+  width: 1.2px;
+  height: 7px;
   opacity: 0.95;
 }
 
 .score-orbit__glow {
   position: absolute;
   left: 50%;
-  bottom: -30px;
+  bottom: -20px;
   transform: translateX(-50%);
-  width: 360px;
-  height: 150px;
+  width: 240px;
+  height: 100px;
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 95%,
@@ -275,17 +266,17 @@ body {
     rgba(126, 0, 0, 0.4) 50%,
     rgba(0, 0, 0, 0) 68%
   );
-  filter: blur(16px);
+  filter: blur(11px);
   opacity: 0.9;
 }
 
 .score-orbit__hot-edge {
   position: absolute;
   left: 50%;
-  bottom: 10px;
+  bottom: 7px;
   transform: translateX(-50%);
-  width: 280px;
-  height: 26px;
+  width: 187px;
+  height: 17px;
   border-radius: 50%;
   background: linear-gradient(
     90deg,
@@ -295,7 +286,7 @@ body {
     rgba(255, 172, 54, 1),
     rgba(255, 90, 0, 0)
   );
-  filter: blur(9px);
+  filter: blur(6px);
   opacity: 0.9;
 }
 
@@ -303,8 +294,8 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 285px;
-  height: 285px;
+  width: 190px;
+  height: 190px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: radial-gradient(circle, #050505 0%, #030303 60%, rgba(0, 0, 0, 0.98) 100%);
@@ -316,7 +307,7 @@ body {
   top: 52%;
   transform: translate(-50%, -50%);
   font-family: var(--font-mono, monospace);
-  font-size: 116px;
+  font-size: 64px;
   font-weight: 700;
   line-height: 0.82;
   letter-spacing: -0.03em;
@@ -334,7 +325,7 @@ body {
   top: 68%;
   transform: translateX(-50%);
   font-family: var(--font-mono, monospace);
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   color: rgba(255, 255, 255, 0.5);
   z-index: 6;
@@ -343,7 +334,7 @@ body {
 .score-orbit__arc-text {
   fill: #dcdcdc;
   font-family: Inter, sans-serif;
-  font-size: 15px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
 }
