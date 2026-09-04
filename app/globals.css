@@ -250,7 +250,7 @@ body {
   width: 1px;
   height: 13px;
   background: rgba(242, 242, 242, 0.55);
-  transform-origin: 50% 191px;
+  transform-origin: center;
 }
 
 .score-orbit__tick--accent {
