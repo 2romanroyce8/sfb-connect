@@ -54,13 +54,6 @@ export default function PlatformsSection() {
             ))}
           </div>
         </Reveal>
-        <Reveal>
-          <p className="text-center text-[12.5px] text-[#5c5c60] mt-14 max-w-[520px] mx-auto leading-relaxed">
-            SFB Connect is not affiliated with, certified by, or partnered
-            with the platforms named above. Logos and names are shown to
-            describe the discovery ecosystem this service addresses.
-          </p>
-        </Reveal>
       </div>
     </section>
   );

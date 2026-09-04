@@ -31,6 +31,13 @@ export default function Footer() {
           </div>
           <div>© 2026 SFB Connect. All rights reserved.</div>
         </div>
+        <div className="mt-6 pt-6 border-t border-white/10">
+          <p className="text-[12.5px] text-[#5c5c60] max-w-[640px] leading-relaxed">
+            SFB Connect is not affiliated with, certified by, or partnered
+            with the platforms named above. Logos and names are shown to
+            describe the discovery ecosystem this service addresses.
+          </p>
+        </div>
       </div>
     </footer>
   );
