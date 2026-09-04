@@ -202,13 +202,24 @@ function ScoreBar({ label, score, delay }: { label: string; score: number; delay
 }
 
 function AiChatPanel() {
-  const { setLookupResult, pendingChatMessage, clearPendingChatMessage } = useBusinessLookup();
+  const { selectedBusiness, summary, setLookupResult, pendingChatMessage, clearPendingChatMessage } =
+    useBusinessLookup();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
   const [state, setState] = useState<LookupState>({ status: "idle" });
   const [stepIndex, setStepIndex] = useState(0);
+
+  // If a business was already searched elsewhere (e.g. the hero's live
+  // lookup) before this panel mounted/rendered, reflect that same canonical
+  // result here instead of showing an empty search form.
+  useEffect(() => {
+    if (selectedBusiness && state.status === "idle") {
+      setState({ status: "completed", result: selectedBusiness, summary });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBusiness]);
 
   useEffect(() => {
     const el = ref.current;

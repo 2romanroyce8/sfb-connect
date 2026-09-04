@@ -15,8 +15,8 @@ export default function HomePage() {
   return (
     <main>
       <Navbar />
-      <Hero />
       <BusinessLookupProvider>
+        <Hero />
         <PlatformsSection />
         <ShiftSection />
         <AnalyzeSection />

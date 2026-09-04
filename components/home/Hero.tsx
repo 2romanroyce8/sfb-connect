@@ -1,97 +1,165 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
+import { useBusinessLookup } from "@/lib/businessLookupContext";
+import { runBusinessLookup } from "@/lib/runBusinessLookup";
 
 export default function Hero() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
+  const { setLookupResult } = useBusinessLookup();
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!query.trim() || loading) return;
     setLoading(true);
     setError(null);
-    try {
-      await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("sfb_lead_email", email);
-      }
-      router.push("/pay");
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setLoading(false);
+    const outcome = await runBusinessLookup(query);
+    setLoading(false);
+
+    if (outcome.status === "completed") {
+      setLookupResult(outcome.result, outcome.summary);
+      document.getElementById("shift")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (outcome.status === "needs_link") {
+      setError(outcome.message);
+    } else {
+      setError(outcome.message);
     }
   }
 
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section className="relative min-h-[100svh] w-full overflow-hidden flex flex-col items-center justify-center text-center px-6 pt-[120px] pb-[72px]">
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover opacity-70"
+        className="absolute inset-0 w-full h-full object-cover"
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_120549_0cd82c36-56b3-4dd9-b190-069cfc3a623f.mp4"
       />
-      <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-background to-transparent" />
+      {/* Layered readability overlay — background art stays fully intact underneath */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.44) 0%, rgba(0,0,0,0.18) 30%, rgba(0,0,0,0.20) 62%, rgba(0,0,0,0.48) 100%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 43%, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.36) 100%)",
+        }}
+      />
 
-      <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6 pt-28 md:pt-32">
-        <h1 className="text-[40px] sm:text-[56px] md:text-[76px] lg:text-[92px] font-extrabold leading-[1.02] tracking-[-0.03em] max-w-4xl">
-          Your customers are asking AI{" "}
+      <div className="relative z-10 w-full max-w-[1120px] mx-auto flex flex-col items-center">
+        <span
+          className="mb-5 text-[11px] font-semibold tracking-[0.24em] uppercase text-white/[0.62]"
+          style={{ textShadow: "0 1px 14px rgba(0,0,0,0.55)" }}
+        >
+          AI Presence for Business
+        </span>
+
+        <h1
+          className="text-[56px] sm:text-[72px] md:text-[92px] font-bold leading-[0.9] tracking-[-0.055em] max-w-[1050px]"
+          style={{ textShadow: "0 3px 30px rgba(0,0,0,0.32)" }}
+        >
+          Your customers are asking AI
+          <br />
+          who to{" "}
           <span className="font-serif-accent italic font-normal">
-            who to choose.
+            choose.
           </span>
         </h1>
 
-        <div className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-[-0.02em] mt-4 text-medium-gray">
+        <div
+          className="mt-[22px] text-[28px] sm:text-[32px] md:text-[38px] font-medium tracking-[-0.035em] text-white"
+          style={{ textShadow: "0 2px 20px rgba(0,0,0,0.45)" }}
+        >
           Make sure it can find you.
         </div>
 
         <p
-          className="max-w-xl text-lg mt-7 leading-relaxed"
-          style={{ color: "hsl(var(--hero-subtitle))" }}
+          className="max-w-[690px] mt-[22px] text-[17px] leading-relaxed text-white/80"
+          style={{ textShadow: "0 2px 18px rgba(0,0,0,0.45)" }}
         >
-          We analyze and optimize how your business is represented across the
-          digital signals AI systems can use when answering local and
-          commercial recommendations.
+          See how clearly AI can understand your business, what it can
+          verify, and what may be keeping you from being recommended.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="liquid-glass rounded-full p-2 max-w-lg w-full mx-auto mt-9 flex items-center gap-2"
-        >
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your business email"
-            className="flex-1 bg-transparent border-none outline-none px-5 text-sm placeholder:text-medium-gray"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-white text-black rounded-full px-7 py-3 text-sm font-semibold whitespace-nowrap hover:scale-[1.03] active:scale-[0.98] transition-transform disabled:opacity-60"
+        <div className="w-full max-w-[650px] mt-[34px]">
+          <div className="mb-[9px] text-[9px] font-semibold tracking-[0.16em] text-white/[0.48] text-left pl-1">
+            LIVE BUSINESS LOOKUP
+          </div>
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 sm:grid-cols-[1fr_auto] items-center gap-1.5 p-[6px] min-h-[64px] rounded-[18px] border border-white/30"
+            style={{
+              background: "rgba(7,7,7,0.52)",
+              backdropFilter: "blur(18px) saturate(120%)",
+              WebkitBackdropFilter: "blur(18px) saturate(120%)",
+              boxShadow:
+                "0 16px 55px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
           >
-            {loading ? "…" : "ANALYZE MY BUSINESS"}
-          </button>
-        </form>
-        {error && <p className="text-sm text-red-400 mt-3">{error}</p>}
-
-        <div className="mt-8 flex items-baseline gap-4 flex-wrap justify-center">
-          <div className="font-mono text-lg font-semibold tracking-wide">
-            $200 / YEAR
-          </div>
-          <div className="text-[13px] text-medium-gray">
-            One annual payment. No monthly subscription.
-          </div>
+            <input
+              type="text"
+              required
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Business name, website, or social profile"
+              className="h-[52px] bg-transparent border-none outline-none px-[18px] text-[14px] text-white placeholder:text-white/[0.48]"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-[52px] px-[25px] rounded-[13px] bg-white text-[#080808] text-[12px] font-bold tracking-[-0.01em] inline-flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-60 whitespace-nowrap"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  Analyze My Business
+                  <ArrowRight size={14} />
+                </>
+              )}
+            </button>
+          </form>
+          {error && (
+            <p className="text-sm text-red-300 mt-3">{error}</p>
+          )}
         </div>
+
+        <div className="mt-[15px] flex items-center justify-center gap-2 text-[11px] text-white/55 flex-wrap max-w-[320px] sm:max-w-none">
+          <span>Public business data only</span>
+          <span>•</span>
+          <span>No login required to preview</span>
+          <span>•</span>
+          <span>Takes about 30 seconds</span>
+        </div>
+
+        <div className="mt-[26px] flex items-baseline justify-center gap-[10px]">
+          <span className="text-[19px] font-semibold text-white">$200</span>
+          <span className="text-[13px] font-semibold tracking-[0.08em] text-white/[0.86]">
+            / YEAR
+          </span>
+          <span className="text-[12px] text-white/50">
+            Full annual AI Presence service
+          </span>
+        </div>
+      </div>
+
+      <div className="absolute bottom-[26px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-[7px] z-10">
+        <span className="text-[9px] tracking-[0.12em] uppercase text-white/[0.42]">
+          See how it works
+        </span>
+        <ChevronDown size={15} className="text-white/[0.52]" />
       </div>
     </section>
   );
