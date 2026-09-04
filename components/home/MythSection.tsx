@@ -1,10 +1,12 @@
 import Reveal from "@/components/ui/Reveal";
-import SectionHead from "@/components/home/SectionHead";
+import SectionLabel from "@/components/ui/SectionLabel";
+import EditorialHeading from "@/components/ui/EditorialHeading";
+import GlassPanel from "@/components/ui/GlassPanel";
 
 const cards = [
   { title: "Reviews", statement: "Important. Not the entire picture." },
   { title: "Website", statement: "Important. Not enough by itself." },
-  { title: "Logo", statement: "Great for humans. Limited machine context." },
+  { title: "Brand", statement: "Great for humans. Limited machine context by itself." },
   {
     title: "Service",
     statement:
@@ -17,23 +19,20 @@ export default function MythSection() {
     <section className="py-24 md:py-32 section-band" id="myth">
       <div className="max-w-[1200px] mx-auto px-8">
         <Reveal>
-          <SectionHead
-            label="The Misconception"
-            title="The prettiest business doesn't automatically win."
-          />
+          <SectionLabel>The Misconception</SectionLabel>
+          <EditorialHeading className="mb-16">
+            The prettiest business doesn&apos;t automatically win.
+          </EditorialHeading>
         </Reveal>
         <Reveal>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {cards.map((c) => (
-              <div
-                key={c.title}
-                className="glass rounded-3xl p-8"
-              >
+              <GlassPanel key={c.title} hover className="p-8">
                 <h3 className="text-lg font-bold mb-3.5">{c.title}</h3>
                 <p className="text-[14.5px] leading-relaxed text-medium-gray">
                   {c.statement}
                 </p>
-              </div>
+              </GlassPanel>
             ))}
           </div>
         </Reveal>

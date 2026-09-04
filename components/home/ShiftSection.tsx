@@ -1,34 +1,27 @@
 import Reveal from "@/components/ui/Reveal";
-import SectionHead from "@/components/home/SectionHead";
+import SectionLabel from "@/components/ui/SectionLabel";
+import EditorialHeading, { Accent } from "@/components/ui/EditorialHeading";
+import ComparisonPanel from "@/components/ui/ComparisonPanel";
 
 export default function ShiftSection() {
   return (
     <section className="py-24 md:py-32 section-band" id="shift">
       <div className="max-w-[1200px] mx-auto px-8">
         <Reveal>
-          <SectionHead
-            label="The Shift"
-            title={
-              <>
-                Search gave people choices.
-                <br />
-                AI gives people{" "}
-                <span className="font-serif-accent italic font-normal">
-                  answers.
-                </span>
-              </>
-            }
-          />
+          <SectionLabel>The Shift</SectionLabel>
+          <EditorialHeading className="mb-16">
+            Search gave people choices.
+            <br />
+            AI gives people <Accent>answers.</Accent>
+          </EditorialHeading>
         </Reveal>
         <Reveal>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="glass rounded-[28px] p-10">
-              <div className="font-mono text-[15px] text-medium-gray mb-5">
-                2016
-              </div>
-              <div className="text-xl font-semibold mb-7 leading-snug">
-                &quot;best plumber near me&quot;
-              </div>
+            <ComparisonPanel
+              year="2016"
+              query={`"best plumber near me"`}
+              caption="Pages of search results"
+            >
               <div className="flex flex-col gap-2">
                 {[100, 100, 60, 100, 55].map((w, i) => (
                   <div
@@ -38,17 +31,14 @@ export default function ShiftSection() {
                   />
                 ))}
               </div>
-              <div className="mt-4 text-[13px] text-medium-gray font-mono">
-                Pages of search results
-              </div>
-            </div>
-            <div className="glass rounded-[28px] p-10">
-              <div className="font-mono text-[15px] text-medium-gray mb-5">
-                2026
-              </div>
-              <div className="text-xl font-semibold mb-7 leading-snug">
-                &quot;Who is the best plumber near me?&quot;
-              </div>
+            </ComparisonPanel>
+
+            <ComparisonPanel
+              year="2026"
+              query={`"Who is the best plumber near me?"`}
+              caption="A short AI-generated recommendation set"
+              emphasized
+            >
               <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-5 text-[14.5px] leading-relaxed text-[#d4d4d8]">
                 Based on service area, reviews, and specialty match, here are
                 three well-suited plumbers near you:{" "}
@@ -56,10 +46,7 @@ export default function ShiftSection() {
                 <strong>Rapid Rooter Co.</strong>, and{" "}
                 <strong>Metro Pipe Works</strong>.
               </div>
-              <div className="mt-4 text-[13px] text-medium-gray font-mono">
-                A short AI-generated recommendation set
-              </div>
-            </div>
+            </ComparisonPanel>
           </div>
         </Reveal>
         <Reveal>

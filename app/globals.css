@@ -6,6 +6,18 @@
   --border: rgba(255, 255, 255, 0.12);
   --glass-bg: rgba(255, 255, 255, 0.06);
   --hero-subtitle: 210 17% 95%;
+
+  /* Surfaces */
+  --surface-1: #080808;
+  --surface-2: #0d0d0d;
+  --surface-3: #131313;
+  --border-strong: rgba(255, 255, 255, 0.22);
+
+  /* Ambient glow palette — used sparingly, one or two hues per section */
+  --glow-cyan: #46c7ff;
+  --glow-violet: #9b6cff;
+  --glow-green: #67f2a3;
+  --glow-warm: #ff8d65;
 }
 
 * {
@@ -70,6 +82,50 @@ body {
 
 .font-serif-accent {
   font-family: var(--font-serif), serif;
+}
+
+/* Glass panel with reflective gradient edge — the signature "liquid glass" object material */
+.glass-edge {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.055),
+    rgba(255, 255, 255, 0.018)
+  );
+  backdrop-filter: blur(18px) saturate(115%);
+  -webkit-backdrop-filter: blur(18px) saturate(115%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.glass-edge::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.35),
+    rgba(70, 199, 255, 0.2),
+    rgba(155, 108, 255, 0.15),
+    rgba(255, 255, 255, 0.08)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.ambient-glow {
+  filter: blur(80px);
+  opacity: 0.18;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
