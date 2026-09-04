@@ -396,7 +396,11 @@ function AiChatPanel() {
               Get My Full AI Presence Audit
             </a>
             <button
-              onClick={() => setState({ status: "idle" })}
+              onClick={() => {
+                setQuery("");
+                setLocation("");
+                setState({ status: "idle" });
+              }}
               className="mt-2 h-[36px] text-[12px] text-white/45"
             >
               Check another business
