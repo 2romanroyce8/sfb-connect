@@ -338,3 +338,180 @@ body {
   font-weight: 600;
   letter-spacing: 0.1em;
 }
+
+/* ============================================================
+   Iceberg comparison — "what businesses think matters" (small
+   tip, huge cluttered underwater body) vs. "what AI actually
+   evaluates" (taller tip, small focused body), per spec
+   ("IcebergComparisonSection" technique).
+   ============================================================ */
+.iceberg-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+@media (max-width: 860px) {
+  .iceberg-wrap {
+    grid-template-columns: 1fr;
+    gap: 56px;
+  }
+}
+
+.iceberg__label {
+  text-align: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 20px;
+}
+
+.iceberg {
+  position: relative;
+  height: 560px;
+}
+
+.iceberg__tip {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0.08) 70%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: none;
+}
+
+.iceberg__tip--small {
+  width: 110px;
+  height: 64px;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.iceberg__tip--tall {
+  width: 150px;
+  height: 176px;
+  clip-path: polygon(50% 0%, 88% 100%, 12% 100%);
+}
+
+.iceberg__waterline {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(120, 190, 255, 0.55),
+    rgba(255, 255, 255, 0.95),
+    rgba(120, 190, 255, 0.55),
+    transparent
+  );
+  box-shadow: 0 0 22px rgba(140, 200, 255, 0.55);
+  z-index: 5;
+}
+
+.iceberg__waterline--small {
+  top: 64px;
+}
+
+.iceberg__waterline--tall {
+  top: 176px;
+}
+
+.iceberg__body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.iceberg__body--left {
+  top: 52px;
+  clip-path: polygon(
+    38% 0%,
+    62% 0%,
+    88% 8%,
+    100% 30%,
+    96% 60%,
+    80% 88%,
+    60% 100%,
+    40% 100%,
+    18% 90%,
+    4% 62%,
+    0% 32%,
+    14% 8%
+  );
+  background: linear-gradient(
+    160deg,
+    #ff6b4a 0%,
+    #ff4fa3 38%,
+    #b23bd6 68%,
+    #6c2bd9 100%
+  );
+  opacity: 0.94;
+}
+
+.iceberg__body--right {
+  top: 164px;
+  clip-path: polygon(
+    42% 0%,
+    58% 0%,
+    78% 10%,
+    88% 32%,
+    82% 62%,
+    66% 88%,
+    50% 100%,
+    34% 88%,
+    20% 62%,
+    14% 32%,
+    24% 10%
+  );
+  background: linear-gradient(160deg, #ffb347 0%, #ff7a3d 55%, #ff4e4e 100%);
+  opacity: 0.94;
+}
+
+.iceberg__depth {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.iceberg__tags {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 22px;
+}
+
+.iceberg__tag {
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-family: var(--font-mono, monospace);
+}
+
+.iceberg__tag--small {
+  font-size: 10.5px;
+  padding: 4.5px 10px;
+  opacity: 0.92;
+}
+
+.iceberg__tag--large {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+}
