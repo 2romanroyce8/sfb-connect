@@ -1,6 +1,6 @@
 import Reveal from "@/components/ui/Reveal";
 import SectionHead from "@/components/home/SectionHead";
-import IcebergComparison from "@/components/ui/IcebergComparison";
+import AIEvaluationComparison from "@/components/ui/AIEvaluationComparison";
 
 export default function AlgorithmSection() {
   return (
@@ -9,26 +9,26 @@ export default function AlgorithmSection() {
         <Reveal>
           <SectionHead
             label="Why This Matters"
-            title="The same internet does not look the same to everyone."
+            title="Not every signal carries the same weight."
           />
         </Reveal>
         <Reveal>
-          <p className="max-w-[700px] text-lg leading-relaxed text-[#c7c7cc] mb-16">
-            Modern recommendation systems evaluate context. Location, intent,
-            relevance, preferences, history and available information can
-            influence what gets surfaced. Most business owners optimize for
-            what a human eye finds impressive — but that&apos;s only the tip
-            of what actually determines whether AI recommends you.
+          <p className="max-w-[720px] text-lg leading-relaxed text-[#c7c7cc] mb-20">
+            Businesses often spend their attention on what looks impressive
+            to people. AI discovery systems evaluate a different mix of
+            identity, location, authority, structure, freshness and
+            machine-readable information.
           </p>
         </Reveal>
         <Reveal>
-          <IcebergComparison />
+          <AIEvaluationComparison />
         </Reveal>
         <Reveal>
-          <div className="mt-14 text-center font-mono text-sm text-medium-gray tracking-wide max-w-[560px] mx-auto leading-relaxed">
-            RECOMMENDATION SYSTEMS RECOMMEND WHAT THEY CAN VERIFY — NOT WHAT
-            IMPRESSES A HUMAN EYE.
-          </div>
+          <p className="mt-20 text-xl md:text-2xl font-medium leading-snug tracking-[-0.025em] text-white/[0.82] max-w-[820px]">
+            Looking impressive can help a customer trust you. Being
+            structured, consistent and understandable helps AI know when to
+            recommend you.
+          </p>
         </Reveal>
       </div>
     </section>
