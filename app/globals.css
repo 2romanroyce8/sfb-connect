@@ -464,15 +464,15 @@ body {
   clip-path: polygon(
     46% 0%,
     54% 0%,
-    82% 10%,
-    96% 32%,
-    90% 62%,
-    70% 90%,
+    88% 12%,
+    100% 34%,
+    92% 62%,
+    72% 92%,
     50% 100%,
-    30% 90%,
-    10% 62%,
-    4% 32%,
-    18% 10%
+    28% 92%,
+    8% 62%,
+    0% 34%,
+    12% 12%
   );
   background: linear-gradient(160deg, #ffb347 0%, #ff7a3d 55%, #ff4e4e 100%);
   opacity: 0.94;
@@ -496,8 +496,18 @@ body {
 }
 
 .iceberg__body--right .iceberg__tags {
-  padding: 20px 8px;
-  gap: 5px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px 8px;
+  padding: 26px 42px;
+  flex-wrap: unset;
+}
+
+.iceberg__body--right .iceberg__tag--large {
+  width: 100%;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.25;
 }
 
 .iceberg__tag {
