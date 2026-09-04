@@ -59,16 +59,6 @@ export default function ProcessSection() {
           />
         </Reveal>
         <Reveal>
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full aspect-[3/1] object-cover rounded-2xl mb-16"
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260325_125119_8e5ae31c-0021-4396-bc08-f7aebeb877a2.mp4"
-          />
-        </Reveal>
-        <Reveal>
           <div className="flex flex-col">
             {steps.map((s, i) => (
               <div
