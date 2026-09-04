@@ -17,8 +17,19 @@ const FEATURES = [
 
 export default function PricingSection() {
   return (
-    <section className="py-24 md:py-32 section-band" id="pricing">
-      <div className="max-w-[1200px] mx-auto px-8">
+    <section
+      className="py-24 md:py-32 section-band relative overflow-hidden"
+      id="pricing"
+    >
+      <div
+        className="absolute inset-0 bg-center bg-cover opacity-[0.32] pointer-events-none"
+        style={{
+          backgroundImage:
+            "url(https://pub.hyperagent.com/api/published/pbf01M1PX1MRK_64YV090V4P6624Z4/terrarium_frame.jpg)",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/70 to-black pointer-events-none" />
+      <div className="max-w-[1200px] mx-auto px-8 relative z-10">
         <Reveal>
           <SectionHead
             label="One Price"
