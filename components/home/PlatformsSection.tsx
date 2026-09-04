@@ -1,13 +1,14 @@
 import Reveal from "@/components/ui/Reveal";
+import { Search, Bot } from "lucide-react";
 
-const PLATFORMS = [
-  "ChatGPT",
-  "Claude",
-  "Perplexity",
-  "Grok",
-  "Gemini",
-  "AI Search",
-  "AI Assistants",
+const PLATFORMS: { name: string; logo?: string }[] = [
+  { name: "ChatGPT", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETQF1_GKWEVZM81T4F7F3S/logo-chatgpt.png" },
+  { name: "Claude", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETRF8_1VFNQ24D15D436CX/logo-claude.png" },
+  { name: "Perplexity", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETS6Q_3S0CNHDN0W2C8QKA/logo-perplexity.png" },
+  { name: "Grok", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETSN3_WRD1VYQ7QCSEHAP8/logo-grok.png" },
+  { name: "Gemini", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETT0N_69SGZJMWZP0BTXWH/logo-gemini.png" },
+  { name: "AI Search" },
+  { name: "AI Assistants" },
 ];
 
 export default function PlatformsSection() {
@@ -23,22 +24,41 @@ export default function PlatformsSection() {
           </h2>
         </Reveal>
         <Reveal>
-          <div className="flex flex-wrap gap-10 md:gap-12 justify-center items-center mt-12">
+          <div className="flex flex-wrap gap-10 md:gap-14 justify-center items-start mt-14">
             {PLATFORMS.map((p) => (
               <div
-                key={p}
-                className="text-xl md:text-2xl font-semibold text-medium-gray tracking-tight hover:text-white transition-colors"
+                key={p.name}
+                className="flex flex-col items-center gap-3 w-[92px]"
               >
-                {p}
+                <div className="w-12 h-12 flex items-center justify-center">
+                  {p.logo ? (
+                    <img
+                      src={p.logo}
+                      alt={p.name}
+                      className="max-w-full max-h-full object-contain opacity-80 hover:opacity-100 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full border border-white/15 flex items-center justify-center text-medium-gray">
+                      {p.name === "AI Search" ? (
+                        <Search className="w-5 h-5" strokeWidth={1.75} />
+                      ) : (
+                        <Bot className="w-5 h-5" strokeWidth={1.75} />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <span className="text-sm font-semibold text-medium-gray tracking-tight hover:text-white transition-colors">
+                  {p.name}
+                </span>
               </div>
             ))}
           </div>
         </Reveal>
         <Reveal>
-          <p className="text-center text-[12.5px] text-[#5c5c60] mt-12 max-w-[520px] mx-auto leading-relaxed">
+          <p className="text-center text-[12.5px] text-[#5c5c60] mt-14 max-w-[520px] mx-auto leading-relaxed">
             SFB Connect is not affiliated with, certified by, or partnered
-            with the platforms named above. Names are shown to describe the
-            discovery ecosystem this service addresses.
+            with the platforms named above. Logos and names are shown to
+            describe the discovery ecosystem this service addresses.
           </p>
         </Reveal>
       </div>
