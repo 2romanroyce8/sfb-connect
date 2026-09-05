@@ -65,10 +65,10 @@ export async function middleware(request: NextRequest) {
     }
     const { data: profile } = await supabase
       .from("users")
-      .select("team_role")
+      .select("team_role, team_status")
       .eq("id", user.id)
       .single();
-    if (!profile?.team_role) {
+    if (!profile?.team_role || profile.team_status === "disabled") {
       const url = request.nextUrl.clone();
       url.pathname = "/team/login";
       url.searchParams.set("error", "not_authorized");

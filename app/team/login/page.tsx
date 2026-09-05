@@ -38,18 +38,35 @@ function TeamLoginForm() {
     // there is no public signup here.
     const { data: profile } = await supabase
       .from("users")
-      .select("team_role")
+      .select("team_role, team_status")
       .eq("id", data.user.id)
       .single();
 
-    setLoading(false);
-
     if (!profile?.team_role) {
+      setLoading(false);
       await supabase.auth.signOut();
       setError("This account isn't set up for team access.");
       return;
     }
 
+    if (profile.team_status === "disabled") {
+      setLoading(false);
+      await supabase.auth.signOut();
+      setError("This account has been disabled. Contact your administrator.");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    if (profile.team_status === "invited") {
+      await supabase
+        .from("users")
+        .update({ team_status: "active", activated_at: now, last_active_at: now })
+        .eq("id", data.user.id);
+    } else {
+      await supabase.from("users").update({ last_active_at: now }).eq("id", data.user.id);
+    }
+
+    setLoading(false);
     router.push(next);
   }
 
