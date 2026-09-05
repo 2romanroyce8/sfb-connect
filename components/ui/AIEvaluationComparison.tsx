@@ -41,6 +41,16 @@ export default function AIEvaluationComparison() {
       className="relative w-full overflow-hidden"
       style={{ background: "#090A0C" }}
     >
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          zIndex: 15,
+          background:
+            "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.16) 64%, rgba(0,0,0,0.56) 100%)",
+        }}
+      />
+
       {/* Grain */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -244,10 +254,20 @@ export default function AIEvaluationComparison() {
           />
         </div>
 
-        {/* Left metric — lower, quieter */}
+        {/* Left metric — lower, quieter. Centered anchor so it sits close to the beam. */}
         <div
           className="absolute text-left transition-all duration-700 ease-out"
-          style={{ left: "17%", top: "390px", width: "210px", zIndex: 11, ...fade(0.32, "x", -18) }}
+          style={{
+            left: "35.5%",
+            top: "54%",
+            width: "210px",
+            zIndex: 11,
+            opacity: visible ? 1 : 0,
+            transform: visible
+              ? "translate(-50%, -50%)"
+              : "translate(calc(-50% - 18px), -50%)",
+            transitionDelay: "0.32s",
+          }}
         >
           <div
             style={{
@@ -277,10 +297,20 @@ export default function AIEvaluationComparison() {
           </div>
         </div>
 
-        {/* Right metric — higher, stronger */}
+        {/* Right metric — higher, stronger. Centered anchor so it sits close to the beam. */}
         <div
           className="absolute text-left transition-all duration-700 ease-out"
-          style={{ right: "15%", top: "305px", width: "220px", zIndex: 11, ...fade(0.4, "x", 18) }}
+          style={{
+            right: "34.5%",
+            top: "41%",
+            width: "220px",
+            zIndex: 11,
+            opacity: visible ? 1 : 0,
+            transform: visible
+              ? "translate(50%, -50%)"
+              : "translate(calc(50% + 18px), -50%)",
+            transitionDelay: "0.4s",
+          }}
         >
           <div
             style={{
