@@ -64,79 +64,108 @@ export default function AIEvaluationComparison() {
 
       {/* ============ DESKTOP / TABLET — absolute cinematic composition ============ */}
       <div className="hidden md:block relative" style={{ height: "860px" }}>
-        {/* Atmosphere: clouds */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 3,
-            left: "-12%",
-            bottom: "-2%",
-            width: "65%",
-            height: "52%",
-            background:
-              "radial-gradient(ellipse at 62% 46%, rgba(118,47,42,0.42) 0%, rgba(55,29,30,0.38) 25%, rgba(21,18,21,0.72) 58%, rgba(9,10,12,0) 76%)",
-            filter: "blur(14px)",
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 4,
-            left: "9%",
-            bottom: "25%",
-            width: "38%",
-            height: "18%",
-            background:
-              "radial-gradient(ellipse at center, rgba(255,75,52,0.26) 0%, rgba(255,66,46,0.08) 38%, transparent 72%)",
-            filter: "blur(14px)",
-            transform: "rotate(12deg)",
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 3,
-            right: "-13%",
-            bottom: "-4%",
-            width: "67%",
-            height: "54%",
-            background:
-              "radial-gradient(ellipse at 36% 42%, rgba(104,44,42,0.40) 0%, rgba(49,27,29,0.40) 27%, rgba(18,17,20,0.78) 58%, rgba(9,10,12,0) 77%)",
-            filter: "blur(15px)",
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 4,
-            right: "9%",
-            bottom: "27%",
-            width: "38%",
-            height: "18%",
-            background:
-              "radial-gradient(ellipse at center, rgba(255,72,50,0.24) 0%, rgba(255,65,45,0.07) 40%, transparent 72%)",
-            filter: "blur(15px)",
-            transform: "rotate(-11deg)",
-          }}
-        />
-
-        {/* Mountains */}
+        {/* Mountains — pushed behind the clouds, kept subtle (depth cue, not the hero shape) */}
         <svg
           className="absolute left-0 right-0 bottom-0 pointer-events-none"
-          style={{ zIndex: 5, height: "360px", width: "100%" }}
-          viewBox="0 0 1600 360"
+          style={{ zIndex: 2, height: "300px", width: "100%" }}
+          viewBox="0 0 1600 300"
           preserveAspectRatio="none"
         >
           <path
-            d="M0 360 L0 260 L170 150 L310 245 L445 120 L610 260 L790 170 L950 260 L1120 125 L1290 240 L1440 160 L1600 265 L1600 360 Z"
-            fill="#111216"
-            opacity={0.72}
+            d="M0 300 L0 220 L170 130 L310 210 L445 105 L610 220 L790 145 L950 220 L1120 110 L1290 205 L1440 140 L1600 225 L1600 300 Z"
+            fill="#141416"
+            opacity={0.55}
           />
           <path
-            d="M0 360 L0 300 L210 230 L350 295 L510 185 L690 310 L835 245 L990 305 L1170 200 L1370 300 L1510 240 L1600 290 L1600 360 Z"
-            fill="#090A0C"
+            d="M0 300 L0 250 L210 195 L350 245 L510 160 L690 260 L835 210 L990 255 L1170 170 L1370 250 L1510 205 L1600 240 L1600 300 Z"
+            fill="#0c0c0e"
+            opacity={0.85}
           />
         </svg>
+
+        {/* Atmosphere: big soft cloud masses — the dominant lower-half visual */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            zIndex: 3,
+            left: "-16%",
+            bottom: "-8%",
+            width: "72%",
+            height: "66%",
+            background:
+              "radial-gradient(ellipse at 64% 50%, rgba(140,58,50,0.58) 0%, rgba(90,44,44,0.50) 22%, rgba(48,32,34,0.62) 46%, rgba(18,16,18,0.55) 66%, rgba(9,10,12,0) 82%)",
+            filter: "blur(26px)",
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            zIndex: 4,
+            left: "6%",
+            bottom: "22%",
+            width: "42%",
+            height: "26%",
+            background:
+              "radial-gradient(ellipse at center, rgba(255,88,58,0.36) 0%, rgba(255,72,48,0.14) 40%, transparent 74%)",
+            filter: "blur(18px)",
+            transform: "rotate(10deg)",
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            zIndex: 3,
+            right: "-17%",
+            bottom: "-10%",
+            width: "74%",
+            height: "68%",
+            background:
+              "radial-gradient(ellipse at 34% 48%, rgba(130,54,48,0.56) 0%, rgba(84,42,42,0.48) 24%, rgba(44,30,32,0.62) 48%, rgba(16,15,18,0.58) 68%, rgba(9,10,12,0) 83%)",
+            filter: "blur(27px)",
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            zIndex: 4,
+            right: "6%",
+            bottom: "24%",
+            width: "42%",
+            height: "26%",
+            background:
+              "radial-gradient(ellipse at center, rgba(255,84,56,0.34) 0%, rgba(255,70,46,0.13) 40%, transparent 74%)",
+            filter: "blur(18px)",
+            transform: "rotate(-10deg)",
+          }}
+        />
+
+        {/* Rim-light seams where the clouds meet the beam */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            zIndex: 6,
+            left: "34%",
+            bottom: "20%",
+            width: "18%",
+            height: "30%",
+            background:
+              "radial-gradient(ellipse at 85% 55%, rgba(255,110,75,0.5) 0%, rgba(255,90,60,0.16) 35%, transparent 70%)",
+            filter: "blur(13px)",
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            zIndex: 6,
+            right: "34%",
+            bottom: "20%",
+            width: "18%",
+            height: "30%",
+            background:
+              "radial-gradient(ellipse at 15% 55%, rgba(255,108,73,0.48) 0%, rgba(255,88,58,0.15) 35%, transparent 70%)",
+            filter: "blur(13px)",
+          }}
+        />
 
         {/* Beam ground glow */}
         <div
