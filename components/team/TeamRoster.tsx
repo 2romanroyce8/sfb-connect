@@ -133,7 +133,21 @@ function InviteForm({ onInvited }: { onInvited: () => void }) {
   );
 }
 
-export default function TeamRoster({ members: initialMembers }: { members: Member[] }) {
+type Performance = { calls: number; talkTime: number; meetings: number; wins: number; conversion: number };
+
+function formatDuration(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+export default function TeamRoster({
+  members: initialMembers,
+  performance,
+}: {
+  members: Member[];
+  performance: Record<string, Performance>;
+}) {
   const [members, setMembers] = useState(initialMembers);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -186,7 +200,7 @@ export default function TeamRoster({ members: initialMembers }: { members: Membe
         <table className="w-full text-[13px]">
           <thead>
             <tr style={{ background: "#0A0A0A" }}>
-              {["Name", "Email", "Role", "Status", "Last Active", ""].map((h) => (
+              {["Name", "Email", "Role", "Status", "Calls", "Talk Time", "Meetings", "Wins", "Conversion", "Last Active", ""].map((h) => (
                 <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
                   {h}
                 </th>
@@ -210,6 +224,11 @@ export default function TeamRoster({ members: initialMembers }: { members: Membe
                     <span className="capitalize text-[#A1A1A6]">{m.team_status || "invited"}</span>
                   </span>
                 </td>
+                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.calls ?? 0}</td>
+                <td className="px-4 py-3 text-[#A1A1A6]">{formatDuration(performance[m.id]?.talkTime ?? 0)}</td>
+                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.meetings ?? 0}</td>
+                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.wins ?? 0}</td>
+                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.conversion ?? 0}%</td>
                 <td className="px-4 py-3 text-[#6E6E73]">
                   {m.last_active_at ? new Date(m.last_active_at).toLocaleDateString() : "Never"}
                 </td>

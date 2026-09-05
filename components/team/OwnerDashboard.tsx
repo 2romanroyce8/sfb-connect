@@ -112,15 +112,19 @@ export default function OwnerDashboard({
       <div className="mb-3 text-[13px] font-semibold text-[#F5F5F7]">Team</div>
       {reps.length === 0 ? (
         <div
-          className="rounded-[12px] p-6 text-center"
+          className="rounded-[14px] p-8 text-center"
           style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <p className="text-[13px] text-[#A1A1A6]">
-            No sales reps provisioned yet. Ashton and Logan need Supabase Auth
-            accounts with <code className="text-[#F5F5F7]">team_role = &apos;sales_rep&apos;</code> set
-            on their <code className="text-[#F5F5F7]">public.users</code> row before they&apos;ll show up
-            here.
+          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No sales reps yet</div>
+          <p className="text-[13px] text-[#A1A1A6] mb-5">
+            Invite your first sales rep to start tracking team performance.
           </p>
+          <Link
+            href="/team/team"
+            className="inline-flex h-[38px] px-4 items-center rounded-[8px] bg-white text-black text-[12.5px] font-semibold"
+          >
+            Invite Team Member
+          </Link>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
