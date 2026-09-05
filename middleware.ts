@@ -54,9 +54,31 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // SFB Sales OS — internal team CRM, entirely separate from the customer
+  // portal above. /team/login is the only public route in this tree.
+  if (path.startsWith("/team") && path !== "/team/login") {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/team/login";
+      url.searchParams.set("next", path);
+      return NextResponse.redirect(url);
+    }
+    const { data: profile } = await supabase
+      .from("users")
+      .select("team_role")
+      .eq("id", user.id)
+      .single();
+    if (!profile?.team_role) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/team/login";
+      url.searchParams.set("error", "not_authorized");
+      return NextResponse.redirect(url);
+    }
+  }
+
   return response;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*", "/team/:path*"],
 };
