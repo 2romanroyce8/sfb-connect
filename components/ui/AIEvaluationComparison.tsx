@@ -146,8 +146,15 @@ export default function AIEvaluationComparison() {
 
         {/* Headline */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 text-center transition-all duration-700 ease-out"
-          style={{ top: 0, width: "660px", maxWidth: "90vw", zIndex: 10, ...fade(0) }}
+          className="absolute left-1/2 text-center transition-all duration-700 ease-out"
+          style={{
+            top: 0,
+            width: "660px",
+            maxWidth: "90vw",
+            zIndex: 10,
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translate(-50%, 0)" : "translate(-50%, 18px)",
+          }}
         >
           <h2
             className="font-bold text-[#f4f4f4]"
