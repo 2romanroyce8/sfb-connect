@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, PhoneOff, Loader2 } from "lucide-react";
+import MeetingBookingFlow from "./MeetingBookingFlow";
 
 type Lead = {
   id: string;
@@ -71,7 +72,6 @@ export default function CallWorkspace({
   const [outcome, setOutcome] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [followupAt, setFollowupAt] = useState("");
-  const [meetingAt, setMeetingAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -117,9 +117,6 @@ export default function CallWorkspace({
       const payload: Record<string, unknown> = { outcome, outcomeReason: reason || undefined };
       if (outcome === "call_back_later" || outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") {
         if (followupAt) payload.followup = { dueAt: new Date(followupAt).toISOString(), reason };
-      }
-      if (outcome === "booked_meeting" && meetingAt) {
-        payload.meeting = { scheduledAt: new Date(meetingAt).toISOString() };
       }
       const res = await fetch(`/api/team/calls/${call.id}/end`, {
         method: "POST",
@@ -300,38 +297,39 @@ export default function CallWorkspace({
               </div>
             )}
 
-            {outcome === "booked_meeting" && (
-              <div className="mb-3">
-                <label className="text-[11px] text-[#6E6E73] uppercase tracking-wide">Meeting date/time</label>
-                <input
-                  type="datetime-local"
-                  value={meetingAt}
-                  onChange={(e) => setMeetingAt(e.target.value)}
-                  className="w-full h-[38px] rounded-[8px] px-3 text-[13px] outline-none mt-1"
-                  style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-                />
-                <p className="text-[11px] text-[#6E6E73] mt-1">
-                  Calendar invites and Google Meet links aren't automated yet — this saves the meeting to the CRM now.
-                </p>
-              </div>
+            {outcome === "booked_meeting" && call && (
+              <MeetingBookingFlow
+                leadId={lead.id}
+                callId={call.id}
+                defaultPhone={lead.phone}
+                onCancel={() => setOutcome(null)}
+                onBooked={() => {
+                  setShowOutcome(false);
+                  setOutcome(null);
+                  setCall(null);
+                  router.refresh();
+                }}
+              />
             )}
 
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={submitOutcome}
-                disabled={!outcome || submitting}
-                className="h-[38px] px-4 rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-50"
-              >
-                {submitting ? "Saving…" : "Save Outcome"}
-              </button>
-              <button
-                onClick={() => setShowOutcome(false)}
-                className="h-[38px] px-4 rounded-[8px] text-[13px] text-[#A1A1A6]"
-                style={{ border: "1px solid rgba(255,255,255,0.1)" }}
-              >
-                Cancel
-              </button>
-            </div>
+            {outcome !== "booked_meeting" && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={submitOutcome}
+                  disabled={!outcome || submitting}
+                  className="h-[38px] px-4 rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-50"
+                >
+                  {submitting ? "Saving…" : "Save Outcome"}
+                </button>
+                <button
+                  onClick={() => setShowOutcome(false)}
+                  className="h-[38px] px-4 rounded-[8px] text-[13px] text-[#A1A1A6]"
+                  style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

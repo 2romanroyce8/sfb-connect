@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { listUpcomingEvents } from "@/lib/crm/googleCalendar";
 
 const RANGE_DAYS: Record<string, number> = { day: 1, week: 7, month: 30 };
 
@@ -20,7 +21,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: { v
   const [{ data: meetings }, { data: followups }] = await Promise.all([
     supabase
       .from("crm_meetings")
-      .select("id, lead_id, scheduled_at, contact_name, status, google_meet_url")
+      .select("id, lead_id, scheduled_at, contact_name, status, google_meet_url, calendar_event_id")
       .gte("scheduled_at", start.toISOString())
       .lt("scheduled_at", end.toISOString())
       .order("scheduled_at", { ascending: true }),
@@ -37,7 +38,28 @@ export default async function CalendarPage({ searchParams }: { searchParams: { v
   const { data: leads } = leadIds.length ? await supabase.from("crm_leads").select("id, business_name").in("id", leadIds) : { data: [] as any[] };
   const leadMap = Object.fromEntries((leads ?? []).map((l) => [l.id, l.business_name]));
 
-  type Event = { id: string; at: string; type: "meeting" | "follow_up"; title: string; leadId: string; extra?: string };
+  type Event = { id: string; at: string; type: "meeting" | "follow_up" | "google"; title: string; leadId?: string; extra?: string };
+  const syncedEventIds = new Set((meetings ?? []).map((m) => m.calendar_event_id).filter(Boolean));
+
+  // Only ever the CURRENT user's own connected calendar — per the security
+  // rule, nobody (including the owner) reads another rep's Google events.
+  let googleEvents: Event[] = [];
+  try {
+    const raw = await listUpcomingEvents(user!.id, start.toISOString(), end.toISOString());
+    googleEvents = raw
+      .filter((e) => !syncedEventIds.has(e.id) && e.status !== "cancelled")
+      .map((e) => ({
+        id: `google-${e.id}`,
+        at: e.start?.dateTime || e.start?.date,
+        type: "google" as const,
+        title: e.summary || "Google Calendar event",
+        extra: "From your Google Calendar",
+      }));
+  } catch {
+    // Not connected, or token expired — the CRM events below still render;
+    // this section just contributes nothing rather than erroring the page.
+  }
+
   const events: Event[] = [
     ...(meetings ?? []).map((m) => ({
       id: m.id,
@@ -55,6 +77,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: { v
       leadId: f.lead_id,
       extra: f.reason || undefined,
     })),
+    ...googleEvents,
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
   const byDay = new Map<string, Event[]>();
@@ -106,22 +129,30 @@ export default async function CalendarPage({ searchParams }: { searchParams: { v
                 {new Date(day).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
               </div>
               <div className="flex flex-col gap-2">
-                {dayEvents.map((e) => (
-                  <Link
-                    key={e.id}
-                    href={`/team/leads/${e.leadId}`}
-                    className="flex items-center justify-between p-3.5 rounded-[10px]"
-                    style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}
-                  >
-                    <div>
-                      <div className="text-[13px] text-[#F5F5F7]">{e.title}</div>
-                      {e.extra && <div className="text-[11.5px] text-[#6E6E73] mt-0.5">{e.extra}</div>}
+                {dayEvents.map((e) => {
+                  const content = (
+                    <>
+                      <div>
+                        <div className="text-[13px] text-[#F5F5F7]">{e.title}</div>
+                        {e.extra && <div className="text-[11.5px] text-[#6E6E73] mt-0.5">{e.extra}</div>}
+                      </div>
+                      <div className="text-[12px] text-[#A1A1A6]">
+                        {new Date(e.at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                      </div>
+                    </>
+                  );
+                  const className = "flex items-center justify-between p-3.5 rounded-[10px]";
+                  const style = { background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" };
+                  return e.leadId ? (
+                    <Link key={e.id} href={`/team/leads/${e.leadId}`} className={className} style={style}>
+                      {content}
+                    </Link>
+                  ) : (
+                    <div key={e.id} className={className} style={style}>
+                      {content}
                     </div>
-                    <div className="text-[12px] text-[#A1A1A6]">
-                      {new Date(e.at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                    </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
