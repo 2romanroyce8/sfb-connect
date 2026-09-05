@@ -39,7 +39,7 @@ export default function AIEvaluationComparison() {
     <div
       ref={ref}
       className="relative w-full overflow-hidden"
-      style={{ background: "#090A0C" }}
+      style={{ background: "#111214" }}
     >
       {/* Vignette */}
       <div
@@ -47,7 +47,7 @@ export default function AIEvaluationComparison() {
         style={{
           zIndex: 15,
           background:
-            "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.16) 64%, rgba(0,0,0,0.56) 100%)",
+            "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.16) 70%, rgba(0,0,0,0.48) 100%)",
         }}
       />
 
@@ -56,140 +56,112 @@ export default function AIEvaluationComparison() {
         className="absolute inset-0 pointer-events-none"
         style={{
           zIndex: 20,
-          opacity: 0.045,
+          opacity: 0.035,
           mixBlendMode: "screen",
           backgroundImage: GRAIN_URL,
         }}
       />
 
       {/* ============ DESKTOP / TABLET — absolute cinematic composition ============ */}
-      <div className="hidden md:block relative" style={{ height: "860px" }}>
-        {/* Mountains — pushed behind the clouds, kept subtle (depth cue, not the hero shape) */}
+      <div className="hidden md:block relative" style={{ height: "780px" }}>
+        {/* Mountains — dark, soft, barely-there depth cue */}
         <svg
           className="absolute left-0 right-0 bottom-0 pointer-events-none"
-          style={{ zIndex: 2, height: "300px", width: "100%" }}
-          viewBox="0 0 1600 300"
+          style={{ zIndex: 2, height: "250px", width: "100%", opacity: 0.75 }}
+          viewBox="0 0 1600 250"
           preserveAspectRatio="none"
         >
           <path
-            d="M0 300 L0 220 L170 130 L310 210 L445 105 L610 220 L790 145 L950 220 L1120 110 L1290 205 L1440 140 L1600 225 L1600 300 Z"
-            fill="#141416"
-            opacity={0.55}
+            d="M0 250 L0 185 L170 115 L310 175 L445 90 L610 185 L790 120 L950 185 L1120 92 L1290 172 L1440 118 L1600 188 L1600 250 Z"
+            fill="#17181B"
+            opacity={0.48}
           />
           <path
-            d="M0 300 L0 250 L210 195 L350 245 L510 160 L690 260 L835 210 L990 255 L1170 170 L1370 250 L1510 205 L1600 240 L1600 300 Z"
-            fill="#0c0c0e"
-            opacity={0.85}
+            d="M0 250 L0 210 L210 165 L350 205 L510 135 L690 218 L835 175 L990 213 L1170 143 L1370 210 L1510 172 L1600 200 L1600 250 Z"
+            fill="#0b0c0e"
+            opacity={0.98}
           />
         </svg>
 
-        {/* Atmosphere: big soft cloud masses — the dominant lower-half visual */}
+        {/* Atmosphere: dark cloud masses, concentrated low, no flat red wash */}
         <div
           className="absolute pointer-events-none"
           style={{
             zIndex: 3,
-            left: "-16%",
-            bottom: "-8%",
-            width: "72%",
-            height: "66%",
+            left: "-12%",
+            bottom: "6%",
+            width: "58%",
+            height: "48%",
             background:
-              "radial-gradient(ellipse at 64% 50%, rgba(140,58,50,0.58) 0%, rgba(90,44,44,0.50) 22%, rgba(48,32,34,0.62) 46%, rgba(18,16,18,0.55) 66%, rgba(9,10,12,0) 82%)",
-            filter: "blur(26px)",
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 4,
-            left: "6%",
-            bottom: "22%",
-            width: "42%",
-            height: "26%",
-            background:
-              "radial-gradient(ellipse at center, rgba(255,88,58,0.36) 0%, rgba(255,72,48,0.14) 40%, transparent 74%)",
-            filter: "blur(18px)",
-            transform: "rotate(10deg)",
+              "radial-gradient(ellipse at 68% 45%, rgba(92,60,64,0.44) 0%, rgba(55,43,47,0.58) 28%, rgba(27,27,30,0.78) 58%, rgba(17,18,20,0) 82%)",
+            filter: "blur(10px)",
           }}
         />
         <div
           className="absolute pointer-events-none"
           style={{
             zIndex: 3,
-            right: "-17%",
-            bottom: "-10%",
-            width: "74%",
-            height: "68%",
+            right: "-12%",
+            bottom: "6%",
+            width: "58%",
+            height: "48%",
             background:
-              "radial-gradient(ellipse at 34% 48%, rgba(130,54,48,0.56) 0%, rgba(84,42,42,0.48) 24%, rgba(44,30,32,0.62) 48%, rgba(16,15,18,0.58) 68%, rgba(9,10,12,0) 83%)",
-            filter: "blur(27px)",
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 4,
-            right: "6%",
-            bottom: "24%",
-            width: "42%",
-            height: "26%",
-            background:
-              "radial-gradient(ellipse at center, rgba(255,84,56,0.34) 0%, rgba(255,70,46,0.13) 40%, transparent 74%)",
-            filter: "blur(18px)",
-            transform: "rotate(-10deg)",
+              "radial-gradient(ellipse at 32% 44%, rgba(92,59,63,0.42) 0%, rgba(54,42,46,0.58) 29%, rgba(27,27,30,0.78) 58%, rgba(17,18,20,0) 82%)",
+            filter: "blur(10px)",
           }}
         />
 
-        {/* Rim-light seams where the clouds meet the beam */}
+        {/* Rim-light seams — subtle, only where clouds meet the beam */}
         <div
           className="absolute pointer-events-none"
           style={{
             zIndex: 6,
-            left: "34%",
-            bottom: "20%",
-            width: "18%",
-            height: "30%",
+            left: "19%",
+            bottom: "25%",
+            width: "28%",
+            height: "18%",
             background:
-              "radial-gradient(ellipse at 85% 55%, rgba(255,110,75,0.5) 0%, rgba(255,90,60,0.16) 35%, transparent 70%)",
-            filter: "blur(13px)",
+              "radial-gradient(ellipse at 85% 50%, rgba(255,80,54,0.26) 0%, rgba(255,72,48,0.10) 34%, transparent 72%)",
+            filter: "blur(10px)",
           }}
         />
         <div
           className="absolute pointer-events-none"
           style={{
             zIndex: 6,
-            right: "34%",
-            bottom: "20%",
-            width: "18%",
-            height: "30%",
+            right: "19%",
+            bottom: "25%",
+            width: "28%",
+            height: "18%",
             background:
-              "radial-gradient(ellipse at 15% 55%, rgba(255,108,73,0.48) 0%, rgba(255,88,58,0.15) 35%, transparent 70%)",
-            filter: "blur(13px)",
+              "radial-gradient(ellipse at 15% 50%, rgba(255,80,54,0.24) 0%, rgba(255,72,48,0.09) 34%, transparent 72%)",
+            filter: "blur(10px)",
           }}
         />
 
-        {/* Beam ground glow */}
+        {/* Beam ground glow — small, concentrated near the beam base only */}
         <div
           className="absolute pointer-events-none"
           style={{
             zIndex: 6,
             left: "50%",
-            bottom: "37px",
+            bottom: "30px",
             transform: "translateX(-50%)",
-            width: "500px",
-            height: "160px",
+            width: "360px",
+            height: "110px",
             background:
-              "radial-gradient(ellipse at center, rgba(255,69,42,0.38) 0%, rgba(255,62,38,0.17) 28%, rgba(255,60,38,0.05) 50%, transparent 74%)",
-            filter: "blur(16px)",
+              "radial-gradient(ellipse at center, rgba(255,76,46,0.20) 0%, rgba(255,68,42,0.08) 34%, transparent 72%)",
+            filter: "blur(12px)",
           }}
         />
 
-        {/* Headline */}
+        {/* Headline — smaller, sits comfortably below the nav */}
         <div
           className="absolute left-1/2 text-center transition-all duration-700 ease-out"
           style={{
-            top: 0,
-            width: "660px",
-            maxWidth: "90vw",
+            top: "72px",
+            width: "620px",
+            maxWidth: "88vw",
             zIndex: 10,
             opacity: visible ? 1 : 0,
             transform: visible ? "translate(-50%, 0)" : "translate(-50%, 18px)",
@@ -198,9 +170,9 @@ export default function AIEvaluationComparison() {
           <h2
             className="font-bold text-[#f4f4f4]"
             style={{
-              fontSize: "clamp(3.4rem, 5.2vw, 5.7rem)",
+              fontSize: "clamp(2.6rem, 3.9vw, 4.3rem)",
               lineHeight: 0.88,
-              letterSpacing: "-0.055em",
+              letterSpacing: "-0.05em",
             }}
           >
             AI evaluates more than
@@ -211,13 +183,13 @@ export default function AIEvaluationComparison() {
             </span>
           </h2>
           <p
-            className="mx-auto mt-[15px]"
+            className="mx-auto mt-3"
             style={{
-              maxWidth: "520px",
-              fontSize: "11px",
-              lineHeight: 1.5,
+              maxWidth: "480px",
+              fontSize: "10px",
+              lineHeight: 1.45,
               letterSpacing: "0.01em",
-              color: "rgba(255,255,255,0.28)",
+              color: "rgba(255,255,255,0.26)",
             }}
           >
             Businesses often focus on what people can see. AI evaluates the
@@ -226,13 +198,13 @@ export default function AIEvaluationComparison() {
           </p>
         </div>
 
-        {/* Center beam */}
+        {/* Center beam — shorter, narrower, dimmer */}
         <div
           className="absolute left-1/2 -translate-x-1/2 transition-transform duration-[1200ms] ease-out"
           style={{
-            top: "192px",
-            width: "70px",
-            height: "540px",
+            top: "250px",
+            width: "56px",
+            height: "430px",
             zIndex: 7,
             transformOrigin: "top",
             transform: visible ? "translateX(-50%) scaleY(1)" : "translateX(-50%) scaleY(0)",
@@ -242,35 +214,35 @@ export default function AIEvaluationComparison() {
           <div
             className="absolute left-1/2 -translate-x-1/2"
             style={{
-              top: "-18px",
-              width: "220px",
-              height: "580px",
+              top: "-14px",
+              width: "140px",
+              height: "470px",
               background:
-                "linear-gradient(180deg, rgba(255,74,43,0) 0%, rgba(255,77,43,0.05) 10%, rgba(255,77,43,0.22) 38%, rgba(255,66,38,0.34) 62%, rgba(255,52,30,0.08) 88%, rgba(255,52,30,0) 100%)",
-              filter: "blur(28px)",
+                "linear-gradient(180deg, rgba(255,80,48,0) 0%, rgba(255,80,48,0.08) 18%, rgba(255,76,44,0.24) 48%, rgba(255,69,39,0.18) 72%, rgba(255,69,39,0) 100%)",
+              filter: "blur(18px)",
             }}
           />
           <div
             className="absolute left-1/2 -translate-x-1/2 top-0"
             style={{
-              width: "52px",
+              width: "42px",
               height: "100%",
               background:
-                "linear-gradient(180deg, rgba(255,86,51,0.02) 0%, rgba(255,90,51,0.22) 16%, rgba(255,88,48,0.62) 45%, #FF5633 67%, rgba(255,72,40,0.34) 87%, rgba(255,62,35,0.02) 100%)",
-              borderLeft: "1px solid rgba(255,135,100,0.10)",
-              borderRight: "1px solid rgba(255,135,100,0.08)",
-              boxShadow: "0 0 40px rgba(255,72,40,0.18)",
+                "linear-gradient(180deg, rgba(255,88,53,0.04) 0%, rgba(255,85,50,0.22) 18%, rgba(255,81,48,0.62) 48%, #FF5A38 66%, rgba(255,77,45,0.26) 84%, rgba(255,70,42,0.03) 100%)",
+              borderLeft: "1px solid rgba(255,135,100,0.08)",
+              borderRight: "1px solid rgba(255,135,100,0.07)",
+              boxShadow: "0 0 28px rgba(255,74,44,0.14)",
             }}
           />
           <div
             className="absolute left-1/2 -translate-x-1/2"
             style={{
-              top: "150px",
-              width: "14px",
-              height: "310px",
+              top: "110px",
+              width: "8px",
+              height: "260px",
               background:
-                "linear-gradient(180deg, rgba(255,153,125,0.05), rgba(255,107,72,0.62), rgba(255,79,47,0.92), rgba(255,77,45,0.15))",
-              filter: "blur(6px)",
+                "linear-gradient(180deg, rgba(255,153,125,0.05), rgba(255,107,72,0.55), rgba(255,79,47,0.85), rgba(255,77,45,0.12))",
+              filter: "blur(4px)",
             }}
           />
           <div
@@ -278,18 +250,18 @@ export default function AIEvaluationComparison() {
             style={{
               width: "1px",
               background:
-                "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.26), rgba(255,255,255,0.04))",
+                "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.22), rgba(255,255,255,0.03))",
             }}
           />
         </div>
 
-        {/* Left metric — lower, quieter. Centered anchor so it sits close to the beam. */}
+        {/* Left metric — close to the beam, lower */}
         <div
           className="absolute text-left transition-all duration-700 ease-out"
           style={{
-            left: "35.5%",
-            top: "54%",
-            width: "210px",
+            left: "31%",
+            top: "430px",
+            width: "180px",
             zIndex: 11,
             opacity: visible ? 1 : 0,
             transform: visible
@@ -300,7 +272,7 @@ export default function AIEvaluationComparison() {
         >
           <div
             style={{
-              fontSize: "72px",
+              fontSize: "58px",
               fontWeight: 500,
               lineHeight: 0.84,
               letterSpacing: "-0.06em",
@@ -310,9 +282,9 @@ export default function AIEvaluationComparison() {
             35%
           </div>
           <div
-            className="mt-3"
+            className="mt-2"
             style={{
-              fontSize: "8px",
+              fontSize: "7px",
               fontWeight: 600,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
@@ -321,18 +293,18 @@ export default function AIEvaluationComparison() {
           >
             What Businesses Focus On
           </div>
-          <div className="mt-2" style={{ fontSize: "10px", color: "rgba(255,255,255,0.34)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "9px", color: "rgba(255,255,255,0.34)" }}>
             surface-level signals
           </div>
         </div>
 
-        {/* Right metric — higher, stronger. Centered anchor so it sits close to the beam. */}
+        {/* Right metric — close to the beam, higher */}
         <div
           className="absolute text-left transition-all duration-700 ease-out"
           style={{
-            right: "34.5%",
-            top: "41%",
-            width: "220px",
+            right: "29%",
+            top: "345px",
+            width: "190px",
             zIndex: 11,
             opacity: visible ? 1 : 0,
             transform: visible
@@ -343,7 +315,7 @@ export default function AIEvaluationComparison() {
         >
           <div
             style={{
-              fontSize: "76px",
+              fontSize: "62px",
               fontWeight: 600,
               lineHeight: 0.84,
               letterSpacing: "-0.06em",
@@ -353,18 +325,18 @@ export default function AIEvaluationComparison() {
             85%
           </div>
           <div
-            className="mt-3"
+            className="mt-2"
             style={{
-              fontSize: "8px",
+              fontSize: "7px",
               fontWeight: 700,
               letterSpacing: "0.17em",
               textTransform: "uppercase",
-              color: "#FF6644",
+              color: "#FF6A48",
             }}
           >
             What AI Actually Evaluates
           </div>
-          <div className="mt-2" style={{ fontSize: "10px", color: "rgba(255,255,255,0.42)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "9px", color: "rgba(255,255,255,0.40)" }}>
             structured discovery signals
           </div>
         </div>
@@ -372,95 +344,96 @@ export default function AIEvaluationComparison() {
         {/* Tiny editorial signal labels */}
         <div
           className="absolute"
-          style={{ left: "17%", bottom: "68px", width: "260px", zIndex: 11 }}
+          style={{ left: "17%", bottom: "46px", width: "260px", zIndex: 11, opacity: 0.9 }}
         >
-          <div style={{ fontSize: "7px", letterSpacing: "0.18em", color: "rgba(255,255,255,0.24)" }}>
+          <div style={{ fontSize: "7px", letterSpacing: "0.18em", color: "rgba(255,255,255,0.22)" }}>
             VISIBLE SIGNALS
           </div>
-          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgba(255,255,255,0.22)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgba(255,255,255,0.20)" }}>
             LOGO · SOCIALS · WEBSITE DESIGN · FOLLOWERS
           </div>
         </div>
         <div
           className="absolute text-right"
-          style={{ right: "14%", bottom: "68px", width: "320px", zIndex: 11 }}
+          style={{ right: "14%", bottom: "46px", width: "320px", zIndex: 11, opacity: 0.9 }}
         >
-          <div style={{ fontSize: "7px", letterSpacing: "0.18em", color: "rgba(255,102,68,0.54)" }}>
+          <div style={{ fontSize: "7px", letterSpacing: "0.18em", color: "rgba(255,102,68,0.48)" }}>
             AI DISCOVERY SIGNALS
           </div>
-          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgba(255,255,255,0.32)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgba(255,255,255,0.30)" }}>
             IDENTITY · SCHEMA · LOCATION · AUTHORITY · KNOWLEDGE · FRESHNESS
           </div>
         </div>
       </div>
 
       {/* ============ MOBILE — simplified stacked version ============ */}
-      <div className="md:hidden relative px-6 pt-16 pb-10">
+      <div className="md:hidden relative px-6 pt-14 pb-10">
         <div
           className="absolute pointer-events-none"
           style={{
             zIndex: 1,
-            left: "-20%",
-            bottom: "10%",
-            width: "80%",
-            height: "40%",
+            left: "-18%",
+            bottom: "8%",
+            width: "70%",
+            height: "36%",
             background:
-              "radial-gradient(ellipse at center, rgba(118,47,42,0.4) 0%, rgba(21,18,21,0.6) 55%, transparent 78%)",
-            filter: "blur(16px)",
+              "radial-gradient(ellipse at center, rgba(92,60,64,0.4) 0%, rgba(27,27,30,0.6) 55%, transparent 78%)",
+            filter: "blur(14px)",
           }}
         />
         <div
           className="absolute pointer-events-none"
           style={{
             zIndex: 1,
-            right: "-20%",
-            bottom: "6%",
-            width: "80%",
-            height: "40%",
+            right: "-18%",
+            bottom: "5%",
+            width: "70%",
+            height: "36%",
             background:
-              "radial-gradient(ellipse at center, rgba(104,44,42,0.38) 0%, rgba(18,17,20,0.65) 55%, transparent 78%)",
-            filter: "blur(17px)",
+              "radial-gradient(ellipse at center, rgba(92,59,63,0.38) 0%, rgba(27,27,30,0.62) 55%, transparent 78%)",
+            filter: "blur(15px)",
           }}
         />
         <svg
           className="absolute left-0 right-0 bottom-0 pointer-events-none"
-          style={{ zIndex: 2, height: "200px", width: "100%" }}
-          viewBox="0 0 1600 360"
+          style={{ zIndex: 2, height: "170px", width: "100%", opacity: 0.75 }}
+          viewBox="0 0 1600 250"
           preserveAspectRatio="none"
         >
           <path
-            d="M0 360 L0 260 L170 150 L310 245 L445 120 L610 260 L790 170 L950 260 L1120 125 L1290 240 L1440 160 L1600 265 L1600 360 Z"
-            fill="#111216"
-            opacity={0.72}
+            d="M0 250 L0 185 L170 115 L310 175 L445 90 L610 185 L790 120 L950 185 L1120 92 L1290 172 L1440 118 L1600 188 L1600 250 Z"
+            fill="#17181B"
+            opacity={0.48}
           />
           <path
-            d="M0 360 L0 300 L210 230 L350 295 L510 185 L690 310 L835 245 L990 305 L1170 200 L1370 300 L1510 240 L1600 290 L1600 360 Z"
-            fill="#090A0C"
+            d="M0 250 L0 210 L210 165 L350 205 L510 135 L690 218 L835 175 L990 213 L1170 143 L1370 210 L1510 172 L1600 200 L1600 250 Z"
+            fill="#0b0c0e"
+            opacity={0.98}
           />
         </svg>
 
         <div className="relative z-10 text-center transition-all duration-700 ease-out" style={fade(0)}>
           <h2
             className="font-bold text-[#f4f4f4]"
-            style={{ fontSize: "clamp(2.9rem, 12vw, 4.3rem)", lineHeight: 0.9, letterSpacing: "-0.05em" }}
+            style={{ fontSize: "clamp(2.4rem, 10vw, 3.6rem)", lineHeight: 0.9, letterSpacing: "-0.05em" }}
           >
             AI evaluates more than what{" "}
             <span className="font-serif-accent italic font-normal">
               looks impressive.
             </span>
           </h2>
-          <p className="mx-auto mt-4" style={{ maxWidth: "330px", fontSize: "10px", color: "rgba(255,255,255,0.3)", lineHeight: 1.5 }}>
+          <p className="mx-auto mt-4" style={{ maxWidth: "310px", fontSize: "10px", color: "rgba(255,255,255,0.28)", lineHeight: 1.45 }}>
             Businesses often focus on what people can see. AI evaluates the
             deeper signals underneath the surface.
           </p>
         </div>
 
-        <div className="relative z-10 flex flex-col items-center mt-10">
+        <div className="relative z-10 flex flex-col items-center mt-9">
           <div
             className="relative transition-transform duration-[1100ms] ease-out"
             style={{
-              width: "52px",
-              height: "300px",
+              width: "42px",
+              height: "240px",
               transformOrigin: "top",
               transform: visible ? "scaleY(1)" : "scaleY(0)",
               opacity: visible ? 1 : 0,
@@ -469,47 +442,47 @@ export default function AIEvaluationComparison() {
             <div
               className="absolute left-1/2 -translate-x-1/2"
               style={{
-                top: "-14px",
-                width: "150px",
-                height: "320px",
+                top: "-10px",
+                width: "110px",
+                height: "260px",
                 background:
-                  "linear-gradient(180deg, rgba(255,77,43,0) 0%, rgba(255,66,38,0.3) 50%, rgba(255,52,30,0) 100%)",
-                filter: "blur(20px)",
+                  "linear-gradient(180deg, rgba(255,80,48,0) 0%, rgba(255,76,44,0.22) 50%, rgba(255,69,39,0) 100%)",
+                filter: "blur(16px)",
               }}
             />
             <div
               className="absolute left-1/2 -translate-x-1/2 top-0"
               style={{
-                width: "38px",
+                width: "30px",
                 height: "100%",
                 background:
-                  "linear-gradient(180deg, rgba(255,90,51,0.1) 0%, #FF5633 48%, rgba(255,62,35,0.05) 100%)",
-                boxShadow: "0 0 30px rgba(255,72,40,0.2)",
+                  "linear-gradient(180deg, rgba(255,90,51,0.08) 0%, #FF5A38 48%, rgba(255,70,42,0.04) 100%)",
+                boxShadow: "0 0 22px rgba(255,74,44,0.16)",
               }}
             />
           </div>
         </div>
 
-        <div className="relative z-10 flex items-end justify-between mt-8">
+        <div className="relative z-10 flex items-end justify-between mt-7">
           <div style={fade(0.2, "x", -14)} className="transition-all duration-700 ease-out">
-            <div style={{ fontSize: "48px", fontWeight: 500, lineHeight: 0.84, letterSpacing: "-0.05em", color: "rgba(255,255,255,0.72)" }}>
+            <div style={{ fontSize: "42px", fontWeight: 500, lineHeight: 0.84, letterSpacing: "-0.05em", color: "rgba(255,255,255,0.72)" }}>
               35%
             </div>
-            <div className="mt-2" style={{ fontSize: "8px", fontWeight: 600, letterSpacing: "0.14em", color: "rgba(255,255,255,0.28)" }}>
+            <div className="mt-2" style={{ fontSize: "7px", fontWeight: 600, letterSpacing: "0.14em", color: "rgba(255,255,255,0.28)" }}>
               BUSINESSES FOCUS ON
             </div>
           </div>
           <div style={fade(0.3, "x", 14)} className="text-right transition-all duration-700 ease-out">
-            <div style={{ fontSize: "52px", fontWeight: 600, lineHeight: 0.84, letterSpacing: "-0.05em", color: "#FFFFFF" }}>
+            <div style={{ fontSize: "46px", fontWeight: 600, lineHeight: 0.84, letterSpacing: "-0.05em", color: "#FFFFFF" }}>
               85%
             </div>
-            <div className="mt-2" style={{ fontSize: "8px", fontWeight: 700, letterSpacing: "0.14em", color: "#FF6644" }}>
+            <div className="mt-2" style={{ fontSize: "7px", fontWeight: 700, letterSpacing: "0.14em", color: "#FF6A48" }}>
               WHAT AI EVALUATES
             </div>
           </div>
         </div>
 
-        <p className="relative z-10 text-center mt-10" style={{ fontSize: "8px", letterSpacing: "0.06em", color: "rgba(255,255,255,0.28)" }}>
+        <p className="relative z-10 text-center mt-9" style={{ fontSize: "8px", letterSpacing: "0.06em", color: "rgba(255,255,255,0.26)" }}>
           IDENTITY · SCHEMA · LOCATION · AUTHORITY · KNOWLEDGE · FRESHNESS
         </p>
       </div>
