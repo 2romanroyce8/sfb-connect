@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, AlertCircle, ArrowUpRight } from "lucide-react";
+import { Check, AlertCircle, X, ArrowRight } from "lucide-react";
 import { useBusinessLookup } from "@/lib/businessLookupContext";
 
 const DEMO_SUBSCORES = [
@@ -17,7 +17,7 @@ const TICK_COUNT = 64;
 const ACCENT_ANGLES = [78, 90, 102, 114, 126, 138, 150, 162, 174, 186, 198, 210];
 
 export default function ScoreRing() {
-  const { selectedBusiness, summary, openChatWithMessage } = useBusinessLookup();
+  const { selectedBusiness, summary, setLookupResult } = useBusinessLookup();
   const ref = useRef<HTMLDivElement>(null);
   const [animated, setAnimated] = useState(false);
   const [display, setDisplay] = useState(0);
@@ -145,27 +145,16 @@ export default function ScoreRing() {
               </div>
             ))}
           </div>
-          <div className="mt-10">
-            {selectedBusiness ? (
-              <button
-                onClick={() =>
-                  openChatWithMessage(
-                    "Based on my business analysis, what should I fix first to improve my AI Presence Score?"
-                  )
-                }
-                className="bg-white text-black px-8 py-4 rounded-full text-base font-semibold inline-flex items-center gap-2 hover:scale-[1.03] transition-transform"
-              >
-                Improve My Score →
-              </button>
-            ) : (
+          {!selectedBusiness && (
+            <div className="mt-10">
               <a
                 href="#pricing"
                 className="bg-white text-black px-8 py-4 rounded-full text-base font-semibold inline-flex items-center gap-2 hover:scale-[1.03] transition-transform"
               >
                 Improve My Score →
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -174,19 +163,20 @@ export default function ScoreRing() {
           <div className="text-[12px] font-mono uppercase tracking-[0.14em] text-medium-gray mb-4">
             SFB AI Presence Preview
           </div>
-          <p className="text-[16px] md:text-[17px] leading-relaxed text-white/[0.85] max-w-[720px] mb-6">
+          <p className="text-[16px] md:text-[17px] leading-relaxed text-white/[0.85] max-w-[900px] mb-6">
             {summary.summary}
           </p>
-          <p className="text-[14px] leading-relaxed text-medium-gray max-w-[720px] mb-8">
+          <p className="text-[14px] leading-relaxed text-medium-gray max-w-[980px] mb-8">
             {summary.whyScoreIsWhatItIs}
           </p>
-          <div className="grid sm:grid-cols-2 gap-4 max-w-[720px]">
+
+          <div className="grid sm:grid-cols-3 gap-3.5">
             <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
               <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-medium-gray mb-3">
-                What AI understands
+                AI Understands
               </div>
               <div className="flex flex-col gap-2">
-                {summary.whatAIUnderstands.map((s) => (
+                {selectedBusiness.strengths.map((s) => (
                   <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
                     <Check size={13} className="text-[#30D158] mt-[2px] shrink-0" />
                     {s}
@@ -196,10 +186,10 @@ export default function ScoreRing() {
             </div>
             <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
               <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-medium-gray mb-3">
-                What may be holding you back
+                AI May Struggle With
               </div>
               <div className="flex flex-col gap-2">
-                {summary.whatMayBeMissing.map((s) => (
+                {selectedBusiness.gaps.map((s) => (
                   <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
                     <AlertCircle size={13} className="text-[#FFD60A] mt-[2px] shrink-0" />
                     {s}
@@ -207,19 +197,65 @@ export default function ScoreRing() {
                 ))}
               </div>
             </div>
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-medium-gray mb-3">
+                Unable to Verify
+              </div>
+              <div className="flex flex-col gap-2">
+                {selectedBusiness.missing.map((s) => (
+                  <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
+                    <X size={13} className="text-[#FF453A] mt-[2px] shrink-0" />
+                    {s}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="mt-4 p-4 rounded-2xl bg-white/[0.03] border border-white/10 max-w-[720px]">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-medium-gray mb-3">
-              Recommended next steps
+
+          {summary.recommendedNextSteps.length > 0 && (
+            <div className="mt-3.5 p-4 rounded-2xl bg-white/[0.03] border border-white/10">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-medium-gray mb-3">
+                Recommended Next Steps
+              </div>
+              <div className="flex flex-col gap-2">
+                {summary.recommendedNextSteps.map((s) => (
+                  <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
+                    <ArrowRight size={13} className="text-white mt-[2px] shrink-0" />
+                    {s}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {summary.recommendedNextSteps.map((s) => (
-                <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
-                  <ArrowUpRight size={13} className="text-white mt-[2px] shrink-0" />
-                  {s}
-                </div>
-              ))}
-            </div>
+          )}
+
+          <div className="mt-8 pt-6 border-t border-white/[0.06] flex items-center gap-3">
+            <span className="text-[10px] text-medium-gray mr-1">Signals checked</span>
+            {selectedBusiness.sources.map((s) => (
+              <span
+                key={s}
+                className="text-[10px] px-2.5 py-1.5 rounded-full bg-[#151515] border border-white/[0.07] text-white/[0.48] capitalize"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-8 flex items-center gap-3 flex-wrap">
+            <a
+              href="#pricing"
+              className="bg-white text-black px-7 py-[14px] rounded-full text-[15px] font-semibold hover:scale-[1.03] transition-transform"
+            >
+              Get My Full AI Presence Audit
+            </a>
+            <button
+              onClick={() => {
+                setLookupResult(null, null);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="px-6 py-[13px] rounded-full text-[14px] text-white/[0.66] border border-white/[0.12] hover:text-white hover:border-white/25 transition-colors"
+            >
+              Analyze Another Business
+            </button>
           </div>
         </div>
       )}

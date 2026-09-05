@@ -255,6 +255,12 @@ function AiChatPanel() {
     setState(result);
     if (result.status === "completed") {
       setLookupResult(result.result, result.summary);
+      // This section hides itself once selectedBusiness is set, so send the
+      // visitor straight to the one full diagnostic report instead of a now
+      // vanished panel.
+      setTimeout(() => {
+        document.getElementById("score")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     } else {
       setLookupResult(null, null);
     }
@@ -531,6 +537,14 @@ function AiChatPanel() {
 }
 
 export default function ShiftSection() {
+  const { selectedBusiness } = useBusinessLookup();
+
+  // Search is only the entry point. Once a business has been found and
+  // analyzed, the comparison/mockup UI disappears entirely and the visitor
+  // sees only the full diagnostic report further down the page (#score) —
+  // never both at once.
+  if (selectedBusiness) return null;
+
   return (
     <section className="py-24 md:py-32 section-band" id="shift">
       <div className="max-w-[1200px] mx-auto px-8">

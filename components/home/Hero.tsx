@@ -21,7 +21,9 @@ export default function Hero() {
 
     if (outcome.status === "completed") {
       setLookupResult(outcome.result, outcome.summary);
-      document.getElementById("shift")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => {
+        document.getElementById("score")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     } else if (outcome.status === "needs_link") {
       setError(outcome.message);
     } else {
