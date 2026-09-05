@@ -19,8 +19,8 @@ export default function HomePage() {
         <Hero />
         <PlatformsSection />
         <ShiftSection />
-        <AnalyzeSection />
         <AlgorithmSection />
+        <AnalyzeSection />
         <ProcessSection />
       </BusinessLookupProvider>
       <PricingSection />
