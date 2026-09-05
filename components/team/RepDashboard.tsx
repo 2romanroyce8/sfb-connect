@@ -11,17 +11,28 @@ type Lead = {
 };
 type Followup = { id: string; lead_id: string; due_at: string; reason: string | null };
 type Meeting = { id: string; lead_id: string; scheduled_at: string; contact_name: string | null };
+type CallStats = { callsToday: number; talkTimeToday: number; avgDurationToday: number };
+
+function formatDuration(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${m}:${s}`;
+}
 
 export default function RepDashboard({
   name,
   leads,
   followups,
   meetings,
+  callStats,
 }: {
   name: string;
   leads: Lead[];
   followups: Followup[];
   meetings: Meeting[];
+  callStats: CallStats;
 }) {
   const nextLead = leads.find((l) => l.pipeline_stage === "ready_to_call") || leads[0];
 
@@ -46,6 +57,21 @@ export default function RepDashboard({
         <div className="p-4 rounded-[12px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="text-[24px] font-semibold text-[#F5F5F7]">{meetings.length}</div>
           <div className="text-[11px] text-[#6E6E73] mt-1">Meetings Booked</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="p-4 rounded-[12px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[24px] font-semibold text-[#F5F5F7]">{callStats.callsToday}</div>
+          <div className="text-[11px] text-[#6E6E73] mt-1">Calls Today</div>
+        </div>
+        <div className="p-4 rounded-[12px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[24px] font-semibold text-[#F5F5F7]">{formatDuration(callStats.talkTimeToday)}</div>
+          <div className="text-[11px] text-[#6E6E73] mt-1">Talk Time Today</div>
+        </div>
+        <div className="p-4 rounded-[12px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[24px] font-semibold text-[#F5F5F7]">{formatDuration(callStats.avgDurationToday)}</div>
+          <div className="text-[11px] text-[#6E6E73] mt-1">Avg Call Duration</div>
         </div>
       </div>
 

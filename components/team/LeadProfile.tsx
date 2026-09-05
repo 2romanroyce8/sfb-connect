@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, Globe, MapPin, ChevronDown, ChevronUp, CheckCircle2, HelpCircle, XCircle, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Phone, Globe, MapPin, ChevronDown, ChevronUp, CheckCircle2, HelpCircle, XCircle, AlertTriangle, Gauge, Sparkles, PhoneCall } from "lucide-react";
 
 type Evidence = {
   id: string;
@@ -168,6 +169,29 @@ export default function LeadProfile({
             <div className="text-[11px] text-[#6E6E73] uppercase tracking-wide">AI Presence Score</div>
           </div>
         )}
+      </div>
+
+      <div className="flex items-center gap-2 mb-6">
+        <Link
+          href={`/team/leads/${lead.id}/audit`}
+          className="h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-[8px] text-[12.5px] text-[#A1A1A6] hover:text-white"
+          style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+        >
+          <Gauge size={13} /> AI Audit
+        </Link>
+        <Link
+          href={`/team/leads/${lead.id}/script`}
+          className="h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-[8px] text-[12.5px] text-[#A1A1A6] hover:text-white"
+          style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+        >
+          <Sparkles size={13} /> Script
+        </Link>
+        <Link
+          href={`/team/leads/${lead.id}/call`}
+          className="h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[12.5px] font-semibold"
+        >
+          <PhoneCall size={13} /> Call
+        </Link>
       </div>
 
       <div className="flex items-center gap-1 mb-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>

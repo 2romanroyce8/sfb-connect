@@ -292,6 +292,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Signal-level evidence — persisted so a later AI Presence Audit can explain
+  // its category scores from stored evidence alone, without re-fetching any
+  // source. Each row traces back to whether we actually saw it in the HTML.
+  const signalEvidence: { field: string; value: string; status: "verified" | "not_found" }[] = [
+    { field: "structured_data", value: hasJsonLd ? "present" : "absent", status: hasJsonLd ? "verified" : "not_found" },
+    { field: "https", value: hasHttps ? "yes" : "no", status: hasHttps ? "verified" : "not_found" },
+    { field: "meta_description", value: hasMetaDescription ? "present" : "absent", status: hasMetaDescription ? "verified" : "not_found" },
+    { field: "aggregate_rating", value: hasAggregateRating ? "present" : "absent", status: hasAggregateRating ? "verified" : "not_found" },
+    {
+      field: "social_profiles",
+      value: socialLinks.length > 0 ? socialLinks.map((s) => s.platform).join(",") : "none",
+      status: socialLinks.length > 0 ? "verified" : "not_found",
+    },
+  ];
+  for (const s of signalEvidence) {
+    await service.from("crm_lead_evidence").insert({
+      lead_id: lead.id,
+      field_name: s.field,
+      field_value: s.value,
+      status: s.status,
+      confidence: s.status === "verified" ? 1 : 0,
+      source_url: accessible[0]?.finalUrl || null,
+      source_type: "website",
+      research_pass: 8,
+    });
+  }
+
   // ---- Deterministic AI Presence audit (same 5-category framework as the public site) ----
   const identityScore = name.status === "verified" ? 20 : name.status === "uncertain" ? 10 : 0;
   const knowledgeScore = (hasMetaDescription ? 10 : 0) + (hasJsonLd ? 10 : 0);
