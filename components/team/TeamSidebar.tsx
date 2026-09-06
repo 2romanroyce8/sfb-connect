@@ -16,6 +16,7 @@ import {
   Calendar,
   StickyNote,
   Activity,
+  FileText,
   UserCog,
   BarChart3,
   Plug,
@@ -76,6 +77,7 @@ const NAV_GROUPS: {
       { href: "/team/calendar", label: "Calendar", icon: Calendar },
       { href: "/team/notes", label: "Notes", icon: StickyNote },
       { href: "/team/activity", label: "Activity", icon: Activity },
+      { href: "/team/docs", label: "Docs", icon: FileText },
     ],
   },
   {
