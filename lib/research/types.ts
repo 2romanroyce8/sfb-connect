@@ -61,6 +61,31 @@ export type LocationRecord = {
   sourceUrl: string | null;
 };
 
+// One row per source the Discovery Graph ever touched — this is what lets
+// the owner inspect exactly which extraction step failed when a rep reports
+// a missed Linktree/website/social. discoveryMethod distinguishes "we found
+// this by reading another page" from "the rep pasted this directly".
+export type DiscoveryMethod = "seed" | "bio_link" | "link_extraction" | "social_link" | "website_crawl" | "gap_analysis" | "qa_reopen";
+
+export type SourceLogEntry = {
+  url: string;
+  sourceType: string;
+  discoveredFrom: string | null;
+  discoveryMethod: DiscoveryMethod;
+  fetchStatus: "ok" | "unavailable";
+  blockedReason?: string;
+  primaryPassDone: boolean;
+  verificationPassDone: boolean;
+};
+
+export type QAPassResult = {
+  pass: number;
+  name: string;
+  passed: boolean;
+  issues: string[];
+  newSourcesFound: number;
+};
+
 export type BusinessGraph = {
   businessName: Candidate | null;
   category: string | null;
@@ -71,6 +96,11 @@ export type BusinessGraph = {
   locations: LocationRecord[];
   socialProfiles: SocialProfileRecord[];
   sourceChecks: SourceCheck[];
+  // Full discovery-graph audit trail + QA pass results, surfaced to the
+  // owner in the Research Results UI so a missed source is debuggable
+  // instead of a silent gap.
+  sourceLog: SourceLogEntry[];
+  qaResults: QAPassResult[];
   // Backward-compatible flat signals the deterministic audit scorer reads.
   signals: {
     hasJsonLd: boolean;

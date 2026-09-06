@@ -48,6 +48,25 @@ const SOCIAL_HOSTS: Record<string, "facebook" | "instagram" | "tiktok" | "linked
   "wa.me": "whatsapp",
 };
 
+// Any public bio-link hub, not just Linktree. Kept as an explicit host list
+// per the "known providers" rule — genuinely unknown hub providers still get
+// caught by the DeepResearchCoordinator's verification pass, which doesn't
+// depend on a provider allowlist (it looks at page shape, not just domain).
+const BIO_LINK_HOSTS = [
+  "linktr.ee",
+  "beacons.ai",
+  "campsite.bio",
+  "bio.link",
+  "carrd.co",
+  "solo.to",
+  "taplink.cc",
+  "linkin.bio",
+  "msha.ke",
+  "stan.store",
+  "withkoji.com",
+  "koji.to",
+];
+
 export type LinkClassification =
   | { kind: "social"; platform: "facebook" | "instagram" | "tiktok" | "linkedin" | "youtube" | "x" | "whatsapp" }
   | { kind: "whatsapp" }
@@ -59,7 +78,7 @@ export function classifyLink(url: string): LinkClassification {
   const domain = canonicalDomain(url) || "";
   if (domain === "wa.me" || domain === "api.whatsapp.com") return { kind: "whatsapp" };
   if (domain in SOCIAL_HOSTS) return { kind: "social", platform: SOCIAL_HOSTS[domain] };
-  if (["linktr.ee", "beacons.ai", "campsite.bio", "bio.link", "carrd.co"].includes(domain)) return { kind: "linktree" };
+  if (BIO_LINK_HOSTS.includes(domain)) return { kind: "linktree" };
   if (["calendly.com", "squareup.com", "square.site", "booksy.com", "acuityscheduling.com", "setmore.com"].includes(domain)) return { kind: "booking" };
   return { kind: "other" };
 }

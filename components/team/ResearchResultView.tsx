@@ -22,6 +22,8 @@ import {
   Mail,
   Phone,
   MapPin,
+  ChevronDown,
+  ArrowRight,
 } from "lucide-react";
 import type { BusinessGraph } from "@/lib/research/types";
 import type { ResearchStage } from "@/lib/research/jobProgress";
@@ -95,6 +97,7 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
   const [moreSource, setMoreSource] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showLog, setShowLog] = useState(false);
 
   type ReRunState =
     | { mode: "running"; stage: ResearchStage; progressPercent: number; sourcesFound: number; elapsedMs: number }
@@ -331,6 +334,65 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
           </div>
         ))}
       </Section>
+
+      {/* Research Log — exactly which sources the discovery graph touched,
+          how it found them, and whether both extraction passes completed.
+          This is what lets a missed source be debugged instead of staying a
+          silent gap. */}
+      {(graph.sourceLog?.length > 0 || graph.qaResults?.length > 0) && (
+        <div className="mb-5">
+          <button onClick={() => setShowLog((v) => !v)} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] hover:text-white mb-2">
+            <ChevronDown size={12} style={{ transform: showLog ? "none" : "rotate(-90deg)", transition: "transform 120ms" }} />
+            Research Log ({graph.sourceLog?.length || 0} sources · {graph.qaResults?.length || 0} QA checks)
+          </button>
+          {showLog && (
+            <div className="rounded-[12px] overflow-hidden" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                Discovery Graph
+              </div>
+              {(graph.sourceLog || []).map((s, i) => (
+                <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+                  <span className="px-1.5 py-0.5 rounded-[4px] shrink-0 text-[10px] uppercase" style={{ background: "#151515", color: "#8E8E93" }}>
+                    {s.sourceType}
+                  </span>
+                  <span className="text-[#D0D0D0] truncate flex-1">{s.url}</span>
+                  {s.discoveredFrom && (
+                    <span className="text-[10.5px] text-[#6E6E73] shrink-0 flex items-center gap-1">
+                      via {s.discoveryMethod.replace(/_/g, " ")} <ArrowRight size={9} />
+                    </span>
+                  )}
+                  <span className="text-[10.5px] shrink-0" style={{ color: s.fetchStatus === "ok" ? "#30D158" : "#6E6E73" }}>
+                    {s.fetchStatus === "ok" ? `P${s.primaryPassDone ? "✓" : "–"} V${s.verificationPassDone ? "✓" : "–"}` : s.blockedReason || "unavailable"}
+                  </span>
+                </div>
+              ))}
+
+              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                8 QA Passes
+              </div>
+              {(graph.qaResults || []).map((qa, i) => (
+                <div key={i} className="px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#D0D0D0]">
+                      {qa.pass <= 8 ? `Pass ${qa.pass} — ${qa.name}` : qa.name}
+                    </span>
+                    <span className="text-[10.5px]" style={{ color: qa.passed ? "#30D158" : "#FFD60A" }}>
+                      {qa.newSourcesFound > 0 ? `+${qa.newSourcesFound} new source(s)` : qa.passed ? "Passed" : "Flagged"}
+                    </span>
+                  </div>
+                  {qa.issues.length > 0 && (
+                    <ul className="mt-1 pl-3 text-[11px] text-[#6E6E73] list-disc">
+                      {qa.issues.map((issue, ii) => (
+                        <li key={ii}>{issue}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {reRun && (
         <div className="mb-5">
