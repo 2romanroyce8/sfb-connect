@@ -5,9 +5,9 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Profile = { full_name: string | null; email: string; team_role: string; team_status: string; created_at: string };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
-    <div className="rounded-[12px] p-5 mb-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div id={id} className="rounded-[12px] p-5 mb-4 scroll-mt-6" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
       <div className="text-[13px] font-semibold text-[#F5F5F7] mb-3">{title}</div>
       {children}
     </div>
@@ -67,7 +67,7 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
         <div className="text-[20px] font-semibold text-[#F5F5F7]">Settings</div>
       </div>
 
-      <Section title="Profile">
+      <Section title="Profile" id="profile">
         <div className="flex flex-col gap-3">
           <div>
             <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Full Name</label>
@@ -99,7 +99,7 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
         <div className="text-[13px] text-[#A1A1A6] mt-1">Member since {new Date(profile.created_at).toLocaleDateString()}</div>
       </Section>
 
-      <Section title="Security">
+      <Section title="Security" id="security">
         <div className="flex flex-col gap-3">
           <div>
             <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">New Password</label>

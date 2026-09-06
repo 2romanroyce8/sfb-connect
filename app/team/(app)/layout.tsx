@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import TeamSidebar from "@/components/team/TeamSidebar";
+import AccountWorkspaceMenu from "@/components/team/AccountWorkspaceMenu";
 
 export default async function TeamAppLayout({
   children,
@@ -36,7 +37,15 @@ export default async function TeamAppLayout({
         role={profile.team_role}
         activeSession={activeSession as { id: string; clocked_in_at: string } | null}
       />
-      <div className="flex-1 min-w-0">{children}</div>
+      <div className="flex-1 min-w-0 relative">
+        <AccountWorkspaceMenu
+          name={profile.full_name || profile.email}
+          email={profile.email}
+          role={profile.team_role}
+          activeSession={activeSession as { id: string; clocked_in_at: string } | null}
+        />
+        {children}
+      </div>
     </div>
   );
 }
