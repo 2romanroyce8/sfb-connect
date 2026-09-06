@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { updateCalendarEvent, GoogleNotConnectedError, GoogleAuthExpiredError } from "@/lib/crm/googleCalendar";
+import { notify, getOwnerIds } from "@/lib/crm/notify";
 
 // RLS on crm_meetings (rep_id = auth.uid() or owner) governs the select and
 // update directly on the session client.
@@ -27,6 +28,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .eq("id", params.id);
 
     await supabase.from("crm_activities").insert({ lead_id: meeting.lead_id, rep_id: user.id, activity_type: "meeting_rescheduled", description: "Meeting rescheduled" });
+
+    const { data: lead } = await supabase.from("crm_leads").select("business_name").eq("id", meeting.lead_id).single();
+    const service = createSupabaseServiceClient();
+    const ownerIds = await getOwnerIds(service);
+    for (const ownerId of ownerIds) {
+      if (ownerId === user.id) continue;
+      await notify(service, {
+        userId: ownerId,
+        type: "meeting_rescheduled",
+        title: `${lead?.business_name || "A"} meeting has been rescheduled.`,
+        relatedLeadId: meeting.lead_id,
+        relatedMeetingId: meeting.id,
+        actionUrl: `/team/leads/${meeting.lead_id}`,
+        actionLabel: "View Meeting",
+      });
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     if (err instanceof GoogleNotConnectedError || err instanceof GoogleAuthExpiredError) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { createCalendarEvent, GoogleNotConnectedError, GoogleAuthExpiredError } from "@/lib/crm/googleCalendar";
 import { formatInTimeZone } from "@/lib/crm/timezone";
+import { notify, getOwnerIds } from "@/lib/crm/notify";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -88,6 +89,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       event.meetUrl ? `\n\nGoogle Meet:\n${event.meetUrl}` : ""
     }\n\nLooking forward to speaking with you.`;
 
+    const ownerIds = await getOwnerIds(service);
+    for (const ownerId of ownerIds) {
+      if (ownerId === user.id) continue; // don't notify the owner about their own booking
+      await notify(service, {
+        userId: ownerId,
+        type: "meeting_booked",
+        title: `A meeting has been booked with ${lead.business_name || "a lead"}.`,
+        body: `${dateLabel} at ${timeLabel} ${tzLabel}`,
+        relatedLeadId: lead.id,
+        relatedMeetingId: meeting.id,
+        actionUrl: `/team/leads/${lead.id}`,
+        actionLabel: "View Meeting",
+      });
+    }
+
     return NextResponse.json({ meeting, meetUrl: event.meetUrl, htmlLink: event.htmlLink, confirmationMessage });
   } catch (err) {
     if (err instanceof GoogleNotConnectedError) return NextResponse.json({ error: "google_not_connected", message: err.message }, { status: 409 });
@@ -95,6 +111,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Google booking failed — do not record a meeting or move the pipeline.
     // The rep can retry once the underlying issue (network, permissions) is
     // resolved, and nothing here has silently claimed success.
+    await notify(service, {
+      userId: user.id,
+      type: "booking_sync_failed",
+      title: `Google Calendar sync failed for ${lead.business_name || "a lead"}.`,
+      body: err instanceof Error ? err.message : "Could not book the meeting.",
+      relatedLeadId: lead.id,
+      actionUrl: `/team/leads/${lead.id}/call`,
+      actionLabel: "Retry",
+    });
     return NextResponse.json({ error: err instanceof Error ? err.message : "Could not book the meeting." }, { status: 400 });
   }
 }

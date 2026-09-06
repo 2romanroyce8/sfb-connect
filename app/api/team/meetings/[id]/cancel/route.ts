@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { deleteCalendarEvent } from "@/lib/crm/googleCalendar";
+import { notify, getOwnerIds } from "@/lib/crm/notify";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -24,6 +25,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     await supabase.from("crm_meetings").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", params.id);
     await supabase.from("crm_activities").insert({ lead_id: meeting.lead_id, rep_id: user.id, activity_type: "meeting_cancelled", description: "Meeting cancelled" });
+
+    const { data: lead } = await supabase.from("crm_leads").select("business_name").eq("id", meeting.lead_id).single();
+    const service = createSupabaseServiceClient();
+    const ownerIds = await getOwnerIds(service);
+    for (const ownerId of ownerIds) {
+      if (ownerId === user.id) continue;
+      await notify(service, {
+        userId: ownerId,
+        type: "meeting_cancelled",
+        title: `${lead?.business_name || "A"} meeting was cancelled.`,
+        relatedLeadId: meeting.lead_id,
+        actionUrl: `/team/leads/${meeting.lead_id}`,
+        actionLabel: "View Details",
+      });
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Could not cancel." }, { status: 400 });

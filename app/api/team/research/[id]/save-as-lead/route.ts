@@ -3,6 +3,7 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/s
 import { evaluateCompleteness } from "@/lib/research/CompletenessEvaluator";
 import { persistGraphToLead } from "@/lib/crm/persistGraph";
 import { computeAndSaveAudit } from "@/lib/crm/audit";
+import { notify } from "@/lib/crm/notify";
 import type { BusinessGraph } from "@/lib/research/types";
 
 // The only place a crm_leads row gets created from research. Everything the
@@ -58,6 +59,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await service.from("crm_activities").insert({ lead_id: lead.id, rep_id: user.id, activity_type: "lead_imported", description: "Lead saved from research results" });
 
   const auditResult = await computeAndSaveAudit(lead.id, user.id);
+
+  if (assignedRep && assignedRep !== user.id) {
+    await notify(service, {
+      userId: assignedRep,
+      type: "lead_assigned",
+      title: `${result.business_name || "A lead"} has been assigned to you.`,
+      relatedLeadId: lead.id,
+      actionUrl: `/team/leads/${lead.id}`,
+      actionLabel: "Open Lead",
+    });
+  }
 
   return NextResponse.json({ leadId: lead.id, overallScore: auditResult.overall, offer: auditResult.opportunity.primary });
 }

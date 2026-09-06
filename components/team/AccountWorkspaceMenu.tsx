@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CircleHelp, ContactRound, UserRoundCog, UsersRound, Settings, LogOut, Check } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import NotificationsPanel from "./NotificationsPanel";
 
 type Props = {
   name: string;
@@ -78,6 +79,7 @@ export default function AccountWorkspaceMenu({ name, email, role, activeSession 
         >
           <CircleHelp size={15} /> Help
         </a>
+        <NotificationsPanel />
         <button
           onClick={() => setOpen((v) => !v)}
           className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[12px] font-bold"
