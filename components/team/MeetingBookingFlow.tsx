@@ -2,10 +2,17 @@
 
 import { useState } from "react";
 import { Loader2, Check, Copy, ExternalLink } from "lucide-react";
+import MeetingAvailabilityPicker from "./MeetingAvailabilityPicker";
 
 type Suggestion = { startISO: string; endISO: string; label: string };
+type Selected = { startISO: string; endISO: string } | null;
 
-const DURATIONS = [15, 30, 45, 60];
+function isoToDateTimeInZone(iso: string, timeZone: string): { date: string; time: string } {
+  const d = new Date(iso);
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  const time = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+  return { date, time };
+}
 
 export default function MeetingBookingFlow({
   leadId,
@@ -24,8 +31,7 @@ export default function MeetingBookingFlow({
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState(defaultPhone || "");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [selected, setSelected] = useState<Selected>(null);
   const [duration, setDuration] = useState(30);
   const [timeZone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [loading, setLoading] = useState(false);
@@ -35,14 +41,16 @@ export default function MeetingBookingFlow({
   const [result, setResult] = useState<{ meetUrl: string | null; htmlLink: string; confirmationMessage: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  async function checkAvailability() {
-    if (!date || !time) {
-      setError({ message: "Pick a date and time first." });
-      return;
-    }
+  // Re-checks availability right before booking even though the picker
+  // already showed real (or honestly-unverified) options a moment earlier —
+  // this is the "check again immediately before booking" safety net, using
+  // the exact same conflict-detection endpoint the flow always used.
+  async function confirmAndBook() {
+    if (!selected) return;
     setLoading(true);
     setError(null);
     try {
+      const { date, time } = isoToDateTimeInZone(selected.startISO, timeZone);
       const res = await fetch(`/api/team/leads/${leadId}/meetings/check-availability`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,6 +90,7 @@ export default function MeetingBookingFlow({
         setStep("form");
         return;
       }
+      setChosenSlot({ startISO, endISO });
       setResult({ meetUrl: data.meetUrl, htmlLink: data.htmlLink, confirmationMessage: data.confirmationMessage });
       setStep("confirmed");
     } catch {
@@ -205,46 +214,26 @@ export default function MeetingBookingFlow({
               style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
             />
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-[36px] rounded-[8px] px-2 text-[12.5px] outline-none"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-            />
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="h-[36px] rounded-[8px] px-2 text-[12.5px] outline-none"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-            />
-            <select
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-              className="h-[36px] rounded-[8px] px-2 text-[12.5px] outline-none"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-            >
-              {DURATIONS.map((d) => (
-                <option key={d} value={d}>
-                  {d} min
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="text-[11px] text-[#6E6E73]">Timezone: {timeZone}</div>
+
+          <MeetingAvailabilityPicker
+            leadId={leadId}
+            duration={duration}
+            onDurationChange={setDuration}
+            selected={selected}
+            onSelect={(startISO, endISO) => setSelected({ startISO, endISO })}
+            timeZone={timeZone}
+          />
         </div>
       )}
 
       {step === "form" && (
         <div className="flex gap-2">
           <button
-            onClick={checkAvailability}
-            disabled={loading}
+            onClick={confirmAndBook}
+            disabled={loading || !selected}
             className="h-[38px] px-4 rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60 flex items-center gap-1.5"
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : null} {loading ? "Checking…" : "Check Availability"}
+            {loading ? <Loader2 size={14} className="animate-spin" /> : null} {loading ? "Booking…" : selected ? "Book Meeting" : "Select a time"}
           </button>
           <button onClick={onCancel} className="h-[38px] px-4 rounded-[8px] text-[13px] text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
             Cancel

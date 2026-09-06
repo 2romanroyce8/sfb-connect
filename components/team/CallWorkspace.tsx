@@ -255,7 +255,20 @@ export default function CallWorkspace({
 
       {showOutcome && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.7)" }}>
-          <div className="w-[420px] rounded-[14px] p-6" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div
+            className="rounded-[14px] p-6"
+            style={{
+              // Same modal, same position/shell -- only widened (and made
+              // scrollable) when the Booked Meeting scheduler is showing,
+              // since that's the one outcome with real content instead of a
+              // couple of inputs.
+              width: outcome === "booked_meeting" ? "min(560px, calc(100vw - 32px))" : 420,
+              maxHeight: outcome === "booked_meeting" ? "calc(100vh - 48px)" : undefined,
+              overflowY: outcome === "booked_meeting" ? "auto" : undefined,
+              background: "#0A0A0A",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
             <div className="text-[16px] font-semibold text-[#F5F5F7] mb-4">What happened?</div>
             <div className="grid grid-cols-2 gap-2 mb-4">
               {OUTCOMES.map((o) => (
