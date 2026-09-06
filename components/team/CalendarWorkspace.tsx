@@ -270,21 +270,27 @@ export default function CalendarWorkspace({
   const selectedDayLabel = new Date(selectedDate + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "#0B0B0B", padding: "84px 34px" }}>
+    <div
+      className="flex justify-center"
+      style={{ background: "#0B0B0B", padding: "28px 28px 36px", width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", overflowX: "hidden" }}
+    >
       <div
         className="grid overflow-hidden"
         style={{
-          width: "min(1180px, calc(100vw - 68px))",
+          width: "100%",
+          maxWidth: 1180,
+          minWidth: 0,
           minHeight: 690,
-          gridTemplateColumns: "370px minmax(560px, 1fr) 320px",
+          gridTemplateColumns: "minmax(260px, 0.85fr) minmax(0, 1.6fr) minmax(220px, 0.65fr)",
           background: "#121212",
           border: "1px solid rgba(255,255,255,0.07)",
           borderRadius: 10,
           boxShadow: "0 24px 70px rgba(0,0,0,0.25)",
+          boxSizing: "border-box",
         }}
       >
         {/* LEFT: selected event details */}
-        <div className="flex flex-col" style={{ background: "#141414", borderRight: "1px solid rgba(255,255,255,0.07)", padding: 32 }}>
+        <div className="flex flex-col overflow-hidden" style={{ background: "#141414", borderRight: "1px solid rgba(255,255,255,0.07)", padding: 32, minWidth: 0, wordBreak: "break-word" }}>
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-[12px] font-bold">
               {currentUser.name.slice(0, 1).toUpperCase()}
@@ -315,8 +321,8 @@ export default function CalendarWorkspace({
         </div>
 
         {/* CENTER: month grid */}
-        <div className="relative" style={{ background: "#151515", padding: 28 }}>
-          <div className="flex items-center gap-1.5 mb-4">
+        <div className="relative overflow-hidden" style={{ background: "#151515", padding: 28, minWidth: 0 }}>
+          <div className="flex items-center gap-1.5 mb-4 flex-wrap" style={{ maxWidth: "100%" }}>
             {MODE_TABS.filter((m) => m !== "TEAM" || isOwner).map((m) => (
               <button
                 key={m}
@@ -329,7 +335,7 @@ export default function CalendarWorkspace({
             ))}
           </div>
 
-          <div className="flex items-center justify-between" style={{ marginBottom: 28 }}>
+          <div className="flex items-center justify-between gap-4" style={{ marginBottom: 28, minWidth: 0 }}>
             <div className="text-[25px] font-semibold text-[#F5F5F7]" style={{ letterSpacing: "-0.02em" }}>
               {monthLabel}
             </div>
@@ -343,15 +349,15 @@ export default function CalendarWorkspace({
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-1" style={{ marginBottom: 22 }}>
+          <div className="grid gap-1" style={{ marginBottom: 22, gridTemplateColumns: "repeat(7, minmax(0, 1fr))", minWidth: 0 }}>
             {WEEKDAYS.map((w) => (
-              <div key={w} className="text-center text-[13px] font-semibold text-[#F0F0F0]" style={{ letterSpacing: "0.12em" }}>
+              <div key={w} className="text-center text-[13px] font-semibold text-[#F0F0F0] truncate" style={{ letterSpacing: "0.12em" }}>
                 {w}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-[5px]">
+          <div className="grid gap-[5px]" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", minWidth: 0 }}>
             {cells.map(({ date, key, inMonth }) => {
               const dayEvents = eventsByDay.get(key) || [];
               const isSelected = key === selectedDate;
@@ -365,8 +371,10 @@ export default function CalendarWorkspace({
                   }}
                   className="relative flex items-center justify-center"
                   style={{
+                    width: "100%",
+                    minWidth: 0,
                     aspectRatio: "1.08 / 1",
-                    minHeight: 78,
+                    minHeight: 60,
                     background: isSelected ? "#F1F1F1" : inMonth ? "#3D3D3D" : "#333333",
                     border: isSelected ? "1px solid rgba(255,255,255,0.6)" : "1px solid rgba(255,255,255,0.025)",
                     borderRadius: 7,
@@ -391,7 +399,7 @@ export default function CalendarWorkspace({
         </div>
 
         {/* RIGHT: selected day agenda + actions */}
-        <div className="flex flex-col" style={{ background: "#131313", borderLeft: "1px solid rgba(255,255,255,0.07)", padding: "28px 26px" }}>
+        <div className="flex flex-col overflow-hidden" style={{ background: "#131313", borderLeft: "1px solid rgba(255,255,255,0.07)", padding: "28px 26px", minWidth: 0, boxSizing: "border-box" }}>
           <div className="text-[25px] font-semibold text-[#F5F5F7]">{selectedDayLabel}</div>
           <div className="text-[12px] text-[#8E8E93] mt-1">{selectedDayEvents.length} event{selectedDayEvents.length === 1 ? "" : "s"}</div>
 
@@ -462,8 +470,8 @@ export default function CalendarWorkspace({
 
           <button
             onClick={() => setShowCreate(true)}
-            className="h-[44px] rounded-[7px] font-semibold text-[13.5px] flex items-center justify-center gap-1.5"
-            style={{ background: "#F1F1F1", color: "#111111" }}
+            className="h-[44px] rounded-[7px] font-semibold text-[13.5px] flex items-center justify-center gap-1.5 shrink-0"
+            style={{ background: "#F1F1F1", color: "#111111", width: "100%", maxWidth: "100%", boxSizing: "border-box", whiteSpace: "nowrap" }}
           >
             <Plus size={14} /> Create Event
           </button>
