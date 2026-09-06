@@ -34,7 +34,11 @@ export default function RepDashboard({
   meetings: Meeting[];
   callStats: CallStats;
 }) {
-  const nextLead = leads.find((l) => l.pipeline_stage === "ready_to_call") || leads[0];
+  // Deterministic "next best lead": highest AI Presence score among leads
+  // ready to call, falling back to the most recently updated lead. No AI
+  // model picks this — it's a plain sort, same as everywhere else in the CRM.
+  const readyToCall = leads.filter((l) => l.pipeline_stage === "ready_to_call").sort((a, b) => (b.ai_overall_score ?? -1) - (a.ai_overall_score ?? -1));
+  const nextLead = readyToCall[0] || leads[0];
 
   return (
     <div className="px-8 py-8 max-w-[1100px]">

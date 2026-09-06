@@ -19,6 +19,7 @@ import {
   Pencil,
   RefreshCw,
 } from "lucide-react";
+import LeadActions from "./LeadActions";
 
 type StatusValue = "verified" | "uncertain" | "not_found" | "conflict";
 
@@ -59,6 +60,8 @@ type Lead = {
   research_completeness: number | null;
   research_completeness_breakdown: { category: string; percent: number }[] | null;
   last_researched_at: string | null;
+  archived: boolean;
+  assigned_rep: string | null;
 };
 
 const STATUS_META: Record<StatusValue, { icon: React.ElementType; color: string; label: string }> = {
@@ -222,6 +225,8 @@ export default function LeadProfile({
   socialProfiles,
   sourceChecks,
   audit,
+  isOwner,
+  reps,
 }: {
   lead: Lead;
   contactMethods: ContactMethod[];
@@ -229,6 +234,8 @@ export default function LeadProfile({
   socialProfiles: SocialRow[];
   sourceChecks: SourceCheck[];
   audit: Audit;
+  isOwner: boolean;
+  reps: { id: string; label: string }[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"overview" | "contact" | "locations" | "social" | "business" | "research" | "audit">("overview");
@@ -255,7 +262,10 @@ export default function LeadProfile({
     <div className="px-8 py-8 max-w-[920px]">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="text-[22px] font-semibold text-[#F5F5F7]">{lead.business_name || "Unnamed lead"}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-[22px] font-semibold text-[#F5F5F7]">{lead.business_name || "Unnamed lead"}</div>
+            {lead.archived && <span className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] px-2 py-0.5 rounded-[5px]" style={{ border: "1px solid rgba(255,255,255,0.15)" }}>Archived</span>}
+          </div>
           <div className="flex items-center gap-4 mt-2 text-[13px] text-[#A1A1A6] flex-wrap">
             {lead.website && (
               <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-white">
@@ -292,6 +302,8 @@ export default function LeadProfile({
         <Link href={`/team/leads/${lead.id}/call`} className="h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[12.5px] font-semibold">
           <PhoneCall size={13} /> Call
         </Link>
+        <div className="flex-1" />
+        <LeadActions leadId={lead.id} archived={lead.archived} isOwner={isOwner} reps={reps} currentAssignedRep={lead.assigned_rep} />
       </div>
 
       <div className="flex items-center gap-1 mb-6 overflow-x-auto" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>

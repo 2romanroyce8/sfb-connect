@@ -45,6 +45,7 @@ const NAV_GROUPS: {
     label: "AI",
     items: [
       { href: "/team/leads/import", label: "Lead Research", icon: FileSearch },
+      { href: "/team/research", label: "Research Queue", icon: ClipboardList },
       { href: "/team/audits", label: "Business Audits", icon: ClipboardList },
       { href: "/team/scripts", label: "Scripts", icon: Sparkles },
     ],

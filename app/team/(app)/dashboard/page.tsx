@@ -86,6 +86,7 @@ export default async function TeamDashboardPage() {
       .from("crm_leads")
       .select("id, business_name, website, pipeline_stage, ai_overall_score, recommended_offer")
       .eq("assigned_rep", user!.id)
+      .eq("archived", false)
       .order("updated_at", { ascending: false })
       .limit(10),
     supabase

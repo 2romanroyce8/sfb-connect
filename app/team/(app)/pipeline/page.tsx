@@ -15,6 +15,7 @@ export default async function PipelinePage() {
   const { data: leads } = await supabase
     .from("crm_leads")
     .select("id, business_name, website, phone, pipeline_stage, recommended_offer, ai_overall_score, assigned_rep, updated_at")
+    .eq("archived", false)
     .order("updated_at", { ascending: false });
 
   let repNames: Record<string, string> = {};

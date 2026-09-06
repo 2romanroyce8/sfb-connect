@@ -13,6 +13,7 @@ type Lead = {
   pipeline_stage: string;
   ai_overall_score: number | null;
   recommended_offer: string | null;
+  archived: boolean;
   created_at: string;
 };
 
@@ -38,7 +39,7 @@ const STAGE_COLOR: Record<string, string> = {
   lost: "#FF453A",
 };
 
-export default function LeadsList({ leads }: { leads: Lead[] }) {
+export default function LeadsList({ leads, showArchived }: { leads: Lead[]; showArchived: boolean }) {
   return (
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-6">
@@ -48,12 +49,21 @@ export default function LeadsList({ leads }: { leads: Lead[] }) {
             {leads.length} lead{leads.length === 1 ? "" : "s"}
           </div>
         </div>
-        <Link
-          href="/team/leads/import"
-          className="h-[38px] px-4 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[13px] font-semibold"
-        >
-          <Plus size={14} /> New Lead
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={showArchived ? "/team/leads" : "/team/leads?archived=1"}
+            className="h-[38px] px-3.5 inline-flex items-center rounded-[8px] text-[12.5px] text-[#A1A1A6] hover:text-white"
+            style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+          >
+            {showArchived ? "Hide Archived" : "Show Archived"}
+          </Link>
+          <Link
+            href="/team/leads/import"
+            className="h-[38px] px-4 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[13px] font-semibold"
+          >
+            <Plus size={14} /> New Lead
+          </Link>
+        </div>
       </div>
 
       {leads.length === 0 ? (
@@ -93,7 +103,10 @@ export default function LeadsList({ leads }: { leads: Lead[] }) {
                   onClick={() => (window.location.href = `/team/leads/${l.id}`)}
                 >
                   <td className="px-4 py-3">
-                    <div className="text-[#F5F5F7] font-medium">{l.business_name || "Unnamed lead"}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#F5F5F7] font-medium">{l.business_name || "Unnamed lead"}</span>
+                      {l.archived && <span className="text-[10px] uppercase tracking-wide text-[#6E6E73] px-1.5 py-0.5 rounded-[4px]" style={{ border: "1px solid rgba(255,255,255,0.15)" }}>Archived</span>}
+                    </div>
                     <div className="text-[#6E6E73] text-[12px]">{l.website?.replace(/^https?:\/\//, "") || "—"}</div>
                   </td>
                   <td className="px-4 py-3 text-[#A1A1A6]">

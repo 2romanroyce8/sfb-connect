@@ -4,6 +4,9 @@ import LeadProfile from "@/components/team/LeadProfile";
 
 export default async function LeadProfilePage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Every query below runs on the session-scoped client, so RLS decides
   // whether this rep is even allowed to see this lead — a rep hitting
@@ -11,13 +14,16 @@ export default async function LeadProfilePage({ params }: { params: { id: string
   const { data: lead } = await supabase
     .from("crm_leads")
     .select(
-      "id, business_name, website, phone, email, category, description, services, owner_name, city, state, source_urls, pipeline_stage, recommended_offer, research_completeness, research_completeness_breakdown, last_researched_at"
+      "id, business_name, website, phone, email, category, description, services, owner_name, city, state, source_urls, pipeline_stage, recommended_offer, research_completeness, research_completeness_breakdown, last_researched_at, archived, assigned_rep"
     )
     .eq("id", params.id)
     .single();
   if (!lead) notFound();
 
-  const [{ data: contactMethods }, { data: locations }, { data: socialProfiles }, { data: sourceChecks }, { data: audit }] = await Promise.all([
+  const { data: caller } = await supabase.from("users").select("team_role").eq("id", user!.id).single();
+  const isOwner = caller?.team_role === "owner";
+
+  const [{ data: contactMethods }, { data: locations }, { data: socialProfiles }, { data: sourceChecks }, { data: audit }, { data: reps }] = await Promise.all([
     supabase.from("crm_lead_contact_methods").select("id, type, value, status, confidence, source_url, manual_value, edited_at").eq("lead_id", params.id),
     supabase.from("crm_lead_locations").select("id, name, address, city, state, postal_code, location_type, status, confidence, source_url, manual_value, edited_at").eq("lead_id", params.id),
     supabase.from("crm_lead_social_profiles").select("id, platform, handle, url, display_name, status, confidence, source_url, manual_value, edited_at").eq("lead_id", params.id),
@@ -29,6 +35,7 @@ export default async function LeadProfilePage({ params }: { params: { id: string
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    isOwner ? supabase.from("users").select("id, full_name, email").not("team_role", "is", null).eq("team_status", "active") : Promise.resolve({ data: [] as any[] }),
   ]);
 
   return (
@@ -39,6 +46,8 @@ export default async function LeadProfilePage({ params }: { params: { id: string
       socialProfiles={socialProfiles ?? []}
       sourceChecks={sourceChecks ?? []}
       audit={audit as any}
+      isOwner={isOwner}
+      reps={(reps ?? []).map((r) => ({ id: r.id, label: r.full_name || r.email }))}
     />
   );
 }

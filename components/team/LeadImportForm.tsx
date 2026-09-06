@@ -4,11 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X, Loader2, Search } from "lucide-react";
 
-export default function LeadImportForm({ reps }: { reps: { id: string; label: string }[] }) {
+export default function LeadImportForm() {
   const router = useRouter();
   const [sources, setSources] = useState<string[]>([""]);
   const [location, setLocation] = useState("");
-  const [assignedRep, setAssignedRep] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<string | null>(null);
@@ -39,11 +38,11 @@ export default function LeadImportForm({ reps }: { reps: { id: string; label: st
       const res = await fetch("/api/team/leads/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sources: cleaned, location, assignedRep: assignedRep || undefined }),
+        body: JSON.stringify({ sources: cleaned, location }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Research failed.");
-      router.push(`/team/leads/${data.leadId}`);
+      router.push(`/team/research/${data.researchResultId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setLoading(false);
@@ -100,37 +99,15 @@ export default function LeadImportForm({ reps }: { reps: { id: string; label: st
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
-              City, State (optional)
-            </label>
-            <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Austin, TX"
-              className="h-[40px] rounded-[8px] px-3 text-[13px] outline-none"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
-              Assign to
-            </label>
-            <select
-              value={assignedRep}
-              onChange={(e) => setAssignedRep(e.target.value)}
-              className="h-[40px] rounded-[8px] px-3 text-[13px] outline-none"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-            >
-              <option value="">Unassigned</option>
-              {reps.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">City, State (optional)</label>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Austin, TX"
+            className="h-[40px] rounded-[8px] px-3 text-[13px] outline-none"
+            style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          />
         </div>
 
         {error && <p className="text-[13px] text-[#FF453A]">{error}</p>}
@@ -153,7 +130,8 @@ export default function LeadImportForm({ reps }: { reps: { id: string; label: st
         <p className="text-[11.5px] text-[#6E6E73] leading-relaxed">
           This runs a real research pass across every source you list — no data is invented.
           Fields we can't confirm are marked as uncertain or not found, and you'll be able to see
-          exactly which source backs each field on the lead's profile.
+          exactly which source backs each field. Research doesn't create a lead — you'll review the
+          results first and choose Save as Lead, Research More, or Discard.
         </p>
       </form>
     </div>
