@@ -88,6 +88,7 @@ export default function FollowUpStack({
   repMap,
   isOwner,
   currentUserId,
+  allReps,
 }: {
   followups: Followup[];
   leadMap: Record<string, Lead>;
@@ -97,11 +98,19 @@ export default function FollowUpStack({
   repMap: Record<string, string>;
   isOwner: boolean;
   currentUserId: string;
+  allReps: { id: string; label: string }[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const focusId = searchParams?.get("focus") || null;
   const [followups, setFollowups] = useState(initialFollowups);
+  // router.refresh() re-runs the server component and passes a new
+  // initialFollowups array, but a useState initial value only applies on
+  // first mount -- without this, a router.refresh() (after quick-create,
+  // for example) would silently not reach the screen.
+  useEffect(() => {
+    setFollowups(initialFollowups);
+  }, [initialFollowups]);
   const [tab, setTab] = useState<Tab>("TODAY");
   const [cardIndex, setCardIndex] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -180,7 +189,7 @@ export default function FollowUpStack({
             New Follow-Up
           </button>
         </div>
-        {showCreate && <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} />}
+        {showCreate && <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} allReps={allReps} />}
       </div>
     );
   }
@@ -289,7 +298,7 @@ export default function FollowUpStack({
         />
       )}
 
-      {showCreate && <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} />}
+      {showCreate && <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} allReps={allReps} />}
     </div>
   );
 }
@@ -537,7 +546,17 @@ function DetailsDrawer({
   );
 }
 
-function QuickCreateModal({ onClose, onCreated, isOwner }: { onClose: () => void; onCreated: () => void; isOwner: boolean }) {
+function QuickCreateModal({
+  onClose,
+  onCreated,
+  isOwner,
+  allReps,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+  isOwner: boolean;
+  allReps: { id: string; label: string }[];
+}) {
   const [leadQuery, setLeadQuery] = useState("");
   const [leadResults, setLeadResults] = useState<{ id: string; business_name: string | null }[]>([]);
   const [selectedLead, setSelectedLead] = useState<{ id: string; business_name: string | null } | null>(null);
@@ -545,6 +564,7 @@ function QuickCreateModal({ onClose, onCreated, isOwner }: { onClose: () => void
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
   const [reason, setReason] = useState("");
+  const [assignedTo, setAssignedTo] = useState(allReps[0]?.id || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -574,7 +594,7 @@ function QuickCreateModal({ onClose, onCreated, isOwner }: { onClose: () => void
       const res = await fetch("/api/team/followups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leadId: selectedLead.id, followupType: type, dueAt, timezone, reason }),
+        body: JSON.stringify({ leadId: selectedLead.id, followupType: type, dueAt, timezone, reason, assignedTo: isOwner ? assignedTo : undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -645,6 +665,19 @@ function QuickCreateModal({ onClose, onCreated, isOwner }: { onClose: () => void
               ))}
             </select>
           </div>
+
+          {isOwner && allReps.length > 0 && (
+            <div>
+              <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Assigned Rep</label>
+              <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className="w-full mt-1 h-[38px] rounded-[8px] px-3 text-[13px] outline-none" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}>
+                {allReps.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <div>

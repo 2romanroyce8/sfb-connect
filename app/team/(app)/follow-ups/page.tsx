@@ -30,6 +30,8 @@ export default async function FollowUpsPage() {
     isOwner && repIds.length ? supabase.from("users").select("id, full_name, email").in("id", repIds) : Promise.resolve({ data: [] as any[] }),
   ]);
 
+  const { data: allReps } = isOwner ? await supabase.from("users").select("id, full_name, email").not("team_role", "is", null).eq("team_status", "active") : { data: [] as any[] };
+
   const leadMap = Object.fromEntries((leads ?? []).map((l) => [l.id, l]));
   const callMap = Object.fromEntries((relatedCalls ?? []).map((c) => [c.id, c]));
   const meetingMap = Object.fromEntries((meetings ?? []).map((m) => [m.id, m]));
@@ -50,6 +52,7 @@ export default async function FollowUpsPage() {
       repMap={repMap}
       isOwner={isOwner}
       currentUserId={user!.id}
+      allReps={(allReps ?? []).map((r) => ({ id: r.id, label: r.full_name || r.email }))}
     />
   );
 }
