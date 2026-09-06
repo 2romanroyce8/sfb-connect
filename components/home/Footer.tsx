@@ -7,16 +7,22 @@ export default function Footer() {
         <div className="flex justify-between flex-wrap gap-8 mb-12">
           <div className="font-extrabold text-lg">SFB CONNECT</div>
           <div className="flex gap-8 flex-wrap text-sm text-medium-gray">
-            <Link href="#process" className="hover:text-white transition-colors">
-              How It Works
-            </Link>
-            <Link href="#score" className="hover:text-white transition-colors">
+            <Link href="/#score" className="hover:text-white transition-colors">
               AI Presence
             </Link>
-            <Link href="#pricing" className="hover:text-white transition-colors">
+            <Link href="/websites" className="hover:text-white transition-colors">
+              Websites
+            </Link>
+            <Link href="/solutions" className="hover:text-white transition-colors">
+              Solutions
+            </Link>
+            <Link href="/portfolio" className="hover:text-white transition-colors">
+              Portfolio
+            </Link>
+            <Link href="/#pricing" className="hover:text-white transition-colors">
               Pricing
             </Link>
-            <Link href="#faq" className="hover:text-white transition-colors">
+            <Link href="/#faq" className="hover:text-white transition-colors">
               FAQ
             </Link>
           </div>

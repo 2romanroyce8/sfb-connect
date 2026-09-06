@@ -21,6 +21,7 @@ import {
   UserCog,
   BarChart3,
   Plug,
+  Images,
   Settings,
   LogOut,
   ChevronDown,
@@ -88,6 +89,7 @@ const NAV_GROUPS: {
     items: [
       { href: "/team/team", label: "Team", icon: UserCog, ownerOnly: true },
       { href: "/team/performance", label: "Performance", icon: BarChart3, ownerOnly: true },
+      { href: "/team/portfolio", label: "Portfolio", icon: Images, ownerOnly: true },
     ],
   },
   {

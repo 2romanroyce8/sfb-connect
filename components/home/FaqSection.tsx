@@ -36,6 +36,31 @@ const FAQS = [
     a: "It overlaps with certain technical SEO concepts but focuses specifically on how business information is structured, understood and represented for AI-assisted discovery.",
     color: "#FFFFFF",
   },
+  {
+    q: "Does SFB Connect build websites?",
+    a: "Yes. SFB Connect builds new websites from scratch and rebuilds existing websites. Website projects can be purchased independently or combined with AI Presence work.",
+    color: "#5577FF",
+  },
+  {
+    q: "Can I buy a website without AI Presence?",
+    a: "Yes.",
+    color: "#42E36D",
+  },
+  {
+    q: "Can I add AI Presence to my website project?",
+    a: "Yes. SFB can incorporate AI Presence considerations into the website's information architecture, business information, structured data and other relevant technical foundations.",
+    color: "#A96CFF",
+  },
+  {
+    q: "Do you rebuild existing websites?",
+    a: "Yes. Existing websites can be redesigned and redeveloped when the current site no longer meets the business's needs.",
+    color: "#FF8A3D",
+  },
+  {
+    q: "Do you offer other technology services?",
+    a: "SFB Connect also offers selected automation, AI receptionist, marketing and paid advertising services depending on the business's needs and project scope.",
+    color: "#FFD84D",
+  },
 ];
 
 function FaqItem({

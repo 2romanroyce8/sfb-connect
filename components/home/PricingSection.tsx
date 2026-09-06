@@ -67,8 +67,8 @@ const PLANS: Plan[] = [
     period: "",
     description:
       "For businesses that need a stronger website foundation alongside their AI presence strategy.",
-    button: "Contact Us",
-    href: "mailto:hello@sfbconnect.com",
+    button: "Explore Websites",
+    href: "/websites",
     buttonStyle: "dark",
     accent: "#42E36D",
     features: [
@@ -223,6 +223,13 @@ export default function PricingSection() {
         <Reveal>
           <div className="text-center text-[12.5px] text-medium-gray mt-10">
             Pay via Cash App, PayPal, or Zelle.
+          </div>
+          <div className="text-center text-[12.5px] text-medium-gray mt-2">
+            Need automation, an AI receptionist, marketing or paid ads instead?{" "}
+            <Link href="/solutions" className="underline hover:text-white transition-colors">
+              Explore all solutions
+            </Link>
+            .
           </div>
         </Reveal>
       </div>
