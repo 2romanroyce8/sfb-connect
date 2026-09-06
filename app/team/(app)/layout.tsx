@@ -22,11 +22,19 @@ export default async function TeamAppLayout({
 
   if (!profile?.team_role) redirect("/team/login?error=not_authorized");
 
+  const { data: activeSession } = await supabase
+    .from("team_work_sessions")
+    .select("id, clocked_in_at")
+    .eq("rep_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
   return (
     <div className="min-h-screen flex" style={{ background: "#000000", color: "#F5F5F7" }}>
       <TeamSidebar
         name={profile.full_name || profile.email}
         role={profile.team_role}
+        activeSession={activeSession as { id: string; clocked_in_at: string } | null}
       />
       <div className="flex-1 min-w-0">{children}</div>
     </div>

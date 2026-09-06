@@ -22,6 +22,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import ClockControl from "./ClockControl";
 
 const NAV_GROUPS: {
   label: string;
@@ -29,7 +30,10 @@ const NAV_GROUPS: {
 }[] = [
   {
     label: "Overview",
-    items: [{ href: "/team/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    items: [
+      { href: "/team/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/team/clock", label: "Clock", icon: CalendarClock },
+    ],
   },
   {
     label: "Sales",
@@ -77,9 +81,11 @@ const NAV_GROUPS: {
 export default function TeamSidebar({
   name,
   role,
+  activeSession,
 }: {
   name: string;
   role: "owner" | "sales_rep";
+  activeSession: { id: string; clocked_in_at: string } | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -103,6 +109,10 @@ export default function TeamSidebar({
         <div className="mt-1 text-[10.5px] text-[#6E6E73] tracking-wide uppercase">
           Sales OS
         </div>
+      </div>
+
+      <div className="pt-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <ClockControl activeSession={activeSession} />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
