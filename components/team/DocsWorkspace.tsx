@@ -173,7 +173,7 @@ export default function DocsWorkspace({
   }
 
   return (
-    <div className="px-8 py-8">
+    <div className="px-8 pt-16 pb-8">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#6E6E73] mb-1">Workspace</div>
