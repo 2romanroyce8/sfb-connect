@@ -118,8 +118,9 @@ export default async function TeamDashboardPage() {
       .select("id, lead_id, due_at, reason")
       .eq("rep_id", user!.id)
       .eq("status", "open")
+      .lt("due_at", new Date(new Date().setHours(23, 59, 59, 999)).toISOString())
       .order("due_at", { ascending: true })
-      .limit(10),
+      .limit(3),
     supabase
       .from("crm_meetings")
       .select("id, lead_id, scheduled_at, contact_name")
@@ -138,11 +139,17 @@ export default async function TeamDashboardPage() {
   const completedToday = (myCallsToday ?? []).filter((c) => c.duration_seconds != null);
   const avgDurationToday = completedToday.length > 0 ? Math.round(talkTimeToday / completedToday.length) : 0;
 
+  const followupLeadIds = Array.from(new Set((followups ?? []).map((f) => f.lead_id)));
+  const { data: followupLeads } = followupLeadIds.length
+    ? await supabase.from("crm_leads").select("id, business_name").in("id", followupLeadIds)
+    : { data: [] as any[] };
+  const followupLeadNames = Object.fromEntries((followupLeads ?? []).map((l) => [l.id, l.business_name]));
+
   return (
     <RepDashboard
       name={name}
       leads={myLeads ?? []}
-      followups={followups ?? []}
+      followups={(followups ?? []).map((f) => ({ ...f, business_name: followupLeadNames[f.lead_id] || null }))}
       meetings={meetings ?? []}
       callStats={{ callsToday: (myCallsToday ?? []).length, talkTimeToday, avgDurationToday }}
       chartData={{

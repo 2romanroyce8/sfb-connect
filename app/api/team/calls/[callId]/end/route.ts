@@ -73,6 +73,9 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
     await service.from("crm_followups").insert({
       lead_id: call.lead_id,
       rep_id: user.id,
+      created_by: user.id,
+      related_call_id: call.id,
+      followup_type: "CALL",
       due_at: followup.dueAt,
       reason: followup.reason || "Call back requested",
     });
@@ -80,6 +83,9 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
     await service.from("crm_followups").insert({
       lead_id: call.lead_id,
       rep_id: user.id,
+      created_by: user.id,
+      related_call_id: call.id,
+      followup_type: "CALL",
       due_at: followup.dueAt,
       reason: followup.reason || `Follow up after ${outcome.replace(/_/g, " ")}`,
     });

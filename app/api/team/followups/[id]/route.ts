@@ -12,7 +12,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const body = await req.json();
   const update: Record<string, unknown> = {};
-  if (body.status) update.status = body.status;
+  if (body.status) {
+    update.status = body.status;
+    update.completed_at = body.status === "completed" ? new Date().toISOString() : null;
+  }
   if (body.dueAt) update.due_at = body.dueAt;
   if (body.reason !== undefined) update.reason = body.reason;
 

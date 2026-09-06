@@ -13,7 +13,7 @@ type Lead = {
   recommended_offer: string | null;
   updated_at: string;
 };
-type Followup = { id: string; lead_id: string; due_at: string; reason: string | null };
+type Followup = { id: string; lead_id: string; due_at: string; reason: string | null; business_name?: string | null };
 type Meeting = { id: string; lead_id: string; scheduled_at: string; contact_name: string | null };
 type CallStats = { callsToday: number; talkTimeToday: number; avgDurationToday: number };
 
@@ -100,9 +100,15 @@ export default function RepDashboard({
           ) : (
             <div className="flex flex-col gap-2">
               {followups.map((f) => (
-                <div key={f.id} className="p-3 rounded-[8px] text-[12.5px] text-[#A1A1A6]" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
-                  {f.reason || "Follow up"} — {new Date(f.due_at).toLocaleDateString()}
-                </div>
+                <Link
+                  key={f.id}
+                  href={`/team/follow-ups?focus=${f.id}`}
+                  className="block p-3 rounded-[8px] text-[12.5px] text-[#A1A1A6] hover:bg-[#161616] hover:text-white transition-colors"
+                  style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <span className="text-[#F5F5F7]">{f.business_name || "Unknown lead"}</span> — {f.reason || "Follow up"} —{" "}
+                  {new Date(f.due_at) < new Date() ? "overdue" : new Date(f.due_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                </Link>
               ))}
             </div>
           )}
