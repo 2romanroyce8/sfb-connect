@@ -95,8 +95,15 @@ export default function LeadImportForm() {
         }}
       />
 
-      <div className="relative w-full mx-auto flex flex-col items-center" style={{ maxWidth: 1180, padding: "clamp(60px, 14vw, 140px) clamp(20px, 4vw, 48px) 70px" }}>
-        {job.mode === "idle" && <LeadResearchCommandBar onSubmit={runResearch} />}
+      <div
+        className="relative w-full mx-auto flex flex-col items-center justify-center"
+        style={{ minHeight: "calc(100vh - 72px)", padding: "0 32px 110px", boxSizing: "border-box", overflow: "hidden" }}
+      >
+        {job.mode === "idle" && (
+          <div style={{ width: "100%", maxWidth: 820, transform: "translateY(60px)" }}>
+            <LeadResearchCommandBar onSubmit={runResearch} />
+          </div>
+        )}
 
         {job.mode !== "idle" && (
           <div className="w-full">
