@@ -19,6 +19,8 @@ export default async function TeamDashboardPage() {
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
   if (isOwner) {
     // Company-wide numbers — real queries against currently-empty tables.
@@ -31,6 +33,9 @@ export default async function TeamDashboardPage() {
       { data: reps },
       { data: callsToday },
       { data: allCalls },
+      { data: calls90 },
+      { data: meetings90 },
+      { data: recentLeads },
     ] = await Promise.all([
       supabase.from("crm_leads").select("id", { count: "exact", head: true }),
       supabase.from("crm_leads").select("id", { count: "exact", head: true }).eq("pipeline_stage", "interested"),
@@ -39,6 +44,14 @@ export default async function TeamDashboardPage() {
       supabase.from("users").select("id, full_name, email").eq("team_role", "sales_rep"),
       supabase.from("crm_calls").select("id, rep_id, duration_seconds, outcome").gte("started_at", todayStart.toISOString()),
       supabase.from("crm_calls").select("lead_id, duration_seconds, outcome"),
+      supabase.from("crm_calls").select("started_at").gte("started_at", ninetyDaysAgo.toISOString()),
+      supabase.from("crm_meetings").select("created_at").gte("created_at", ninetyDaysAgo.toISOString()),
+      supabase
+        .from("crm_leads")
+        .select("id, business_name, pipeline_stage, updated_at, assigned_rep")
+        .eq("archived", false)
+        .order("updated_at", { ascending: false })
+        .limit(10),
     ]);
 
     const talkTimeToday = (callsToday ?? []).reduce((sum, c) => sum + (c.duration_seconds || 0), 0);
@@ -50,6 +63,8 @@ export default async function TeamDashboardPage() {
     }
     const distinctLeadsCalled = new Set((allCalls ?? []).map((c) => c.lead_id)).size;
     const leadToCallConversion = totalLeads ? Math.round((distinctLeadsCalled / totalLeads) * 100) : 0;
+    const totalCallsAllTime = (allCalls ?? []).length;
+    const conversionRate = totalCallsAllTime ? Math.round(((meetingsBooked ?? 0) / totalCallsAllTime) * 100) : 0;
 
     const repActivity = (reps ?? []).map((rep) => {
       const repCallsToday = (callsToday ?? []).filter((c) => c.rep_id === rep.id);
@@ -60,6 +75,9 @@ export default async function TeamDashboardPage() {
         talkTimeToday: repCallsToday.reduce((s, c) => s + (c.duration_seconds || 0), 0),
       };
     });
+
+    const repNameById = Object.fromEntries((reps ?? []).map((r) => [r.id, r.full_name || r.email]));
+    const recentLeadsWithRep = (recentLeads ?? []).map((l) => ({ ...l, assigned_rep_name: l.assigned_rep ? repNameById[l.assigned_rep] || null : null }));
 
     return (
       <OwnerDashboard
@@ -75,16 +93,22 @@ export default async function TeamDashboardPage() {
           avgDurationToday,
           outcomesToday,
           leadToCallConversion,
+          conversionRate,
         }}
         repActivity={repActivity}
+        chartData={{
+          calls: (calls90 ?? []).map((c) => ({ at: c.started_at })),
+          meetings: (meetings90 ?? []).map((m) => ({ at: m.created_at })),
+        }}
+        recentLeads={recentLeadsWithRep as any}
       />
     );
   }
 
-  const [{ data: myLeads }, { data: followups }, { data: meetings }, { data: myCallsToday }] = await Promise.all([
+  const [{ data: myLeads }, { data: followups }, { data: meetings }, { data: myCallsToday }, { data: calls90 }, { data: meetings90 }] = await Promise.all([
     supabase
       .from("crm_leads")
-      .select("id, business_name, website, pipeline_stage, ai_overall_score, recommended_offer")
+      .select("id, business_name, website, pipeline_stage, ai_overall_score, recommended_offer, updated_at")
       .eq("assigned_rep", user!.id)
       .eq("archived", false)
       .order("updated_at", { ascending: false })
@@ -106,6 +130,8 @@ export default async function TeamDashboardPage() {
     // RLS already scopes crm_calls to rep_id = auth.uid() for a non-owner,
     // but the explicit filter keeps this query self-documenting.
     supabase.from("crm_calls").select("id, duration_seconds, outcome").eq("rep_id", user!.id).gte("started_at", todayStart.toISOString()),
+    supabase.from("crm_calls").select("started_at").eq("rep_id", user!.id).gte("started_at", ninetyDaysAgo.toISOString()),
+    supabase.from("crm_meetings").select("created_at").eq("rep_id", user!.id).gte("created_at", ninetyDaysAgo.toISOString()),
   ]);
 
   const talkTimeToday = (myCallsToday ?? []).reduce((sum, c) => sum + (c.duration_seconds || 0), 0);
@@ -119,6 +145,10 @@ export default async function TeamDashboardPage() {
       followups={followups ?? []}
       meetings={meetings ?? []}
       callStats={{ callsToday: (myCallsToday ?? []).length, talkTimeToday, avgDurationToday }}
+      chartData={{
+        calls: (calls90 ?? []).map((c) => ({ at: c.started_at })),
+        meetings: (meetings90 ?? []).map((m) => ({ at: m.created_at })),
+      }}
     />
   );
 }
