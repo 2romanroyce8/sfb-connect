@@ -24,11 +24,24 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { userId, leadIds } = body as { userId?: string; leadIds?: string[] };
+  const { userId, leadIds, role } = body as { userId?: string; leadIds?: string[]; role?: string };
   const service = createSupabaseServiceClient();
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sfbconnect.com";
 
   switch (params.action) {
+    case "change-role": {
+      if (!userId || !role) return NextResponse.json({ error: "userId and role required" }, { status: 400 });
+      // Only the two roles the rest of the system actually understands --
+      // never a role picked from a UI list that doesn't map to a real
+      // permission tier (no fake "Manager"/"Viewer" roles).
+      if (!["owner", "sales_rep"].includes(role)) return NextResponse.json({ error: "Invalid role." }, { status: 400 });
+      if (userId === user.id && role !== "owner") {
+        return NextResponse.json({ error: "You can't demote your own account." }, { status: 400 });
+      }
+      const { error } = await service.from("users").update({ team_role: role }).eq("id", userId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ success: true });
+    }
     case "resend-invite": {
       if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
       const { data: profile } = await service.from("users").select("email").eq("id", userId).single();

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { UserPlus, RotateCcw, KeyRound, Power } from "lucide-react";
+import InviteCollaboratorsModal from "./InviteCollaboratorsModal";
 
 type Member = {
   id: string;
@@ -33,106 +34,6 @@ async function callAction(action: string, payload: Record<string, unknown>) {
   return data;
 }
 
-function InviteForm({ onInvited }: { onInvited: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"sales_rep" | "owner">("sales_rep");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      await callAction("invite", { firstName, lastName, email, role });
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setOpen(false);
-      onInvited();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to invite.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="h-[38px] px-4 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[13px] font-semibold"
-      >
-        <UserPlus size={14} /> Invite Team Member
-      </button>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-5 rounded-[14px] mb-2 flex flex-col gap-3"
-      style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}
-    >
-      <div className="grid grid-cols-2 gap-3">
-        <input
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          placeholder="First name"
-          className="h-[38px] rounded-[8px] px-3 text-[13px] outline-none"
-          style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-        />
-        <input
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          placeholder="Last name"
-          className="h-[38px] rounded-[8px] px-3 text-[13px] outline-none"
-          style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-        />
-      </div>
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        className="h-[38px] rounded-[8px] px-3 text-[13px] outline-none"
-        style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-      />
-      <select
-        value={role}
-        onChange={(e) => setRole(e.target.value as "sales_rep" | "owner")}
-        className="h-[38px] rounded-[8px] px-3 text-[13px] outline-none"
-        style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-      >
-        <option value="sales_rep">Sales Rep</option>
-        <option value="owner">Owner</option>
-      </select>
-      {error && <p className="text-[12.5px] text-[#FF453A]">{error}</p>}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={loading}
-          className="h-[36px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold disabled:opacity-60"
-        >
-          {loading ? "Sending invite…" : "Send Invite"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="h-[36px] px-4 rounded-[8px] text-[12.5px] text-[#A1A1A6]"
-          style={{ border: "1px solid rgba(255,255,255,0.10)" }}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
-}
-
 type Performance = { calls: number; talkTime: number; meetings: number; wins: number; conversion: number };
 
 function formatDuration(seconds: number) {
@@ -151,6 +52,7 @@ export default function TeamRoster({
   const [members, setMembers] = useState(initialMembers);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showInvite, setShowInvite] = useState(false);
 
   function refresh() {
     window.location.reload();
@@ -187,8 +89,15 @@ export default function TeamRoster({
             Manage who has access to the Sales OS.
           </div>
         </div>
-        <InviteForm onInvited={refresh} />
+        <button
+          onClick={() => setShowInvite(true)}
+          className="h-[38px] px-4 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[13px] font-semibold"
+        >
+          <UserPlus size={14} /> Invite Team Member
+        </button>
       </div>
+
+      {showInvite && <InviteCollaboratorsModal members={members} onClose={() => setShowInvite(false)} onChanged={refresh} />}
 
       {toast && (
         <div className="mb-4 text-[12.5px] text-[#F5F5F7] bg-[#151515] border border-white/10 rounded-[8px] px-3 py-2">
