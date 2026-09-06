@@ -10,8 +10,10 @@ import { buildFingerprint, matchesFingerprint } from "./BusinessIdentityResolver
 import { isPublicSearchConfigured, publicSearch } from "./PublicSearchService";
 import { extractTitle, extractMeta, extractJsonLd, findLocalBusiness, decodeEntities } from "./htmlExtract";
 import { classifyLink, canonicalDomain } from "./normalize";
+import { classifyCategoryHeuristic } from "./CategoryClassifier";
+import type { ResearchStage } from "./jobProgress";
 
-export type ResearchStageUpdate = (stage: string) => Promise<void> | void;
+export type ResearchStageUpdate = (stage: ResearchStage, meta?: { sourcesFound?: number }) => Promise<void> | void;
 
 /**
  * Orchestrates every discovery service into one canonical BusinessGraph.
@@ -24,14 +26,14 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
   const sourceChecks: SourceCheck[] = [];
   const seedPages: FetchedPage[] = [];
 
-  await onStage?.("Reading submitted sources");
+  await onStage?.("IDENTIFYING_BUSINESS");
   for (const src of seedSources) {
     const page = await fetchPage(src);
     seedPages.push(page);
     sourceChecks.push({ sourceUrl: page.url, sourceType: page.sourceType, reachable: page.ok, reason: page.ok ? undefined : page.blockedReason });
   }
 
-  await onStage?.("Identifying business and extracting links");
+  await onStage?.("DISCOVERING_SOURCES", { sourcesFound: sourceChecks.length });
   let officialWebsite: string | null = null;
   const linkInBioPages: string[] = [];
   const bookingLinks: string[] = [];
@@ -45,14 +47,13 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
 
   let crawledPages: FetchedPage[] = [];
   if (officialWebsite) {
-    await onStage?.("Opening official website");
+    await onStage?.("READING_WEBSITE", { sourcesFound: sourceChecks.length });
     crawledPages = await crawlWebsite(officialWebsite);
     for (const p of crawledPages) {
       sourceChecks.push({ sourceUrl: p.url, sourceType: p.sourceType, reachable: p.ok, reason: p.ok ? undefined : p.blockedReason });
     }
   }
 
-  await onStage?.("Checking link-in-bio destinations");
   const bioPages: FetchedPage[] = [];
   for (const url of Array.from(new Set(linkInBioPages)).slice(0, 2)) {
     const page = await fetchPage(url);
@@ -69,14 +70,16 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
 
   const allPages = [...seedPages, ...crawledPages, ...bioPages];
 
-  await onStage?.("Discovering contact channels");
+  await onStage?.("EXTRACTING_CONTACTS", { sourcesFound: sourceChecks.length });
   const contacts = discoverContacts(allPages, Array.from(new Set(bookingLinks)));
 
-  await onStage?.("Discovering locations and service areas");
+  await onStage?.("EXTRACTING_LOCATIONS", { sourcesFound: sourceChecks.length });
   const locations = discoverLocations(allPages);
 
-  await onStage?.("Discovering social profiles");
+  await onStage?.("EXTRACTING_SOCIALS", { sourcesFound: sourceChecks.length });
   let socialProfiles = discoverSocialProfiles(allPages);
+
+  await onStage?.("CLASSIFYING_BUSINESS", { sourcesFound: sourceChecks.length });
 
   // ---- Identity fields (single-value, resolved across all pages) ----
   const nameCandidates: Candidate[] = [];
@@ -127,12 +130,22 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
     }
   }
 
+  // Fallback: if no page published schema.org markup with a recognized
+  // @type (the common case for small-business sites), fall back to a
+  // title/heading/nav keyword heuristic rather than leaving category
+  // permanently "Not found" just because the site has no JSON-LD. This
+  // candidate is strength 1 -- schema-derived candidates (strength 2) always
+  // win when both exist; resolveField marks a heuristic-only result
+  // "uncertain" rather than "verified", which is the honest distinction.
+  const heuristicCategory = classifyCategoryHeuristic(allPages);
+  if (heuristicCategory) categoryCandidates.push(heuristicCategory);
+
   const name = resolveField(nameCandidates);
   const categoryResolved = resolveField(categoryCandidates);
 
   // ---- Optional Phase 8: broad public search expansion ----
   if (isPublicSearchConfigured() && name.value) {
-    await onStage?.("Searching public sources");
+    await onStage?.("IDENTIFYING_BUSINESS", { sourcesFound: sourceChecks.length });
     const fingerprint = buildFingerprint({ name: name.value, domain: officialWebsite ? canonicalDomain(officialWebsite) : null, phone: contacts.phone[0]?.value || null });
     const results = await publicSearch(`"${name.value}" contact OR website OR instagram OR tiktok`, 6);
     for (const r of results) {
@@ -144,7 +157,7 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
     }
   }
 
-  await onStage?.("Cross-checking evidence");
+  await onStage?.("CROSS_VALIDATING", { sourcesFound: sourceChecks.length });
   const contactMethods = [
     { type: "phone" as const, ...normalizeResolved(resolveField(contacts.phone)) },
     { type: "email" as const, ...normalizeResolved(resolveField(contacts.email)) },
@@ -159,6 +172,7 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
     { type: "booking" as const, ...normalizeResolved(resolveField(contacts.booking)) },
   ];
 
+  await onStage?.("BUILDING_PROFILE", { sourcesFound: sourceChecks.length });
   const graph: BusinessGraph = {
     businessName: name.value ? { value: name.value, sourceUrl: name.sources[0] || "", sourceType: "website", strength: 3 } : null,
     category: categoryResolved.value,

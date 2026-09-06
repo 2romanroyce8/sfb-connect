@@ -96,6 +96,36 @@ export function extractWhatsAppLinks(html: string): string[] {
   return Array.from(links);
 }
 
+/** All h1-h6 heading text, in document order. Used for category heuristics
+ * when a page has no schema.org JSON-LD to classify against. */
+export function extractHeadings(html: string): string[] {
+  const headings: string[] = [];
+  const re = /<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const text = decodeEntities(m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+    if (text) headings.push(text);
+  }
+  return headings;
+}
+
+/** Anchor text from <nav> and <footer> blocks — navigation labels are strong
+ * signals of what a business actually does ("Services", "Roof Repair"). */
+export function extractNavText(html: string): string[] {
+  const labels: string[] = [];
+  const blockRe = /<(nav|footer)[^>]*>([\s\S]*?)<\/\1>/gi;
+  let block: RegExpExecArray | null;
+  while ((block = blockRe.exec(html))) {
+    const linkRe = /<a[^>]*>([\s\S]*?)<\/a>/gi;
+    let link: RegExpExecArray | null;
+    while ((link = linkRe.exec(block[2]))) {
+      const text = decodeEntities(link[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+      if (text) labels.push(text);
+    }
+  }
+  return labels;
+}
+
 /** Visible body text with tags stripped, for heuristic "areas we serve" scanning. */
 export function extractVisibleText(html: string): string {
   return html
