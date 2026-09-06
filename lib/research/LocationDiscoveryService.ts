@@ -7,11 +7,58 @@ import { extractJsonLd, findLocalBusiness, extractVisibleText } from "./htmlExtr
 // a sentence is not a physical branch unless a real address says otherwise.
 const SERVICE_AREA_TRIGGERS = /(?:service area|areas we serve|we (?:proudly )?serve|serving the following|cities we serve)[:\s]/i;
 
+// Services and materials are not geographic locations. A roofing site's
+// "we serve" sentence can easily be followed by "Metal, Shingle, Commercial
+// and Residential roofing" rather than a city list -- the free-text
+// heuristic below has no way to tell those apart from real city names by
+// capitalization alone, so it needs an explicit denylist.
+const NOT_A_LOCATION = new Set([
+  "metal",
+  "shingle",
+  "shingles",
+  "roofing",
+  "roof",
+  "repair",
+  "repairs",
+  "replacement",
+  "installation",
+  "installations",
+  "maintenance",
+  "commercial",
+  "residential",
+  "industrial",
+  "new",
+  "custom",
+  "emergency",
+  "free",
+  "quote",
+  "estimate",
+  "financing",
+  "warranty",
+  "insurance",
+  "inspection",
+  "inspections",
+  "gutter",
+  "gutters",
+  "siding",
+  "windows",
+  "doors",
+  "flat",
+  "pitched",
+  "tile",
+  "shake",
+]);
+
 function looksLikeCity(token: string): boolean {
   const t = token.trim();
   if (t.length < 3 || t.length > 40) return false;
   if (!/^[A-Z][a-zA-Z.\s]+$/.test(t)) return false;
   if (/\b(and|the|our|home|about|contact|us|read|more|click|here)\b/i.test(t)) return false;
+  // Single-word tokens are the risky case (multi-word phrases like "Oklahoma
+  // City" are never a material/service name) -- only block single words that
+  // match the denylist, case-insensitively.
+  const words = t.split(/\s+/);
+  if (words.length === 1 && NOT_A_LOCATION.has(words[0].toLowerCase())) return false;
   return true;
 }
 
