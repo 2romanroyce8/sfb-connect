@@ -14,7 +14,7 @@ export default async function PipelinePage() {
   // the board never fetches more than the viewer is allowed to see.
   const { data: leads } = await supabase
     .from("crm_leads")
-    .select("id, business_name, website, phone, pipeline_stage, recommended_offer, ai_overall_score, assigned_rep, updated_at")
+    .select("id, business_name, website, phone, category, pipeline_stage, recommended_offer, ai_overall_score, assigned_rep, updated_at")
     .eq("archived", false)
     .order("updated_at", { ascending: false });
 
@@ -24,5 +24,16 @@ export default async function PipelinePage() {
     repNames = Object.fromEntries((reps ?? []).map((r) => [r.id, r.full_name || r.email]));
   }
 
-  return <PipelineBoard leads={leads ?? []} repNames={repNames} isOwner={isOwner} />;
+  const leadIds = (leads ?? []).map((l) => l.id);
+  const [{ data: notes }, { data: sourceChecks }] = await Promise.all([
+    leadIds.length ? supabase.from("crm_notes").select("lead_id").in("lead_id", leadIds) : Promise.resolve({ data: [] as any[] }),
+    leadIds.length ? supabase.from("crm_lead_source_checks").select("lead_id").in("lead_id", leadIds) : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const noteCounts: Record<string, number> = {};
+  for (const n of notes ?? []) noteCounts[n.lead_id] = (noteCounts[n.lead_id] || 0) + 1;
+  const sourceCounts: Record<string, number> = {};
+  for (const s of sourceChecks ?? []) sourceCounts[s.lead_id] = (sourceCounts[s.lead_id] || 0) + 1;
+
+  return <PipelineBoard leads={leads ?? []} repNames={repNames} isOwner={isOwner} noteCounts={noteCounts} sourceCounts={sourceCounts} />;
 }

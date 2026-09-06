@@ -17,6 +17,7 @@ import {
   StickyNote,
   Activity,
   FileText,
+  GanttChartSquare,
   UserCog,
   BarChart3,
   Plug,
@@ -58,6 +59,7 @@ const NAV_GROUPS: {
       { href: "/team/calls", label: "Calls", icon: Phone },
       { href: "/team/meetings", label: "Meetings", icon: CalendarClock },
       { href: "/team/follow-ups", label: "Follow-Ups", icon: Bell },
+      { href: "/team/work-plan", label: "Work Plan", icon: GanttChartSquare },
     ],
   },
   {
