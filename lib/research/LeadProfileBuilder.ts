@@ -15,6 +15,17 @@ import type { ResearchStage } from "./jobProgress";
 
 export type ResearchStageUpdate = (stage: ResearchStage, meta?: { sourcesFound?: number }) => Promise<void> | void;
 
+// Real scope differences, not cosmetic labels:
+//  - "website_only" / "quick_contact" skip link-in-bio expansion and public
+//    search widening -- the whole point of restricting to what was
+//    submitted rather than fanning out to discover more sources.
+//  - "quick_contact" additionally skips location/social discovery entirely,
+//    returning only identity + contact channels, faster and narrower.
+//  - "public_web", "social_profile", "google_business" all run the full
+//    fan-out; the seed URL variety doesn't change the discovery breadth,
+//    just what kind of page the fan-out starts from.
+export type ResearchScope = "public_web" | "website_only" | "social_profile" | "google_business" | "quick_contact";
+
 /**
  * Orchestrates every discovery service into one canonical BusinessGraph.
  * The submitted URL(s) are a SEED, not the final answer -- this follows
@@ -22,7 +33,13 @@ export type ResearchStageUpdate = (stage: ResearchStage, meta?: { sourcesFound?:
  * EXA_API_KEY is configured) expands into public search, all while keeping
  * "source unavailable" distinct from "not found".
  */
-export async function buildLeadProfile(seedSources: string[], onStage?: ResearchStageUpdate): Promise<{ graph: BusinessGraph; allPages: FetchedPage[] }> {
+export async function buildLeadProfile(
+  seedSources: string[],
+  onStage?: ResearchStageUpdate,
+  scope: ResearchScope = "public_web"
+): Promise<{ graph: BusinessGraph; allPages: FetchedPage[] }> {
+  const skipExpansion = scope === "website_only" || scope === "quick_contact";
+  const skipLocationsAndSocials = scope === "quick_contact";
   const sourceChecks: SourceCheck[] = [];
   const seedPages: FetchedPage[] = [];
 
@@ -55,16 +72,18 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
   }
 
   const bioPages: FetchedPage[] = [];
-  for (const url of Array.from(new Set(linkInBioPages)).slice(0, 2)) {
-    const page = await fetchPage(url);
-    bioPages.push(page);
-    sourceChecks.push({ sourceUrl: page.url, sourceType: page.sourceType, reachable: page.ok, reason: page.ok ? undefined : page.blockedReason });
-    if (page.ok) {
-      const discovered = discoverLinks(page);
-      bookingLinks.push(...discovered.bookingLinks);
-      // A link-in-bio page's own social/website links are treated as if
-      // they came from the official site itself -- that's the whole point
-      // of a bio-link page.
+  if (!skipExpansion) {
+    for (const url of Array.from(new Set(linkInBioPages)).slice(0, 2)) {
+      const page = await fetchPage(url);
+      bioPages.push(page);
+      sourceChecks.push({ sourceUrl: page.url, sourceType: page.sourceType, reachable: page.ok, reason: page.ok ? undefined : page.blockedReason });
+      if (page.ok) {
+        const discovered = discoverLinks(page);
+        bookingLinks.push(...discovered.bookingLinks);
+        // A link-in-bio page's own social/website links are treated as if
+        // they came from the official site itself -- that's the whole point
+        // of a bio-link page.
+      }
     }
   }
 
@@ -74,10 +93,10 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
   const contacts = discoverContacts(allPages, Array.from(new Set(bookingLinks)));
 
   await onStage?.("EXTRACTING_LOCATIONS", { sourcesFound: sourceChecks.length });
-  const locations = discoverLocations(allPages);
+  const locations = skipLocationsAndSocials ? [] : discoverLocations(allPages);
 
   await onStage?.("EXTRACTING_SOCIALS", { sourcesFound: sourceChecks.length });
-  let socialProfiles = discoverSocialProfiles(allPages);
+  let socialProfiles = skipLocationsAndSocials ? [] : discoverSocialProfiles(allPages);
 
   await onStage?.("CLASSIFYING_BUSINESS", { sourcesFound: sourceChecks.length });
 
@@ -144,7 +163,7 @@ export async function buildLeadProfile(seedSources: string[], onStage?: Research
   const categoryResolved = resolveField(categoryCandidates);
 
   // ---- Optional Phase 8: broad public search expansion ----
-  if (isPublicSearchConfigured() && name.value) {
+  if (!skipExpansion && isPublicSearchConfigured() && name.value) {
     await onStage?.("IDENTIFYING_BUSINESS", { sourcesFound: sourceChecks.length });
     const fingerprint = buildFingerprint({ name: name.value, domain: officialWebsite ? canonicalDomain(officialWebsite) : null, phone: contacts.phone[0]?.value || null });
     const results = await publicSearch(`"${name.value}" contact OR website OR instagram OR tiktok`, 6);

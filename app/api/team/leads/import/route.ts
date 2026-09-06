@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
-import { buildLeadProfile } from "@/lib/research/LeadProfileBuilder";
+import { buildLeadProfile, type ResearchScope } from "@/lib/research/LeadProfileBuilder";
 import { evaluateCompleteness } from "@/lib/research/CompletenessEvaluator";
 import { progressForStage, type ResearchStage } from "@/lib/research/jobProgress";
+
+const VALID_SCOPES: ResearchScope[] = ["public_web", "website_only", "social_profile", "google_business", "quick_contact"];
 
 // ============================================================
 // SFB Sales OS — Lead Research Pipeline V2
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const rawSources: string[] = (body.sources || []).filter((s: string) => s && s.trim());
   const location: string | undefined = body.location;
+  const scope: ResearchScope = VALID_SCOPES.includes(body.scope) ? body.scope : "public_web";
   if (rawSources.length === 0) return new Response(JSON.stringify({ error: "At least one source URL is required." }), { status: 400 });
 
   const service = createSupabaseServiceClient();
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const { graph } = await buildLeadProfile(rawSources, onStage);
+        const { graph } = await buildLeadProfile(rawSources, onStage, scope);
         const completeness = evaluateCompleteness(graph);
         const website = graph.contactMethods.find((c) => c.type === "website");
         const phone = graph.contactMethods.find((c) => c.type === "phone");
