@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Linkedin, Twitter, Instagram, ChevronDown, Menu, X } from "lucide-react";
+
+const LOGO_SRC =
+  "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 
 const SOLUTIONS_LINKS = [
   { label: "AI Presence", href: "/#score" },
@@ -31,7 +33,8 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-14 py-5" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(14px)" }}>
       <Link href="/" className="flex items-center gap-2.5">
-        <Image src="/brand/sfb-logo-mark.png" alt="SFB Connect" width={28} height={24} className="w-7 h-auto shrink-0" priority />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={LOGO_SRC} alt="SFB Connect" className="w-7 h-auto shrink-0" />
         <span className="font-extrabold tracking-tight text-[15px]">
           SFB <span className="text-medium-gray font-semibold">CONNECT</span>
         </span>

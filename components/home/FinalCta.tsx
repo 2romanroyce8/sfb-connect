@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import Reveal from "@/components/ui/Reveal";
 
 const BG_SRC =
   "https://pub.hyperagent.com/api/published/pbf01M1PYE7MN_BNVYVBE1D6Z2DECN/crystal_frame.jpg";
+const LOGO_SRC =
+  "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 
 export default function FinalCta() {
   return (
@@ -18,13 +19,8 @@ export default function FinalCta() {
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-8">
         <Reveal>
-          <Image
-            src="/brand/sfb-logo-mark.png"
-            alt="SFB Connect"
-            width={40}
-            height={35}
-            className="w-10 h-auto mx-auto mb-8"
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={LOGO_SRC} alt="SFB Connect" className="w-10 h-auto mx-auto mb-8" />
 
           <h2 className="text-[36px] sm:text-[48px] md:text-[68px] font-serif-accent italic font-normal tracking-[-0.01em] max-w-[800px] mx-auto leading-[1.08]">
             Make sure AI knows who you are.

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+
+const LOGO_SRC =
+  "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 import {
   LayoutDashboard,
   Users,
@@ -128,7 +130,8 @@ export default function TeamSidebar({
       style={{ background: "#0C0C0C", borderRight: "1px solid rgba(255,255,255,0.06)" }}
     >
       <div className="px-[18px] pt-[18px] pb-1 flex items-center gap-2" style={{ height: 44 }}>
-        <Image src="/brand/sfb-logo-mark.png" alt="SFB Connect" width={20} height={17} className="w-5 h-auto shrink-0" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={LOGO_SRC} alt="SFB Connect" className="w-5 h-auto shrink-0" />
         <span className="text-[16px] font-semibold tracking-tight" style={{ letterSpacing: "-0.02em" }}>
           SFB CONNECT
         </span>
