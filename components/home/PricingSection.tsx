@@ -61,26 +61,6 @@ const PLANS: Plan[] = [
       "Ongoing monthly review",
     ],
   },
-  {
-    id: "premium",
-    name: "AI Presence Premium",
-    price: "$269",
-    period: "/mo",
-    description:
-      "For businesses that need a stronger website foundation alongside their AI presence strategy — fully managed by our team.",
-    button: "Book a Demo",
-    href: "#book-a-demo",
-    buttonStyle: "dark",
-    accent: "#42E36D",
-    features: [
-      "Everything in Pro",
-      "Website rebuild or new site",
-      "Structured business information",
-      "Conversion-focused UX",
-      "Mobile optimization",
-      "Custom implementation",
-    ],
-  },
 ];
 
 function PlanCard({ plan, index }: { plan: Plan; index: number }) {
@@ -215,21 +195,11 @@ export default function PricingSection() {
           </div>
         </Reveal>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[18px] mt-12 items-stretch">
+        <div className="grid sm:grid-cols-2 gap-[18px] mt-12 items-stretch max-w-[780px] mx-auto">
           {PLANS.map((plan, i) => (
             <PlanCard key={plan.id} plan={plan} index={i} />
           ))}
         </div>
-
-        <Reveal>
-          <div className="text-center text-[12.5px] text-medium-gray mt-10">
-            Need automation, an AI receptionist, marketing or paid ads instead?{" "}
-            <Link href="/solutions" className="underline hover:text-white transition-colors">
-              Explore all solutions
-            </Link>
-            .
-          </div>
-        </Reveal>
 
         <div id="book-a-demo" className="max-w-[560px] mx-auto mt-20 scroll-mt-24">
           <Reveal>

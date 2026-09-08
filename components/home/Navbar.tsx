@@ -2,32 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Linkedin, Twitter, Instagram, ChevronDown, Menu, X } from "lucide-react";
+import { Linkedin, Twitter, Instagram, Menu, X } from "lucide-react";
 
 const LOGO_SRC =
   "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 
-const SOLUTIONS_LINKS = [
-  { label: "AI Presence", href: "/#score" },
-  { label: "Website Design", href: "/websites" },
-  { label: "Website Rebuilds", href: "/websites#rebuild" },
-  { label: "Custom Website Builds", href: "/websites#custom" },
-  { label: "Automation", href: "/solutions/automation" },
-  { label: "AI Receptionist", href: "/solutions/ai-receptionist" },
-  { label: "Marketing", href: "/solutions/marketing" },
-  { label: "Paid Ads", href: "/solutions/paid-ads" },
-];
-
 const PRIMARY_LINKS = [
   { label: "AI Presence", href: "/#score" },
-  { label: "Websites", href: "/websites" },
-  { label: "Portfolio", href: "/portfolio" },
   { label: "How It Works", href: "/#process" },
   { label: "Pricing", href: "/#pricing" },
 ];
 
 export default function Navbar() {
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -41,46 +27,11 @@ export default function Navbar() {
       </Link>
 
       <div className="hidden lg:flex items-center gap-6 text-sm">
-        <Link href="/#score" className="text-medium-gray hover:text-white transition-colors">
-          AI Presence
-        </Link>
-        <Link href="/websites" className="text-medium-gray hover:text-white transition-colors">
-          Websites
-        </Link>
-
-        <div className="relative" onMouseEnter={() => setSolutionsOpen(true)} onMouseLeave={() => setSolutionsOpen(false)}>
-          <button className="flex items-center gap-1 text-medium-gray hover:text-white transition-colors">
-            Solutions <ChevronDown size={13} style={{ transform: solutionsOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }} />
-          </button>
-          {solutionsOpen && (
-            <div
-              className="absolute top-full left-1/2 -translate-x-1/2 pt-3"
-              style={{ width: 240 }}
-            >
-              <div className="rounded-[12px] overflow-hidden p-1.5" style={{ background: "#0C0C0C", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}>
-                {SOLUTIONS_LINKS.map((l) => (
-                  <Link
-                    key={l.label}
-                    href={l.href}
-                    className="block px-3 py-2.5 rounded-[8px] text-[13px] text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors"
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <Link href="/portfolio" className="text-medium-gray hover:text-white transition-colors">
-          Portfolio
-        </Link>
-        <Link href="/#process" className="text-medium-gray hover:text-white transition-colors">
-          How It Works
-        </Link>
-        <Link href="/#pricing" className="text-medium-gray hover:text-white transition-colors">
-          Pricing
-        </Link>
+        {PRIMARY_LINKS.map((l) => (
+          <Link key={l.href} href={l.href} className="text-medium-gray hover:text-white transition-colors">
+            {l.label}
+          </Link>
+        ))}
       </div>
 
       <div className="flex items-center gap-3">
@@ -114,12 +65,6 @@ export default function Navbar() {
           <div className="px-6 py-6 flex flex-col gap-1">
             {PRIMARY_LINKS.map((l) => (
               <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="py-3 text-[15px] text-white/80 hover:text-white border-b border-white/[0.06]">
-                {l.label}
-              </Link>
-            ))}
-            <div className="pt-4 pb-1 text-[11px] uppercase tracking-wide text-white/35">Solutions</div>
-            {SOLUTIONS_LINKS.filter((l) => l.label !== "AI Presence").map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="py-2.5 text-[14px] text-white/65 hover:text-white">
                 {l.label}
               </Link>
             ))}

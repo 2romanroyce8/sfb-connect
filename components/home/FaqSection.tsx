@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: "Is pricing monthly or annual?",
-    a: "Monthly. Plans start at $19.99/month, with Pro and Premium tiers for businesses that want more done for them. Book a demo and we'll help you pick the right one.",
+    a: "Monthly. Plans start at $19.99/month, with a Pro tier for businesses that want more done for them. Book a demo and we'll help you pick the right one.",
     color: "#FF8A3D",
   },
   {
@@ -35,31 +35,6 @@ const FAQS = [
     q: "Is this the same as SEO?",
     a: "It overlaps with certain technical SEO concepts but focuses specifically on how business information is structured, understood and represented for AI-assisted discovery.",
     color: "#FFFFFF",
-  },
-  {
-    q: "Does SFB Connects build websites?",
-    a: "Yes. SFB Connects builds new websites from scratch and rebuilds existing websites. Website projects can be purchased independently or combined with AI Presence work.",
-    color: "#5577FF",
-  },
-  {
-    q: "Can I buy a website without AI Presence?",
-    a: "Yes.",
-    color: "#42E36D",
-  },
-  {
-    q: "Can I add AI Presence to my website project?",
-    a: "Yes. SFB can incorporate AI Presence considerations into the website's information architecture, business information, structured data and other relevant technical foundations.",
-    color: "#A96CFF",
-  },
-  {
-    q: "Do you rebuild existing websites?",
-    a: "Yes. Existing websites can be redesigned and redeveloped when the current site no longer meets the business's needs.",
-    color: "#FF8A3D",
-  },
-  {
-    q: "Do you offer other technology services?",
-    a: "SFB Connects also offers selected automation, AI receptionist, marketing and paid advertising services depending on the business's needs and project scope.",
-    color: "#FFD84D",
   },
 ];
 

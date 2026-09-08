@@ -10,15 +10,6 @@ export default function Footer() {
             <Link href="/#score" className="hover:text-white transition-colors">
               AI Presence
             </Link>
-            <Link href="/websites" className="hover:text-white transition-colors">
-              Websites
-            </Link>
-            <Link href="/solutions" className="hover:text-white transition-colors">
-              Solutions
-            </Link>
-            <Link href="/portfolio" className="hover:text-white transition-colors">
-              Portfolio
-            </Link>
             <Link href="/#pricing" className="hover:text-white transition-colors">
               Pricing
             </Link>
@@ -31,7 +22,7 @@ export default function Footer() {
           <div className="max-w-[640px] leading-relaxed">
             AI recommendations are dynamic and can vary based on platform,
             query, user, location, available sources and other factors. SFB
-            Connect improves AI discoverability and business information
+            Connects improves AI discoverability and business information
             quality but does not guarantee a specific ranking or
             recommendation.
           </div>
