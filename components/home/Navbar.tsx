@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Linkedin, Twitter, Instagram, ChevronDown, Menu, X } from "lucide-react";
 
 const SOLUTIONS_LINKS = [
@@ -30,9 +31,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-14 py-5" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(14px)" }}>
       <Link href="/" className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-full border-2 border-white/60 flex items-center justify-center">
-          <div className="w-3 h-3 rounded-full border border-white/60" />
-        </div>
+        <Image src="/brand/sfb-logo-mark.png" alt="SFB Connect" width={28} height={24} className="w-7 h-auto shrink-0" priority />
         <span className="font-extrabold tracking-tight text-[15px]">
           SFB <span className="text-medium-gray font-semibold">CONNECT</span>
         </span>

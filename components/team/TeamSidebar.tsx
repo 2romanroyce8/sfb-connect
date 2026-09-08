@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -127,7 +128,7 @@ export default function TeamSidebar({
       style={{ background: "#0C0C0C", borderRight: "1px solid rgba(255,255,255,0.06)" }}
     >
       <div className="px-[18px] pt-[18px] pb-1 flex items-center gap-2" style={{ height: 44 }}>
-        <span className="w-5 h-5 rounded-full border border-white/25 inline-block shrink-0" />
+        <Image src="/brand/sfb-logo-mark.png" alt="SFB Connect" width={20} height={17} className="w-5 h-auto shrink-0" />
         <span className="text-[16px] font-semibold tracking-tight" style={{ letterSpacing: "-0.02em" }}>
           SFB CONNECT
         </span>

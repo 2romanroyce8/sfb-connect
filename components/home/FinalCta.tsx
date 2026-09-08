@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import Reveal from "@/components/ui/Reveal";
 
 const BG_SRC =
@@ -17,9 +18,13 @@ export default function FinalCta() {
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-8">
         <Reveal>
-          <div className="w-10 h-10 rounded-full border-2 border-white/60 flex items-center justify-center mx-auto mb-8">
-            <div className="w-5 h-5 rounded-full border border-white/60" />
-          </div>
+          <Image
+            src="/brand/sfb-logo-mark.png"
+            alt="SFB Connect"
+            width={40}
+            height={35}
+            className="w-10 h-auto mx-auto mb-8"
+          />
 
           <h2 className="text-[36px] sm:text-[48px] md:text-[68px] font-serif-accent italic font-normal tracking-[-0.01em] max-w-[800px] mx-auto leading-[1.08]">
             Make sure AI knows who you are.
