@@ -30,13 +30,13 @@ export default function FinalCta() {
             wait is another day the algorithm answers without you.
           </p>
           <div className="font-mono text-2xl text-medium-gray my-9">
-            $200 / YEAR
+            Plans from $19.99 / month
           </div>
           <Link
-            href="#pricing"
+            href="#book-a-demo"
             className="bg-white text-black px-8 py-4 rounded-full text-base font-semibold inline-flex items-center gap-2 hover:scale-[1.03] transition-transform"
           >
-            Analyze My Business →
+            Book a Demo →
           </Link>
         </Reveal>
       </div>

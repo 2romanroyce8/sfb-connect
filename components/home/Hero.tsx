@@ -155,12 +155,12 @@ export default function Hero() {
         </div>
 
         <div className="mt-[26px] flex items-baseline justify-center gap-[10px]">
-          <span className="text-[19px] font-semibold text-white">$200</span>
+          <span className="text-[19px] font-semibold text-white">$19.99</span>
           <span className="text-[13px] font-semibold tracking-[0.08em] text-white/[0.86]">
-            / YEAR
+            / MONTH
           </span>
           <span className="text-[12px] text-white/[0.62]">
-            Full annual AI Presence service
+            Plans start here — book a demo to see what fits
           </span>
         </div>
       </div>

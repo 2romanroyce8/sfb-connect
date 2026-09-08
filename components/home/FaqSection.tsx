@@ -22,8 +22,8 @@ const FAQS = [
     defaultOpen: true,
   },
   {
-    q: "Is the $200 monthly or annual?",
-    a: "Annual. SFB Connect costs $200 for the entire year — no monthly subscription.",
+    q: "Is pricing monthly or annual?",
+    a: "Monthly. Plans start at $19.99/month, with Pro and Premium tiers for businesses that want more done for them. Book a demo and we'll help you pick the right one.",
     color: "#FF8A3D",
   },
   {

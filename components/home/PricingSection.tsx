@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, Star } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
+import ServiceInquiryForm from "@/components/marketing/ServiceInquiryForm";
 
 type Plan = {
   id: string;
@@ -19,14 +20,14 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    id: "audit",
-    name: "AI Presence Audit",
-    price: "$200",
-    period: "/year",
+    id: "basic",
+    name: "AI Presence Basic",
+    price: "$19.99",
+    period: "/mo",
     description:
       "For businesses that want a clear picture of how AI currently understands and recommends them.",
-    button: "Get Started",
-    href: "/pay",
+    button: "Book a Demo",
+    href: "#book-a-demo",
     buttonStyle: "dark",
     accent: "#5577FF",
     features: [
@@ -41,39 +42,39 @@ const PLANS: Plan[] = [
   {
     id: "pro",
     name: "AI Presence Pro",
-    price: "$200",
-    period: "/year",
+    price: "$197",
+    period: "/mo",
     description:
-      "For businesses ready to improve how clearly AI systems understand, categorize, and surface them.",
-    button: "Start AI Presence",
-    href: "/pay",
+      "For businesses ready to improve how clearly AI systems understand, categorize, and surface them — done for you by our team.",
+    button: "Book a Demo",
+    href: "#book-a-demo",
     buttonStyle: "light",
     accent: "#FFFFFF",
     badge: "POPULAR",
     featured: true,
     features: [
-      "Everything in Audit",
+      "Everything in Basic",
       "Entity optimization",
       "Knowledge optimization",
       "Local presence review",
       "AI-readable service structure",
-      "Ongoing annual review",
+      "Ongoing monthly review",
     ],
   },
   {
-    id: "custom",
-    name: "Website + AI Presence",
-    price: "Custom",
-    period: "",
+    id: "premium",
+    name: "AI Presence Premium",
+    price: "$269",
+    period: "/mo",
     description:
-      "For businesses that need a stronger website foundation alongside their AI presence strategy.",
-    button: "Explore Websites",
-    href: "/websites",
+      "For businesses that need a stronger website foundation alongside their AI presence strategy — fully managed by our team.",
+    button: "Book a Demo",
+    href: "#book-a-demo",
     buttonStyle: "dark",
     accent: "#42E36D",
     features: [
+      "Everything in Pro",
       "Website rebuild or new site",
-      "AI presence optimization",
       "Structured business information",
       "Conversion-focused UX",
       "Mobile optimization",
@@ -209,7 +210,7 @@ export default function PricingSection() {
               far you want to take your AI presence.
             </p>
             <span className="inline-flex items-center h-7 px-3 mt-6 rounded-full bg-[#121212] border border-white/[0.08] text-[10px] font-medium text-white/[0.62]">
-              Billed annually
+              Billed monthly
             </span>
           </div>
         </Reveal>
@@ -222,9 +223,6 @@ export default function PricingSection() {
 
         <Reveal>
           <div className="text-center text-[12.5px] text-medium-gray mt-10">
-            Pay via Cash App, PayPal, or Zelle.
-          </div>
-          <div className="text-center text-[12.5px] text-medium-gray mt-2">
             Need automation, an AI receptionist, marketing or paid ads instead?{" "}
             <Link href="/solutions" className="underline hover:text-white transition-colors">
               Explore all solutions
@@ -232,6 +230,25 @@ export default function PricingSection() {
             .
           </div>
         </Reveal>
+
+        <div id="book-a-demo" className="max-w-[560px] mx-auto mt-20 scroll-mt-24">
+          <Reveal>
+            <div className="text-center mb-8">
+              <h3 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.03em] text-[#f7f7f7]">
+                Book a demo.
+              </h3>
+              <p className="mt-3 text-[13.5px] leading-relaxed text-white/[0.42]">
+                Tell us about your business and which plan you're interested
+                in. We'll walk you through it and help you pick the right fit.
+              </p>
+            </div>
+            <ServiceInquiryForm
+              defaultInterest="AI Presence"
+              ctaLabel="Book My Demo"
+              title="Tell us about your business"
+            />
+          </Reveal>
+        </div>
       </div>
     </section>
   );

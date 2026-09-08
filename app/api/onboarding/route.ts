@@ -40,15 +40,14 @@ const onboardingSchema = z.object({
 });
 
 /**
- * Finalizes onboarding. Requires an authenticated Supabase session (created
- * on /pay before the payment step) AND a payment row for this user with
- * status = 'confirmed' — set by an admin after manually verifying the
- * Cash App / PayPal / Zelle payment against the actual account, since none
- * of those methods offer a webhook to verify automatically.
+ * Finalizes onboarding. Requires an authenticated Supabase session — the
+ * old self-serve Cash App / PayPal / Zelle checkout (and the "confirmed
+ * payment" gate that used to sit in front of this route) has been removed
+ * in favor of a demo-first sales process, so there is no automated payment
+ * confirmation to check here anymore.
  *
  * On success: creates the business and all related intake rows, a project
- * in "submitted" status, a day-0 audit, and the annual membership record
- * linked back to the confirmed payment.
+ * in "submitted" status, a day-0 audit, and the membership record.
  */
 export async function POST(req: NextRequest) {
   const supabase = createSupabaseServerClient();
@@ -68,23 +67,6 @@ export async function POST(req: NextRequest) {
   }
 
   const service = createSupabaseServiceClient();
-
-  // Require a confirmed payment before creating anything.
-  const { data: confirmedPayment } = await service
-    .from("payments")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status", "confirmed")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!confirmedPayment) {
-    return NextResponse.json(
-      { error: "No confirmed payment found. Please complete payment first." },
-      { status: 402 }
-    );
-  }
 
   // Ensure a public.users profile row exists.
   await service
@@ -173,19 +155,13 @@ export async function POST(req: NextRequest) {
   }
 
   const renewsAt = new Date();
-  renewsAt.setFullYear(renewsAt.getFullYear() + 1);
+  renewsAt.setMonth(renewsAt.getMonth() + 1);
   await service.from("subscriptions_or_annual_memberships").insert({
     business_id: businessId,
-    payment_id: confirmedPayment.id,
+    payment_id: null,
     status: "active",
     renews_at: renewsAt.toISOString(),
   });
-
-  // Link the confirmed payment to this business for admin record-keeping.
-  await service
-    .from("payments")
-    .update({ business_id: businessId })
-    .eq("id", confirmedPayment.id);
 
   return NextResponse.json({ ok: true, businessId, projectId: projectRow?.id });
 }

@@ -32,11 +32,11 @@ export const metadata: Metadata = {
     template: "%s | SFB Connect",
   },
   description:
-    "SFB Connect analyzes and optimizes how your business is represented across the digital signals AI systems use when answering local and commercial recommendations. $200/year. No monthly subscription.",
+    "SFB Connect analyzes and optimizes how your business is represented across the digital signals AI systems use when answering local and commercial recommendations. Plans start at $19.99/month.",
   openGraph: {
     title: "SFB Connect — Be The Business AI Finds.",
     description:
-      "Your customers are asking AI who to choose. Make sure it can find you. $200/year AI Presence Optimization.",
+      "Your customers are asking AI who to choose. Make sure it can find you. Plans start at $19.99/month.",
     url: siteUrl,
     siteName: "SFB Connect",
     type: "website",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SFB Connect — Be The Business AI Finds.",
     description:
-      "AI Presence Optimization for local and service businesses. $200/year.",
+      "AI Presence Optimization for local and service businesses. Plans start at $19.99/month.",
   },
   alternates: { canonical: "/" },
 };
