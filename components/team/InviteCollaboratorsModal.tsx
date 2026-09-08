@@ -72,6 +72,7 @@ export default function InviteCollaboratorsModal({
   const [query, setQuery] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState("sales_rep");
+  const [invitePassword, setInvitePassword] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,12 +110,19 @@ export default function InviteCollaboratorsModal({
       const res = await fetch("/api/team/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: query.trim(), role: inviteRole, firstName: firstName || undefined, lastName: rest.join(" ") || undefined }),
+        body: JSON.stringify({
+          email: query.trim(),
+          role: inviteRole,
+          firstName: firstName || undefined,
+          lastName: rest.join(" ") || undefined,
+          password: invitePassword.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setQuery("");
       setInviteName("");
+      setInvitePassword("");
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send invite.");
@@ -233,6 +241,19 @@ export default function InviteCollaboratorsModal({
                     className="w-full outline-none mb-2"
                     style={{ height: 34, borderRadius: 8, padding: "0 10px", fontSize: 12.5, background: "#222222", border: "1px solid rgba(255,255,255,0.06)", color: "#F0F0F0" }}
                   />
+                  <input
+                    value={invitePassword}
+                    onChange={(e) => setInvitePassword(e.target.value)}
+                    placeholder="Set a password (optional)"
+                    type="text"
+                    className="w-full outline-none mb-2"
+                    style={{ height: 34, borderRadius: 8, padding: "0 10px", fontSize: 12.5, background: "#222222", border: "1px solid rgba(255,255,255,0.06)", color: "#F0F0F0" }}
+                  />
+                  <div className="text-[10.5px] text-[#7C7C7C] mb-2 -mt-1">
+                    {invitePassword
+                      ? "Account will be created with this password, ready to log in immediately."
+                      : "Leave blank to email an invite link — they'll set their own password."}
+                  </div>
                   <div className="flex items-center gap-2">
                     <RoleSelect value={inviteRole} onChange={setInviteRole} />
                     <button
