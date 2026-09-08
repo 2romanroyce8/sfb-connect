@@ -154,7 +154,7 @@ export default function OnboardingWizard() {
     <main className="min-h-screen bg-black text-white px-6 py-16">
       <div className="max-w-[560px] mx-auto">
         <div className="font-extrabold text-lg mb-3 text-center">
-          SFB <span className="text-medium-gray font-semibold">CONNECT</span>
+          SFB <span className="text-medium-gray font-semibold">CONNECTS</span>
         </div>
         <p className="text-center text-medium-gray text-sm mb-10">
           Tell Us About Your Business

@@ -10,7 +10,7 @@ import ServiceInquiryForm from "@/components/marketing/ServiceInquiryForm";
 export const metadata: Metadata = {
   title: "Websites",
   description:
-    "SFB Connect designs, rebuilds, and develops websites that communicate a business clearly to customers while providing the technical structure modern search and AI-assisted discovery systems can interpret.",
+    "SFB Connects designs, rebuilds, and develops websites that communicate a business clearly to customers while providing the technical structure modern search and AI-assisted discovery systems can interpret.",
 };
 
 // ─── Service path data ───────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ export default function WebsitesPage() {
         <div className="relative z-10 w-full max-w-[1040px] mx-auto flex flex-col items-center">
           <Reveal>
             <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-8 block">
-              Websites / SFB Connect
+              Websites / SFB Connects
             </span>
 
             <h1 className="text-[52px] sm:text-[68px] md:text-[88px] font-bold leading-[0.94] tracking-[-0.05em] text-white max-w-[900px]">
@@ -144,7 +144,7 @@ export default function WebsitesPage() {
             </div>
 
             <p className="mt-7 max-w-[620px] mx-auto text-[17px] leading-relaxed text-white/60">
-              SFB Connect designs, rebuilds and develops websites that
+              SFB Connects designs, rebuilds and develops websites that
               communicate a business clearly to customers while providing the
               technical structure modern search and AI-assisted discovery systems
               can interpret.
@@ -356,7 +356,7 @@ export default function WebsitesPage() {
                 style={{ background: "#0d0d0d" }}
               >
                 <div className="font-mono text-xs tracking-[0.18em] uppercase text-white/40 mb-8">
-                  After SFB Connect
+                  After SFB Connects
                 </div>
                 <div className="flex flex-col gap-4">
                   {AFTER.map((item) => (

@@ -10,7 +10,7 @@ import ServiceInquiryForm from "@/components/marketing/ServiceInquiryForm";
 export const metadata: Metadata = {
   title: "Solutions",
   description:
-    "SFB Connect builds the technology stack that connects every stage of the customer journey — from AI discovery to operations.",
+    "SFB Connects builds the technology stack that connects every stage of the customer journey — from AI discovery to operations.",
 };
 
 const JOURNEY = [
@@ -79,7 +79,7 @@ export default function SolutionsPage() {
               journey.
             </h1>
             <p className="mt-7 text-[17px] md:text-[19px] leading-relaxed text-white/55 max-w-[640px]">
-              SFB Connect is not a collection of loosely related services. Every
+              SFB Connects is not a collection of loosely related services. Every
               product is designed to hand off cleanly to the next stage of how
               customers find, evaluate, and work with a business.
             </p>
@@ -167,7 +167,7 @@ export default function SolutionsPage() {
                   not just alongside each other.
                 </>
               }
-              description="Most agencies hand you disconnected vendors for each channel. SFB Connect is engineered as a single integrated stack — the AI presence data informs the website architecture, the website feeds the AI receptionist, automation connects the intake to operations, and marketing amplifies everything underneath. Each layer is more effective because the others exist."
+              description="Most agencies hand you disconnected vendors for each channel. SFB Connects is engineered as a single integrated stack — the AI presence data informs the website architecture, the website feeds the AI receptionist, automation connects the intake to operations, and marketing amplifies everything underneath. Each layer is more effective because the others exist."
             />
           </Reveal>
 

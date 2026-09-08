@@ -131,7 +131,7 @@ export async function connectGoogleCalendar(repId: string, code: string) {
     // prompt=consent, which we always pass) — if it's still missing, the
     // connection can't survive an access-token expiry, so refuse it rather
     // than silently storing a connection that'll break in an hour.
-    throw new Error("Google didn't return a refresh token. Try disconnecting any prior SFB Connect access in your Google Account and reconnecting.");
+    throw new Error("Google didn't return a refresh token. Try disconnecting any prior SFB Connects access in your Google Account and reconnecting.");
   }
 
   const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {

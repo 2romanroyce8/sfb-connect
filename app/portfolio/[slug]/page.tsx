@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const { project } = data;
   return {
     title: project.business_name,
-    description: project.short_description || `${project.business_name} — a ${project.project_type.replace(/_/g, " ").toLowerCase()} project by SFB Connect.`,
+    description: project.short_description || `${project.business_name} — a ${project.project_type.replace(/_/g, " ").toLowerCase()} project by SFB Connects.`,
     alternates: { canonical: `/portfolio/${project.slug}` },
     openGraph: project.cover_image_url ? { images: [{ url: project.cover_image_url }] } : undefined,
   };

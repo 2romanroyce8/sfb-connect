@@ -6,7 +6,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="border-b border-white/10 px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/admin" className="font-extrabold text-base">
-            SFB <span className="text-medium-gray font-semibold">CONNECT ADMIN</span>
+            SFB <span className="text-medium-gray font-semibold">CONNECTS ADMIN</span>
           </Link>
           <Link href="/admin" className="text-sm text-medium-gray hover:text-white transition-colors">
             Customers

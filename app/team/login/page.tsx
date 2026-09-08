@@ -119,7 +119,7 @@ function TeamLoginForm() {
               color: "#F2F2F2",
             }}
           >
-            SFB Connect
+            SFB Connects
           </span>
           <div className="flex items-center gap-[6px]" style={{ marginTop: 5, opacity: 0.38 }}>
             {Array.from({ length: 9 }).map((_, i) => (

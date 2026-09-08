@@ -32,7 +32,7 @@ export default function SupportPage() {
       <h1 className="text-3xl font-bold mb-2">Support</h1>
       <p className="text-medium-gray mb-10 max-w-[560px]">
         Questions about your analysis, your score, or your account — send a
-        message and the SFB Connect team will follow up by email.
+        message and the SFB Connects team will follow up by email.
       </p>
 
       <div className="glass rounded-[28px] p-8 max-w-[560px]">

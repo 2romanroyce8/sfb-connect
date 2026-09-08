@@ -5,7 +5,7 @@ import { useScroll } from "framer-motion";
 import WordReveal from "@/components/ui/WordReveal";
 
 const PARAGRAPH_1 =
-  "We built SFB Connect because being online isn't enough anymore — your business needs to be understandable to the machines helping customers decide who to call.";
+  "We built SFB Connects because being online isn't enough anymore — your business needs to be understandable to the machines helping customers decide who to call.";
 
 const PARAGRAPH_2 =
   "Clear identity, consistent information, and machine-readable structure — that's what turns a business AI can see into a business AI recommends.";

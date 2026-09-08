@@ -131,9 +131,9 @@ export default function TeamSidebar({
     >
       <div className="px-[18px] pt-[18px] pb-1 flex items-center gap-2" style={{ height: 44 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_SRC} alt="SFB Connect" className="w-5 h-auto shrink-0" />
+        <img src={LOGO_SRC} alt="SFB Connects" className="w-5 h-auto shrink-0" />
         <span className="text-[16px] font-semibold tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-          SFB CONNECT
+          SFB CONNECTS
         </span>
       </div>
       <div className="px-[18px] pb-1 text-[10px] text-[#6E6E73] tracking-wide uppercase">Sales OS</div>

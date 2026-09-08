@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Portfolio",
-  description: "A selection of websites designed, rebuilt and developed by SFB Connect.",
+  description: "A selection of websites designed, rebuilt and developed by SFB Connects.",
   alternates: { canonical: "/portfolio" },
 };
 
@@ -29,12 +29,12 @@ export default async function PortfolioPage() {
       <section className="pt-[140px] pb-16 px-6">
         <div className="max-w-[900px] mx-auto text-center">
           <Reveal>
-            <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-6 block">SFB Connect / Selected Work</span>
+            <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-6 block">SFB Connects / Selected Work</span>
             <h1 className="text-[36px] sm:text-[48px] md:text-[64px] font-extrabold tracking-[-0.03em] leading-[1.04]">
               Websites built to <span className="font-serif-accent italic font-normal">move businesses forward.</span>
             </h1>
             <p className="mt-6 text-[16px] leading-relaxed text-[#a3a3a8] max-w-[560px] mx-auto">
-              A selection of websites designed, rebuilt and developed by SFB Connect.
+              A selection of websites designed, rebuilt and developed by SFB Connects.
             </p>
           </Reveal>
         </div>

@@ -153,7 +153,7 @@ export default function InviteCollaboratorsModal({
         </div>
 
         <div style={{ fontSize: 24, fontWeight: 500, letterSpacing: "-0.02em", color: "#F5F5F5" }}>Invite collaborators</div>
-        <div style={{ fontSize: 15, fontWeight: 400, color: "#8E8E8E", marginTop: 3, marginBottom: 24 }}>Invite team members to work inside SFB Connect</div>
+        <div style={{ fontSize: 15, fontWeight: 400, color: "#8E8E8E", marginTop: 3, marginBottom: 24 }}>Invite team members to work inside SFB Connects</div>
 
         <div className="grid grid-cols-2" style={{ height: 45, background: "#333333", borderRadius: 12, padding: 3, marginBottom: 20, gap: 0 }}>
           {[
@@ -181,7 +181,7 @@ export default function InviteCollaboratorsModal({
         <div style={{ height: 1, width: "100%", background: "rgba(255,255,255,0.06)", margin: "0 0 20px" }} />
 
         {tab === "departments" ? (
-          <div className="text-[13.5px] text-[#8E8E8E] text-center mt-10">Departments aren't set up for SFB Connect yet.</div>
+          <div className="text-[13.5px] text-[#8E8E8E] text-center mt-10">Departments aren't set up for SFB Connects yet.</div>
         ) : (
           <>
             <div className="flex items-center" style={{ width: "100%", height: 46, background: "#333333", border: "1px solid rgba(255,255,255,0.025)", borderRadius: 12, padding: "0 14px", marginBottom: 18 }}>

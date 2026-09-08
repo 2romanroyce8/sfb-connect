@@ -20,7 +20,7 @@ export default function FinalCta() {
       <div className="relative z-10 max-w-[1200px] mx-auto px-8">
         <Reveal>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO_SRC} alt="SFB Connect" className="w-10 h-auto mx-auto mb-8" />
+          <img src={LOGO_SRC} alt="SFB Connects" className="w-10 h-auto mx-auto mb-8" />
 
           <h2 className="text-[36px] sm:text-[48px] md:text-[68px] font-serif-accent italic font-normal tracking-[-0.01em] max-w-[800px] mx-auto leading-[1.08]">
             Make sure AI knows who you are.

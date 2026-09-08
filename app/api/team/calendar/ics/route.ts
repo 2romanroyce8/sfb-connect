@@ -9,7 +9,7 @@ function buildIcs(params: { uid: string; title: string; description: string; sta
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//SFB Connect//Sales OS//EN",
+    "PRODID:-//SFB Connects//Sales OS//EN",
     "BEGIN:VEVENT",
     `UID:${params.uid}@sfbconnect.com`,
     `DTSTAMP:${toIcsDate(new Date().toISOString())}`,
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     const { data: lead } = await supabase.from("crm_leads").select("business_name").eq("id", m.lead_id).single();
     ics = buildIcs({
       uid: m.id,
-      title: `SFB Connect — ${lead?.business_name || "Meeting"}`,
+      title: `SFB Connects — ${lead?.business_name || "Meeting"}`,
       description: m.contact_name ? `With ${m.contact_name}` : "",
       startAt: m.scheduled_at,
       endAt: m.ends_at || m.scheduled_at,

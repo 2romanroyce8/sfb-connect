@@ -7,7 +7,7 @@ import Reveal from "@/components/ui/Reveal";
 const FAQS = [
   {
     q: "Can you guarantee AI rankings?",
-    a: "No. AI recommendations vary by platform, query, context, location and available information. SFB Connect optimizes the signals that can improve your discoverability and relevance — no platform can be guaranteed.",
+    a: "No. AI recommendations vary by platform, query, context, location and available information. SFB Connects optimizes the signals that can improve your discoverability and relevance — no platform can be guaranteed.",
     color: "#FF4D4D",
   },
   {
@@ -37,8 +37,8 @@ const FAQS = [
     color: "#FFFFFF",
   },
   {
-    q: "Does SFB Connect build websites?",
-    a: "Yes. SFB Connect builds new websites from scratch and rebuilds existing websites. Website projects can be purchased independently or combined with AI Presence work.",
+    q: "Does SFB Connects build websites?",
+    a: "Yes. SFB Connects builds new websites from scratch and rebuilds existing websites. Website projects can be purchased independently or combined with AI Presence work.",
     color: "#5577FF",
   },
   {
@@ -58,7 +58,7 @@ const FAQS = [
   },
   {
     q: "Do you offer other technology services?",
-    a: "SFB Connect also offers selected automation, AI receptionist, marketing and paid advertising services depending on the business's needs and project scope.",
+    a: "SFB Connects also offers selected automation, AI receptionist, marketing and paid advertising services depending on the business's needs and project scope.",
     color: "#FFD84D",
   },
 ];

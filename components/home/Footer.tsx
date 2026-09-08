@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="border-t border-white/10 py-16 pb-10">
       <div className="max-w-[1200px] mx-auto px-8">
         <div className="flex justify-between flex-wrap gap-8 mb-12">
-          <div className="font-extrabold text-lg">SFB CONNECT</div>
+          <div className="font-extrabold text-lg">SFB CONNECTS</div>
           <div className="flex gap-8 flex-wrap text-sm text-medium-gray">
             <Link href="/#score" className="hover:text-white transition-colors">
               AI Presence
@@ -35,11 +35,11 @@ export default function Footer() {
             quality but does not guarantee a specific ranking or
             recommendation.
           </div>
-          <div>© 2026 SFB Connect. All rights reserved.</div>
+          <div>© 2026 SFB Connects. All rights reserved.</div>
         </div>
         <div className="mt-6 pt-6 border-t border-white/10">
           <p className="text-[12.5px] text-[#5c5c60] max-w-[640px] leading-relaxed">
-            SFB Connect is not affiliated with, certified by, or partnered
+            SFB Connects is not affiliated with, certified by, or partnered
             with the platforms named above. Logos and names are shown to
             describe the discovery ecosystem this service addresses.
           </p>

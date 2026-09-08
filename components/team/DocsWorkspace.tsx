@@ -274,7 +274,7 @@ export default function DocsWorkspace({
                   <div className="min-w-0">
                     <div className="text-[13px] text-[#E5E5E5] truncate">{d.title}</div>
                     <div className="text-[11px] text-[#8C8C8C] mt-0.5">
-                      {d.creator_name || "SFB Connect"} · {formatBytes(d.file_size_bytes)} · Updated {new Date(d.updated_at).toLocaleDateString()}
+                      {d.creator_name || "SFB Connects"} · {formatBytes(d.file_size_bytes)} · Updated {new Date(d.updated_at).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0 ml-3">

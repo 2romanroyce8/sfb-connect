@@ -20,7 +20,7 @@ export default async function RecommendationsPage() {
     <div>
       <h1 className="text-3xl font-bold mb-2">Recommendations</h1>
       <p className="text-medium-gray mb-10 max-w-[560px]">
-        Prioritized actions SFB Connect has identified to strengthen your AI
+        Prioritized actions SFB Connects has identified to strengthen your AI
         Presence.
       </p>
 

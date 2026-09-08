@@ -66,8 +66,8 @@ export function generateScript(
   const opening = brief
     ? `Hey, is this ${name}?`
     : casual
-    ? `Hey there, this is [Rep Name] with SFB Connect — hope I'm catching you at an okay time.`
-    : `Hi, this is [Rep Name] calling from SFB Connect. Is this ${name}?`;
+    ? `Hey there, this is [Rep Name] with SFB Connects — hope I'm catching you at an okay time.`
+    : `Hi, this is [Rep Name] calling from SFB Connects. Is this ${name}?`;
 
   const hook = brief
     ? `Got 30 seconds? I'll be quick.`

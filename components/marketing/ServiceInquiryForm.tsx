@@ -60,7 +60,7 @@ export default function ServiceInquiryForm({
         </div>
         <div className="text-[18px] font-medium text-white mb-1.5">Request received</div>
         <p className="text-[14px] text-white/50 max-w-[380px] mx-auto">
-          Thanks — someone from SFB Connect will follow up with you shortly.
+          Thanks — someone from SFB Connects will follow up with you shortly.
         </p>
       </div>
     );

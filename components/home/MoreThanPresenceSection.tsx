@@ -6,13 +6,13 @@ export default function MoreThanPresenceSection() {
       <div className="max-w-[900px] mx-auto text-center">
         <Reveal>
           <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-6 block">
-            SFB Connect is more than AI Presence
+            SFB Connects is more than AI Presence
           </span>
           <h2 className="text-[32px] sm:text-[42px] md:text-[52px] font-extrabold tracking-[-0.03em] leading-[1.1]">
             AI may be changing how customers discover businesses — but discovery is only the beginning.
           </h2>
           <p className="mt-6 text-[16px] leading-relaxed text-[#a3a3a8] max-w-[620px] mx-auto">
-            SFB Connect builds the technology behind the rest of the journey.
+            SFB Connects builds the technology behind the rest of the journey.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[15px] md:text-[17px] font-medium text-white/70">
             <span>AI Presence</span>

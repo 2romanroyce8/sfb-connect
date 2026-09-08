@@ -62,7 +62,7 @@ export default function ShortlistSection() {
         </Reveal>
         <Reveal>
           <p className="mt-12 text-xl md:text-2xl font-semibold leading-relaxed max-w-[680px]">
-            SFB Connect is built to make your business a stronger candidate
+            SFB Connects is built to make your business a stronger candidate
             for AI-powered discovery.
           </p>
         </Reveal>

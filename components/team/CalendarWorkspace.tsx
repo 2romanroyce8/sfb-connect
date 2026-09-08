@@ -303,7 +303,7 @@ export default function CalendarWorkspace({
               <div className="text-[29px] font-semibold text-[#F3F3F3] mb-1.5" style={{ lineHeight: 1.1, letterSpacing: "-0.02em" }}>
                 {selectedEvent.title}
               </div>
-              <div className="text-[13px] text-[#A7A7A7] mb-4 capitalize">{selectedEvent.eventType.replace(/_/g, " ")} · SFB Connect</div>
+              <div className="text-[13px] text-[#A7A7A7] mb-4 capitalize">{selectedEvent.eventType.replace(/_/g, " ")} · SFB Connects</div>
               {selectedEvent.description && <p className="text-[14px] text-[#C8C8C8] leading-[1.55] max-h-[190px] overflow-y-auto pr-2">{selectedEvent.description}</p>}
 
               <div className="flex flex-col gap-[18px]" style={{ marginTop: 26 }}>

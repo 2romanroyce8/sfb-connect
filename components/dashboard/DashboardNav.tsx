@@ -26,7 +26,7 @@ export default function DashboardNav() {
   return (
     <aside className="w-full md:w-[240px] shrink-0 md:border-r border-white/10 md:min-h-screen px-6 py-8">
       <div className="font-extrabold text-base mb-10">
-        SFB <span className="text-medium-gray font-semibold">CONNECT</span>
+        SFB <span className="text-medium-gray font-semibold">CONNECTS</span>
       </div>
       <nav className="flex flex-col gap-1">
         {LINKS.map((link) => {

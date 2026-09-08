@@ -32,7 +32,7 @@ function LoginForm() {
     <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
       <div className="w-full max-w-[420px]">
         <div className="font-extrabold text-lg mb-10 text-center">
-          SFB <span className="text-medium-gray font-semibold">CONNECT</span>
+          SFB <span className="text-medium-gray font-semibold">CONNECTS</span>
         </div>
         <div className="glass rounded-[28px] p-9">
           <h1 className="text-2xl font-bold mb-8">Sign in</h1>
@@ -63,7 +63,7 @@ function LoginForm() {
             </button>
           </form>
           <p className="text-sm text-medium-gray mt-6 text-center">
-            New to SFB Connect?{" "}
+            New to SFB Connects?{" "}
             <Link href="/#pricing" className="text-white underline">
               Start your AI Presence
             </Link>

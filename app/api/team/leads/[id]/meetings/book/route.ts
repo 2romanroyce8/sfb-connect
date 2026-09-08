@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!lead) return NextResponse.json({ error: "Lead not found or not accessible." }, { status: 404 });
 
   const { data: profile } = await supabase.from("users").select("full_name, email").eq("id", user.id).single();
-  const repName = profile?.full_name || profile?.email || "your SFB Connect rep";
+  const repName = profile?.full_name || profile?.email || "your SFB Connects rep";
 
   const body = await req.json();
   const { contactName, contactEmail, contactPhone, startISO, endISO, timeZone, repNotes, callId } = body;
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   try {
     const event = await createCalendarEvent(user.id, {
-      summary: `SFB Connect — ${lead.business_name || "New Lead"}`,
+      summary: `SFB Connects — ${lead.business_name || "New Lead"}`,
       description,
       startISO,
       endISO,
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const dateLabel = formatInTimeZone(startISO, timeZone, { weekday: "long", month: "long", day: "numeric" });
     const timeLabel = formatInTimeZone(startISO, timeZone, { hour: "numeric", minute: "2-digit" });
     const tzLabel = formatInTimeZone(startISO, timeZone, { timeZoneName: "short" }).split(" ").pop();
-    const confirmationMessage = `Hey ${contactName ? contactName.split(" ")[0] : "there"}, this is ${repName} with SFB Connect. You're confirmed for ${dateLabel} at ${timeLabel} ${tzLabel}.${
+    const confirmationMessage = `Hey ${contactName ? contactName.split(" ")[0] : "there"}, this is ${repName} with SFB Connects. You're confirmed for ${dateLabel} at ${timeLabel} ${tzLabel}.${
       event.meetUrl ? `\n\nGoogle Meet:\n${event.meetUrl}` : ""
     }\n\nLooking forward to speaking with you.`;
 
