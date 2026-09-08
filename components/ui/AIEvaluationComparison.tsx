@@ -5,6 +5,14 @@ import { useEffect, useRef, useState } from "react";
 const GRAIN_URL =
   "url(data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E)";
 
+// Real matte-painted cloud/mountain art (generated to match this section's
+// existing red-beam palette) instead of approximating clouds and mountains
+// with CSS gradients — gradients read as flat/generic at this size, a real
+// painted atmosphere with volumetric cloud banks and a jagged silhouette
+// does not.
+const ATMOSPHERE_BG =
+  "https://pub.hyperagent.com/api/published/pbf01M20HYAA8_37KYJ1D9NW72XADZ/cmtsokpag13x407ad3tj2v9e9_ba35f3b4-944f-4c54-af80-e5f5aeaba25f.png";
+
 export default function AIEvaluationComparison() {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -64,78 +72,26 @@ export default function AIEvaluationComparison() {
 
       {/* ============ DESKTOP / TABLET — absolute cinematic composition ============ */}
       <div className="hidden md:block relative" style={{ height: "780px" }}>
-        {/* Mountains — dark, soft, barely-there depth cue */}
-        <svg
-          className="absolute left-0 right-0 bottom-0 pointer-events-none"
-          style={{ zIndex: 2, height: "250px", width: "100%", opacity: 0.75 }}
-          viewBox="0 0 1600 250"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0 250 L0 185 L170 115 L310 175 L445 90 L610 185 L790 120 L950 185 L1120 92 L1290 172 L1440 118 L1600 188 L1600 250 Z"
-            fill="#17181B"
-            opacity={0.48}
-          />
-          <path
-            d="M0 250 L0 210 L210 165 L350 205 L510 135 L690 218 L835 175 L990 213 L1170 143 L1370 210 L1510 172 L1600 200 L1600 250 Z"
-            fill="#0b0c0e"
-            opacity={0.98}
-          />
-        </svg>
-
-        {/* Atmosphere: dark cloud masses, concentrated low, no flat red wash */}
+        {/* Atmosphere: real matte-painted cloud banks + mountain silhouette,
+            not CSS gradients pretending to be clouds. */}
         <div
-          className="absolute pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 2,
+            backgroundImage: `url(${ATMOSPHERE_BG})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center 70%",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+        {/* Fades the painted sky into the section's flat background at the
+            top and sides so the image reads as atmosphere, not a pasted photo. */}
+        <div
+          className="absolute inset-0 pointer-events-none"
           style={{
             zIndex: 3,
-            left: "-12%",
-            bottom: "6%",
-            width: "58%",
-            height: "48%",
             background:
-              "radial-gradient(ellipse at 68% 45%, rgba(92,60,64,0.44) 0%, rgba(55,43,47,0.58) 28%, rgba(27,27,30,0.78) 58%, rgba(17,18,20,0) 82%)",
-            filter: "blur(10px)",
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 3,
-            right: "-12%",
-            bottom: "6%",
-            width: "58%",
-            height: "48%",
-            background:
-              "radial-gradient(ellipse at 32% 44%, rgba(92,59,63,0.42) 0%, rgba(54,42,46,0.58) 29%, rgba(27,27,30,0.78) 58%, rgba(17,18,20,0) 82%)",
-            filter: "blur(10px)",
-          }}
-        />
-
-        {/* Rim-light seams — subtle, only where clouds meet the beam */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 6,
-            left: "19%",
-            bottom: "25%",
-            width: "28%",
-            height: "18%",
-            background:
-              "radial-gradient(ellipse at 85% 50%, rgba(255,80,54,0.26) 0%, rgba(255,72,48,0.10) 34%, transparent 72%)",
-            filter: "blur(10px)",
-          }}
-        />
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 6,
-            right: "19%",
-            bottom: "25%",
-            width: "28%",
-            height: "18%",
-            background:
-              "radial-gradient(ellipse at 15% 50%, rgba(255,80,54,0.24) 0%, rgba(255,72,48,0.09) 34%, transparent 72%)",
-            filter: "blur(10px)",
+              "linear-gradient(180deg, #111214 0%, rgba(17,18,20,0.55) 14%, rgba(17,18,20,0) 34%, rgba(17,18,20,0) 70%, #111214 100%)",
           }}
         />
 
@@ -369,48 +325,23 @@ export default function AIEvaluationComparison() {
       {/* ============ MOBILE — simplified stacked version ============ */}
       <div className="md:hidden relative px-6 pt-14 pb-10">
         <div
-          className="absolute pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             zIndex: 1,
-            left: "-18%",
-            bottom: "8%",
-            width: "70%",
-            height: "36%",
-            background:
-              "radial-gradient(ellipse at center, rgba(92,60,64,0.4) 0%, rgba(27,27,30,0.6) 55%, transparent 78%)",
-            filter: "blur(14px)",
+            backgroundImage: `url(${ATMOSPHERE_BG})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center 65%",
+            backgroundRepeat: "no-repeat",
           }}
         />
         <div
-          className="absolute pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             zIndex: 1,
-            right: "-18%",
-            bottom: "5%",
-            width: "70%",
-            height: "36%",
             background:
-              "radial-gradient(ellipse at center, rgba(92,59,63,0.38) 0%, rgba(27,27,30,0.62) 55%, transparent 78%)",
-            filter: "blur(15px)",
+              "linear-gradient(180deg, #111214 0%, rgba(17,18,20,0.5) 12%, rgba(17,18,20,0) 30%, rgba(17,18,20,0) 68%, #111214 100%)",
           }}
         />
-        <svg
-          className="absolute left-0 right-0 bottom-0 pointer-events-none"
-          style={{ zIndex: 2, height: "170px", width: "100%", opacity: 0.75 }}
-          viewBox="0 0 1600 250"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0 250 L0 185 L170 115 L310 175 L445 90 L610 185 L790 120 L950 185 L1120 92 L1290 172 L1440 118 L1600 188 L1600 250 Z"
-            fill="#17181B"
-            opacity={0.48}
-          />
-          <path
-            d="M0 250 L0 210 L210 165 L350 205 L510 135 L690 218 L835 175 L990 213 L1170 143 L1370 210 L1510 172 L1600 200 L1600 250 Z"
-            fill="#0b0c0e"
-            opacity={0.98}
-          />
-        </svg>
 
         <div className="relative z-10 text-center transition-all duration-700 ease-out" style={fade(0)}>
           <h2
