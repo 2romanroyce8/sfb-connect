@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Check, Star } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
@@ -6,8 +9,7 @@ import ServiceInquiryForm from "@/components/marketing/ServiceInquiryForm";
 type Plan = {
   id: string;
   name: string;
-  price: string;
-  period: string;
+  monthlyPrice: number;
   description: string;
   button: string;
   href: string;
@@ -18,12 +20,13 @@ type Plan = {
   features: string[];
 };
 
+const YEARLY_DISCOUNT = 0.2; // 20% off when billed annually
+
 const PLANS: Plan[] = [
   {
     id: "monitor",
     name: "AI Presence Monitor",
-    price: "$19.99",
-    period: "/mo",
+    monthlyPrice: 19.99,
     description:
       "SFB Connects tells you what's happening and what to improve — self-service AI presence monitoring.",
     button: "Book a Demo",
@@ -42,8 +45,7 @@ const PLANS: Plan[] = [
   {
     id: "grow",
     name: "AI Presence Grow",
-    price: "$197",
-    period: "/mo",
+    monthlyPrice: 197,
     description:
       "SFB Connects actively improves your AI presence — not just reports, real optimization work.",
     button: "Book a Demo",
@@ -64,8 +66,7 @@ const PLANS: Plan[] = [
   {
     id: "managed",
     name: "AI Presence Managed",
-    price: "$269",
-    period: "/mo",
+    monthlyPrice: 269,
     description:
       "SFB Connects and a dedicated specialist manage your AI presence for you, end to end.",
     button: "Book a Demo",
@@ -83,7 +84,16 @@ const PLANS: Plan[] = [
   },
 ];
 
-function PlanCard({ plan, index }: { plan: Plan; index: number }) {
+function formatPrice(n: number) {
+  const rounded = Math.round(n * 100) / 100;
+  return Number.isInteger(rounded) ? `$${rounded}` : `$${rounded.toFixed(2)}`;
+}
+
+function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing: "monthly" | "yearly" }) {
+  const annualTotal = Math.round(plan.monthlyPrice * 12 * (1 - YEARLY_DISCOUNT) * 100) / 100;
+  const yearlyPerMonth = annualTotal / 12;
+  const displayPrice = billing === "monthly" ? plan.monthlyPrice : yearlyPerMonth;
+
   return (
     <Reveal className="h-full">
       <div
@@ -135,16 +145,19 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
 
           <div className="flex items-baseline gap-1 mt-5">
             <span className="text-[40px] font-medium tracking-[-0.05em] leading-none text-white">
-              {plan.price}
+              {formatPrice(displayPrice)}
             </span>
-            {plan.period && (
-              <span className="text-[13px] text-white/[0.36]">
-                {plan.period}
+            <span className="text-[13px] text-white/[0.36]">/mo</span>
+          </div>
+          <div className="mt-1.5 h-[15px]">
+            {billing === "yearly" && (
+              <span className="text-[10.5px] text-white/[0.34]">
+                Billed {formatPrice(annualTotal)}/yr
               </span>
             )}
           </div>
 
-          <p className="mt-[18px] min-h-[62px] text-[13px] leading-relaxed text-white/[0.42]">
+          <p className="mt-[10px] min-h-[62px] text-[13px] leading-relaxed text-white/[0.42]">
             {plan.description}
           </p>
 
@@ -194,6 +207,8 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
 }
 
 export default function PricingSection() {
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+
   return (
     <section className="relative overflow-hidden section-band pt-24 md:pt-32 pb-24 md:pb-32" id="pricing">
       <div className="max-w-[1180px] mx-auto px-6">
@@ -209,15 +224,49 @@ export default function PricingSection() {
               Choose the plan that fits where your business is today and how
               far you want to take your AI presence.
             </p>
-            <span className="inline-flex items-center h-7 px-3 mt-6 rounded-full bg-[#121212] border border-white/[0.08] text-[10px] font-medium text-white/[0.62]">
-              Billed monthly
-            </span>
+
+            <div className="inline-flex items-center gap-1 mt-7 p-[4px] rounded-full bg-[#121212] border border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => setBilling("monthly")}
+                className="h-8 px-4 rounded-full text-[11.5px] font-medium transition-colors"
+                style={
+                  billing === "monthly"
+                    ? { background: "#f5f5f5", color: "#090909" }
+                    : { color: "rgba(255,255,255,0.56)" }
+                }
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setBilling("yearly")}
+                className="h-8 pl-4 pr-3 rounded-full text-[11.5px] font-medium transition-colors inline-flex items-center gap-1.5"
+                style={
+                  billing === "yearly"
+                    ? { background: "#f5f5f5", color: "#090909" }
+                    : { color: "rgba(255,255,255,0.56)" }
+                }
+              >
+                Yearly
+                <span
+                  className="inline-flex items-center h-[18px] px-[7px] rounded-full text-[8.5px] font-semibold"
+                  style={
+                    billing === "yearly"
+                      ? { background: "rgba(9,9,9,0.10)", color: "#090909" }
+                      : { background: "rgba(66,227,109,0.14)", color: "#42E36D" }
+                  }
+                >
+                  Save 20%
+                </span>
+              </button>
+            </div>
           </div>
         </Reveal>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[18px] mt-12 items-stretch">
           {PLANS.map((plan, i) => (
-            <PlanCard key={plan.id} plan={plan} index={i} />
+            <PlanCard key={plan.id} plan={plan} index={i} billing={billing} />
           ))}
         </div>
 
