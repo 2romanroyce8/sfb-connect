@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, AlertCircle, X, ArrowRight } from "lucide-react";
 import { useBusinessLookup } from "@/lib/businessLookupContext";
+import MarketPositionPanel from "@/components/ui/MarketPositionPanel";
 
 const DEMO_SUBSCORES = [
   { name: "Identity", val: 92 },
@@ -227,6 +228,8 @@ export default function ScoreRing() {
               </div>
             </div>
           )}
+
+          <MarketPositionPanel business={selectedBusiness} />
 
           <div className="mt-8 pt-6 border-t border-white/[0.06] flex items-center gap-3">
             <span className="text-[10px] text-medium-gray mr-1">Signals checked</span>

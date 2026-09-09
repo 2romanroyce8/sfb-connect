@@ -19,31 +19,6 @@ import SectionHead from "@/components/home/SectionHead";
 import { useBusinessLookup } from "@/lib/businessLookupContext";
 import type { AISummary } from "@/lib/businessLookupContext";
 
-const OLD_RESULTS = [
-  {
-    domain: "localplumbingcompany.com",
-    title: "Local Plumbing Company",
-    description:
-      "Plumbing repair, drain cleaning, emergency services and more.",
-    rating: "4.8",
-    reviews: "312 reviews",
-  },
-  {
-    domain: "rapidrooter.com",
-    title: "Rapid Rooter Co.",
-    description: "Residential and commercial plumbing services.",
-    rating: "4.7",
-    reviews: "198 reviews",
-  },
-  {
-    domain: "metropipeworks.com",
-    title: "Metro Pipe Works",
-    description: "Licensed plumbers serving the surrounding area.",
-    rating: "4.6",
-    reviews: "145 reviews",
-  },
-];
-
 const RESEARCH_STEPS = [
   "Finding your business",
   "Checking your website",
@@ -204,7 +179,7 @@ function ScoreBar({ label, score, delay }: { label: string; score: number; delay
   );
 }
 
-function AiChatPanel() {
+function AiChatPanel({ onStatusChange }: { onStatusChange?: (status: LookupState["status"]) => void }) {
   const { selectedBusiness, summary, setLookupResult, pendingChatMessage, clearPendingChatMessage } =
     useBusinessLookup();
   const ref = useRef<HTMLDivElement>(null);
@@ -213,6 +188,11 @@ function AiChatPanel() {
   const [location, setLocation] = useState("");
   const [state, setState] = useState<LookupState>({ status: "idle" });
   const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    onStatusChange?.(state.status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
 
   // If a business was already searched elsewhere (e.g. the hero's live
   // lookup) before this panel mounted/rendered, reflect that same canonical
@@ -589,13 +569,49 @@ function AiChatPanel() {
   );
 }
 
+function MarketPanelPlaceholder({ status }: { status: LookupState["status"] }) {
+  if (status === "researching") {
+    return (
+      <div className="bg-[#0D0D0D] border border-white/[0.12] rounded-[24px] p-7 min-h-[500px] flex flex-col">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40 mb-6">
+          AI Discovery Market Position
+        </div>
+        <div className="flex-1 flex flex-col gap-3 justify-center">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-[64px] rounded-[14px] bg-white/[0.04] border border-white/[0.06] animate-pulse" />
+          ))}
+        </div>
+        <p className="mt-6 text-[12px] text-white/[0.36]">
+          We&apos;ll compare your business against real public search results once your AI Presence result is ready.
+        </p>
+      </div>
+    );
+  }
+
+  // Idle (and any other pre-result state): reserved, honest empty space —
+  // no fake ranking, no fake business names, nothing shown before a real
+  // search happens.
+  return (
+    <div className="bg-[#0D0D0D] border border-white/[0.12] rounded-[24px] p-7 min-h-[500px] flex flex-col items-center justify-center text-center">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/30 mb-3">
+        AI Discovery Market Position
+      </div>
+      <p className="max-w-[280px] text-[14px] leading-relaxed text-white/[0.42]">
+        Search your business to see a real, evidence-based comparison against
+        other businesses AI can find in your market.
+      </p>
+    </div>
+  );
+}
+
 export default function ShiftSection() {
   const { selectedBusiness } = useBusinessLookup();
+  const [chatStatus, setChatStatus] = useState<LookupState["status"]>("idle");
 
   // Search is only the entry point. Once a business has been found and
-  // analyzed, the comparison/mockup UI disappears entirely and the visitor
-  // sees only the full diagnostic report further down the page (#score) —
-  // never both at once.
+  // analyzed, this UI disappears entirely and the visitor sees only the
+  // full diagnostic report (including the real market position panel)
+  // further down the page (#score) — never both at once.
   if (selectedBusiness) return null;
 
   return (
@@ -618,51 +634,9 @@ export default function ShiftSection() {
         </Reveal>
         <Reveal>
           <div className="grid md:grid-cols-2 gap-7 items-stretch">
-            <div className="bg-[#0D0D0D] border border-white/[0.12] rounded-[24px] p-7 min-h-[500px] flex flex-col">
-              <div className="font-mono text-[14px] text-white/45 mb-[22px]">
-                2016
-              </div>
-              <div className="text-2xl font-semibold mb-7 leading-snug">
-                &quot;best plumber near me&quot;
-              </div>
+            <MarketPanelPlaceholder status={chatStatus} />
 
-              <div className="flex items-center gap-[7px] mb-4">
-                <span className="w-[9px] h-[9px] rounded-full bg-[#5C5C5C]" />
-                <span className="w-[9px] h-[9px] rounded-full bg-[#5C5C5C]" />
-                <span className="w-[9px] h-[9px] rounded-full bg-[#5C5C5C]" />
-                <div className="flex-1 h-[34px] bg-[#181818] rounded-[10px] flex items-center px-3 text-[12.5px] text-white/50 ml-2">
-                  best plumber near me
-                </div>
-              </div>
-
-              <div className="flex-1">
-                {OLD_RESULTS.map((r) => (
-                  <div
-                    key={r.domain}
-                    className="py-[18px] border-b border-white/[0.06] last:border-b-0"
-                  >
-                    <div className="text-[12px] text-white/45">
-                      {r.domain}
-                    </div>
-                    <div className="text-[17px] font-medium text-[#D8D8D8] mt-1">
-                      {r.title}
-                    </div>
-                    <div className="text-[13px] leading-relaxed text-white/[0.48] mt-1">
-                      {r.description}
-                    </div>
-                    <div className="text-[12px] text-white/40 mt-1.5">
-                      ★ {r.rating} · {r.reviews}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-[22px] text-[13px] text-white/[0.38] font-mono">
-                Pages of links. The customer has to compare everything.
-              </div>
-            </div>
-
-            <AiChatPanel />
+            <AiChatPanel onStatusChange={setChatStatus} />
           </div>
         </Reveal>
         <Reveal>
