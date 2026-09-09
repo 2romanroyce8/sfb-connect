@@ -61,11 +61,17 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
   const service = createSupabaseServiceClient();
   const { data: myConnRow } = await service
     .from("crm_calendar_connections")
-    .select("google_email, connected_at, token_expires_at")
+    .select("google_email, connected_at, refresh_failed_at")
     .eq("rep_id", user!.id)
     .maybeSingle();
+  // The short-lived access token expires roughly hourly and is refreshed
+  // transparently on demand (lib/crm/googleCalendar.ts) -- that expiry is
+  // NOT a sign of a broken connection, so it's never used here. The only
+  // real signal that the connection needs reconnecting is a refresh_token
+  // that Google itself rejected (refresh_failed_at gets set when that
+  // happens, and cleared the next time a refresh succeeds).
   const myConnection = myConnRow
-    ? { google_email: myConnRow.google_email, connected_at: myConnRow.connected_at, token_currently_valid: new Date(myConnRow.token_expires_at) > new Date() }
+    ? { google_email: myConnRow.google_email, connected_at: myConnRow.connected_at, token_currently_valid: !myConnRow.refresh_failed_at }
     : null;
 
   let teamConnections: { rep_id: string; google_email: string | null; connected_at: string }[] = [];

@@ -102,13 +102,34 @@ async function getValidAccessToken(repId: string): Promise<string> {
   }
 
   const refreshToken = decryptToken(conn.refresh_token_enc);
-  const refreshed = await refreshAccessToken(refreshToken);
-  const newExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
-  await service
-    .from("crm_calendar_connections")
-    .update({ access_token_enc: encryptToken(refreshed.access_token), token_expires_at: newExpiresAt, updated_at: new Date().toISOString() })
-    .eq("rep_id", repId);
-  return refreshed.access_token;
+  try {
+    const refreshed = await refreshAccessToken(refreshToken);
+    const newExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+    // A successful refresh proves the connection is healthy end-to-end, so
+    // clear any prior failure flag along with rotating the token.
+    await service
+      .from("crm_calendar_connections")
+      .update({
+        access_token_enc: encryptToken(refreshed.access_token),
+        token_expires_at: newExpiresAt,
+        refresh_failed_at: null,
+        refresh_error: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("rep_id", repId);
+    return refreshed.access_token;
+  } catch (err) {
+    // The access token expiring is normal and happens roughly hourly — it is
+    // NOT a real failure on its own. Only a rejected refresh_token (revoked
+    // access, invalidated grant, etc.) is worth surfacing to the rep as
+    // "Needs Reconnect", so that's the only case we persist here.
+    const message = err instanceof Error ? err.message : "Google Calendar refresh failed.";
+    await service
+      .from("crm_calendar_connections")
+      .update({ refresh_failed_at: new Date().toISOString(), refresh_error: message })
+      .eq("rep_id", repId);
+    throw err;
+  }
 }
 
 async function callCalendarApi(repId: string, path: string, init: RequestInit = {}) {
