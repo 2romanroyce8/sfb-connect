@@ -1,7 +1,6 @@
 import Navbar from "@/components/home/Navbar";
 import Hero from "@/components/home/Hero";
 import { BusinessLookupProvider } from "@/lib/businessLookupContext";
-import ShiftSection from "@/components/home/ShiftSection";
 import AlgorithmSection from "@/components/home/AlgorithmSection";
 import ProcessSection from "@/components/home/ProcessSection";
 import AnalyzeSection from "@/components/home/AnalyzeSection";
@@ -18,7 +17,6 @@ export default function HomePage() {
       <BusinessLookupProvider>
         <Hero />
         <PlatformsSection />
-        <ShiftSection />
         <AlgorithmSection />
         <AnalyzeSection />
         <ProcessSection />
