@@ -36,6 +36,8 @@ export default async function TeamDashboardPage() {
       { data: calls90 },
       { data: meetings90 },
       { data: recentLeads },
+      { data: revenueEventsAllTime },
+      { data: revenueEvents90 },
     ] = await Promise.all([
       supabase.from("crm_leads").select("id", { count: "exact", head: true }),
       supabase.from("crm_leads").select("id", { count: "exact", head: true }).eq("pipeline_stage", "interested"),
@@ -52,7 +54,11 @@ export default async function TeamDashboardPage() {
         .eq("archived", false)
         .order("updated_at", { ascending: false })
         .limit(10),
+      supabase.from("revenue_events").select("amount"),
+      supabase.from("revenue_events").select("occurred_at, amount").gte("occurred_at", ninetyDaysAgo.toISOString()),
     ]);
+
+    const totalRevenue = (revenueEventsAllTime ?? []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
     const talkTimeToday = (callsToday ?? []).reduce((sum, c) => sum + (c.duration_seconds || 0), 0);
     const completedToday = (callsToday ?? []).filter((c) => c.duration_seconds != null);
@@ -86,6 +92,7 @@ export default async function TeamDashboardPage() {
         qualifiedLeads={qualifiedLeads ?? 0}
         meetingsBooked={meetingsBooked ?? 0}
         won={won ?? 0}
+        totalRevenue={totalRevenue}
         reps={reps ?? []}
         callStats={{
           callsToday: (callsToday ?? []).length,
@@ -100,12 +107,13 @@ export default async function TeamDashboardPage() {
           calls: (calls90 ?? []).map((c) => ({ at: c.started_at })),
           meetings: (meetings90 ?? []).map((m) => ({ at: m.created_at })),
         }}
+        revenueEvents={(revenueEvents90 ?? []).map((e) => ({ occurred_at: e.occurred_at, amount: Number(e.amount || 0) }))}
         recentLeads={recentLeadsWithRep as any}
       />
     );
   }
 
-  const [{ data: myLeads }, { data: followups }, { data: meetings }, { data: myCallsToday }, { data: calls90 }, { data: meetings90 }] = await Promise.all([
+  const [{ data: myLeads }, { data: followups }, { data: meetings }, { data: myCallsToday }, { data: calls90 }, { data: meetings90 }, { data: myRevenueEvents90 }] = await Promise.all([
     supabase
       .from("crm_leads")
       .select("id, business_name, website, pipeline_stage, ai_overall_score, recommended_offer, updated_at")
@@ -133,6 +141,9 @@ export default async function TeamDashboardPage() {
     supabase.from("crm_calls").select("id, duration_seconds, outcome").eq("rep_id", user!.id).gte("started_at", todayStart.toISOString()),
     supabase.from("crm_calls").select("started_at").eq("rep_id", user!.id).gte("started_at", ninetyDaysAgo.toISOString()),
     supabase.from("crm_meetings").select("created_at").eq("rep_id", user!.id).gte("created_at", ninetyDaysAgo.toISOString()),
+    // RLS already scopes revenue_events to rep_id = auth.uid() for a
+    // non-owner, but the explicit filter keeps this query self-documenting.
+    supabase.from("revenue_events").select("occurred_at, amount").eq("rep_id", user!.id).gte("occurred_at", ninetyDaysAgo.toISOString()),
   ]);
 
   const talkTimeToday = (myCallsToday ?? []).reduce((sum, c) => sum + (c.duration_seconds || 0), 0);
@@ -156,6 +167,7 @@ export default async function TeamDashboardPage() {
         calls: (calls90 ?? []).map((c) => ({ at: c.started_at })),
         meetings: (meetings90 ?? []).map((m) => ({ at: m.created_at })),
       }}
+      revenueEvents={(myRevenueEvents90 ?? []).map((e) => ({ occurred_at: e.occurred_at, amount: Number(e.amount || 0) }))}
     />
   );
 }

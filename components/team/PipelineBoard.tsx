@@ -32,6 +32,12 @@ const STAGES: { value: string; label: string; color: string }[] = [
   { value: "nurture", label: "Nurture", color: "#6E6E73" },
 ];
 
+const WON_PLANS: { key: string; label: string; price: string }[] = [
+  { key: "revenue_presence", label: "Revenue Presence", price: "$19.99/mo" },
+  { key: "revenue_growth", label: "Revenue Growth", price: "$197/mo" },
+  { key: "revenue_dominance", label: "Revenue Dominance", price: "$359/mo" },
+];
+
 const OFFER_LABEL: Record<string, string> = {
   ai_presence: "AI Presence",
   website_new: "New Website",
@@ -87,21 +93,34 @@ export default function PipelineBoard({
   const [sort, setSort] = useState("newest");
   const [showFilter, setShowFilter] = useState(false);
   const [showSort, setShowSort] = useState(false);
+  const [wonPrompt, setWonPrompt] = useState<{ leadId: string; businessName: string | null } | null>(null);
+  const [savingWon, setSavingWon] = useState(false);
 
-  async function moveTo(leadId: string, stage: string) {
+  async function moveTo(leadId: string, stage: string, planKey?: string) {
     const prev = leads;
     setLeads((cur) => cur.map((l) => (l.id === leadId ? { ...l, pipeline_stage: stage } : l)));
     try {
       const res = await fetch(`/api/team/leads/${leadId}/stage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stage }),
+        body: JSON.stringify(planKey ? { stage, planKey } : { stage }),
       });
       if (!res.ok) throw new Error();
       router.refresh();
     } catch {
       setLeads(prev); // revert on failure — never claim a move that didn't persist
     }
+  }
+
+  // Marking a lead "won" is a real revenue event -- require the rep to say
+  // which plan was actually sold before it's recorded, rather than
+  // guessing or leaving revenue unattributed.
+  async function confirmWon(planKey: string) {
+    if (!wonPrompt) return;
+    setSavingWon(true);
+    await moveTo(wonPrompt.leadId, "won", planKey);
+    setSavingWon(false);
+    setWonPrompt(null);
   }
 
   const filtered = useMemo(() => (repFilter ? leads.filter((l) => l.assigned_rep === repFilter) : leads), [leads, repFilter]);
@@ -191,7 +210,13 @@ export default function PipelineBoard({
                 e.preventDefault();
                 const leadId = e.dataTransfer.getData("text/plain");
                 setDragOverStage(null);
-                if (leadId) moveTo(leadId, stage.value);
+                if (!leadId) return;
+                if (stage.value === "won") {
+                  const lead = leads.find((l) => l.id === leadId);
+                  setWonPrompt({ leadId, businessName: lead?.business_name ?? null });
+                } else {
+                  moveTo(leadId, stage.value);
+                }
               }}
               className="w-[300px] shrink-0"
               style={{ background: dragOverStage === stage.value ? "#141414" : "transparent", borderRadius: 12 }}
@@ -257,6 +282,47 @@ export default function PipelineBoard({
           );
         })}
       </div>
+
+      {wonPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ background: "rgba(0,0,0,0.6)" }}
+          onClick={() => !savingWon && setWonPrompt(null)}
+        >
+          <div
+            className="w-full max-w-[380px] rounded-[16px] p-6"
+            style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 90px rgba(0,0,0,0.5)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-[15px] font-semibold text-[#F5F5F7] mb-1">Which plan did they buy?</div>
+            <p className="text-[12.5px] text-[#A1A1A6] mb-5">
+              {wonPrompt.businessName || "This lead"} will be marked Won and a real revenue event will be recorded.
+            </p>
+            <div className="flex flex-col gap-2">
+              {WON_PLANS.map((p) => (
+                <button
+                  key={p.key}
+                  disabled={savingWon}
+                  onClick={() => confirmWon(p.key)}
+                  className="flex items-center justify-between px-4 h-[46px] rounded-[10px] text-left transition-colors disabled:opacity-50"
+                  style={{ background: "#1B1B1B", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <span className="text-[13.5px] text-[#F5F5F7]">{p.label}</span>
+                  <span className="text-[12px] text-[#6E6E73]">{p.price}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={savingWon}
+              onClick={() => setWonPrompt(null)}
+              className="w-full mt-4 h-[38px] rounded-[8px] text-[12.5px] text-[#A1A1A6] disabled:opacity-50"
+              style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

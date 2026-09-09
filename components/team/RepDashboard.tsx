@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Phone, Bell, CalendarCheck, Users } from "lucide-react";
 import MetricCard from "./MetricCard";
-import PerformanceChart from "./PerformanceChart";
+import RevenueChart from "./RevenueChart";
 import RecentLeadsTable from "./RecentLeadsTable";
 
 type Lead = {
@@ -32,6 +32,7 @@ export default function RepDashboard({
   meetings,
   callStats,
   chartData,
+  revenueEvents,
 }: {
   name: string;
   leads: Lead[];
@@ -39,6 +40,7 @@ export default function RepDashboard({
   meetings: Meeting[];
   callStats: CallStats;
   chartData: { calls: { at: string }[]; meetings: { at: string }[] };
+  revenueEvents: { occurred_at: string; amount: number }[];
 }) {
   // Deterministic "next best lead": highest AI Presence score among leads
   // ready to call, falling back to the most recently updated lead. No AI
@@ -60,7 +62,7 @@ export default function RepDashboard({
       </div>
 
       <div className="mb-[18px]">
-        <PerformanceChart calls={chartData.calls} meetings={chartData.meetings} />
+        <RevenueChart events={revenueEvents} />
       </div>
 
       <div className="mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase text-[#6E6E73]">Next Action</div>

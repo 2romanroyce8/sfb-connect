@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Phone, CalendarCheck, TrendingUp, Clock, Users } from "lucide-react";
+import { Phone, CalendarCheck, TrendingUp, Clock, Users, DollarSign } from "lucide-react";
 import MetricCard from "./MetricCard";
-import PerformanceChart from "./PerformanceChart";
+import RevenueChart from "./RevenueChart";
 import RecentLeadsTable from "./RecentLeadsTable";
 
 type Rep = { id: string; full_name: string | null; email: string };
@@ -30,10 +30,12 @@ export default function OwnerDashboard({
   qualifiedLeads,
   meetingsBooked,
   won,
+  totalRevenue,
   reps,
   callStats,
   repActivity,
   chartData,
+  revenueEvents,
   recentLeads,
 }: {
   name: string;
@@ -41,10 +43,12 @@ export default function OwnerDashboard({
   qualifiedLeads: number;
   meetingsBooked: number;
   won: number;
+  totalRevenue: number;
   reps: Rep[];
   callStats: CallStats;
   repActivity: RepActivity[];
   chartData: { calls: { at: string }[]; meetings: { at: string }[] };
+  revenueEvents: { occurred_at: string; amount: number }[];
   recentLeads: RecentLead[];
 }) {
   return (
@@ -56,21 +60,21 @@ export default function OwnerDashboard({
 
       {/* three primary metric cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[14px] mb-4">
-        <MetricCard icon={Phone} title="Calls Today" value={callStats.callsToday} context="across the team" />
+        <MetricCard icon={DollarSign} title="Revenue" value={`$${totalRevenue.toLocaleString()}`} context="all time, collected" />
         <MetricCard icon={CalendarCheck} title="Meetings Booked" value={meetingsBooked} context="all time, status: booked" />
         <MetricCard icon={TrendingUp} title="Conversion Rate" value={`${callStats.conversionRate}%`} context="meetings per call, all time" />
       </div>
 
-      {/* performance chart */}
+      {/* revenue chart */}
       <div className="mb-[18px]">
-        <PerformanceChart calls={chartData.calls} meetings={chartData.meetings} />
+        <RevenueChart events={revenueEvents} />
       </div>
 
       {/* secondary stat row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-[14px] mb-[18px]">
-        <MetricCard icon={Users} title="Total Leads" value={totalLeads} />
-        <MetricCard icon={Users} title="Qualified Leads" value={qualifiedLeads} />
+        <MetricCard icon={Phone} title="Calls Today" value={callStats.callsToday} context="across the team" />
         <MetricCard icon={Clock} title="Talk Time Today" value={formatDuration(callStats.talkTimeToday)} />
+        <MetricCard icon={Users} title="Qualified Leads" value={qualifiedLeads} />
         <MetricCard icon={TrendingUp} title="Deals Won" value={won} />
       </div>
 
