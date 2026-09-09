@@ -19,12 +19,26 @@ function formatMoney(n: number) {
   return `$${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
+// Illustrative starting points only, editable per plan -- deliberately NOT
+// the same number across tiers. Presence is monitoring-only (near-zero
+// active work), so it shouldn't be credited with the same customer flow as
+// a plan where SFB is actively running optimization or doing the work for
+// you. These are starting assumptions for the visitor to correct, not a
+// performance claim -- there's no historical data yet to back a specific
+// multiplier, so we don't imply Growth "gets you 2x Presence" as fact.
+const DEFAULT_EXPECTED_CUSTOMERS: Record<(typeof CALC_PLANS)[number]["id"], number> = {
+  presence: 1,
+  growth: 2,
+  dominance: 4,
+};
+
 export default function RoiCalculator() {
   const [planId, setPlanId] = useState<(typeof CALC_PLANS)[number]["id"]>("growth");
   const [customerValue, setCustomerValue] = useState<number>(150);
-  const [expectedCustomers, setExpectedCustomers] = useState<number>(2);
+  const [expectedByPlan, setExpectedByPlan] = useState(DEFAULT_EXPECTED_CUSTOMERS);
 
   const plan = CALC_PLANS.find((p) => p.id === planId)!;
+  const expectedCustomers = expectedByPlan[planId];
 
   const { breakEvenCustomers, monthlyRevenue, monthlyProfit, roiMultiple } = useMemo(() => {
     const value = Math.max(customerValue, 0);
@@ -89,6 +103,13 @@ export default function RoiCalculator() {
               </div>
             </div>
 
+            <div className="text-[11.5px] leading-relaxed text-white/[0.4] rounded-[8px] p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
+              Each plan has its own "new customers/month" number below, on purpose — Presence is
+              monitoring-only, while Growth and Dominance involve SFB actively working to bring in
+              more. Set each one to what you'd actually expect from that plan, not the same number
+              for all three.
+            </div>
+
             <div>
               <label className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/[0.44]">
                 Average value of one new customer
@@ -107,14 +128,17 @@ export default function RoiCalculator() {
 
             <div>
               <label className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/[0.44]">
-                New customers you expect per month
+                New customers you expect per month, from {plan.name.replace("Revenue ", "")}
               </label>
               <div className="flex items-center mt-2 h-11 rounded-[8px] px-3.5" style={{ background: "#0e0e0f", border: "1px solid rgba(255,255,255,0.09)" }}>
                 <input
                   type="number"
                   min={0}
                   value={expectedCustomers}
-                  onChange={(e) => setExpectedCustomers(Number(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const next = Number(e.target.value) || 0;
+                    setExpectedByPlan((prev) => ({ ...prev, [planId]: next }));
+                  }}
                   className="w-full bg-transparent outline-none text-[14px] text-white"
                 />
               </div>
