@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Star } from "lucide-react";
+import { Check } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import DemoBookingForm from "@/components/marketing/DemoBookingForm";
 import RoiCalculator from "@/components/home/RoiCalculator";
@@ -130,9 +130,20 @@ function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing
         {/* Decorative circle */}
         <div className="absolute -top-1.5 -right-7 w-[126px] h-[126px] rounded-full border border-white/[0.035] bg-white/[0.012]" />
 
-        {plan.badge && (
+        {plan.badge === "MOST POPULAR" && (
+          <span className="absolute top-6 right-6 z-10">
+            {/* Pulsing glow halo, sits behind the pill */}
+            <span
+              className="absolute inset-0 rounded-full pricing-badge-glow"
+              style={{ background: "#FFD60A", filter: "blur(9px)" }}
+            />
+            <span className="relative h-6 px-[10px] inline-flex items-center rounded-full bg-[#1c1a10] border border-[#FFD60A]/40 text-[8px] font-bold tracking-[0.06em] text-[#FFD60A] whitespace-nowrap">
+              {plan.badge}
+            </span>
+          </span>
+        )}
+        {plan.badge && plan.badge !== "MOST POPULAR" && (
           <span className="absolute top-6 right-6 h-6 px-[9px] inline-flex items-center gap-[5px] rounded-full bg-[#2c2c2e] border border-white/10 text-[8px] font-semibold tracking-[0.05em] text-white/70 z-10 whitespace-nowrap">
-            {plan.badge === "MOST POPULAR" && <Star size={9} className="fill-white/70" />}
             {plan.badge}
           </span>
         )}
@@ -218,6 +229,22 @@ function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes pricingBadgeGlow {
+          0%, 100% {
+            opacity: 0.55;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.95;
+            transform: scale(1.35);
+          }
+        }
+        .pricing-badge-glow {
+          animation: pricingBadgeGlow 2.2s ease-in-out infinite;
+        }
+      `}</style>
     </Reveal>
   );
 }
