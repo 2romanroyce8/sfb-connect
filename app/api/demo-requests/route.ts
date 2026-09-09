@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 
 const demoRequestSchema = z.object({
   fullName: z.string().min(1),
@@ -33,23 +33,26 @@ export async function POST(req: NextRequest) {
   }
   const { fullName, companyName, businessLink, email, phone } = parsed.data;
 
+  // Generate the id ourselves and skip .select() on the insert: the public
+  // insert policy lets anyone create a demo request, but (deliberately)
+  // cannot read one back -- only the team owner can. Requesting the row
+  // back via .select() would need it to satisfy the SELECT policy too,
+  // which a public visitor never can, so we sidestep that entirely.
+  const requestId = crypto.randomUUID();
   const supabase = createSupabaseServerClient();
-  const { data: inserted, error } = await supabase
-    .from("demo_requests")
-    .insert({
-      full_name: fullName,
-      company_name: companyName,
-      business_link: businessLink,
-      email,
-      phone,
-      consent_to_contact: true,
-      status: "NEW",
-      source: "pricing_page",
-    })
-    .select("id")
-    .single();
+  const { error } = await supabase.from("demo_requests").insert({
+    id: requestId,
+    full_name: fullName,
+    company_name: companyName,
+    business_link: businessLink,
+    email,
+    phone,
+    consent_to_contact: true,
+    status: "NEW",
+    source: "pricing_page",
+  });
 
-  if (error || !inserted) {
+  if (error) {
     console.error("Demo request insert failed", error);
     return NextResponse.json({ error: "Could not submit your request. Please try again." }, { status: 500 });
   }
@@ -70,11 +73,16 @@ export async function POST(req: NextRequest) {
       const data = await res.json().catch(() => null);
       if (data?.status === "completed" && data?.jobId) {
         // Real research genuinely finished -- the report actually exists,
-        // so REPORT_READY is true, not aspirational.
-        await supabase
+        // so REPORT_READY is true, not aspirational. This status update is
+        // trusted server-side bookkeeping on the row we just created
+        // ourselves (not visitor-supplied data), so it uses the service
+        // client -- the public write surface stays limited to the INSERT
+        // above, gated by demo_requests_public_insert.
+        const service = createSupabaseServiceClient();
+        await service
           .from("demo_requests")
           .update({ research_prospect_id: data.jobId, status: "REPORT_READY" })
-          .eq("id", inserted.id);
+          .eq("id", requestId);
       }
       // needs_link / failed: leave status at NEW. A demo request was still
       // captured; we just couldn't auto-start research from what they gave us.
