@@ -85,7 +85,14 @@ export default function PerformanceChart({ calls, meetings }: { calls: RawPoint[
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="1 8" stroke="rgba(255,255,255,0.08)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: "#666666", fontSize: 12 }} axisLine={false} tickLine={false} minTickGap={24} />
+              <XAxis
+                dataKey="label"
+                tick={{ fill: "#666666", fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+                minTickGap={24}
+                interval="preserveStartEnd"
+              />
               <YAxis tick={{ fill: "#666666", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} width={28} />
               <Tooltip
                 contentStyle={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "10px 12px" }}
