@@ -28,7 +28,12 @@ function bucketByDay(points: RawPoint[], days: number) {
   }
   return Array.from(buckets.entries()).map(([date, count]) => ({
     date,
-    label: new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    // `new Date("2026-09-09")` parses a date-only ISO string as UTC
+    // midnight, which toLocaleDateString then renders in the browser's
+    // local timezone -- for anyone west of UTC that silently shifts the
+    // displayed label back a full day (today showing as "yesterday").
+    // Appending a local midnight time avoids that reinterpretation.
+    label: new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
     count,
   }));
 }
