@@ -106,10 +106,12 @@ const NAV_GROUPS: {
 export default function TeamSidebar({
   name,
   role,
+  avatarUrl,
   activeSession,
 }: {
   name: string;
   role: "owner" | "sales_rep";
+  avatarUrl?: string | null;
   activeSession: { id: string; clocked_in_at: string } | null;
 }) {
   const pathname = usePathname();
@@ -186,8 +188,13 @@ export default function TeamSidebar({
 
       <div className="px-3 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2.5 px-2.5 py-2">
-          <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center text-[11px] font-bold shrink-0">
-            {name?.slice(0, 1).toUpperCase() || "?"}
+          <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+            ) : (
+              name?.slice(0, 1).toUpperCase() || "?"
+            )}
           </div>
           <div className="min-w-0">
             <div className="text-[12.5px] text-[#F5F5F7] truncate">{name}</div>

@@ -11,6 +11,7 @@ type Props = {
   name: string;
   email: string;
   role: "owner" | "sales_rep";
+  avatarUrl?: string | null;
   activeSession: { id: string; clocked_in_at: string } | null;
 };
 
@@ -18,7 +19,7 @@ type Props = {
 // clock-in/Work-Mode system built earlier, just given the reference's
 // Personal/Company framing. Switching to "SFB Connects" clocks you in;
 // switching to "Personal" clocks you out. One real system, two surfaces.
-export default function AccountWorkspaceMenu({ name, email, role, activeSession }: Props) {
+export default function AccountWorkspaceMenu({ name, email, role, avatarUrl, activeSession }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState(activeSession);
@@ -82,10 +83,15 @@ export default function AccountWorkspaceMenu({ name, email, role, activeSession 
         <NotificationsPanel />
         <button
           onClick={() => setOpen((v) => !v)}
-          className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[12px] font-bold"
+          className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[12px] font-bold overflow-hidden"
           style={{ background: "#18181E", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
         >
-          {initial}
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            initial
+          )}
         </button>
       </div>
 

@@ -17,7 +17,7 @@ export default async function TeamAppLayout({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("full_name, email, team_role")
+    .select("full_name, email, team_role, avatar_url")
     .eq("id", user.id)
     .single();
 
@@ -35,6 +35,7 @@ export default async function TeamAppLayout({
       <TeamSidebar
         name={profile.full_name || profile.email}
         role={profile.team_role}
+        avatarUrl={profile.avatar_url}
         activeSession={activeSession as { id: string; clocked_in_at: string } | null}
       />
       <div className="flex-1 min-w-0 relative">
@@ -42,6 +43,7 @@ export default async function TeamAppLayout({
           name={profile.full_name || profile.email}
           email={profile.email}
           role={profile.team_role}
+          avatarUrl={profile.avatar_url}
           activeSession={activeSession as { id: string; clocked_in_at: string } | null}
         />
         {children}

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type Profile = { full_name: string | null; email: string; team_role: string; team_status: string; created_at: string };
+type Profile = {
+  full_name: string | null;
+  email: string;
+  team_role: string;
+  team_status: string;
+  created_at: string;
+  avatar_url?: string | null;
+};
 
 function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
@@ -18,6 +25,70 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
   const [fullName, setFullName] = useState(profile.full_name || "");
   const [savingName, setSavingName] = useState(false);
   const [nameMsg, setNameMsg] = useState<string | null>(null);
+
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadAvatar(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setAvatarMsg("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMsg("Image must be under 5MB.");
+      return;
+    }
+    setUploadingAvatar(true);
+    setAvatarMsg(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not signed in.");
+      const ext = file.name.split(".").pop() || "jpg";
+      // Path is namespaced by user id -- storage RLS only allows each user to
+      // write inside their own folder, so this can never overwrite a
+      // teammate's avatar.
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Cache-bust so the new image shows immediately instead of the old
+      // one lingering under an identical URL.
+      const url = `${pub.publicUrl}?v=${Date.now()}`;
+      const { error: dbError } = await supabase.from("users").update({ avatar_url: url }).eq("id", user.id);
+      if (dbError) throw dbError;
+      setAvatarUrl(url);
+      setAvatarMsg("Photo updated.");
+    } catch (err) {
+      setAvatarMsg(err instanceof Error ? err.message : "Could not upload photo.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setUploadingAvatar(true);
+    setAvatarMsg(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not signed in.");
+      const { error } = await supabase.from("users").update({ avatar_url: null }).eq("id", user.id);
+      if (error) throw error;
+      setAvatarUrl(null);
+      setAvatarMsg("Photo removed.");
+    } catch (err) {
+      setAvatarMsg(err instanceof Error ? err.message : "Could not remove photo.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   const [password, setPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
@@ -69,6 +140,54 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
 
       <Section title="Profile" id="profile">
         <div className="flex flex-col gap-3">
+          <div>
+            <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Photo</label>
+            <div className="flex items-center gap-4 mt-1.5">
+              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="Your profile photo" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[20px] font-semibold text-[#F5F5F7]">
+                    {(fullName || profile.email || "?").slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="h-[32px] px-3.5 rounded-[8px] bg-white text-black text-[12px] font-semibold disabled:opacity-60"
+                  >
+                    {uploadingAvatar ? "Uploading…" : avatarUrl ? "Change photo" : "Upload photo"}
+                  </button>
+                  {avatarUrl && (
+                    <button
+                      onClick={removeAvatar}
+                      disabled={uploadingAvatar}
+                      className="h-[32px] px-3.5 rounded-[8px] text-[12px] text-[#A1A1A6] disabled:opacity-60"
+                      style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)" }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                {avatarMsg && <span className="text-[12px] text-[#A1A1A6]">{avatarMsg}</span>}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadAvatar(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          </div>
           <div>
             <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Full Name</label>
             <input
