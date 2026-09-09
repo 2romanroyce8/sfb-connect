@@ -18,6 +18,7 @@ import {
   Calendar,
   StickyNote,
   Activity,
+  LineChart,
   GanttChartSquare,
   UserCog,
   BarChart3,
@@ -80,6 +81,7 @@ const NAV_GROUPS: {
       { href: "/team/calendar", label: "Calendar", icon: Calendar },
       { href: "/team/notes", label: "Notes", icon: StickyNote },
       { href: "/team/activity", label: "Activity", icon: Activity },
+      { href: "/team/charts", label: "Analytics", icon: LineChart },
     ],
   },
   {

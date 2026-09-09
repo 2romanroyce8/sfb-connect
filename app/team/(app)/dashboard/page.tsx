@@ -54,8 +54,8 @@ export default async function TeamDashboardPage() {
         .eq("archived", false)
         .order("updated_at", { ascending: false })
         .limit(10),
-      supabase.from("revenue_events").select("amount"),
-      supabase.from("revenue_events").select("occurred_at, amount").gte("occurred_at", ninetyDaysAgo.toISOString()),
+      supabase.from("revenue_events").select("amount").is("reversed_at", null),
+      supabase.from("revenue_events").select("occurred_at, amount").is("reversed_at", null).gte("occurred_at", ninetyDaysAgo.toISOString()),
     ]);
 
     const totalRevenue = (revenueEventsAllTime ?? []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -143,7 +143,7 @@ export default async function TeamDashboardPage() {
     supabase.from("crm_meetings").select("created_at").eq("rep_id", user!.id).gte("created_at", ninetyDaysAgo.toISOString()),
     // RLS already scopes revenue_events to rep_id = auth.uid() for a
     // non-owner, but the explicit filter keeps this query self-documenting.
-    supabase.from("revenue_events").select("occurred_at, amount").eq("rep_id", user!.id).gte("occurred_at", ninetyDaysAgo.toISOString()),
+    supabase.from("revenue_events").select("occurred_at, amount").eq("rep_id", user!.id).is("reversed_at", null).gte("occurred_at", ninetyDaysAgo.toISOString()),
   ]);
 
   const talkTimeToday = (myCallsToday ?? []).reduce((sum, c) => sum + (c.duration_seconds || 0), 0);

@@ -60,7 +60,7 @@ export default function OwnerDashboard({
 
       {/* three primary metric cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[14px] mb-4">
-        <MetricCard icon={DollarSign} title="Revenue" value={`$${totalRevenue.toLocaleString()}`} context="all time, collected" />
+        <MetricCard icon={DollarSign} title="Revenue" value={`$${totalRevenue.toLocaleString()}`} context="all time, closed deals" />
         <MetricCard icon={CalendarCheck} title="Meetings Booked" value={meetingsBooked} context="all time, status: booked" />
         <MetricCard icon={TrendingUp} title="Conversion Rate" value={`${callStats.conversionRate}%`} context="meetings per call, all time" />
       </div>

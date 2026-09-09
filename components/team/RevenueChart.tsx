@@ -53,7 +53,7 @@ export default function RevenueChart({ events }: { events: RevenueEvent[] }) {
         <div>
           <div className="text-[15px] text-[#D6D6D6]">Revenue</div>
           <div className="text-[34px] font-semibold text-[#F5F5F7] mt-2 leading-none">{formatMoney(totalRevenue)}</div>
-          <div className="text-[12.5px] text-[#6E6E73] mt-1.5">Collected revenue in range</div>
+          <div className="text-[12.5px] text-[#6E6E73] mt-1.5">Closed revenue in range — deals marked Won, not verified cash collected</div>
         </div>
         <select
           value={range}
