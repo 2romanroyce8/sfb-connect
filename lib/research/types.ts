@@ -65,7 +65,7 @@ export type LocationRecord = {
 // the owner inspect exactly which extraction step failed when a rep reports
 // a missed Linktree/website/social. discoveryMethod distinguishes "we found
 // this by reading another page" from "the rep pasted this directly".
-export type DiscoveryMethod = "seed" | "bio_link" | "link_extraction" | "social_link" | "website_crawl" | "gap_analysis" | "qa_reopen";
+export type DiscoveryMethod = "seed" | "bio_link" | "link_extraction" | "social_link" | "website_crawl" | "gap_analysis" | "qa_reopen" | "search_discovery";
 
 export type SourceLogEntry = {
   url: string;
@@ -107,5 +107,16 @@ export type BusinessGraph = {
     hasHttps: boolean;
     hasMetaDescription: boolean;
     hasAggregateRating: boolean;
+  };
+  // Honest record of whether independent wider-web website discovery ran
+  // at all -- "discovery_unavailable" (no provider configured / not enough
+  // identity to search) must never be collapsed into "not_found" (a real
+  // search ran and found nothing). Optional/undefined for research results
+  // created before this field existed.
+  websiteDiscovery?: {
+    status: "found" | "not_found" | "discovery_unavailable";
+    provider: string | null;
+    reason: string | null;
+    queriesRun: string[];
   };
 };

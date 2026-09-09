@@ -285,6 +285,24 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
             ))}
           </div>
         )}
+
+        {/* Honest distinction: "we searched the web and found nothing" is a
+            different claim than "no search actually ran" -- collapsing
+            them into one "Not found" would be exactly the kind of silent
+            gap this engine is built to avoid. */}
+        {!result.website && result.graph_json?.websiteDiscovery && (
+          <div className="mt-3 text-[11.5px] text-[#6E6E73] flex items-start gap-1.5">
+            <Globe size={13} className="mt-[1px] shrink-0" />
+            {result.graph_json.websiteDiscovery.status === "discovery_unavailable" ? (
+              <span>Website search could not run — {result.graph_json.websiteDiscovery.reason}</span>
+            ) : (
+              <span>
+                Searched the public web for an official website and found none
+                {result.graph_json.websiteDiscovery.provider ? ` (via ${result.graph_json.websiteDiscovery.provider})` : ""}.
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Locations */}

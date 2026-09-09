@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Check, Loader2 } from "lucide-react";
 
 // Premium "Book a Demo" form for SFB Connect — POSTs to the real
@@ -17,6 +17,21 @@ export default function DemoBookingForm() {
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const confirmationRef = useRef<HTMLDivElement>(null);
+
+  // The success card is much shorter than the form it replaces. Without
+  // this, the viewport's scroll offset stays fixed in place, and the user
+  // ends up scrolled past the (now much shorter) confirmation instead of
+  // looking at it -- they'd have to manually scroll back up to see "You're
+  // all set." Center it in view instead, and move focus there too.
+  useEffect(() => {
+    if (status !== "done") return;
+    const t = setTimeout(() => {
+      confirmationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      confirmationRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(t);
+  }, [status]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,7 +94,7 @@ export default function DemoBookingForm() {
         }}
       >
         {status === "done" ? (
-          <div className="text-center py-9 px-2">
+          <div ref={confirmationRef} tabIndex={-1} className="text-center py-9 px-2 outline-none">
             <CheckCircle2 size={46} className="text-[#30D158] mx-auto" strokeWidth={1.5} />
             <div className="text-[28px] sm:text-[31px] font-semibold tracking-[-0.02em] text-[#F5F5F7] mt-4">
               You&apos;re all set.

@@ -28,6 +28,7 @@ import { resolveField, type Resolved } from "./EvidenceValidator";
 import { extractTitle, extractMeta, extractJsonLd, findLocalBusiness, decodeEntities, extractLinks } from "./htmlExtract";
 import { classifyLink, canonicalDomain } from "./normalize";
 import { classifyCategoryHeuristic } from "./CategoryClassifier";
+import { discoverOfficialWebsite, type WebsiteDiscoveryOutcome } from "./discovery/websiteDiscovery";
 import type { ResearchStage } from "./jobProgress";
 import {
   runIdentityQA,
@@ -64,6 +65,28 @@ type QueueItem = { url: string; discoveredFrom: string | null; discoveryMethod: 
 
 function urlKey(url: string): string {
   return canonicalDomain(url) || url.toLowerCase();
+}
+
+const HANDLE_HOSTS = ["facebook.com", "instagram.com", "tiktok.com", "x.com", "twitter.com"];
+const NON_HANDLE_SEGMENTS = new Set(["profile.php", "pages", "people", "share"]);
+
+/** Pulls a username/handle straight out of a seed social URL -- this is
+ * real identity evidence even when the page itself can't be fetched (e.g.
+ * a blocked Facebook profile), and it's the strongest signal the query
+ * generator can use. */
+function extractHandleFromSeeds(seedSources: string[]): string | null {
+  for (const s of seedSources) {
+    try {
+      const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+      const host = u.hostname.replace(/^www\.|^m\./, "");
+      if (!HANDLE_HOSTS.includes(host)) continue;
+      const seg = u.pathname.split("/").filter(Boolean)[0];
+      if (seg && !NON_HANDLE_SEGMENTS.has(seg)) return seg;
+    } catch {
+      // not a URL — nothing to extract
+    }
+  }
+  return null;
 }
 
 /** Same-domain links matching a business-information page type — the
@@ -280,6 +303,34 @@ export async function buildLeadProfile(
 
   let extracted = await aggregate();
 
+  // ---- RECURSIVE EXPANSION: independent wider-web website discovery ----
+  // If nothing the seed linked to (or anything found while crawling it)
+  // turned out to be the official website, use the identity actually
+  // verified so far to search the wider web for it -- this is the fix for
+  // "Facebook gave us a name and phone but no website, and the job just
+  // stopped." A found candidate is queued through the SAME Discovery Graph
+  // as any other source, so it gets fetched, verified, and its own
+  // sub-pages/socials/contacts discovered identically.
+  let websiteDiscovery: WebsiteDiscoveryOutcome | undefined;
+  if (!officialWebsite && !skipExpansion) {
+    await onStage?.("DISCOVERING_SOURCES", { sourcesFound: visited.size });
+    const primaryLocation = extracted.locations.find((l) => l.city || l.state);
+    websiteDiscovery = await discoverOfficialWebsite({
+      businessName: extracted.businessName?.value ?? null,
+      handle: extractHandleFromSeeds(seedSources),
+      city: primaryLocation?.city ?? null,
+      state: primaryLocation?.state ?? null,
+      category: extracted.category,
+      phone: extracted.contactMethods.find((c) => c.type === "phone")?.value ?? null,
+    });
+    if (websiteDiscovery.status === "found") {
+      enqueue(websiteDiscovery.url, null, "search_discovery", 0);
+      await drainQueue();
+      allPages = Array.from(visited.values());
+      extracted = await aggregate();
+    }
+  }
+
   // ---- 8 QA PASSES — "complete" means these ran, not just that the graph
   // traversal finished. Passes 3 and 7 can discover real new sources and
   // reopen the queue, bounded to MAX_QA_REOPEN_CYCLES. ----
@@ -334,6 +385,16 @@ export async function buildLeadProfile(
     sourceChecks,
     sourceLog,
     qaResults,
+    ...(websiteDiscovery
+      ? {
+          websiteDiscovery: {
+            status: websiteDiscovery.status,
+            provider: "provider" in websiteDiscovery ? websiteDiscovery.provider : null,
+            reason: websiteDiscovery.status === "discovery_unavailable" ? websiteDiscovery.reason : null,
+            queriesRun: "queriesRun" in websiteDiscovery ? websiteDiscovery.queriesRun : [],
+          },
+        }
+      : {}),
   };
 
   return { graph, allPages };
