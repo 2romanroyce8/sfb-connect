@@ -1,6 +1,7 @@
 import { CalendarDays, Bot, PhoneCall, MessageSquare, Mail } from "lucide-react";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import GoogleCalendarCard from "@/components/team/GoogleCalendarCard";
+import IntegrationsHeroCard from "@/components/team/IntegrationsHeroCard";
 
 const STATUS_COLOR: Record<string, string> = {
   Connected: "#30D158",
@@ -96,7 +97,9 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
         </div>
       )}
 
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">My Calendar</div>
+      <IntegrationsHeroCard />
+
+      <div id="my-calendar" className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">My Calendar</div>
       <div className="grid grid-cols-2 gap-3 max-w-[760px] mb-8">
         <GoogleCalendarCard connection={myConnection as any} />
       </div>
