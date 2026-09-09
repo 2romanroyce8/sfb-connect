@@ -12,9 +12,12 @@ const RANGES: { key: string; label: string; days: number }[] = [
 ];
 
 function bucketByDay(points: RawPoint[], days: number) {
+  // Today first (left), then going backward through the rest of the
+  // range -- insertion order here is what the chart renders left-to-right,
+  // since Map preserves insertion order.
   const buckets = new Map<string, number>();
   const now = new Date();
-  for (let i = days - 1; i >= 0; i--) {
+  for (let i = 0; i < days; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     buckets.set(d.toISOString().slice(0, 10), 0);
