@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Star } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import ServiceInquiryForm from "@/components/marketing/ServiceInquiryForm";
+import DemoBookingForm from "@/components/marketing/DemoBookingForm";
 
 type Plan = {
   id: string;
@@ -270,22 +270,9 @@ export default function PricingSection() {
           ))}
         </div>
 
-        <div id="book-a-demo" className="max-w-[560px] mx-auto mt-20 scroll-mt-24">
+        <div id="book-a-demo" className="mt-32 scroll-mt-24">
           <Reveal>
-            <div className="text-center mb-8">
-              <h3 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.03em] text-[#f7f7f7]">
-                Book a demo.
-              </h3>
-              <p className="mt-3 text-[13.5px] leading-relaxed text-white/[0.42]">
-                Tell us about your business and which plan you're interested
-                in. We'll walk you through it and help you pick the right fit.
-              </p>
-            </div>
-            <ServiceInquiryForm
-              defaultInterest="AI Presence"
-              ctaLabel="Book My Demo"
-              title="Tell us about your business"
-            />
+            <DemoBookingForm />
           </Reveal>
         </div>
       </div>
