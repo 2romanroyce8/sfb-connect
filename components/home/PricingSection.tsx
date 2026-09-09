@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, Star } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import DemoBookingForm from "@/components/marketing/DemoBookingForm";
+import RoiCalculator from "@/components/home/RoiCalculator";
 
 type Plan = {
   id: string;
@@ -283,6 +284,10 @@ export default function PricingSection() {
           {PLANS.map((plan, i) => (
             <PlanCard key={plan.id} plan={plan} index={i} billing={billing} />
           ))}
+        </div>
+
+        <div className="mt-16 max-w-[900px] mx-auto">
+          <RoiCalculator />
         </div>
 
         <div id="book-a-demo" className="mt-32 scroll-mt-24">
