@@ -154,7 +154,10 @@ export default function Hero() {
           <span>Takes about 30 seconds</span>
         </div>
 
-        <div className="mt-[26px] flex items-baseline justify-center gap-[10px]">
+        <div className="mt-[26px] flex items-baseline justify-center gap-[10px] flex-wrap">
+          <span className="text-[9px] font-semibold tracking-[0.14em] uppercase text-white/[0.5] self-center">
+            Introductory
+          </span>
           <span className="text-[19px] font-semibold text-white">$19.99</span>
           <span className="text-[13px] font-semibold tracking-[0.08em] text-white/[0.86]">
             / MONTH

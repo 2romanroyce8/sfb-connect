@@ -30,7 +30,7 @@ export default function FinalCta() {
             wait is another day the algorithm answers without you.
           </p>
           <div className="font-mono text-2xl text-medium-gray my-9">
-            Plans from $19.99 / month
+            Plans from $19.99 / month <span className="text-base align-middle text-medium-gray/70">(introductory)</span>
           </div>
           <Link
             href="#book-a-demo"

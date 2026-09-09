@@ -37,6 +37,7 @@ const PLANS: Plan[] = [
     href: "#book-a-demo",
     buttonStyle: "dark",
     accent: "#5577FF",
+    badge: "INTRODUCTORY PRICE",
     features: [
       "AI Presence Score",
       "Business knowledge profile",
@@ -129,8 +130,8 @@ function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing
         <div className="absolute -top-1.5 -right-7 w-[126px] h-[126px] rounded-full border border-white/[0.035] bg-white/[0.012]" />
 
         {plan.badge && (
-          <span className="absolute top-6 right-6 h-6 px-[9px] inline-flex items-center gap-[5px] rounded-full bg-[#2c2c2e] border border-white/10 text-[8px] font-semibold tracking-[0.05em] text-white/70 z-10">
-            <Star size={9} className="fill-white/70" />
+          <span className="absolute top-6 right-6 h-6 px-[9px] inline-flex items-center gap-[5px] rounded-full bg-[#2c2c2e] border border-white/10 text-[8px] font-semibold tracking-[0.05em] text-white/70 z-10 whitespace-nowrap">
+            {plan.badge === "MOST POPULAR" && <Star size={9} className="fill-white/70" />}
             {plan.badge}
           </span>
         )}
@@ -162,6 +163,11 @@ function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing
             {billing === "yearly" && (
               <span className="text-[10.5px] text-white/[0.34]">
                 Billed {formatPrice(annualTotal)}/yr
+              </span>
+            )}
+            {billing === "monthly" && plan.id === "presence" && (
+              <span className="text-[10.5px] text-white/[0.34]">
+                Introductory price for new customers
               </span>
             )}
           </div>

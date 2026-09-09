@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: "Is pricing monthly or annual?",
-    a: "Both. Plans start at $19.99/month with Revenue Presence, or save with annual billing. Revenue Growth and Revenue Dominance are for businesses that want SFB Connects to actively do the work or fully manage it for them. Book a demo and we'll help you pick the right one.",
+    a: "Both. Plans start at an introductory $19.99/month with Revenue Presence, or save with annual billing. Revenue Growth and Revenue Dominance are for businesses that want SFB Connects to actively do the work or fully manage it for them. Book a demo and we'll help you pick the right one.",
     color: "#FF8A3D",
   },
   {
