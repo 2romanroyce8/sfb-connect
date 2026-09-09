@@ -5,6 +5,9 @@ import {
   MessageSquare,
   MoreHorizontal,
   ArrowUp,
+  ArrowRight,
+  MapPin,
+  Globe2,
   Sparkles,
   Check,
   AlertCircle,
@@ -289,36 +292,72 @@ function AiChatPanel() {
         {state.status === "idle" && (
           <div className="ai-chat-fade flex flex-col flex-1" style={{ transitionDelay: "0.1s" }}>
             <div className="flex items-start gap-2.5 mb-5">
-              <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+              <div className="w-[30px] h-[30px] rounded-full bg-[#F5F5F7] text-[#111111] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                 AI
               </div>
-              <p className="text-[14px] leading-relaxed text-white/[0.82]">
-                See how AI understands your business. Enter your business and
-                we&apos;ll analyze the public information AI systems can find
-                about you.
+              <p className="text-[15px] leading-[1.6] text-[#C7C7CC]">
+                See how AI understands your business. Enter your business name,
+                website, or social profile and we&apos;ll analyze the public
+                information AI systems can find about you.
               </p>
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 pl-[38px]">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Business name, website, or social profile"
-                className="h-[42px] rounded-[12px] bg-[#1a1a1a] border border-white/10 px-3.5 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-white/25"
-              />
-              <input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="City, State (optional)"
-                className="h-[42px] rounded-[12px] bg-[#1a1a1a] border border-white/10 px-3.5 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-white/25"
-              />
-              <button
-                type="submit"
-                className="h-[42px] rounded-[12px] bg-white text-black text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:scale-[1.01] transition-transform"
-              >
-                Check My AI Presence
-              </button>
+
+            <form onSubmit={handleSubmit}>
+              <div className="relative rounded-[18px] bg-[#181818] border border-white/[0.07] overflow-hidden">
+                <textarea
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e as unknown as React.FormEvent);
+                    }
+                  }}
+                  placeholder="Enter your business name, website, or social profile"
+                  rows={3}
+                  className="w-full min-h-[92px] px-[18px] pt-[18px] pb-2 bg-transparent border-none outline-none resize-none text-[15px] leading-[1.45] text-[#F5F5F7] placeholder:text-[#717176]"
+                />
+
+                <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="h-[34px] px-2.5 rounded-[9px] bg-[#202020] border border-white/[0.06] flex items-center gap-[7px]">
+                      <MapPin size={13} className="text-[#A1A1A6] shrink-0" />
+                      <input
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="City, State"
+                        className="w-[90px] sm:w-[118px] bg-transparent border-none outline-none text-[12px] text-[#D1D1D6] placeholder:text-[#6E6E73]"
+                      />
+                    </div>
+                    <div className="h-[34px] px-2.5 rounded-[9px] bg-[#202020] border border-white/[0.06] flex items-center gap-[6px]">
+                      <Globe2 size={13} className="text-[#A1A1A6]" />
+                      <span className="text-[12px] text-[#A1A1A6]">Public</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    aria-label="Check My AI Presence"
+                    className="w-10 h-[34px] rounded-[9px] flex items-center justify-center shrink-0 border border-white/[0.08] transition-[filter] hover:brightness-110"
+                    style={{ background: "linear-gradient(135deg, #FF5A36 0%, #E98A1B 100%)" }}
+                  >
+                    <ArrowRight size={15} className="text-white" />
+                  </button>
+                </div>
+
+                {/* subtle warm accent edge, referencing the reference composer without going neon */}
+                <div
+                  className="absolute left-0 right-0 bottom-0 h-[4px] pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, rgba(235,46,126,0.95) 0%, rgba(255,72,40,0.95) 22%, rgba(246,131,29,0.85) 44%, rgba(55,55,55,0.15) 72%, rgba(0,0,0,0) 100%)",
+                    boxShadow: "0 -8px 28px rgba(255,80,45,0.10)",
+                  }}
+                />
+              </div>
             </form>
-            <p className="mt-3 pl-[38px] text-[11px] text-white/30">
+
+            <p className="mt-3 text-[11px] text-[#5F5F63]">
               We only look at publicly accessible information — no logins,
               no guessing.
             </p>
@@ -348,26 +387,38 @@ function AiChatPanel() {
         {(state.status === "needs_link" || state.status === "failed") && (
           <div className="flex-1 flex flex-col">
             <div className="flex items-start gap-2.5 mb-5">
-              <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+              <div className="w-[30px] h-[30px] rounded-full bg-[#F5F5F7] text-[#111111] flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                 AI
               </div>
-              <p className="text-[14px] leading-relaxed text-white/[0.82]">
+              <p className="text-[15px] leading-[1.6] text-[#C7C7CC]">
                 {state.message}
               </p>
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 pl-[38px]">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="yourbusiness.com or instagram.com/yourbusiness"
-                className="h-[42px] rounded-[12px] bg-[#1a1a1a] border border-white/10 px-3.5 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-white/25"
-              />
-              <button
-                type="submit"
-                className="h-[42px] rounded-[12px] bg-white text-black text-[13px] font-semibold"
-              >
-                Try Again
-              </button>
+            <form onSubmit={handleSubmit}>
+              <div className="relative rounded-[18px] bg-[#181818] border border-white/[0.07] overflow-hidden flex items-center">
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="yourbusiness.com or instagram.com/yourbusiness"
+                  className="flex-1 h-[54px] px-[18px] bg-transparent border-none outline-none text-[15px] text-[#F5F5F7] placeholder:text-[#717176]"
+                />
+                <button
+                  type="submit"
+                  aria-label="Try again"
+                  className="w-10 h-[34px] mr-2.5 rounded-[9px] flex items-center justify-center shrink-0 border border-white/[0.08] transition-[filter] hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg, #FF5A36 0%, #E98A1B 100%)" }}
+                >
+                  <ArrowRight size={15} className="text-white" />
+                </button>
+                <div
+                  className="absolute left-0 right-0 bottom-0 h-[4px] pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, rgba(235,46,126,0.95) 0%, rgba(255,72,40,0.95) 22%, rgba(246,131,29,0.85) 44%, rgba(55,55,55,0.15) 72%, rgba(0,0,0,0) 100%)",
+                    boxShadow: "0 -8px 28px rgba(255,80,45,0.10)",
+                  }}
+                />
+              </div>
             </form>
           </div>
         )}
@@ -527,9 +578,11 @@ function AiChatPanel() {
       </div>
 
       {state.status === "idle" && (
-        <div className="mx-[18px] mb-[18px] h-[46px] shrink-0 bg-[#1C1C1C] border border-white/10 rounded-[22px] flex items-center justify-between px-[14px] opacity-40 pointer-events-none">
-          <span className="text-[12px] text-white/[0.34]">Ask a follow-up</span>
-          <ArrowUp size={14} className="text-white/40" />
+        <div className="mx-[18px] mb-[18px] h-[48px] shrink-0 bg-[#161616] border border-white/[0.06] rounded-[14px] flex items-center justify-between pl-[14px] pr-2.5 opacity-40 pointer-events-none">
+          <span className="text-[12px] text-[#D1D1D6]">Ask a follow-up</span>
+          <span className="w-[30px] h-[30px] rounded-[8px] bg-[#202020] flex items-center justify-center shrink-0">
+            <ArrowUp size={13} className="text-[#737377]" />
+          </span>
         </div>
       )}
     </div>
