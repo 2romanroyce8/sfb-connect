@@ -17,7 +17,8 @@ import {
 import Reveal from "@/components/ui/Reveal";
 import SectionHead from "@/components/home/SectionHead";
 import { useBusinessLookup } from "@/lib/businessLookupContext";
-import type { AISummary } from "@/lib/businessLookupContext";
+import type { AISummary, LookupResult as ContextLookupResult } from "@/lib/businessLookupContext";
+import MarketPositionPanel from "@/components/ui/MarketPositionPanel";
 
 const RESEARCH_STEPS = [
   "Finding your business",
@@ -238,12 +239,8 @@ function AiChatPanel({ onStatusChange }: { onStatusChange?: (status: LookupState
     setState(result);
     if (result.status === "completed") {
       setLookupResult(result.result, result.summary);
-      // This section hides itself once selectedBusiness is set, so send the
-      // visitor straight to the one full diagnostic report instead of a now
-      // vanished panel.
-      setTimeout(() => {
-        document.getElementById("score")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 50);
+      // The left market-position panel and this panel both stay on screen
+      // and populate in place -- no redirect away from this section.
     } else {
       setLookupResult(null, null);
     }
@@ -569,16 +566,43 @@ function AiChatPanel({ onStatusChange }: { onStatusChange?: (status: LookupState
   );
 }
 
-function MarketPanelPlaceholder({ status }: { status: LookupState["status"] }) {
+const LOADING_STAGES = [
+  "Identifying your business",
+  "Determining your niche",
+  "Determining your location",
+  "Checking AI-visible sources",
+  "Finding competitors",
+  "Comparing market signals",
+];
+
+// This IS the results panel, not a placeholder that gets swapped out for
+// something else. It has exactly three phases -- empty (before any
+// search), loading (while one is running), and populated (a real,
+// evidence-based MarketPositionPanel) -- and it never disappears once a
+// business has been searched. A new search clears it back to loading,
+// never back to nothing.
+function MarketPositionColumn({
+  status,
+  business,
+}: {
+  status: LookupState["status"];
+  business: ContextLookupResult | null;
+}) {
+  if (status === "completed" && business) {
+    return <MarketPositionPanel business={business} />;
+  }
+
   if (status === "researching") {
     return (
       <div className="bg-[#0D0D0D] border border-white/[0.12] rounded-[24px] p-7 min-h-[500px] flex flex-col">
         <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/40 mb-6">
           AI Discovery Market Position
         </div>
-        <div className="flex-1 flex flex-col gap-3 justify-center">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-[64px] rounded-[14px] bg-white/[0.04] border border-white/[0.06] animate-pulse" />
+        <div className="flex-1 flex flex-col gap-1.5 justify-center max-w-[260px] mx-auto w-full">
+          {LOADING_STAGES.map((s, i) => (
+            <div key={s} className="text-[12px] text-white/40 py-1">
+              {s}
+            </div>
           ))}
         </div>
         <p className="mt-6 text-[12px] text-white/[0.36]">
@@ -608,12 +632,6 @@ export default function ShiftSection() {
   const { selectedBusiness } = useBusinessLookup();
   const [chatStatus, setChatStatus] = useState<LookupState["status"]>("idle");
 
-  // Search is only the entry point. Once a business has been found and
-  // analyzed, this UI disappears entirely and the visitor sees only the
-  // full diagnostic report (including the real market position panel)
-  // further down the page (#score) — never both at once.
-  if (selectedBusiness) return null;
-
   return (
     <section className="py-24 md:py-32 section-band" id="shift">
       <div className="max-w-[1200px] mx-auto px-8">
@@ -634,7 +652,7 @@ export default function ShiftSection() {
         </Reveal>
         <Reveal>
           <div className="grid md:grid-cols-2 gap-7 items-stretch">
-            <MarketPanelPlaceholder status={chatStatus} />
+            <MarketPositionColumn status={chatStatus} business={selectedBusiness} />
 
             <AiChatPanel onStatusChange={setChatStatus} />
           </div>
