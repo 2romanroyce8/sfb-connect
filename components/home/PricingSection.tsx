@@ -10,6 +10,8 @@ type Plan = {
   id: string;
   name: string;
   monthlyPrice: number;
+  annualPrice: number;
+  tagline: string;
   description: string;
   button: string;
   href: string;
@@ -20,16 +22,18 @@ type Plan = {
   features: string[];
 };
 
-const YEARLY_DISCOUNT = 0.2; // 20% off when billed annually
-
+// Locked pricing (first real pricing test) -- see Thread Context Doc for
+// the full rationale. Annual prices are explicit target numbers (roughly
+// "10 months for 12"), not a generic percentage-off formula.
 const PLANS: Plan[] = [
   {
-    id: "monitor",
-    name: "AI Presence Monitor",
+    id: "presence",
+    name: "Revenue Presence",
     monthlyPrice: 19.99,
-    description:
-      "SFB Connects tells you what's happening and what to improve — self-service AI presence monitoring.",
-    button: "Book a Demo",
+    annualPrice: 199,
+    tagline: "Know where you stand",
+    description: "SFB monitors your AI presence and explains exactly what's happening and what to improve.",
+    button: "Start Monitoring",
     href: "#book-a-demo",
     buttonStyle: "dark",
     accent: "#5577FF",
@@ -43,43 +47,45 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    id: "grow",
-    name: "AI Presence Grow",
+    id: "growth",
+    name: "Revenue Growth",
     monthlyPrice: 197,
-    description:
-      "SFB Connects actively improves your AI presence — not just reports, real optimization work.",
-    button: "Book a Demo",
+    annualPrice: 1970,
+    tagline: "Actively grow your presence",
+    description: "SFB continuously guides and automates improvement — not just reports, real optimization work.",
+    button: "Start Growing",
     href: "#book-a-demo",
     buttonStyle: "light",
     accent: "#FFFFFF",
-    badge: "POPULAR",
+    badge: "MOST POPULAR",
     featured: true,
     features: [
-      "Everything in Monitor",
-      "Automated optimization",
+      "Everything in Presence",
+      "Automated optimization workflows",
       "Structured data implementation",
-      "AI query tracking",
-      "Competitive intelligence",
-      "Priority support",
+      "Larger AI query tracking",
+      "Advanced competitor intelligence",
+      "Weekly progress reporting",
     ],
   },
   {
-    id: "managed",
-    name: "AI Presence Managed",
-    monthlyPrice: 269,
-    description:
-      "SFB Connects and a dedicated specialist manage your AI presence for you, end to end.",
-    button: "Book a Demo",
+    id: "dominance",
+    name: "Revenue Dominance",
+    monthlyPrice: 359,
+    annualPrice: 3590,
+    tagline: "We handle it for you",
+    description: "SFB does the work — managed implementation with human oversight, end to end.",
+    button: "Let SFB Handle It",
     href: "#book-a-demo",
     buttonStyle: "dark",
     accent: "#42E36D",
     features: [
-      "Everything in Grow",
-      "Human oversight",
-      "White-glove onboarding",
-      "Monthly strategy review",
-      "Business-specific testing",
-      "Priority fixes",
+      "Everything in Growth",
+      "Full managed AI-presence program",
+      "Managed onboarding & implementation",
+      "Human oversight on important changes",
+      "Monthly performance & optimization review",
+      "Priority issue resolution",
     ],
   },
 ];
@@ -90,7 +96,7 @@ function formatPrice(n: number) {
 }
 
 function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing: "monthly" | "yearly" }) {
-  const annualTotal = Math.round(plan.monthlyPrice * 12 * (1 - YEARLY_DISCOUNT) * 100) / 100;
+  const annualTotal = plan.annualPrice;
   const yearlyPerMonth = annualTotal / 12;
   const displayPrice = billing === "monthly" ? plan.monthlyPrice : yearlyPerMonth;
 
@@ -141,6 +147,9 @@ function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing
 
           <div className="text-[18px] font-medium tracking-[-0.025em] text-[#f4f4f4]">
             {plan.name}
+          </div>
+          <div className="mt-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/[0.44]">
+            {plan.tagline}
           </div>
 
           <div className="flex items-baseline gap-1 mt-5">
@@ -257,7 +266,7 @@ export default function PricingSection() {
                       : { background: "rgba(66,227,109,0.14)", color: "#42E36D" }
                   }
                 >
-                  Save 20%
+                  2 months free
                 </span>
               </button>
             </div>
