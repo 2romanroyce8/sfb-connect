@@ -20,32 +20,32 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    id: "basic",
-    name: "AI Presence Basic",
+    id: "monitor",
+    name: "AI Presence Monitor",
     price: "$19.99",
     period: "/mo",
     description:
-      "For businesses that want a clear picture of how AI currently understands and recommends them.",
+      "SFB Connects tells you what's happening and what to improve — self-service AI presence monitoring.",
     button: "Book a Demo",
     href: "#book-a-demo",
     buttonStyle: "dark",
     accent: "#5577FF",
     features: [
-      "2-week business audit",
-      "AI presence analysis",
-      "Business identity review",
-      "Machine readability review",
-      "Structured data review",
-      "Action plan",
+      "AI Presence Score",
+      "Business knowledge profile",
+      "AI visibility monitoring",
+      "Issue detection",
+      "Competitor comparison",
+      "Monthly report",
     ],
   },
   {
-    id: "pro",
-    name: "AI Presence Pro",
+    id: "grow",
+    name: "AI Presence Grow",
     price: "$197",
     period: "/mo",
     description:
-      "For businesses ready to improve how clearly AI systems understand, categorize, and surface them — done for you by our team.",
+      "SFB Connects actively improves your AI presence — not just reports, real optimization work.",
     button: "Book a Demo",
     href: "#book-a-demo",
     buttonStyle: "light",
@@ -53,12 +53,32 @@ const PLANS: Plan[] = [
     badge: "POPULAR",
     featured: true,
     features: [
-      "Everything in Basic",
-      "Entity optimization",
-      "Knowledge optimization",
-      "Local presence review",
-      "AI-readable service structure",
-      "Ongoing monthly review",
+      "Everything in Monitor",
+      "Automated optimization",
+      "Structured data implementation",
+      "AI query tracking",
+      "Competitive intelligence",
+      "Priority support",
+    ],
+  },
+  {
+    id: "managed",
+    name: "AI Presence Managed",
+    price: "$269",
+    period: "/mo",
+    description:
+      "SFB Connects and a dedicated specialist manage your AI presence for you, end to end.",
+    button: "Book a Demo",
+    href: "#book-a-demo",
+    buttonStyle: "dark",
+    accent: "#42E36D",
+    features: [
+      "Everything in Grow",
+      "Human oversight",
+      "White-glove onboarding",
+      "Monthly strategy review",
+      "Business-specific testing",
+      "Priority fixes",
     ],
   },
 ];
@@ -195,7 +215,7 @@ export default function PricingSection() {
           </div>
         </Reveal>
 
-        <div className="grid sm:grid-cols-2 gap-[18px] mt-12 items-stretch max-w-[780px] mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[18px] mt-12 items-stretch">
           {PLANS.map((plan, i) => (
             <PlanCard key={plan.id} plan={plan} index={i} />
           ))}

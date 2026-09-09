@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: "Is pricing monthly or annual?",
-    a: "Monthly. Plans start at $19.99/month, with a Pro tier for businesses that want more done for them. Book a demo and we'll help you pick the right one.",
+    a: "Monthly. Plans start at $19.99/month, with Grow and Managed tiers for businesses that want SFB Connects to actively do the work or fully manage it for them. Book a demo and we'll help you pick the right one.",
     color: "#FF8A3D",
   },
   {
