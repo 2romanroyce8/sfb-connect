@@ -1,6 +1,6 @@
 import type { FetchedPage } from "./types";
 import { extractLinks, findLocalBusiness, extractJsonLd } from "./htmlExtract";
-import { classifyLink, canonicalDomain, isSocialOrDirectoryHost } from "./normalize";
+import { classifyLink, canonicalDomain, isSocialOrDirectoryHost, isInfrastructureUrl } from "./normalize";
 
 export type DiscoveredLinks = {
   officialWebsite: string | null;
@@ -27,6 +27,11 @@ export function discoverLinks(page: FetchedPage): DiscoveredLinks {
     const domain = canonicalDomain(link);
     if (!domain || domain === selfDomain) continue;
     const cls = classifyLink(link);
+    // CDN/tracking-pixel/internal-tooling URLs (e.g. static.xx.fbcdn.net)
+    // are never a business's website or a usable social profile -- skip
+    // them outright rather than letting them fall through to "other" and
+    // become eligible for the official-website vote below.
+    if (cls.kind === "infra") continue;
     if (cls.kind === "social") {
       if (!socials.some((s) => s.platform === cls.platform && canonicalDomain(s.url) === domain)) {
         socials.push({ platform: cls.platform, url: link });
@@ -50,7 +55,11 @@ export function discoverLinks(page: FetchedPage): DiscoveredLinks {
   // JSON-LD `url` field, when present, is a much stronger signal of the
   // official site than a link-count heuristic.
   const localBusiness = findLocalBusiness(extractJsonLd(page.html));
-  const jsonLdUrl = localBusiness?.url ? String(localBusiness.url) : null;
+  const rawJsonLdUrl = localBusiness?.url ? String(localBusiness.url) : null;
+  // Trust JSON-LD's `url` field as strongly as before, but never if it's
+  // itself a CDN/infra URL -- malformed or platform-injected schema.org
+  // markup shouldn't be able to plant a fake "official website" either.
+  const jsonLdUrl = rawJsonLdUrl && !isInfrastructureUrl(rawJsonLdUrl) ? rawJsonLdUrl : null;
 
   let officialWebsite: string | null = jsonLdUrl;
   if (!officialWebsite && candidateWebsites.size > 0) {

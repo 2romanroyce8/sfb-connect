@@ -226,7 +226,7 @@ export default function LeadResearchCommandBar({
 
             {modeOpen && (
               <div
-                className="absolute bottom-full left-0 mb-2 rounded-[14px] overflow-hidden p-1.5"
+                className="absolute top-full left-0 mt-2 rounded-[14px] overflow-hidden p-1.5"
                 style={{ width: 300, background: "#0C0C0C", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}
               >
                 {SCOPE_OPTIONS.map((opt) => (
