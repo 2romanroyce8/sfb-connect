@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
+import { awardPointsForEvent } from "@/lib/team/competition/scoring";
 
 const OUTCOME_STAGE: Record<string, string | null> = {
   booked_meeting: "meeting_booked",
@@ -70,41 +71,57 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
   }
 
   if (outcome === "call_back_later" && followup?.dueAt) {
-    await service.from("crm_followups").insert({
-      lead_id: call.lead_id,
-      rep_id: user.id,
-      created_by: user.id,
-      related_call_id: call.id,
-      followup_type: "CALL",
-      due_at: followup.dueAt,
-      reason: followup.reason || "Call back requested",
-    });
+    const { data: fu } = await service
+      .from("crm_followups")
+      .insert({
+        lead_id: call.lead_id,
+        rep_id: user.id,
+        created_by: user.id,
+        related_call_id: call.id,
+        followup_type: "CALL",
+        due_at: followup.dueAt,
+        reason: followup.reason || "Call back requested",
+      })
+      .select("id")
+      .single();
+    if (fu) await awardPointsForEvent({ userId: user.id, eventType: "followup_created", sourceType: "crm_followups", sourceId: fu.id });
   } else if ((outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") && followup?.dueAt) {
-    await service.from("crm_followups").insert({
-      lead_id: call.lead_id,
-      rep_id: user.id,
-      created_by: user.id,
-      related_call_id: call.id,
-      followup_type: "CALL",
-      due_at: followup.dueAt,
-      reason: followup.reason || `Follow up after ${outcome.replace(/_/g, " ")}`,
-    });
+    const { data: fu } = await service
+      .from("crm_followups")
+      .insert({
+        lead_id: call.lead_id,
+        rep_id: user.id,
+        created_by: user.id,
+        related_call_id: call.id,
+        followup_type: "CALL",
+        due_at: followup.dueAt,
+        reason: followup.reason || `Follow up after ${outcome.replace(/_/g, " ")}`,
+      })
+      .select("id")
+      .single();
+    if (fu) await awardPointsForEvent({ userId: user.id, eventType: "followup_created", sourceType: "crm_followups", sourceId: fu.id });
   }
 
+  let bookedMeetingId: string | null = null;
   if (outcome === "booked_meeting" && meeting?.scheduledAt) {
-    await service.from("crm_meetings").insert({
-      lead_id: call.lead_id,
-      rep_id: user.id,
-      call_id: call.id,
-      scheduled_at: meeting.scheduledAt,
-      contact_name: meeting.contactName || null,
-      contact_email: meeting.contactEmail || null,
-      contact_phone: meeting.contactPhone || null,
-      // No calendar/video provider is connected yet — this is a real
-      // scheduled-meeting record, but calendar_event_id/google_meet_url stay
-      // null until the booking-automation phase wires up Google Calendar.
-      status: "booked",
-    });
+    const { data: insertedMeeting } = await service
+      .from("crm_meetings")
+      .insert({
+        lead_id: call.lead_id,
+        rep_id: user.id,
+        call_id: call.id,
+        scheduled_at: meeting.scheduledAt,
+        contact_name: meeting.contactName || null,
+        contact_email: meeting.contactEmail || null,
+        contact_phone: meeting.contactPhone || null,
+        // No calendar/video provider is connected yet — this is a real
+        // scheduled-meeting record, but calendar_event_id/google_meet_url stay
+        // null until the booking-automation phase wires up Google Calendar.
+        status: "booked",
+      })
+      .select("id")
+      .single();
+    bookedMeetingId = insertedMeeting?.id ?? null;
   }
 
   await service.from("crm_activities").insert({
@@ -113,6 +130,39 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
     activity_type: "call_ended",
     description: `Call ended — outcome: ${outcome.replace(/_/g, " ")}`,
   });
+
+  // Competition points -- every ended call is a base "call completed"
+  // point, with additional (stacking, not replacing) points for stronger
+  // outcomes on the SAME call. This is deliberate: the spec's own test case
+  // (10 calls + 2 qualified conversations + 1 meeting booked = 26 points)
+  // only works if qualified-conversation/demo-booked points are additive on
+  // top of the base call point, not instead of it.
+  await awardPointsForEvent({
+    userId: call.rep_id,
+    eventType: "call_completed",
+    sourceType: "crm_calls",
+    sourceId: call.id,
+    occurredAt: endedAt.toISOString(),
+    description: `Call ended — ${outcome.replace(/_/g, " ")}`,
+  });
+  if (outcome === "interested") {
+    await awardPointsForEvent({
+      userId: call.rep_id,
+      eventType: "qualified_conversation",
+      sourceType: "crm_calls",
+      sourceId: call.id,
+      occurredAt: endedAt.toISOString(),
+    });
+  }
+  if (outcome === "booked_meeting" && bookedMeetingId) {
+    await awardPointsForEvent({
+      userId: call.rep_id,
+      eventType: "demo_booked",
+      sourceType: "crm_meetings",
+      sourceId: bookedMeetingId,
+      occurredAt: endedAt.toISOString(),
+    });
+  }
 
   return NextResponse.json({ ok: true, durationSeconds, newStage });
 }

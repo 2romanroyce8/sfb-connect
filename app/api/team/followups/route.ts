@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { awardPointsForEvent } from "@/lib/team/competition/scoring";
 
 const VALID_TYPES = ["CALL", "MEETING", "EMAIL", "TASK", "RESEARCH"];
 
@@ -48,6 +49,10 @@ export async function POST(req: NextRequest) {
     activity_type: "follow_up_created",
     description: `Follow-up created (${followupType.toLowerCase()})`,
   });
+
+  // Points go to whoever the follow-up is assigned to (repId), not
+  // necessarily the owner who quick-created it on their behalf.
+  await awardPointsForEvent({ userId: repId, eventType: "followup_created", sourceType: "crm_followups", sourceId: followup.id });
 
   return NextResponse.json({ ok: true, followupId: followup.id });
 }

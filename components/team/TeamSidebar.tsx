@@ -21,6 +21,7 @@ import {
   LineChart,
   GanttChartSquare,
   UserCog,
+  Trophy,
   BarChart3,
   Plug,
   Images,
@@ -89,6 +90,7 @@ const NAV_GROUPS: {
     collapsible: true,
     items: [
       { href: "/team/team", label: "Team", icon: UserCog, ownerOnly: true },
+      { href: "/team/leaderboard", label: "Leaderboard", icon: Trophy },
       { href: "/team/performance", label: "Performance", icon: BarChart3, ownerOnly: true },
       { href: "/team/portfolio", label: "Portfolio", icon: Images, ownerOnly: true },
     ],

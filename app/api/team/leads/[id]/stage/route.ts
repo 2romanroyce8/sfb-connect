@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SFB_PLAN_PRICES, isPlanKey } from "@/lib/team/plans";
+import { awardPointsForEvent, reversePointEvent, saleEventTypeForPlan } from "@/lib/team/competition/scoring";
 
 const VALID_STAGES = [
   "new",
@@ -64,30 +65,55 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // rep_id on the revenue event is whoever actually closed it (the acting
     // user), not necessarily the lead's long-term assigned_rep -- these
     // usually match, but the event should reflect who gets credit for it.
-    const { error: revenueError } = await supabase.from("revenue_events").insert({
-      lead_id: params.id,
-      rep_id: user.id,
-      plan_key: planKey,
-      amount: SFB_PLAN_PRICES[planKey as keyof typeof SFB_PLAN_PRICES],
-      event_type: "new_sale",
-      created_by: user.id,
-    });
+    const { data: revenueEvent, error: revenueError } = await supabase
+      .from("revenue_events")
+      .insert({
+        lead_id: params.id,
+        rep_id: user.id,
+        plan_key: planKey,
+        amount: SFB_PLAN_PRICES[planKey as keyof typeof SFB_PLAN_PRICES],
+        event_type: "new_sale",
+        created_by: user.id,
+      })
+      .select("id")
+      .single();
     if (revenueError) {
       // The stage change already succeeded -- don't roll that back over a
       // revenue-logging failure, but do surface it honestly rather than
       // silently losing the revenue record.
       return NextResponse.json({ ok: true, warning: "Lead marked won, but the revenue event could not be recorded: " + revenueError.message });
     }
+    if (revenueEvent) {
+      // Competition points for a real Won+plan transition -- plan-specific,
+      // owner-configurable via competition_scoring_rules (sale_<plan_key>).
+      await awardPointsForEvent({
+        userId: user.id,
+        eventType: saleEventTypeForPlan(planKey),
+        sourceType: "revenue_events",
+        sourceId: revenueEvent.id,
+        description: `${planKey.replace(/_/g, " ")} sale`,
+      });
+    }
   } else if (wasWon) {
     // Reopening a previously-won deal (moved off "won" to any other stage).
     // Never silently delete revenue history -- reverse the active event(s)
     // instead, so the Revenue chart stops counting them going forward while
     // the audit trail still shows exactly what happened and when.
-    await supabase
+    const { data: reversedEvents } = await supabase
       .from("revenue_events")
       .update({ reversed_at: new Date().toISOString() })
       .eq("lead_id", params.id)
-      .is("reversed_at", null);
+      .is("reversed_at", null)
+      .select("id, rep_id, plan_key");
+    for (const rev of reversedEvents ?? []) {
+      await reversePointEvent({
+        userId: rev.rep_id,
+        eventType: saleEventTypeForPlan(rev.plan_key),
+        sourceType: "revenue_events",
+        sourceId: rev.id,
+        reason: `Revenue reversed — lead reopened from won to ${stage.replace(/_/g, " ")}`,
+      });
+    }
     await supabase.from("crm_activities").insert({
       lead_id: params.id,
       rep_id: user.id,
