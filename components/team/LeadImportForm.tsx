@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ResearchProgressModule from "./ResearchProgressModule";
 import LeadResearchCommandBar from "./LeadResearchCommandBar";
+import ResearchUsageBar from "./ResearchUsageBar";
 import type { ResearchStage } from "@/lib/research/jobProgress";
 import type { ResearchScope } from "@/lib/research/LeadProfileBuilder";
 
@@ -101,6 +102,7 @@ export default function LeadImportForm() {
       >
         {job.mode === "idle" && (
           <div style={{ width: "100%", maxWidth: 820, transform: "translateY(60px)" }}>
+            <ResearchUsageBar />
             <LeadResearchCommandBar onSubmit={runResearch} />
           </div>
         )}

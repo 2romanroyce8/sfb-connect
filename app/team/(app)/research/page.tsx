@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import ActiveResearchJobs from "@/components/team/ActiveResearchJobs";
+import ResearchUsageBar from "@/components/team/ResearchUsageBar";
 
 export default async function ResearchQueuePage() {
   const supabase = createSupabaseServerClient();
@@ -25,6 +26,7 @@ export default async function ResearchQueuePage() {
         </Link>
       </div>
 
+      <ResearchUsageBar />
       <ActiveResearchJobs />
 
       {!results || results.length === 0 ? (

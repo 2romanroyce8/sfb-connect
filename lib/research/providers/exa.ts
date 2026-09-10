@@ -1,4 +1,5 @@
 import type { DiscoveryProvider, DiscoveryQuery, DiscoveryResult, ProviderHealth } from "./types";
+import { logSearchCall } from "../usage";
 
 // One discovery provider among potentially several. Exa is a neural+keyword
 // web search API -- a real, general-purpose search surface, not a
@@ -35,6 +36,10 @@ export const exaProvider: DiscoveryProvider = {
         }),
       });
       clearTimeout(timeout);
+      // Log the call regardless of outcome -- Exa bills the request whether
+      // or not it returns useful results, so cost tracking has to happen
+      // here, not conditionally on `res.ok`.
+      await logSearchCall("exa", request.query);
       if (!res.ok) return [];
       const data = await res.json();
       const now = new Date().toISOString();
