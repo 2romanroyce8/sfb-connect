@@ -12,12 +12,10 @@ export function classifySourceType(url: string): string {
   return "website";
 }
 
-export async function fetchPage(rawUrl: string): Promise<FetchedPage> {
-  const url = normalizeUrl(rawUrl);
-  const sourceType = classifySourceType(url);
+async function fetchOnce(url: string): Promise<{ ok: boolean; finalUrl: string; html: string; blockedReason?: string }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
     const res = await fetch(url, {
       redirect: "follow",
       signal: controller.signal,
@@ -28,22 +26,49 @@ export async function fetchPage(rawUrl: string): Promise<FetchedPage> {
     });
     clearTimeout(timeout);
     if (!res.ok) {
-      // Most login-walled platforms return 200 with a login-gate page, not a
-      // clean error status — an actual non-2xx from one of them is a strong
-      // enough signal to call it unavailable rather than "not found".
       const blocked = SOCIAL_LOGIN_WALLED.has(new URL(url).hostname.replace(/^www\./, "")) || res.status === 403 || res.status === 429 || res.status === 999;
-      return { url, finalUrl: res.url || url, ok: false, html: "", sourceType, blockedReason: blocked ? `HTTP ${res.status} — likely login-walled` : `HTTP ${res.status}` };
+      return { ok: false, finalUrl: res.url || url, html: "", blockedReason: blocked ? `HTTP ${res.status} — likely login-walled` : `HTTP ${res.status}` };
     }
     const html = await res.text();
-    // Heuristic login-wall detection for platforms that return 200 anyway.
     const looksLoginWalled =
       SOCIAL_LOGIN_WALLED.has(new URL(res.url || url).hostname.replace(/^www\./, "")) &&
       (/log ?in to (see|view)|you must log in|content isn.t available/i.test(html) || html.length < 2000);
-    if (looksLoginWalled) {
-      return { url, finalUrl: res.url || url, ok: false, html, sourceType, blockedReason: "login wall" };
-    }
-    return { url, finalUrl: res.url || url, ok: true, html, sourceType };
+    if (looksLoginWalled) return { ok: false, finalUrl: res.url || url, html, blockedReason: "login wall" };
+    return { ok: true, finalUrl: res.url || url, html };
   } catch (err) {
-    return { url, finalUrl: url, ok: false, html: "", sourceType, blockedReason: err instanceof Error && err.name === "AbortError" ? "timeout" : "network error" };
+    clearTimeout(timeout);
+    return { ok: false, finalUrl: url, html: "", blockedReason: err instanceof Error && err.name === "AbortError" ? "timeout" : "network error" };
   }
+}
+
+export async function fetchPage(rawUrl: string): Promise<FetchedPage> {
+  const url = normalizeUrl(rawUrl);
+  const sourceType = classifySourceType(url);
+
+  const first = await fetchOnce(url);
+  if (first.ok) return { url, finalUrl: first.finalUrl, ok: true, html: first.html, sourceType };
+
+  // Legitimate fallback, not a bypass: mbasic.facebook.com is the same
+  // public page, served by Facebook itself as its lightweight/basic-browser
+  // surface. It's frequently reachable without a login wall for public
+  // Business Pages even when the full www.facebook.com render blocks a
+  // non-browser client -- this doesn't circumvent any access control, it
+  // just uses the plain-HTML entry point Facebook already offers.
+  let hostname = "";
+  try {
+    hostname = new URL(url).hostname.replace(/^www\.|^m\./, "");
+  } catch {
+    // leave hostname empty
+  }
+  if (hostname === "facebook.com") {
+    const mbasicUrl = url.replace(/^https?:\/\/(www\.|m\.)?facebook\.com/i, "https://mbasic.facebook.com");
+    if (mbasicUrl !== url) {
+      const fallback = await fetchOnce(mbasicUrl);
+      if (fallback.ok) {
+        return { url, finalUrl: fallback.finalUrl, ok: true, html: fallback.html, sourceType };
+      }
+    }
+  }
+
+  return { url, finalUrl: first.finalUrl, ok: false, html: first.html, sourceType, blockedReason: first.blockedReason };
 }

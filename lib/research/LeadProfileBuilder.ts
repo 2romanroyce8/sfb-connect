@@ -68,20 +68,40 @@ function urlKey(url: string): string {
 }
 
 const HANDLE_HOSTS = ["facebook.com", "instagram.com", "tiktok.com", "x.com", "twitter.com"];
+// Segments that are never themselves a handle -- but several of them
+// (pages/people/profile.php) are followed by a real human-readable
+// business-name slug that IS usable identity, so this only rules out
+// treating the segment itself as the handle, not the whole URL.
 const NON_HANDLE_SEGMENTS = new Set(["profile.php", "pages", "people", "share"]);
 
 /** Pulls a username/handle straight out of a seed social URL -- this is
  * real identity evidence even when the page itself can't be fetched (e.g.
  * a blocked Facebook profile), and it's the strongest signal the query
- * generator can use. */
+ * generator can use.
+ *
+ * Handles three real Facebook URL shapes, not just the vanity-username
+ * one:
+ *   facebook.com/tonytints925                       -> "tonytints925"
+ *   facebook.com/pages/Some-Business-Name/123456789  -> "Some Business Name"
+ *   facebook.com/people/Some-Business-Name/pfbid...  -> "Some Business Name"
+ * A bare facebook.com/profile.php?id=NNNN (no name segment at all) still
+ * has no recoverable text identity -- that's an honest dead end, not a bug,
+ * since a raw numeric ID isn't a usable search query. */
 function extractHandleFromSeeds(seedSources: string[]): string | null {
   for (const s of seedSources) {
     try {
       const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
       const host = u.hostname.replace(/^www\.|^m\./, "");
       if (!HANDLE_HOSTS.includes(host)) continue;
-      const seg = u.pathname.split("/").filter(Boolean)[0];
-      if (seg && !NON_HANDLE_SEGMENTS.has(seg)) return seg;
+      const segments = u.pathname.split("/").filter(Boolean);
+      const first = segments[0];
+      if (first && !NON_HANDLE_SEGMENTS.has(first)) return first;
+      // pages/<name>/<id> and people/<name>/<id> -- the second segment is a
+      // real, human-readable business-name slug worth turning into a query.
+      if ((first === "pages" || first === "people") && segments[1]) {
+        const nameSlug = segments[1].replace(/[-_]+/g, " ").trim();
+        if (nameSlug) return nameSlug;
+      }
     } catch {
       // not a URL — nothing to extract
     }
