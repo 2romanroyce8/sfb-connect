@@ -3,6 +3,26 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/s
 import { buildLeadProfile, type ResearchScope } from "@/lib/research/LeadProfileBuilder";
 import { evaluateCompleteness } from "@/lib/research/CompletenessEvaluator";
 import { progressForStage, type ResearchStage } from "@/lib/research/jobProgress";
+import { classifySeedUrlType } from "@/lib/research/fetchSource";
+import type { ResearchInstrumentation } from "@/lib/research/types";
+
+const FACEBOOK_SEED_TYPES = new Set(["vanity", "profile_id", "pages", "people"]);
+
+// Maps ResearchInstrumentation onto the crm_research_jobs row shape, shared
+// by both the success and failure write paths so the two can never drift
+// out of sync with each other.
+function instrumentationColumns(i: ResearchInstrumentation) {
+  return {
+    seed_url_type: i.seedUrlType,
+    facebook_fetch_result: i.facebookFetchResult,
+    mbasic_fallback_used: i.mbasicFallbackUsed,
+    mbasic_fallback_result: i.mbasicFallbackResult,
+    identity_recovered_from_url: i.identityRecoveredFromUrl,
+    identity_recovered_from_secondary_source: i.identityRecoveredFromSecondarySource,
+    discovery_provider_used: i.discoveryProviderUsed,
+    sources_verified: i.sourcesVerified,
+  };
+}
 
 const VALID_SCOPES: ResearchScope[] = ["public_web", "website_only", "social_profile", "google_business", "quick_contact"];
 
@@ -90,7 +110,7 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        const { graph } = await buildLeadProfile(rawSources, onStage, scope);
+        const { graph, instrumentation } = await buildLeadProfile(rawSources, onStage, scope);
         const completeness = evaluateCompleteness(graph);
         const website = graph.contactMethods.find((c) => c.type === "website");
         const phone = graph.contactMethods.find((c) => c.type === "phone");
@@ -102,12 +122,38 @@ export async function POST(req: NextRequest) {
         // research_results row for it.
         const identifiedAnything = !!graph.businessName?.value || website?.value || phone?.value || email?.value;
         if (!identifiedAnything) {
-          const reason = "None of the submitted sources could be identified as a real business — every source was unreachable or returned no usable business information.";
+          // A Facebook seed that never yielded identity through ANY
+          // recovery path (direct fetch, mbasic fallback, URL-text
+          // extraction, or wider-web secondary search) is a distinct,
+          // honest outcome from a generic "not found" -- we didn't prove
+          // the business doesn't exist, we just ran out of public sources
+          // that could identify it. Kept out of NOT_FOUND so it can be
+          // tracked and reported on separately.
+          const isFacebookSeed = FACEBOOK_SEED_TYPES.has(instrumentation.seedUrlType);
+          const identityUnrecoverable =
+            isFacebookSeed &&
+            instrumentation.facebookFetchResult !== "success" &&
+            instrumentation.mbasicFallbackResult !== "success" &&
+            !instrumentation.identityRecoveredFromUrl &&
+            !instrumentation.identityRecoveredFromSecondarySource;
+          const errorCode = identityUnrecoverable ? "IDENTITY_UNRECOVERABLE_FROM_PUBLIC_SOURCES" : "NO_IDENTITY_FOUND";
+          const reason = identityUnrecoverable
+            ? "This Facebook profile's identity could not be recovered from any public source (direct fetch, mbasic fallback, the URL itself, or a wider-web search) — this does not prove the business doesn't exist, only that public sources couldn't identify it."
+            : "None of the submitted sources could be identified as a real business — every source was unreachable or returned no usable business information.";
           await service
             .from("crm_research_jobs")
-            .update({ status: "failed", error_message: reason, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+            .update({
+              status: "failed",
+              error_code: errorCode,
+              error_message: reason,
+              research_completed: false,
+              research_coverage_score: 0,
+              ...instrumentationColumns(instrumentation),
+              completed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
             .eq("id", job.id);
-          push({ type: "error", jobId: job.id, message: reason, lastStage: "BUILDING_PROFILE" });
+          push({ type: "error", jobId: job.id, message: reason, errorCode, lastStage: "BUILDING_PROFILE" });
           controller.close();
           return;
         }
@@ -152,6 +198,9 @@ export async function POST(req: NextRequest) {
             status: "complete",
             current_step: "COMPLETE",
             progress_percent: 100,
+            research_completed: true,
+            research_coverage_score: completeness.overallPercent,
+            ...instrumentationColumns(instrumentation),
             completed_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
@@ -170,9 +219,21 @@ export async function POST(req: NextRequest) {
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Research failed.";
+        // buildLeadProfile threw before returning instrumentation — still
+        // worth logging the seed's URL shape so a hard-crash failure mode
+        // is visible in the same seed_url_type breakdown as a clean
+        // "no identity found" outcome, instead of disappearing from it.
         await service
           .from("crm_research_jobs")
-          .update({ status: "failed", error_message: message, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .update({
+            status: "failed",
+            error_code: "RESEARCH_EXCEPTION",
+            error_message: message,
+            research_completed: false,
+            seed_url_type: rawSources[0] ? classifySeedUrlType(rawSources[0]) : null,
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", job.id);
         push({ type: "error", jobId: job.id, message });
       } finally {

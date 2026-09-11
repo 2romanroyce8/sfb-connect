@@ -11,6 +11,18 @@ export type SourceCheck = {
   reason?: string; // e.g. "login wall", "timeout", "blocked" — only set when reachable=false
 };
 
+// One real network attempt inside fetchPage() — a plain fetch is one
+// attempt; a Facebook URL that gets blocked and then retried against
+// mbasic.facebook.com is two. Recorded regardless of outcome so callers can
+// derive facebook_fetch_result / mbasic_fallback_* without re-fetching or
+// guessing from the final result alone.
+export type FetchAttempt = {
+  url: string;
+  strategy: "direct" | "mbasic_fallback";
+  ok: boolean;
+  blockedReason?: string;
+};
+
 export type FetchedPage = {
   url: string; // as requested
   finalUrl: string; // after redirects
@@ -18,6 +30,34 @@ export type FetchedPage = {
   html: string;
   sourceType: string;
   blockedReason?: string;
+  // Only populated for hosts fetchPage() has a multi-strategy path for
+  // today (Facebook). Empty/undefined for every other host.
+  fetchAttempts?: FetchAttempt[];
+};
+
+// facebook.com URL shape the seed actually was — this is what determines
+// whether a business's identity can be recovered from the URL text alone
+// when the page itself is blocked. "vanity" and "pages"/"people" carry a
+// human-readable slug; "profile_id" (bare profile.php?id=NNNN) does not.
+export type SeedUrlType = "vanity" | "profile_id" | "pages" | "people" | "website" | "other";
+
+export type FetchOutcome = "success" | "blocked" | "failed" | "not_applicable";
+
+// Per-job telemetry answering exactly the questions in the Facebook-recovery
+// instrumentation request: did the direct fetch work, did mbasic save it,
+// was identity recovered from the URL text vs. a secondary (wider-web)
+// source, and how far did the graph actually get. Attached to every
+// crm_research_jobs row, success or failure, so the failure/recovery rate
+// can be measured at real volume instead of guessed at.
+export type ResearchInstrumentation = {
+  seedUrlType: SeedUrlType;
+  facebookFetchResult: FetchOutcome;
+  mbasicFallbackUsed: boolean;
+  mbasicFallbackResult: FetchOutcome;
+  identityRecoveredFromUrl: boolean;
+  identityRecoveredFromSecondarySource: boolean;
+  discoveryProviderUsed: string | null;
+  sourcesVerified: number;
 };
 
 export type Candidate<T = string> = {

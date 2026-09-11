@@ -1,4 +1,4 @@
-import type { FetchedPage } from "./types";
+import type { FetchAttempt, FetchedPage, SeedUrlType } from "./types";
 import { normalizeUrl, classifyLink } from "./normalize";
 
 const SOCIAL_LOGIN_WALLED = new Set(["facebook.com", "instagram.com", "tiktok.com", "linkedin.com", "x.com", "twitter.com"]);
@@ -10,6 +10,31 @@ export function classifySourceType(url: string): string {
   if (c.kind === "booking") return "booking";
   if (c.kind === "linktree") return "link_in_bio";
   return "website";
+}
+
+// Which real facebook.com URL shape a seed is, BEFORE any fetch is
+// attempted. "vanity" and "pages"/"people" carry a human-readable slug that
+// is real identity evidence even if the page itself never loads; a bare
+// "profile_id" (facebook.com/profile.php?id=NNNN, no name segment) does
+// not. Used to classify recovery outcomes, not to change fetch behavior.
+const NON_HANDLE_SEGMENTS = new Set(["profile.php", "pages", "people", "share"]);
+export function classifySeedUrlType(rawUrl: string): SeedUrlType {
+  let u: URL;
+  try {
+    u = new URL(/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`);
+  } catch {
+    return "other";
+  }
+  const host = u.hostname.replace(/^www\.|^m\./, "");
+  if (host !== "facebook.com") return SOCIAL_LOGIN_WALLED.has(host) ? "other" : "website";
+  const segments = u.pathname.split("/").filter(Boolean);
+  const first = segments[0];
+  if (!first) return "profile_id"; // bare facebook.com — no path at all
+  if (first === "profile.php") return "profile_id";
+  if (first === "pages") return "pages";
+  if (first === "people") return "people";
+  if (NON_HANDLE_SEGMENTS.has(first)) return "other";
+  return "vanity";
 }
 
 async function fetchOnce(url: string): Promise<{ ok: boolean; finalUrl: string; html: string; blockedReason?: string }> {
@@ -44,9 +69,11 @@ async function fetchOnce(url: string): Promise<{ ok: boolean; finalUrl: string; 
 export async function fetchPage(rawUrl: string): Promise<FetchedPage> {
   const url = normalizeUrl(rawUrl);
   const sourceType = classifySourceType(url);
+  const fetchAttempts: FetchAttempt[] = [];
 
   const first = await fetchOnce(url);
-  if (first.ok) return { url, finalUrl: first.finalUrl, ok: true, html: first.html, sourceType };
+  fetchAttempts.push({ url, strategy: "direct", ok: first.ok, blockedReason: first.blockedReason });
+  if (first.ok) return { url, finalUrl: first.finalUrl, ok: true, html: first.html, sourceType, fetchAttempts };
 
   // Legitimate fallback, not a bypass: mbasic.facebook.com is the same
   // public page, served by Facebook itself as its lightweight/basic-browser
@@ -64,11 +91,12 @@ export async function fetchPage(rawUrl: string): Promise<FetchedPage> {
     const mbasicUrl = url.replace(/^https?:\/\/(www\.|m\.)?facebook\.com/i, "https://mbasic.facebook.com");
     if (mbasicUrl !== url) {
       const fallback = await fetchOnce(mbasicUrl);
+      fetchAttempts.push({ url: mbasicUrl, strategy: "mbasic_fallback", ok: fallback.ok, blockedReason: fallback.blockedReason });
       if (fallback.ok) {
-        return { url, finalUrl: fallback.finalUrl, ok: true, html: fallback.html, sourceType };
+        return { url, finalUrl: fallback.finalUrl, ok: true, html: fallback.html, sourceType, fetchAttempts };
       }
     }
   }
 
-  return { url, finalUrl: first.finalUrl, ok: false, html: first.html, sourceType, blockedReason: first.blockedReason };
+  return { url, finalUrl: first.finalUrl, ok: false, html: first.html, sourceType, blockedReason: first.blockedReason, fetchAttempts };
 }

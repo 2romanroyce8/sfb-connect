@@ -18,8 +18,8 @@
 // new sources and reopen the discovery queue — bounded to a couple of
 // cycles so this can't loop forever — before the job is allowed to finish.
 // ============================================================
-import type { BusinessGraph, Candidate, FetchedPage, SourceCheck, SourceLogEntry, QAPassResult } from "./types";
-import { fetchPage } from "./fetchSource";
+import type { BusinessGraph, Candidate, FetchedPage, SourceCheck, SourceLogEntry, QAPassResult, ResearchInstrumentation, FetchOutcome } from "./types";
+import { fetchPage, classifySeedUrlType } from "./fetchSource";
 import { discoverLinks } from "./LinkDiscoveryService";
 import { discoverContacts } from "./ContactDiscoveryService";
 import { discoverLocations } from "./LocationDiscoveryService";
@@ -87,7 +87,7 @@ const NON_HANDLE_SEGMENTS = new Set(["profile.php", "pages", "people", "share"])
  * A bare facebook.com/profile.php?id=NNNN (no name segment at all) still
  * has no recoverable text identity -- that's an honest dead end, not a bug,
  * since a raw numeric ID isn't a usable search query. */
-function extractHandleFromSeeds(seedSources: string[]): string | null {
+export function extractHandleFromSeeds(seedSources: string[]): string | null {
   for (const s of seedSources) {
     try {
       const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
@@ -131,7 +131,7 @@ export async function buildLeadProfile(
   seedSources: string[],
   onStage?: ResearchStageUpdate,
   scope: ResearchScope = "public_web"
-): Promise<{ graph: BusinessGraph; allPages: FetchedPage[] }> {
+): Promise<{ graph: BusinessGraph; allPages: FetchedPage[]; instrumentation: ResearchInstrumentation }> {
   const skipExpansion = scope === "website_only" || scope === "quick_contact";
   const skipLocationsAndSocials = scope === "quick_contact";
 
@@ -141,6 +141,10 @@ export async function buildLeadProfile(
   const queue: QueueItem[] = [];
   let officialWebsite: string | null = null;
   let websiteSubPagesQueued = false;
+  // Captured separately from `visited` (which is keyed by domain and can be
+  // overwritten by a later same-domain fetch) so seed-fetch instrumentation
+  // always reflects the actual seed page's own fetch attempts.
+  const seedPageByUrl = new Map<string, FetchedPage>();
 
   function enqueue(url: string, discoveredFrom: string | null, discoveryMethod: SourceLogEntry["discoveryMethod"], depth: number) {
     const key = urlKey(url);
@@ -162,6 +166,7 @@ export async function buildLeadProfile(
     await onStage?.("DISCOVERING_SOURCES", { sourcesFound: visited.size });
     const page = await fetchPage(item.url);
     visited.set(key, page);
+    if (item.discoveryMethod === "seed") seedPageByUrl.set(item.url, page);
     const logEntry: SourceLogEntry = {
       url: item.url,
       sourceType: page.sourceType,
@@ -400,6 +405,31 @@ export async function buildLeadProfile(
 
   const sourceChecks: SourceCheck[] = sourceLog.map((s) => ({ sourceUrl: s.url, sourceType: s.sourceType, reachable: s.fetchStatus === "ok", reason: s.blockedReason }));
 
+  // ---- Facebook-recovery instrumentation (per-job telemetry) ----
+  // Answers, with real numbers instead of anecdotes: what % of Facebook
+  // seeds complete research, how often mbasic saves a blocked job, and
+  // which seed URL shapes fail most. Based on the PRIMARY seed only — a
+  // multi-source submission's later sources don't change what "the seed"
+  // was for classification purposes.
+  const primarySeed = seedSources[0] ?? "";
+  const seedUrlType = classifySeedUrlType(primarySeed);
+  const isFacebookSeed = seedUrlType === "vanity" || seedUrlType === "profile_id" || seedUrlType === "pages" || seedUrlType === "people";
+  const seedAttempts = seedPageByUrl.get(primarySeed)?.fetchAttempts ?? [];
+  const directAttempt = seedAttempts.find((a) => a.strategy === "direct");
+  const mbasicAttempt = seedAttempts.find((a) => a.strategy === "mbasic_fallback");
+  const outcomeOf = (a: typeof directAttempt): FetchOutcome => (!a ? "not_applicable" : a.ok ? "success" : "blocked");
+
+  const instrumentation: ResearchInstrumentation = {
+    seedUrlType,
+    facebookFetchResult: isFacebookSeed ? outcomeOf(directAttempt) : "not_applicable",
+    mbasicFallbackUsed: !!mbasicAttempt,
+    mbasicFallbackResult: isFacebookSeed ? outcomeOf(mbasicAttempt) : "not_applicable",
+    identityRecoveredFromUrl: extractHandleFromSeeds(seedSources) !== null,
+    identityRecoveredFromSecondarySource: websiteDiscovery?.status === "found",
+    discoveryProviderUsed: websiteDiscovery && "provider" in websiteDiscovery ? websiteDiscovery.provider : null,
+    sourcesVerified: sourceLog.filter((s) => s.fetchStatus === "ok").length,
+  };
+
   const graph: BusinessGraph = {
     ...extracted,
     sourceChecks,
@@ -417,7 +447,7 @@ export async function buildLeadProfile(
       : {}),
   };
 
-  return { graph, allPages };
+  return { graph, allPages, instrumentation };
 }
 
 function normalizeResolved(r: Resolved<string>) {
