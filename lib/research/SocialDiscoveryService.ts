@@ -2,15 +2,7 @@ import type { FetchedPage, SocialProfileRecord, SocialPlatform } from "./types";
 import { extractJsonLd, findLocalBusiness } from "./htmlExtract";
 import { discoverLinks } from "./LinkDiscoveryService";
 import { socialPlatformFor } from "./normalize";
-
-function handleFromUrl(url: string, platform: SocialPlatform): string | null {
-  try {
-    const path = new URL(url).pathname.replace(/^\/+|\/+$/g, "");
-    return path.split("/")[0] || null;
-  } catch {
-    return null;
-  }
-}
+import { normalizeSocialProfileUrl } from "./SocialProfileNormalizer";
 
 // A handle linked directly FROM the business's own official website gets
 // meaningfully higher confidence than one merely mentioned somewhere else —
@@ -18,14 +10,30 @@ function handleFromUrl(url: string, platform: SocialPlatform): string | null {
 export function discoverSocialProfiles(pages: FetchedPage[]): SocialProfileRecord[] {
   const byPlatform = new Map<SocialPlatform, SocialProfileRecord>();
 
+  // Every stored social profile goes through the ONE central normalizer --
+  // this is what guarantees a stored record is always
+  // https://facebook.com/{handle}, never a raw m./mbasic./www. variant and
+  // never a platform help/login/reserved-route URL that slipped past
+  // upstream classification. WhatsApp isn't a profile URL in this sense
+  // (ContactDiscoveryService owns it) so it's stored as-is.
   function add(platform: SocialPlatform, url: string, sourceUrl: string, strength: "official" | "secondary") {
+    let canonicalUrl = url;
+    let handle: string | null = null;
+    if (platform === "whatsapp") {
+      handle = null;
+    } else {
+      const identity = normalizeSocialProfileUrl(url);
+      if (!identity.valid || !identity.canonicalUrl) return; // fail closed -- never store an unresolved/reserved-route "profile"
+      canonicalUrl = identity.canonicalUrl;
+      handle = identity.handle;
+    }
     const existing = byPlatform.get(platform);
     const confidence = strength === "official" ? 0.9 : 0.55;
     if (!existing || confidence > existing.confidence) {
       byPlatform.set(platform, {
         platform,
-        handle: handleFromUrl(url, platform),
-        url,
+        handle,
+        url: canonicalUrl,
         displayName: null,
         status: strength === "official" ? "verified" : "uncertain",
         confidence,

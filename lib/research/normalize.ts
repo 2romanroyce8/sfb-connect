@@ -103,7 +103,27 @@ const INFRA_HOST_SUFFIXES = [
   "ibytedtos.com",
   "muscdn.com",
   "byteoversea.com",
+  // Platform-OWNER corporate domains -- these are real, legitimate sites
+  // (Meta's/ByteDance's own corporate pages), but they belong to the
+  // PLATFORM, never to the business being researched. A social platform's
+  // own help/about/redirect page can legitimately link to its parent
+  // company's site, and without this, that link can win the
+  // "official website" vote by link-frequency alone (the exact bug found in
+  // production: a garbage Instagram seed → Instagram's login page →
+  // Facebook's Help Center → about.meta.com got stored as the business's
+  // website). No real small business's official site is a meta.com or
+  // bytedance.com subdomain, unlike e.g. sites.google.com which real
+  // businesses DO legitimately use -- that's why Google isn't suffix-listed
+  // here (see PLATFORM_OWNER_EXACT_HOSTS below instead).
+  "meta.com",
+  "bytedance.com",
 ];
+
+// Same rationale as above, but Google's OWN corporate/product domains need
+// an exact-match list rather than a full *.google.com suffix ban, because
+// real small businesses legitimately use Google subdomains for hosting
+// (sites.google.com) and business tooling (business.google.com listings).
+const PLATFORM_OWNER_EXACT_HOSTS = ["google.com", "www.google.com", "about.google"];
 
 // Subdomains of an otherwise-legitimate social root domain that are
 // internal API / business-tooling / link-shim endpoints, not a public
@@ -118,6 +138,7 @@ function isInfraHost(url: string): boolean {
   const domain = canonicalDomain(url);
   if (!domain) return false;
   if (INFRA_HOST_SUFFIXES.some((suf) => domain === suf || domain.endsWith(`.${suf}`))) return true;
+  if (PLATFORM_OWNER_EXACT_HOSTS.includes(domain)) return true;
   for (const [root, prefixes] of Object.entries(INFRA_SUBDOMAIN_PREFIXES)) {
     if (domain === root) continue; // the bare root domain is a legitimate profile host
     if (domain.endsWith(`.${root}`)) {
@@ -166,6 +187,36 @@ const BIO_LINK_HOSTS = [
   "koji.to",
 ];
 
+// Reserved first-path-segments on a social platform's own domain that are
+// the PLATFORM's own content (help center, login/auth flows, ad tooling,
+// generic feeds) -- never a business's profile. Without this, classifyLink
+// treated ANY facebook.com/instagram.com/etc URL as a social profile purely
+// by hostname, so a link to facebook.com/help/instagram/261704639352628
+// (Facebook's own Help Center) was indistinguishable from a real business
+// page -- that's what let a chain of platform-support pages get crawled as
+// if they were the submitted business, eventually surfacing Meta's own
+// corporate site and social accounts. Deliberately does NOT include
+// profile.php / pages / people -- those ARE legitimate Facebook business
+// profile shapes and must keep working.
+const RESERVED_SOCIAL_ROUTES: Record<string, string[]> = {
+  facebook: ["login", "login.php", "share", "sharer", "watch", "marketplace", "groups", "events", "help", "privacy", "policies", "settings", "ads", "business", "developers", "plugins", "dialog", "l.php", "tr", "photo.php", "video.php", "home.php", "about", "legal"],
+  instagram: ["explore", "accounts", "direct", "reels", "reel", "stories", "p", "about", "developer", "legal", "tv", "embed", "graphql"],
+  tiktok: ["login", "discover", "music", "tag", "about", "legal", "business", "foryou", "upload", "embed"],
+  youtube: ["watch", "results", "playlist", "feed", "shorts", "about", "account", "upload", "gaming", "premium", "live", "embed", "redirect"],
+  x: ["home", "explore", "notifications", "messages", "settings", "search", "i", "intent", "hashtag", "login", "tos", "privacy", "about", "jobs"],
+  linkedin: ["help", "legal", "login", "signup", "about", "jobs", "learning"],
+};
+
+function isReservedSocialRoute(url: string, platform: string): boolean {
+  if (!(platform in RESERVED_SOCIAL_ROUTES)) return false;
+  try {
+    const first = new URL(normalizeUrl(url)).pathname.split("/").filter(Boolean)[0]?.toLowerCase();
+    return !!first && RESERVED_SOCIAL_ROUTES[platform].includes(first);
+  } catch {
+    return false;
+  }
+}
+
 export type LinkClassification =
   | { kind: "social"; platform: "facebook" | "instagram" | "tiktok" | "linkedin" | "youtube" | "x" | "whatsapp" }
   | { kind: "whatsapp" }
@@ -183,7 +234,14 @@ export function classifyLink(url: string): LinkClassification {
   if (domain === "wa.me" || domain === "api.whatsapp.com") return { kind: "whatsapp" };
   if (matchesSocialHost(domain)) {
     const platform = socialPlatformForDomain(domain);
-    if (platform) return { kind: "social", platform };
+    if (platform) {
+      // A reserved platform route is also never a real business's "other"
+      // website candidate, so it's folded into "infra" (the same bucket
+      // CDN/tooling hosts use) rather than a new kind -- every existing
+      // caller that already skips "infra" gets this fix for free.
+      if (platform !== "whatsapp" && isReservedSocialRoute(url, platform)) return { kind: "infra" };
+      return { kind: "social", platform };
+    }
   }
   if (BIO_LINK_HOSTS.includes(domain)) return { kind: "linktree" };
   if (["calendly.com", "squareup.com", "square.site", "booksy.com", "acuityscheduling.com", "setmore.com"].includes(domain)) return { kind: "booking" };
