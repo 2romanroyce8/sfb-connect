@@ -14,6 +14,12 @@ export function normalizeUrl(input: string): string {
   }
 }
 
+// Domain-identity key: "what website/business does this URL belong to."
+// Correct for entity resolution, official-site matching, and per-domain
+// budgeting/rate limits -- WRONG for crawl-frontier dedupe (two different
+// pages on the same domain must not collapse to one key). See pageKey()
+// below for that. Kept exactly as-is; every existing caller here already
+// wants domain-level identity.
 export function canonicalDomain(url: string): string | null {
   try {
     const u = new URL(normalizeUrl(url));
@@ -21,6 +27,37 @@ export function canonicalDomain(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+// Semantic alias for canonicalDomain() at call sites that are explicitly
+// about domain-level identity (crawl budgets, official-site matching) --
+// same function, clearer name alongside pageKey() below.
+export const domainKey = canonicalDomain;
+
+const TRACKING_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid", "fbadid", "mc_cid", "mc_eid", "igshid", "msclkid"];
+
+// Crawl-frontier identity key: "have we already queued/fetched this exact
+// meaningful page." Distinct from canonicalDomain() on purpose --
+// /about and /contact on the same domain MUST produce different keys, or
+// the discovery graph silently stops crawling a site after its first page
+// (the bug this function fixes). Normalizes protocol/host casing, optional
+// www, trailing slash, fragment, known tracking params, and query-param
+// order -- but preserves every OTHER path segment and query param, since
+// ?id=123 vs ?id=456 are genuinely different pages.
+export function pageKey(input: string): string {
+  let u: URL;
+  try {
+    u = new URL(normalizeUrl(input));
+  } catch {
+    return input.trim().toLowerCase();
+  }
+  u.hash = "";
+  u.hostname = u.hostname.replace(/^www\./, "").toLowerCase();
+  for (const param of TRACKING_PARAMS) u.searchParams.delete(param);
+  u.searchParams.sort();
+  let pathname = u.pathname || "/";
+  if (pathname.length > 1 && pathname.endsWith("/")) pathname = pathname.slice(0, -1);
+  return `${u.protocol}//${u.hostname}${pathname}${u.search}`;
 }
 
 export function normalizePhone(raw: string): string | null {

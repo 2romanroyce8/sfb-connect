@@ -26,9 +26,10 @@ import { discoverLocations } from "./LocationDiscoveryService";
 import { discoverSocialProfiles } from "./SocialDiscoveryService";
 import { resolveField, type Resolved } from "./EvidenceValidator";
 import { extractTitle, extractMeta, extractJsonLd, findLocalBusiness, decodeEntities, extractLinks } from "./htmlExtract";
-import { classifyLink, canonicalDomain } from "./normalize";
+import { classifyLink, canonicalDomain, domainKey, pageKey } from "./normalize";
 import { classifyCategoryHeuristic } from "./CategoryClassifier";
 import { discoverOfficialWebsite, type WebsiteDiscoveryOutcome } from "./discovery/websiteDiscovery";
+import { isRejectedPath, sortByPriority, MAX_PAGES_PER_DOMAIN } from "./CrawlPriority";
 import type { ResearchStage } from "./jobProgress";
 import {
   runIdentityQA,
@@ -63,8 +64,16 @@ const MAX_QA_REOPEN_CYCLES = 2; // QA can reopen research, but not forever
 
 type QueueItem = { url: string; discoveredFrom: string | null; discoveryMethod: SourceLogEntry["discoveryMethod"]; depth: number };
 
+// Crawl-frontier identity: two different pages on the same domain must
+// produce two different keys, or the graph silently stops crawling a site
+// after its first page. This is deliberately NOT canonicalDomain() — see
+// pageKey()'s own doc comment in normalize.ts for why that was the bug.
+// Crawl-frontier identity: two different pages on the same domain must
+// produce two different keys, or the graph silently stops crawling a site
+// after its first page. This is deliberately NOT canonicalDomain() — see
+// pageKey()'s own doc comment in normalize.ts for why that was the bug.
 function urlKey(url: string): string {
-  return canonicalDomain(url) || url.toLowerCase();
+  return pageKey(url);
 }
 
 const HANDLE_HOSTS = ["facebook.com", "instagram.com", "tiktok.com", "x.com", "twitter.com"];
@@ -112,7 +121,10 @@ export function extractHandleFromSeeds(seedSources: string[]): string | null {
 /** Same-domain links matching a business-information page type — the
  * queue-native replacement for the old fixed "crawl exactly 6 pages"
  * helper. Runs against ANY page that turns out to be the official website,
- * however many hops from the seed it was discovered. */
+ * however many hops from the seed it was discovered. Returned highest-value
+ * first (contact/about/services before gallery/blog) so that when a site
+ * has more matching pages than the per-domain budget allows, enqueue()
+ * spends that budget on the pages a salesperson actually cares about. */
 function discoverWebsiteSubPages(page: FetchedPage): string[] {
   const domain = canonicalDomain(page.finalUrl);
   const links = extractLinks(page.html, page.finalUrl);
@@ -124,8 +136,17 @@ function discoverWebsiteSubPages(page: FetchedPage): string[] {
       return false;
     }
   });
-  return Array.from(new Set(matches));
+  return sortByPriority(Array.from(new Set(matches)));
 }
+
+// A handful of common paths worth guessing on a domain we already believe
+// (from other evidence -- a linked-to website, a search-discovered
+// candidate) IS the official site, even though its own root fetch failed.
+// Bounded to two guesses so a wrong guess costs almost nothing against the
+// per-domain budget. This is what lets a real /contact page still get
+// found and used when the homepage itself 403s/times out, instead of the
+// whole site being written off.
+const HOMEPAGE_FAILURE_GUESS_PATHS = ["/contact", "/about"];
 
 export async function buildLeadProfile(
   seedSources: string[],
@@ -141,15 +162,30 @@ export async function buildLeadProfile(
   const queue: QueueItem[] = [];
   let officialWebsite: string | null = null;
   let websiteSubPagesQueued = false;
-  // Captured separately from `visited` (which is keyed by domain and can be
-  // overwritten by a later same-domain fetch) so seed-fetch instrumentation
-  // always reflects the actual seed page's own fetch attempts.
+  // Captured separately from `visited` (which is now keyed per-page, not
+  // per-domain) so seed-fetch instrumentation always reflects the actual
+  // seed page's own fetch attempts even if other pages on the same domain
+  // are fetched later.
   const seedPageByUrl = new Map<string, FetchedPage>();
+  // Per-domain page count -- fixing pageKey() lets a real multi-page site
+  // get crawled at all, which means it also needs a ceiling so ONE site
+  // can't consume the entire MAX_TOTAL_SOURCES graph budget by itself
+  // (e.g. a paginated blog or one page per city/team-member).
+  const domainPageCount = new Map<string, number>();
+  // Guards the homepage-failure common-path guess (below) to at most once
+  // per domain, regardless of how many times a node on that domain fails.
+  const homepageGuessedDomains = new Set<string>();
 
   function enqueue(url: string, discoveredFrom: string | null, discoveryMethod: SourceLogEntry["discoveryMethod"], depth: number) {
+    if (depth > MAX_DEPTH) return;
+    if (isRejectedPath(url)) return; // admin/auth/commerce/legal/tracking-archive noise -- never worth a fetch
     const key = urlKey(url);
-    if (queuedKeys.has(key) || visited.has(key) || depth > MAX_DEPTH) return;
+    if (queuedKeys.has(key) || visited.has(key)) return;
+    const domain = domainKey(url) || url.toLowerCase();
+    const domainCount = domainPageCount.get(domain) ?? 0;
+    if (domainCount >= MAX_PAGES_PER_DOMAIN) return; // this domain has already used its crawl budget
     queuedKeys.add(key);
+    domainPageCount.set(domain, domainCount + 1);
     queue.push({ url, discoveredFrom, discoveryMethod, depth });
   }
 
@@ -178,7 +214,34 @@ export async function buildLeadProfile(
       verificationPassDone: false,
     };
     sourceLog.push(logEntry);
-    if (!page.ok) return;
+    if (!page.ok) {
+      // The failed page's own root (homepage) being unreachable must not
+      // silently end research for the whole domain -- if we can still
+      // find real evidence on a well-known sub-path (e.g. /contact
+      // happens to be up even though / 403s), that evidence is genuine
+      // and should be used. Bounded to root-looking URLs and 2 guesses,
+      // once per domain.
+      let isRootPath = false;
+      try {
+        const p = new URL(page.finalUrl || item.url).pathname;
+        isRootPath = p === "/" || p === "";
+      } catch {
+        isRootPath = false;
+      }
+      const domain = domainKey(item.url) || item.url.toLowerCase();
+      if (isRootPath && !homepageGuessedDomains.has(domain)) {
+        homepageGuessedDomains.add(domain);
+        for (const guessPath of HOMEPAGE_FAILURE_GUESS_PATHS) {
+          try {
+            const guessUrl = new URL(guessPath, item.url).toString();
+            enqueue(guessUrl, item.url, "website_crawl", item.depth + 1);
+          } catch {
+            // unparseable base -- skip this guess
+          }
+        }
+      }
+      return;
+    }
 
     // PRIMARY EXTRACTION
     const primary = discoverLinks(page);

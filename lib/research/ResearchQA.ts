@@ -8,7 +8,7 @@
 // extend the job, never a pass that just dislikes a result.
 import type { BusinessGraph, FetchedPage, QAPassResult, SocialPlatform } from "./types";
 import { extractLinks } from "./htmlExtract";
-import { classifyLink, canonicalDomain } from "./normalize";
+import { classifyLink, canonicalDomain, pageKey } from "./normalize";
 import { isPublicSearchConfigured, publicSearch } from "./PublicSearchService";
 import { buildFingerprint, matchesFingerprint, type IdentityFingerprint } from "./BusinessIdentityResolver";
 
@@ -23,8 +23,12 @@ export type QAContext = {
   officialWebsite: string | null;
 };
 
+// Same crawl-frontier identity as LeadProfileBuilder.ts's urlKey() -- must
+// stay page-level, not domain-level, or QA passes 3/7 will think a new page
+// on an already-visited domain is a duplicate and never reopen research for
+// it. See normalize.ts's pageKey() doc comment for the full rationale.
 function urlKey(url: string): string {
-  return canonicalDomain(url) || url.toLowerCase();
+  return pageKey(url);
 }
 
 export function runIdentityQA(ctx: QAContext): QAPassResult {
