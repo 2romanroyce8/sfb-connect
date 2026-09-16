@@ -11,6 +11,7 @@ export default function SidebarSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Result[]>([]);
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -24,6 +25,7 @@ export default function SidebarSearch() {
 
   function onChange(value: string) {
     setQuery(value);
+    setError(null);
     if (timer.current) clearTimeout(timer.current);
     if (value.trim().length < 2) {
       setResults([]);
@@ -31,9 +33,19 @@ export default function SidebarSearch() {
       return;
     }
     timer.current = setTimeout(async () => {
-      const res = await fetch(`/api/team/search?q=${encodeURIComponent(value)}`);
-      const data = await res.json();
-      setResults(data.results || []);
+      try {
+        const res = await fetch(`/api/team/search?q=${encodeURIComponent(value)}`);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          setError("Search failed — try again.");
+          setResults([]);
+        } else {
+          setResults(data.results || []);
+        }
+      } catch {
+        setError("Search failed — try again.");
+        setResults([]);
+      }
       setOpen(true);
     }, 250);
   }
@@ -59,7 +71,9 @@ export default function SidebarSearch() {
           className="absolute left-3 right-3 mt-1 rounded-[8px] overflow-hidden z-30"
           style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.1)" }}
         >
-          {results.length === 0 ? (
+          {error ? (
+            <div className="px-3 py-3 text-[12px] text-[#FF453A]">{error}</div>
+          ) : results.length === 0 ? (
             <div className="px-3 py-3 text-[12px] text-[#6E6E73]">No leads match "{query}"</div>
           ) : (
             results.map((r) => (

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:research": "tsx --test tests/research/*.test.ts",
+    "test:research": "tsx --test tests/research/*.test.ts tests/lib/*.test.ts",
     "cf:preview": "npm install --no-save @opennextjs/cloudflare@latest wrangler@latest && opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "npm install --no-save @opennextjs/cloudflare@latest wrangler@latest && opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
