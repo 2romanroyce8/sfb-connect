@@ -116,6 +116,12 @@ export type SourceLogEntry = {
   blockedReason?: string;
   primaryPassDone: boolean;
   verificationPassDone: boolean;
+  // True when this page's content was a social platform's own generic
+  // shell/boilerplate (bare homepage, login wall) rather than anything
+  // specific to the business -- such a page is visited/logged but
+  // contributes nothing to identity resolution or further discovery. See
+  // GenericPlatformContent.ts for why this exists.
+  genericPlatformContent?: boolean;
 };
 
 export type QAPassResult = {

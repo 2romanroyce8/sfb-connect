@@ -30,6 +30,7 @@ import { classifyLink, canonicalDomain, domainKey, pageKey } from "./normalize";
 import { classifyCategoryHeuristic } from "./CategoryClassifier";
 import { discoverOfficialWebsite, type WebsiteDiscoveryOutcome } from "./discovery/websiteDiscovery";
 import { isRejectedPath, sortByPriority, MAX_PAGES_PER_DOMAIN } from "./CrawlPriority";
+import { isGenericPlatformContent } from "./GenericPlatformContent";
 import type { ResearchStage } from "./jobProgress";
 import {
   runIdentityQA,
@@ -243,11 +244,21 @@ export async function buildLeadProfile(
       return;
     }
 
+    // A platform's own generic shell content (bare homepage, login wall)
+    // must not seed further discovery -- its outbound links are platform
+    // navigation chrome (e.g. Instagram's footer linking to meta.ai), not
+    // evidence about the business. This is what stops a blocked profile
+    // from being silently replaced by the PLATFORM's own identity. The
+    // page still counts as visited (sourceLog/sourceChecks unaffected) --
+    // it just contributes nothing.
+    const genericContent = isGenericPlatformContent(page);
+    logEntry.genericPlatformContent = genericContent || undefined;
+
     // PRIMARY EXTRACTION
-    const primary = discoverLinks(page);
+    const primary = genericContent ? { officialWebsite: null, linkInBioPages: [], socials: [], bookingLinks: [] } : discoverLinks(page);
     logEntry.primaryPassDone = true;
     if (!officialWebsite && primary.officialWebsite) officialWebsite = primary.officialWebsite;
-    if (!skipExpansion) {
+    if (!skipExpansion && !genericContent) {
       for (const bioUrl of primary.linkInBioPages) enqueue(bioUrl, item.url, "bio_link", item.depth + 1);
       for (const s of primary.socials) enqueue(s.url, item.url, "social_link", item.depth + 1);
     }
@@ -257,7 +268,7 @@ export async function buildLeadProfile(
     // so a bio-link or social host primary's ordering happened to skip
     // still gets caught before this source is marked done.
     await onStage?.("VERIFYING_SOURCES", { sourcesFound: visited.size });
-    if (!skipExpansion) {
+    if (!skipExpansion && !genericContent) {
       for (const link of extractLinks(page.html, page.finalUrl)) {
         const cls = classifyLink(link);
         if (cls.kind === "linktree") enqueue(link, item.url, "bio_link", item.depth + 1);
@@ -294,19 +305,38 @@ export async function buildLeadProfile(
 
   // ---- AGGREGATE EXTRACTION over the full discovery-graph result ----
   async function aggregate() {
+    // Platform-generic shell content (bare homepage, login wall) is
+    // excluded from every identity-contributing extraction below -- it's
+    // visited/logged, but a page that describes the PLATFORM rather than
+    // the business must never seed a name, category, contact, location, or
+    // social-profile candidate. See GenericPlatformContent.ts.
+    const contentPages = allPages.filter((p) => p.ok && !isGenericPlatformContent(p));
+    // A page reached via wider-web discovery (gap analysis / independent
+    // search) was validated by nothing stronger than a fingerprint guess --
+    // never a confirmed link FROM the business's own site or profile. Its
+    // identity candidates are capped at the weakest strength tier so a
+    // wider-web hit can never outrank (or alone produce "verified" status
+    // for) evidence found by direct crawling, and so a genuine name/entity
+    // collision (two different real "Arturo Herrera"s, for example) can't
+    // silently overwrite an already-established identity.
+    const discoveryMethodByKey = new Map(sourceLog.map((s) => [urlKey(s.url), s.discoveryMethod] as const));
+    const isWiderWebDiscovered = (page: FetchedPage) => {
+      const m = discoveryMethodByKey.get(urlKey(page.finalUrl));
+      return m === "gap_analysis" || m === "search_discovery";
+    };
+
     await onStage?.("EXTRACTING_CONTACTS", { sourcesFound: visited.size });
     const bookingLinks: string[] = [];
-    for (const page of allPages) {
-      if (!page.ok) continue;
+    for (const page of contentPages) {
       bookingLinks.push(...discoverLinks(page).bookingLinks);
     }
-    const contacts = discoverContacts(allPages, Array.from(new Set(bookingLinks)));
+    const contacts = discoverContacts(contentPages, Array.from(new Set(bookingLinks)));
 
     await onStage?.("EXTRACTING_LOCATIONS", { sourcesFound: visited.size });
-    const locations = skipLocationsAndSocials ? [] : discoverLocations(allPages);
+    const locations = skipLocationsAndSocials ? [] : discoverLocations(contentPages);
 
     await onStage?.("EXTRACTING_SOCIALS", { sourcesFound: visited.size });
-    const socialProfiles = skipLocationsAndSocials ? [] : discoverSocialProfiles(allPages);
+    const socialProfiles = skipLocationsAndSocials ? [] : discoverSocialProfiles(contentPages);
 
     await onStage?.("CLASSIFYING_BUSINESS", { sourcesFound: visited.size });
     const nameCandidates: Candidate[] = [];
@@ -318,8 +348,8 @@ export async function buildLeadProfile(
     let hasMetaDescription = false;
     let hasAggregateRating = false;
 
-    for (const page of allPages) {
-      if (!page.ok) continue;
+    for (const page of contentPages) {
+      const capStrength = (s: number) => (isWiderWebDiscovered(page) ? Math.min(s, 1) : s);
       const title = extractTitle(page.html);
       const ogTitle = extractMeta(page.html, "og:title");
       const metaDesc = extractMeta(page.html, "description") || extractMeta(page.html, "og:description");
@@ -332,12 +362,12 @@ export async function buildLeadProfile(
       if (jsonLd.length > 0) hasJsonLd = true;
       if (jsonLd.some((b) => !!b["aggregateRating"])) hasAggregateRating = true;
 
-      if (localBusiness?.name) nameCandidates.push({ value: decodeEntities(String(localBusiness.name)), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: 3 });
-      if (ogTitle) nameCandidates.push({ value: decodeEntities(ogTitle.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: 2 });
-      if (title) nameCandidates.push({ value: decodeEntities(title.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: 1 });
+      if (localBusiness?.name) nameCandidates.push({ value: decodeEntities(String(localBusiness.name)), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(3) });
+      if (ogTitle) nameCandidates.push({ value: decodeEntities(ogTitle.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
+      if (title) nameCandidates.push({ value: decodeEntities(title.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(1) });
 
       const schemaType = localBusiness?.["@type"];
-      if (schemaType) categoryCandidates.push({ value: String(Array.isArray(schemaType) ? schemaType[0] : schemaType), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: 2 });
+      if (schemaType) categoryCandidates.push({ value: String(Array.isArray(schemaType) ? schemaType[0] : schemaType), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
 
       const makesOffer = localBusiness?.makesOffer;
       if (makesOffer) {
@@ -355,7 +385,7 @@ export async function buildLeadProfile(
       }
     }
 
-    const heuristicCategory = classifyCategoryHeuristic(allPages);
+    const heuristicCategory = classifyCategoryHeuristic(contentPages);
     if (heuristicCategory) categoryCandidates.push(heuristicCategory);
 
     const name = resolveField(nameCandidates);

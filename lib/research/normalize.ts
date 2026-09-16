@@ -123,7 +123,13 @@ const INFRA_HOST_SUFFIXES = [
 // an exact-match list rather than a full *.google.com suffix ban, because
 // real small businesses legitimately use Google subdomains for hosting
 // (sites.google.com) and business tooling (business.google.com listings).
-const PLATFORM_OWNER_EXACT_HOSTS = ["google.com", "www.google.com", "about.google"];
+// meta.ai confirmed in production: a blocked Instagram profile's generic
+// login page linked to it in its footer, and (before the generic-content
+// filtering in GenericPlatformContent.ts) it won "official website" via
+// link-frequency voting. Kept here too as defense-in-depth alongside that
+// fix, and separate from the meta.com suffix ban since meta.ai is not a
+// meta.com subdomain.
+const PLATFORM_OWNER_EXACT_HOSTS = ["google.com", "www.google.com", "about.google", "meta.ai", "www.meta.ai"];
 
 // Subdomains of an otherwise-legitimate social root domain that are
 // internal API / business-tooling / link-shim endpoints, not a public
@@ -198,16 +204,23 @@ const BIO_LINK_HOSTS = [
 // corporate site and social accounts. Deliberately does NOT include
 // profile.php / pages / people -- those ARE legitimate Facebook business
 // profile shapes and must keep working.
-const RESERVED_SOCIAL_ROUTES: Record<string, string[]> = {
+// Exported (not just used internally) so GenericPlatformContent.ts can
+// reuse the exact same list for its path-shape check instead of
+// maintaining a second, independently-drifting copy -- that duplication is
+// exactly what let Instagram's /popular/ "suggested accounts" placeholder
+// slip through content-based generic detection in production (its title
+// text didn't match the generic-title patterns, but its path IS a known
+// reserved Instagram route).
+export const RESERVED_SOCIAL_ROUTES: Record<string, string[]> = {
   facebook: ["login", "login.php", "share", "sharer", "watch", "marketplace", "groups", "events", "help", "privacy", "policies", "settings", "ads", "business", "developers", "plugins", "dialog", "l.php", "tr", "photo.php", "video.php", "home.php", "about", "legal"],
-  instagram: ["explore", "accounts", "direct", "reels", "reel", "stories", "p", "about", "developer", "legal", "tv", "embed", "graphql"],
+  instagram: ["explore", "accounts", "direct", "reels", "reel", "stories", "p", "about", "developer", "legal", "tv", "embed", "graphql", "popular", "web", "lite"],
   tiktok: ["login", "discover", "music", "tag", "about", "legal", "business", "foryou", "upload", "embed"],
   youtube: ["watch", "results", "playlist", "feed", "shorts", "about", "account", "upload", "gaming", "premium", "live", "embed", "redirect"],
   x: ["home", "explore", "notifications", "messages", "settings", "search", "i", "intent", "hashtag", "login", "tos", "privacy", "about", "jobs"],
   linkedin: ["help", "legal", "login", "signup", "about", "jobs", "learning"],
 };
 
-function isReservedSocialRoute(url: string, platform: string): boolean {
+export function isReservedSocialRoute(url: string, platform: string): boolean {
   if (!(platform in RESERVED_SOCIAL_ROUTES)) return false;
   try {
     const first = new URL(normalizeUrl(url)).pathname.split("/").filter(Boolean)[0]?.toLowerCase();

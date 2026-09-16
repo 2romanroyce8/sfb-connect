@@ -21,7 +21,15 @@ export function buildFingerprint(params: { name: string | null; domain: string |
 function nameSimilar(a: string, b: string): boolean {
   const wordsA = new Set(a.split(/\s+/).filter((w) => w.length > 2));
   const wordsB = new Set(b.split(/\s+/).filter((w) => w.length > 2));
-  if (wordsA.size === 0 || wordsB.size === 0) return false;
+  // A single-word "name" (e.g. a platform's own generic branding like
+  // "Instagram", surfaced when a blocked profile's login-wall page gets
+  // mistaken for the business itself) is too generic to safely validate a
+  // broad-web-search candidate against -- almost any page that happens to
+  // mention that one common word would trivially "match" it. Confirmed in
+  // production: a fingerprint of just "instagram" matched Apify's own
+  // "Instagram Scraper" tool pages. Real distinguishing business names need
+  // at least two meaningful words to compare.
+  if (wordsA.size < 2 || wordsB.size === 0) return false;
   let overlap = 0;
   for (const w of wordsA) if (wordsB.has(w)) overlap++;
   return overlap / Math.min(wordsA.size, wordsB.size) >= 0.6;
