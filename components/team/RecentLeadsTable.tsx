@@ -9,6 +9,7 @@ type Lead = {
 };
 
 const STAGE_LABEL: Record<string, string> = {
+  demo_requested: "Book Demo (Pending)",
   new: "New",
   researching: "Researching",
   ready_to_call: "Ready to Call",
@@ -26,6 +27,7 @@ const STAGE_LABEL: Record<string, string> = {
 // "Next Action" is derived deterministically from pipeline_stage — never a
 // model guess — so it's always explainable from data already on the record.
 const NEXT_ACTION: Record<string, string> = {
+  demo_requested: "Schedule Demo",
   new: "Research",
   researching: "Finish research",
   ready_to_call: "Call",

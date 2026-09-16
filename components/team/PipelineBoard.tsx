@@ -19,6 +19,7 @@ type Lead = {
 };
 
 const STAGES: { value: string; label: string; color: string }[] = [
+  { value: "demo_requested", label: "Book Demo (Pending)", color: "#FFD60A" },
   { value: "new", label: "New", color: "#46B5FF" },
   { value: "researching", label: "Researching", color: "#6E7BFF" },
   { value: "ready_to_call", label: "Ready to Call", color: "#30D158" },

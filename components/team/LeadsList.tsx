@@ -18,6 +18,7 @@ type Lead = {
 };
 
 const STAGE_LABEL: Record<string, string> = {
+  demo_requested: "Book Demo (Pending)",
   new: "New",
   researching: "Researching",
   ready_to_call: "Ready to Call",
@@ -29,6 +30,7 @@ const STAGE_LABEL: Record<string, string> = {
 };
 
 const STAGE_COLOR: Record<string, string> = {
+  demo_requested: "#FFD60A",
   new: "#6E6E73",
   researching: "#FFD60A",
   ready_to_call: "#0A84FF",

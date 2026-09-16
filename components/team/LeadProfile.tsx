@@ -18,8 +18,11 @@ import {
   PhoneCall,
   Pencil,
   RefreshCw,
+  CalendarPlus,
+  X,
 } from "lucide-react";
 import LeadActions from "./LeadActions";
+import MeetingBookingFlow from "./MeetingBookingFlow";
 
 type StatusValue = "verified" | "uncertain" | "not_found" | "conflict";
 
@@ -227,6 +230,7 @@ export default function LeadProfile({
   audit,
   isOwner,
   reps,
+  employeeTimezone,
 }: {
   lead: Lead;
   contactMethods: ContactMethod[];
@@ -236,10 +240,12 @@ export default function LeadProfile({
   audit: Audit;
   isOwner: boolean;
   reps: { id: string; label: string }[];
+  employeeTimezone: string;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"overview" | "contact" | "locations" | "social" | "business" | "research" | "audit">("overview");
   const [researching, setResearching] = useState<string | null>(null);
+  const [showScheduleDemo, setShowScheduleDemo] = useState(false);
 
   async function researchAgain(scope: string) {
     setResearching(scope);
@@ -260,6 +266,30 @@ export default function LeadProfile({
 
   return (
     <div className="px-8 py-8 max-w-[920px]">
+      {lead.pipeline_stage === "demo_requested" && (
+        <div
+          className="flex items-center justify-between gap-4 mb-5 px-4 py-3 rounded-[12px]"
+          style={{ background: "rgba(255,214,10,0.08)", border: "1px solid rgba(255,214,10,0.28)" }}
+        >
+          <div className="flex items-center gap-2.5">
+            <CalendarPlus size={17} color="#FFD60A" />
+            <div>
+              <div className="text-[13.5px] font-semibold text-[#F5F5F7]">New demo request — not yet scheduled</div>
+              <div className="text-[12px] text-[#A1A1A6] mt-0.5">
+                {lead.owner_name || "This prospect"} asked for a demo. Pick a time and send them the confirmation.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowScheduleDemo(true)}
+            className="h-[36px] px-4 shrink-0 rounded-[8px] text-[12.5px] font-semibold flex items-center gap-1.5"
+            style={{ background: "#FFD60A", color: "#111111" }}
+          >
+            <CalendarPlus size={13} /> Schedule Demo
+          </button>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2">
@@ -302,6 +332,15 @@ export default function LeadProfile({
         <Link href={`/team/leads/${lead.id}/call`} className="h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[12.5px] font-semibold">
           <PhoneCall size={13} /> Call
         </Link>
+        {lead.pipeline_stage !== "demo_requested" && (
+          <button
+            onClick={() => setShowScheduleDemo(true)}
+            className="h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-[8px] text-[12.5px] text-[#A1A1A6] hover:text-white"
+            style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+          >
+            <CalendarPlus size={13} /> Schedule Meeting
+          </button>
+        )}
         <div className="flex-1" />
         <LeadActions leadId={lead.id} archived={lead.archived} isOwner={isOwner} reps={reps} currentAssignedRep={lead.assigned_rep} />
       </div>
@@ -606,6 +645,31 @@ export default function LeadProfile({
               )}
             </>
           )}
+        </div>
+      )}
+
+      {showScheduleDemo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.65)" }} onClick={() => setShowScheduleDemo(false)}>
+          <div className="w-full max-w-[440px] max-h-[85vh] overflow-y-auto rounded-[16px] p-6" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-[15px] font-semibold text-[#F5F5F7]">Schedule Demo — {lead.business_name || "Lead"}</div>
+              <button onClick={() => setShowScheduleDemo(false)} className="text-[#6E6E73] hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+            <MeetingBookingFlow
+              leadId={lead.id}
+              defaultName={lead.owner_name}
+              defaultEmail={lead.email}
+              defaultPhone={lead.phone}
+              employeeTimezone={employeeTimezone}
+              onCancel={() => setShowScheduleDemo(false)}
+              onBooked={() => {
+                setShowScheduleDemo(false);
+                router.refresh();
+              }}
+            />
+          </div>
         </div>
       )}
     </div>

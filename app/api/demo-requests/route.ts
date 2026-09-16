@@ -15,13 +15,23 @@ const demoRequestSchema = z.object({
 // this uses the anon-key session client so the demo_requests_public_insert
 // RLS policy is what actually authorizes the write.
 //
-// After capturing the request, it kicks off the SAME real business-lookup
-// research used elsewhere on the site, seeded from the link the prospect
-// gave us. If that link can't be resolved into real research, the demo
-// request is still saved -- we just never fabricate a research_prospect_id
-// or a "report ready" status for research that didn't actually complete.
-// No email/SMS confirmation is sent here: no email or SMS provider is
-// wired up in this codebase yet, so claiming one was sent would be a lie.
+// A submitted demo request must actually show up where a rep/owner can act
+// on it: this immediately creates a real crm_leads row in the
+// "demo_requested" ("Book Demo (Pending)") pipeline stage using the
+// prospect's own self-reported details -- it does NOT wait on research to
+// finish, since the person already identified themselves and their business
+// directly via the form. Research still runs separately (below) and is a
+// distinct artifact a rep can review in the Research Queue; it is not a
+// prerequisite for this lead existing.
+//
+// After capturing the request, it also kicks off the SAME real
+// business-lookup research used elsewhere on the site, seeded from the link
+// the prospect gave us. If that link can't be resolved into real research,
+// the demo request is still saved -- we just never fabricate a
+// research_prospect_id or a "report ready" status for research that didn't
+// actually complete. No email/SMS confirmation is sent here: no email or
+// SMS provider is wired up in this codebase yet, so claiming one was sent
+// would be a lie.
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const parsed = demoRequestSchema.safeParse(body);
@@ -55,6 +65,51 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error("Demo request insert failed", error);
     return NextResponse.json({ error: "Could not submit your request. Please try again." }, { status: 500 });
+  }
+
+  // Place it in the pipeline. A public visitor has no INSERT rights on
+  // crm_leads (rightly -- crm_leads_team_insert requires a session), so
+  // this is trusted server-side bookkeeping via the service client, same
+  // as the research-status update below. A normalized-URL businessLink
+  // goes in `website`; anything that doesn't parse as a URL is kept only
+  // in source_urls/description rather than guessed into a website field.
+  try {
+    const service = createSupabaseServiceClient();
+    let website: string | null = null;
+    try {
+      const withScheme = /^https?:\/\//i.test(businessLink) ? businessLink : `https://${businessLink}`;
+      website = new URL(withScheme).toString();
+    } catch {
+      website = null;
+    }
+    const { data: lead, error: leadError } = await service
+      .from("crm_leads")
+      .insert({
+        business_name: companyName,
+        owner_name: fullName,
+        phone,
+        email,
+        website,
+        source_urls: [businessLink],
+        pipeline_stage: "demo_requested",
+        description: "Requested a demo via the pricing page.",
+      })
+      .select("id")
+      .single();
+    if (leadError) {
+      console.error("Demo request -> pipeline lead creation failed", leadError);
+    } else if (lead) {
+      await service.from("demo_requests").update({ converted_lead_id: lead.id }).eq("id", requestId);
+      await service.from("crm_activities").insert({
+        lead_id: lead.id,
+        activity_type: "demo_requested",
+        description: `${fullName} requested a demo via the pricing page.`,
+      });
+    }
+  } catch (err) {
+    console.error("Demo request -> pipeline lead creation threw", err);
+    // The demo request itself is already saved above -- a failure here
+    // must never be reported back to the visitor as a failed submission.
   }
 
   // Best-effort: try to kick off real preliminary research from the link

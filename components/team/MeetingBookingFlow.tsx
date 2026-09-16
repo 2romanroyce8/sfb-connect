@@ -17,6 +17,8 @@ function isoToDateTimeInZone(iso: string, timeZone: string): { date: string; tim
 export default function MeetingBookingFlow({
   leadId,
   callId,
+  defaultName,
+  defaultEmail,
   defaultPhone,
   employeeTimezone,
   onBooked,
@@ -24,6 +26,8 @@ export default function MeetingBookingFlow({
 }: {
   leadId: string;
   callId?: string;
+  defaultName?: string | null;
+  defaultEmail?: string | null;
   defaultPhone?: string | null;
   // The rep's real, configured home timezone -- NEVER the browser's
   // detected timezone. Available slots and the final booked instant are
@@ -35,8 +39,8 @@ export default function MeetingBookingFlow({
   onCancel: () => void;
 }) {
   const [step, setStep] = useState<"form" | "conflict" | "confirmed">("form");
-  const [contactName, setContactName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
+  const [contactName, setContactName] = useState(defaultName || "");
+  const [contactEmail, setContactEmail] = useState(defaultEmail || "");
   const [contactPhone, setContactPhone] = useState(defaultPhone || "");
   const [selected, setSelected] = useState<Selected>(null);
   const [duration, setDuration] = useState(30);

@@ -20,8 +20,9 @@ export default async function LeadProfilePage({ params }: { params: { id: string
     .single();
   if (!lead) notFound();
 
-  const { data: caller } = await supabase.from("users").select("team_role").eq("id", user!.id).single();
+  const { data: caller } = await supabase.from("users").select("team_role, home_timezone").eq("id", user!.id).single();
   const isOwner = caller?.team_role === "owner";
+  const employeeTimezone = caller?.home_timezone || "America/New_York";
 
   const [{ data: contactMethods }, { data: locations }, { data: socialProfiles }, { data: sourceChecks }, { data: audit }, { data: reps }] = await Promise.all([
     supabase.from("crm_lead_contact_methods").select("id, type, value, status, confidence, source_url, manual_value, edited_at").eq("lead_id", params.id),
@@ -48,6 +49,7 @@ export default async function LeadProfilePage({ params }: { params: { id: string
       audit={audit as any}
       isOwner={isOwner}
       reps={(reps ?? []).map((r) => ({ id: r.id, label: r.full_name || r.email }))}
+      employeeTimezone={employeeTimezone}
     />
   );
 }
