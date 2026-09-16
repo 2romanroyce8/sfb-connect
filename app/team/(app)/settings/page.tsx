@@ -9,7 +9,7 @@ export default async function TeamSettingsPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("full_name, email, team_role, team_status, created_at, avatar_url")
+    .select("full_name, email, team_role, team_status, created_at, avatar_url, home_timezone")
     .eq("id", user!.id)
     .single();
 

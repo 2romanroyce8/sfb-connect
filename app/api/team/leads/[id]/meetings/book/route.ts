@@ -50,6 +50,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         scheduled_at: startISO,
         ends_at: endISO,
         timezone: timeZone,
+        // MeetingBookingFlow always operates in the rep's own configured
+        // home timezone today (no Business-Time entry mode wired up on
+        // this path yet), so business_timezone mirrors it for now rather
+        // than being left null.
+        business_timezone: timeZone,
+        creator_timezone: timeZone,
+        google_sync_status: "synced",
+        google_synced_at: new Date().toISOString(),
         duration_minutes: Math.round((new Date(endISO).getTime() - new Date(startISO).getTime()) / 60000),
         contact_name: contactName || null,
         contact_email: contactEmail || null,
@@ -64,6 +72,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .single();
 
     if (error || !meeting) throw new Error(error?.message || "Meeting created in Google Calendar but could not be saved to the CRM — check Meetings and add it manually if it's missing.");
+
+    await service.from("crm_schedule_audit_log").insert({
+      entity_type: "meeting",
+      entity_id: meeting.id,
+      action: "created",
+      new_scheduled_at: startISO,
+      business_timezone: timeZone,
+      employee_timezone: timeZone,
+      actor_id: user.id,
+    });
 
     await service.from("crm_leads").update({ pipeline_stage: "meeting_booked", updated_at: new Date().toISOString() }).eq("id", lead.id);
     await service.from("crm_pipeline_history").insert({ lead_id: lead.id, to_stage: "meeting_booked", changed_by: user.id });

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const term = toOrFilterValue(`%${q}%`);
   const { data: leads, error } = await supabase
     .from("crm_leads")
-    .select("id, business_name, phone, website, pipeline_stage")
+    .select("id, business_name, phone, website, pipeline_stage, city, state")
     .or(`business_name.ilike.${term},phone.ilike.${term},website.ilike.${term},email.ilike.${term}`)
     .limit(8);
 

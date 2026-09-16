@@ -15,8 +15,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { startISO, endISO, timeZone } = await req.json();
   if (!startISO || !endISO) return NextResponse.json({ error: "Missing new time." }, { status: 400 });
 
-  const { data: meeting } = await supabase.from("crm_meetings").select("id, lead_id, rep_id, calendar_event_id").eq("id", params.id).single();
+  const { data: meeting } = await supabase.from("crm_meetings").select("id, lead_id, rep_id, calendar_event_id, scheduled_at").eq("id", params.id).single();
   if (!meeting) return NextResponse.json({ error: "Meeting not found or not accessible." }, { status: 404 });
+  const oldScheduledAt = meeting.scheduled_at;
 
   try {
     if (meeting.calendar_event_id) {
@@ -24,10 +25,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     await supabase
       .from("crm_meetings")
-      .update({ scheduled_at: startISO, ends_at: endISO, timezone: timeZone || undefined, status: "booked", updated_at: new Date().toISOString() })
+      .update({
+        scheduled_at: startISO,
+        ends_at: endISO,
+        timezone: timeZone || undefined,
+        business_timezone: timeZone || undefined,
+        creator_timezone: timeZone || undefined,
+        status: "booked",
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", params.id);
 
     await supabase.from("crm_activities").insert({ lead_id: meeting.lead_id, rep_id: user.id, activity_type: "meeting_rescheduled", description: "Meeting rescheduled" });
+
+    await supabase.from("crm_schedule_audit_log").insert({
+      entity_type: "meeting",
+      entity_id: meeting.id,
+      action: "rescheduled",
+      old_scheduled_at: oldScheduledAt,
+      new_scheduled_at: startISO,
+      business_timezone: timeZone || null,
+      employee_timezone: timeZone || null,
+      actor_id: user.id,
+    });
 
     const { data: lead } = await supabase.from("crm_leads").select("business_name").eq("id", meeting.lead_id).single();
     const service = createSupabaseServiceClient();

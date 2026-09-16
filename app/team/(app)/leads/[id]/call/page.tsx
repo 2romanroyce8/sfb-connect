@@ -85,6 +85,8 @@ export default async function LeadCallPage({ params }: { params: { id: string } 
     existingNotes = note?.content || "";
   }
 
+  const { data: caller } = await supabase.from("users").select("home_timezone").eq("id", user!.id).single();
+
   return (
     <CallWorkspace
       lead={lead as any}
@@ -93,6 +95,7 @@ export default async function LeadCallPage({ params }: { params: { id: string } 
       script={(script as any) || null}
       activeCall={activeCall as any}
       existingNotes={existingNotes}
+      employeeTimezone={caller?.home_timezone || "America/New_York"}
     />
   );
 }

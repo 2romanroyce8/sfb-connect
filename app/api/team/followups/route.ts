@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
 
   const repId = isOwner && body.assignedTo ? body.assignedTo : user.id;
 
+  // timezone (legacy column) is kept in sync with creatorTimezone so older
+  // code paths that only ever read `timezone` still see something sane.
+  const creatorTimezone: string = body.creatorTimezone || body.timezone || "America/New_York";
+
   const { data: followup, error } = await supabase
     .from("crm_followups")
     .insert({
@@ -34,7 +38,11 @@ export async function POST(req: NextRequest) {
       created_by: user.id,
       followup_type: followupType,
       due_at: dueAt,
-      timezone: body.timezone || "America/New_York",
+      timezone: creatorTimezone,
+      business_timezone: body.businessTimezone || null,
+      creator_timezone: creatorTimezone,
+      input_timezone: body.inputTimezone || null,
+      input_local_datetime: body.inputLocalDatetime || null,
       reason: body.reason || null,
       title: body.title || null,
     })
@@ -48,6 +56,16 @@ export async function POST(req: NextRequest) {
     rep_id: user.id,
     activity_type: "follow_up_created",
     description: `Follow-up created (${followupType.toLowerCase()})`,
+  });
+
+  await supabase.from("crm_schedule_audit_log").insert({
+    entity_type: "followup",
+    entity_id: followup.id,
+    action: "created",
+    new_scheduled_at: dueAt,
+    business_timezone: body.businessTimezone || null,
+    employee_timezone: creatorTimezone,
+    actor_id: user.id,
   });
 
   // Points go to whoever the follow-up is assigned to (repId), not

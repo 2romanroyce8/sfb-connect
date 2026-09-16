@@ -33,8 +33,8 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
   const body = await req.json();
   const outcome: string = body.outcome;
   const outcomeReason: string | undefined = body.outcomeReason;
-  const followup: { dueAt: string; reason?: string } | undefined = body.followup;
-  const meeting: { scheduledAt: string; contactName?: string; contactEmail?: string; contactPhone?: string } | undefined = body.meeting;
+  const followup: { dueAt: string; reason?: string; businessTimezone?: string; creatorTimezone?: string; inputTimezone?: string; inputLocalDatetime?: string } | undefined = body.followup;
+  const meeting: { scheduledAt: string; contactName?: string; contactEmail?: string; contactPhone?: string; businessTimezone?: string; creatorTimezone?: string } | undefined = body.meeting;
 
   if (!VALID_OUTCOMES.includes(outcome)) {
     return NextResponse.json({ error: "Invalid outcome." }, { status: 400 });
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
     });
   }
 
-  if (outcome === "call_back_later" && followup?.dueAt) {
+  if ((outcome === "call_back_later" || outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") && followup?.dueAt) {
     const { data: fu } = await service
       .from("crm_followups")
       .insert({
@@ -80,26 +80,28 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
         related_call_id: call.id,
         followup_type: "CALL",
         due_at: followup.dueAt,
-        reason: followup.reason || "Call back requested",
+        timezone: followup.creatorTimezone || "America/New_York",
+        business_timezone: followup.businessTimezone || null,
+        creator_timezone: followup.creatorTimezone || null,
+        input_timezone: followup.inputTimezone || null,
+        input_local_datetime: followup.inputLocalDatetime || null,
+        reason: followup.reason || (outcome === "call_back_later" ? "Call back requested" : `Follow up after ${outcome.replace(/_/g, " ")}`),
       })
       .select("id")
       .single();
-    if (fu) await awardPointsForEvent({ userId: user.id, eventType: "followup_created", sourceType: "crm_followups", sourceId: fu.id });
-  } else if ((outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") && followup?.dueAt) {
-    const { data: fu } = await service
-      .from("crm_followups")
-      .insert({
-        lead_id: call.lead_id,
-        rep_id: user.id,
-        created_by: user.id,
-        related_call_id: call.id,
-        followup_type: "CALL",
-        due_at: followup.dueAt,
-        reason: followup.reason || `Follow up after ${outcome.replace(/_/g, " ")}`,
-      })
-      .select("id")
-      .single();
-    if (fu) await awardPointsForEvent({ userId: user.id, eventType: "followup_created", sourceType: "crm_followups", sourceId: fu.id });
+    if (fu) {
+      await awardPointsForEvent({ userId: user.id, eventType: "followup_created", sourceType: "crm_followups", sourceId: fu.id });
+      await service.from("crm_schedule_audit_log").insert({
+        entity_type: "followup",
+        entity_id: fu.id,
+        action: "created",
+        new_scheduled_at: followup.dueAt,
+        business_timezone: followup.businessTimezone || null,
+        employee_timezone: followup.creatorTimezone || null,
+        actor_id: user.id,
+        detail: `Created from call outcome: ${outcome}`,
+      });
+    }
   }
 
   let bookedMeetingId: string | null = null;
@@ -111,6 +113,9 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
         rep_id: user.id,
         call_id: call.id,
         scheduled_at: meeting.scheduledAt,
+        timezone: meeting.creatorTimezone || "America/New_York",
+        business_timezone: meeting.businessTimezone || null,
+        creator_timezone: meeting.creatorTimezone || null,
         contact_name: meeting.contactName || null,
         contact_email: meeting.contactEmail || null,
         contact_phone: meeting.contactPhone || null,

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone, PhoneOff, Loader2 } from "lucide-react";
 import MeetingBookingFlow from "./MeetingBookingFlow";
+import ScheduleTimeZonePicker, { type ScheduleValue } from "./ScheduleTimeZonePicker";
 
 type Lead = {
   id: string;
@@ -55,6 +56,7 @@ export default function CallWorkspace({
   script,
   activeCall,
   existingNotes,
+  employeeTimezone,
 }: {
   lead: Lead;
   categories: Category[];
@@ -62,6 +64,7 @@ export default function CallWorkspace({
   script: Script;
   activeCall: ActiveCall;
   existingNotes: string;
+  employeeTimezone: string;
 }) {
   const router = useRouter();
   const [call, setCall] = useState(activeCall);
@@ -71,7 +74,7 @@ export default function CallWorkspace({
   const [showOutcome, setShowOutcome] = useState(false);
   const [outcome, setOutcome] = useState<string | null>(null);
   const [reason, setReason] = useState("");
-  const [followupAt, setFollowupAt] = useState("");
+  const [followupSchedule, setFollowupSchedule] = useState<ScheduleValue | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -116,7 +119,16 @@ export default function CallWorkspace({
     try {
       const payload: Record<string, unknown> = { outcome, outcomeReason: reason || undefined };
       if (outcome === "call_back_later" || outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") {
-        if (followupAt) payload.followup = { dueAt: new Date(followupAt).toISOString(), reason };
+        if (followupSchedule) {
+          payload.followup = {
+            dueAt: followupSchedule.dueAtUtc,
+            reason,
+            businessTimezone: followupSchedule.businessTimezone,
+            creatorTimezone: followupSchedule.creatorTimezone,
+            inputTimezone: followupSchedule.inputTimezone,
+            inputLocalDatetime: followupSchedule.inputLocalDatetime,
+          };
+        }
       }
       const res = await fetch(`/api/team/calls/${call.id}/end`, {
         method: "POST",
@@ -300,13 +312,9 @@ export default function CallWorkspace({
             {(outcome === "call_back_later" || outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") && (
               <div className="mb-3">
                 <label className="text-[11px] text-[#6E6E73] uppercase tracking-wide">Follow up on</label>
-                <input
-                  type="datetime-local"
-                  value={followupAt}
-                  onChange={(e) => setFollowupAt(e.target.value)}
-                  className="w-full h-[38px] rounded-[8px] px-3 text-[13px] outline-none mt-1"
-                  style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-                />
+                <div className="mt-1">
+                  <ScheduleTimeZonePicker employeeTimezone={employeeTimezone} leadCity={lead.city} leadState={lead.state} onChange={setFollowupSchedule} />
+                </div>
               </div>
             )}
 
@@ -315,6 +323,7 @@ export default function CallWorkspace({
                 leadId={lead.id}
                 callId={call.id}
                 defaultPhone={lead.phone}
+                employeeTimezone={employeeTimezone}
                 onCancel={() => setOutcome(null)}
                 onBooked={() => {
                   setShowOutcome(false);

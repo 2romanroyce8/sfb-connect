@@ -18,12 +18,19 @@ export default function MeetingBookingFlow({
   leadId,
   callId,
   defaultPhone,
+  employeeTimezone,
   onBooked,
   onCancel,
 }: {
   leadId: string;
   callId?: string;
   defaultPhone?: string | null;
+  // The rep's real, configured home timezone -- NEVER the browser's
+  // detected timezone. Available slots and the final booked instant are
+  // both shown/created against this value, so a rep never has to convert
+  // times in their head, and a misconfigured or traveling browser can't
+  // silently shift what gets booked.
+  employeeTimezone: string;
   onBooked: () => void;
   onCancel: () => void;
 }) {
@@ -33,7 +40,7 @@ export default function MeetingBookingFlow({
   const [contactPhone, setContactPhone] = useState(defaultPhone || "");
   const [selected, setSelected] = useState<Selected>(null);
   const [duration, setDuration] = useState(30);
-  const [timeZone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [timeZone] = useState(employeeTimezone);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ code?: string; message: string } | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);

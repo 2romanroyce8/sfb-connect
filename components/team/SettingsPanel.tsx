@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { COMMON_TIMEZONES } from "@/lib/crm/commonTimezones";
 
 type Profile = {
   full_name: string | null;
@@ -10,6 +11,7 @@ type Profile = {
   team_status: string;
   created_at: string;
   avatar_url?: string | null;
+  home_timezone?: string | null;
 };
 
 function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
@@ -93,6 +95,35 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
   const [password, setPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
+
+  // Employee's persistent home timezone -- this is a real account setting,
+  // never silently re-derived from the browser after being set. The
+  // browser's detected timezone is only ever used as a one-time suggested
+  // default the FIRST time this field is empty, never to overwrite an
+  // already-configured value.
+  const [homeTimezone, setHomeTimezone] = useState(
+    profile.home_timezone || (typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "America/New_York")
+  );
+  const [savingTimezone, setSavingTimezone] = useState(false);
+  const [timezoneMsg, setTimezoneMsg] = useState<string | null>(null);
+
+  async function saveTimezone() {
+    setSavingTimezone(true);
+    setTimezoneMsg(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { error } = await supabase.from("users").update({ home_timezone: homeTimezone }).eq("id", user!.id);
+      if (error) throw error;
+      setTimezoneMsg("Saved. All your follow-ups, meetings, and calendar times will now use this timezone.");
+    } catch (err) {
+      setTimezoneMsg(err instanceof Error ? err.message : "Could not save.");
+    } finally {
+      setSavingTimezone(false);
+    }
+  }
 
   async function saveName() {
     setSavingName(true);
@@ -216,6 +247,34 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
         <div className="text-[13px] text-[#A1A1A6] capitalize">Role: {profile.team_role.replace(/_/g, " ")}</div>
         <div className="text-[13px] text-[#A1A1A6] capitalize mt-1">Status: {profile.team_status}</div>
         <div className="text-[13px] text-[#A1A1A6] mt-1">Member since {new Date(profile.created_at).toLocaleDateString()}</div>
+      </Section>
+
+      <Section title="My Timezone" id="timezone">
+        <p className="text-[12.5px] text-[#6E6E73] leading-relaxed mb-3">
+          Every follow-up, meeting, and calendar time you see is shown in this timezone. You'll never need to convert a
+          client's requested time yourself — just enter it as "business time" and pick their state, and SFB does the math.
+        </p>
+        <div>
+          <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Timezone</label>
+          <select
+            value={homeTimezone}
+            onChange={(e) => setHomeTimezone(e.target.value)}
+            className="w-full h-[38px] rounded-[8px] px-3 text-[13px] outline-none mt-1"
+            style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          >
+            {COMMON_TIMEZONES.map((tz) => (
+              <option key={tz.iana} value={tz.iana}>
+                {tz.label} ({tz.abbr})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-3 mt-3">
+          <button onClick={saveTimezone} disabled={savingTimezone} className="h-[34px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold disabled:opacity-60 self-start">
+            {savingTimezone ? "Saving…" : "Save"}
+          </button>
+          {timezoneMsg && <span className="text-[12px] text-[#A1A1A6]">{timezoneMsg}</span>}
+        </div>
       </Section>
 
       <Section title="Security" id="security">

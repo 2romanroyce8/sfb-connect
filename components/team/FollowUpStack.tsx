@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import ScheduleTimeZonePicker, { type ScheduleValue } from "./ScheduleTimeZonePicker";
+import { formatDualTimezone, formatInTimeZone } from "@/lib/crm/timezone";
 import {
   Clock3,
   Sparkles,
@@ -31,6 +33,7 @@ type Followup = {
   followup_type: "CALL" | "MEETING" | "EMAIL" | "TASK" | "RESEARCH";
   title: string | null;
   timezone: string;
+  business_timezone?: string | null;
   related_call_id: string | null;
   related_meeting_id: string | null;
   related_research_result_id: string | null;
@@ -38,7 +41,7 @@ type Followup = {
   completed_at: string | null;
   created_at: string;
 };
-type Lead = { id: string; business_name: string | null; phone: string | null; email: string | null; category: string | null; owner_name: string | null };
+type Lead = { id: string; business_name: string | null; phone: string | null; email: string | null; category: string | null; owner_name: string | null; city?: string | null; state?: string | null };
 type CallCtx = { id: string; outcome: string | null; outcome_reason: string | null; notes: string | null; ended_at: string | null };
 type Meeting = { id: string; scheduled_at: string; google_meet_url: string | null; contact_name: string | null; status: string };
 
@@ -59,24 +62,32 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-function formatUrgency(dueAt: string): { text: string; color: string } {
+// `timezone` is the timezone the TEXT should be rendered in -- always the
+// ASSIGNED rep's own home timezone (never the viewer's browser timezone),
+// so "today at 7:00 PM" means 7:00 PM for whoever actually owns this
+// follow-up, not whatever timezone the browser happens to report.
+function formatUrgency(dueAt: string, timezone: string): { text: string; color: string } {
   const now = new Date();
   const due = new Date(dueAt);
   const diffMs = due.getTime() - now.getTime();
   const diffMin = Math.round(diffMs / 60000);
+  const timeFmt = (d: Date) => new Intl.DateTimeFormat("en-US", { timeZone: timezone, hour: "numeric", minute: "2-digit" }).format(d);
+  const dateFmt = (d: Date) => new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "short", month: "short", day: "numeric" }).format(d);
+  const isSameDayInZone = (a: Date, b: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(a) === new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(b);
 
   if (diffMs < 0) {
     const overdueMin = Math.abs(diffMin);
     if (overdueMin < 60) return { text: `overdue by ${overdueMin} minute${overdueMin === 1 ? "" : "s"}`, color: "#FF453A" };
     const overdueHr = Math.round(overdueMin / 60);
     if (overdueHr < 24) return { text: `overdue by ${overdueHr} hour${overdueHr === 1 ? "" : "s"}`, color: "#FF453A" };
-    return { text: `overdue since ${due.toLocaleDateString()}`, color: "#FF453A" };
+    return { text: `overdue since ${dateFmt(due)}`, color: "#FF453A" };
   }
   if (diffMin < 60) return { text: `in ${diffMin} minute${diffMin === 1 ? "" : "s"}`, color: "#FFD60A" };
-  if (isSameDay(due, now)) return { text: `today at ${due.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`, color: "#FFD60A" };
+  if (isSameDayInZone(due, now)) return { text: `today at ${timeFmt(due)}`, color: "#FFD60A" };
   const diffHr = Math.round(diffMin / 60);
   if (diffHr < 24) return { text: `in ${diffHr} hour${diffHr === 1 ? "" : "s"}`, color: "#A1A1A6" };
-  return { text: `${due.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} at ${due.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`, color: "#A1A1A6" };
+  return { text: `${dateFmt(due)} at ${timeFmt(due)}`, color: "#A1A1A6" };
 }
 
 export default function FollowUpStack({
@@ -89,6 +100,8 @@ export default function FollowUpStack({
   isOwner,
   currentUserId,
   allReps,
+  employeeTimezone,
+  repTimezoneMap,
 }: {
   followups: Followup[];
   leadMap: Record<string, Lead>;
@@ -98,7 +111,9 @@ export default function FollowUpStack({
   repMap: Record<string, string>;
   isOwner: boolean;
   currentUserId: string;
-  allReps: { id: string; label: string }[];
+  allReps: { id: string; label: string; homeTimezone: string }[];
+  employeeTimezone: string;
+  repTimezoneMap: Record<string, string>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -115,7 +130,7 @@ export default function FollowUpStack({
   const [cardIndex, setCardIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [reschedulePanel, setReschedulePanel] = useState(false);
-  const [newDate, setNewDate] = useState("");
+  const [rescheduleValue, setRescheduleValue] = useState<ScheduleValue | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -166,14 +181,24 @@ export default function FollowUpStack({
   }
 
   async function reschedule(f: Followup) {
-    if (!newDate) return;
+    if (!rescheduleValue) return;
     setBusy(true);
     try {
-      const iso = new Date(newDate).toISOString();
-      await fetch(`/api/team/followups/${f.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dueAt: iso }) });
-      setFollowups((prev) => prev.map((x) => (x.id === f.id ? { ...x, due_at: iso } : x)));
+      const res = await fetch(`/api/team/followups/${f.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dueAt: rescheduleValue.dueAtUtc,
+          businessTimezone: rescheduleValue.businessTimezone,
+          creatorTimezone: rescheduleValue.creatorTimezone,
+          inputTimezone: rescheduleValue.inputTimezone,
+          inputLocalDatetime: rescheduleValue.inputLocalDatetime,
+        }),
+      });
+      if (!res.ok) throw new Error("Could not reschedule.");
+      setFollowups((prev) => prev.map((x) => (x.id === f.id ? { ...x, due_at: rescheduleValue.dueAtUtc, business_timezone: rescheduleValue.businessTimezone } : x)));
       setReschedulePanel(false);
-      setNewDate("");
+      setRescheduleValue(null);
     } finally {
       setBusy(false);
     }
@@ -189,7 +214,9 @@ export default function FollowUpStack({
             New Follow-Up
           </button>
         </div>
-        {showCreate && <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} allReps={allReps} />}
+        {showCreate && (
+          <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} allReps={allReps} employeeTimezone={employeeTimezone} repTimezoneMap={repTimezoneMap} />
+        )}
       </div>
     );
   }
@@ -257,10 +284,11 @@ export default function FollowUpStack({
                 meeting={current.related_meeting_id ? meetingMap[current.related_meeting_id] : undefined}
                 assignedRepLabel={isOwner ? repMap[current.rep_id] || "Unassigned" : "You"}
                 createdByLabel={current.created_by ? (current.created_by === currentUserId ? "You" : repMap[current.created_by] || "Teammate") : "—"}
+                displayTimezone={repTimezoneMap[current.rep_id] || employeeTimezone}
                 busy={busy}
                 reschedulePanel={reschedulePanel}
-                newDate={newDate}
-                setNewDate={setNewDate}
+                rescheduleValue={rescheduleValue}
+                setRescheduleValue={setRescheduleValue}
                 onToggleReschedule={() => setReschedulePanel((v) => !v)}
                 onReschedule={() => reschedule(current)}
                 onComplete={() => complete(current)}
@@ -294,11 +322,14 @@ export default function FollowUpStack({
           meeting={current.related_meeting_id ? meetingMap[current.related_meeting_id] : undefined}
           assignedRepLabel={isOwner ? repMap[current.rep_id] || "Unassigned" : "You"}
           createdByLabel={current.created_by ? (current.created_by === currentUserId ? "You" : repMap[current.created_by] || "Teammate") : "—"}
+          displayTimezone={repTimezoneMap[current.rep_id] || employeeTimezone}
           onClose={() => setDetailsOpen(false)}
         />
       )}
 
-      {showCreate && <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} allReps={allReps} />}
+      {showCreate && (
+        <QuickCreateModal onClose={() => setShowCreate(false)} onCreated={() => router.refresh()} isOwner={isOwner} allReps={allReps} employeeTimezone={employeeTimezone} repTimezoneMap={repTimezoneMap} />
+      )}
     </div>
   );
 }
@@ -319,10 +350,11 @@ function FollowUpCard({
   meeting,
   assignedRepLabel,
   createdByLabel,
+  displayTimezone,
   busy,
   reschedulePanel,
-  newDate,
-  setNewDate,
+  rescheduleValue,
+  setRescheduleValue,
   onToggleReschedule,
   onReschedule,
   onComplete,
@@ -335,17 +367,21 @@ function FollowUpCard({
   meeting: Meeting | undefined;
   assignedRepLabel: string;
   createdByLabel: string;
+  displayTimezone: string;
   busy: boolean;
   reschedulePanel: boolean;
-  newDate: string;
-  setNewDate: (v: string) => void;
+  rescheduleValue: ScheduleValue | null;
+  setRescheduleValue: (v: ScheduleValue | null) => void;
   onToggleReschedule: () => void;
   onReschedule: () => void;
   onComplete: () => void;
   onOpenDetails: () => void;
   readOnly: boolean;
 }) {
-  const urgency = formatUrgency(followup.due_at);
+  const urgency = formatUrgency(followup.due_at, displayTimezone);
+  const clientDual = followup.business_timezone && followup.business_timezone !== displayTimezone
+    ? formatDualTimezone(followup.due_at, followup.business_timezone, displayTimezone)
+    : null;
   const businessName = lead?.business_name || "Unknown business";
   const title = followup.title || `Follow up with ${businessName}`;
 
@@ -392,6 +428,11 @@ function FollowUpCard({
           <TypeIcon type={followup.followup_type} />
           <span style={{ color: urgency.color }}>{urgency.text}</span>
         </div>
+        {clientDual && (
+          <div style={{ marginTop: 4, fontSize: 14, color: "#6F6F73" }}>
+            Client time: {clientDual.businessTime} {clientDual.businessTzLabel}
+          </div>
+        )}
 
         <div style={{ marginTop: 26, display: "flex", alignItems: "center", gap: 14 }}>
           <div
@@ -458,16 +499,10 @@ function FollowUpCard({
             </div>
 
             {reschedulePanel && (
-              <div className="flex items-center gap-2 mt-3">
-                <input
-                  type="datetime-local"
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
-                  className="h-[40px] rounded-[8px] px-3 text-[13px] outline-none"
-                  style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
-                />
-                <button onClick={onReschedule} disabled={busy} className="h-[40px] px-3.5 rounded-[8px] bg-white text-black text-[12.5px] font-semibold">
-                  Save
+              <div className="mt-3 p-3 rounded-[12px]" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <ScheduleTimeZonePicker employeeTimezone={displayTimezone} leadCity={lead?.city} leadState={lead?.state} onChange={setRescheduleValue} />
+                <button onClick={onReschedule} disabled={busy || !rescheduleValue} className="w-full h-[40px] mt-3 rounded-[8px] bg-white text-black text-[12.5px] font-semibold disabled:opacity-50">
+                  Save New Time
                 </button>
               </div>
             )}
@@ -490,6 +525,7 @@ function DetailsDrawer({
   meeting,
   assignedRepLabel,
   createdByLabel,
+  displayTimezone,
   onClose,
 }: {
   followup: Followup;
@@ -498,8 +534,16 @@ function DetailsDrawer({
   meeting: Meeting | undefined;
   assignedRepLabel: string;
   createdByLabel: string;
+  displayTimezone: string;
   onClose: () => void;
 }) {
+  const scheduledTimeValue = followup.business_timezone
+    ? (() => {
+        const dual = formatDualTimezone(followup.due_at, followup.business_timezone!, displayTimezone);
+        return `${dual.employeeTime} ${dual.employeeTzLabel} (client: ${dual.businessTime} ${dual.businessTzLabel})`;
+      })()
+    : formatInTimeZone(followup.due_at, displayTimezone, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+
   const rows: [string, string][] = [
     ["Business", lead?.business_name || "—"],
     ["Contact", lead?.owner_name || "—"],
@@ -510,7 +554,7 @@ function DetailsDrawer({
     ["Last Call Outcome", call?.outcome ? call.outcome.replace(/_/g, " ") : "—"],
     ["Last Objection", call?.outcome && OBJECTION_OUTCOMES.has(call.outcome) ? call.outcome_reason || call.outcome.replace(/_/g, " ") : "—"],
     ["Previous Notes", call?.notes || followup.notes || "—"],
-    ["Scheduled Time", `${new Date(followup.due_at).toLocaleString()} (${followup.timezone})`],
+    ["Scheduled Time", scheduledTimeValue],
     ["Assigned Rep", assignedRepLabel],
     ["Created By", createdByLabel],
   ];
@@ -551,22 +595,30 @@ function QuickCreateModal({
   onCreated,
   isOwner,
   allReps,
+  employeeTimezone,
+  repTimezoneMap,
 }: {
   onClose: () => void;
   onCreated: () => void;
   isOwner: boolean;
-  allReps: { id: string; label: string }[];
+  allReps: { id: string; label: string; homeTimezone: string }[];
+  employeeTimezone: string;
+  repTimezoneMap: Record<string, string>;
 }) {
   const [leadQuery, setLeadQuery] = useState("");
-  const [leadResults, setLeadResults] = useState<{ id: string; business_name: string | null }[]>([]);
-  const [selectedLead, setSelectedLead] = useState<{ id: string; business_name: string | null } | null>(null);
+  const [leadResults, setLeadResults] = useState<{ id: string; business_name: string | null; city: string | null; state: string | null }[]>([]);
+  const [selectedLead, setSelectedLead] = useState<{ id: string; business_name: string | null; city: string | null; state: string | null } | null>(null);
   const [type, setType] = useState<Followup["followup_type"]>("CALL");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("09:00");
+  const [scheduleValue, setScheduleValue] = useState<ScheduleValue | null>(null);
   const [reason, setReason] = useState("");
   const [assignedTo, setAssignedTo] = useState(allReps[0]?.id || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The picker's "My Time" mode should reflect whichever rep this
+  // follow-up is being assigned to when the owner is quick-creating on
+  // someone else's behalf -- not the owner's own timezone.
+  const pickerEmployeeTimezone = isOwner ? repTimezoneMap[assignedTo] || employeeTimezone : employeeTimezone;
 
   async function searchLeads(q: string) {
     setLeadQuery(q);
@@ -577,24 +629,32 @@ function QuickCreateModal({
     const res = await fetch(`/api/team/search?q=${encodeURIComponent(q)}`);
     if (res.ok) {
       const data = await res.json();
-      setLeadResults((data.results || []).map((r: any) => ({ id: r.id, business_name: r.business_name })));
+      setLeadResults((data.results || []).map((r: any) => ({ id: r.id, business_name: r.business_name, city: r.city ?? null, state: r.state ?? null })));
     }
   }
 
   async function submit() {
-    if (!selectedLead || !date) {
-      setError("Choose a lead and a date.");
+    if (!selectedLead || !scheduleValue) {
+      setError("Choose a lead and a date/time.");
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const dueAt = new Date(`${date}T${time}:00`).toISOString();
       const res = await fetch("/api/team/followups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leadId: selectedLead.id, followupType: type, dueAt, timezone, reason, assignedTo: isOwner ? assignedTo : undefined }),
+        body: JSON.stringify({
+          leadId: selectedLead.id,
+          followupType: type,
+          dueAt: scheduleValue.dueAtUtc,
+          businessTimezone: scheduleValue.businessTimezone,
+          creatorTimezone: scheduleValue.creatorTimezone,
+          inputTimezone: scheduleValue.inputTimezone,
+          inputLocalDatetime: scheduleValue.inputLocalDatetime,
+          reason,
+          assignedTo: isOwner ? assignedTo : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -679,16 +739,12 @@ function QuickCreateModal({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Date</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full mt-1 h-[38px] rounded-[8px] px-3 text-[13px] outline-none" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }} />
-            </div>
-            <div>
-              <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Time</label>
-              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full mt-1 h-[38px] rounded-[8px] px-3 text-[13px] outline-none" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }} />
-            </div>
-          </div>
+          <ScheduleTimeZonePicker
+            employeeTimezone={pickerEmployeeTimezone}
+            leadCity={selectedLead?.city}
+            leadState={selectedLead?.state}
+            onChange={setScheduleValue}
+          />
 
           <div>
             <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Reason</label>
@@ -697,7 +753,7 @@ function QuickCreateModal({
 
           {error && <p className="text-[12.5px] text-[#FF453A]">{error}</p>}
 
-          <button onClick={submit} disabled={saving} className="h-[42px] rounded-[8px] bg-white text-black text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60 mt-1">
+          <button onClick={submit} disabled={saving || !scheduleValue || !selectedLead} className="h-[42px] rounded-[8px] bg-white text-black text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60 mt-1">
             {saving ? <Loader2 size={14} className="animate-spin" /> : null} {saving ? "Creating…" : "Create Follow-Up"}
           </button>
         </div>
