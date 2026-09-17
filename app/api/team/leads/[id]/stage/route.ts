@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { SFB_PLAN_PRICES, isPlanKey } from "@/lib/team/plans";
 import { awardPointsForEvent, reversePointEvent, saleEventTypeForPlan } from "@/lib/team/competition/scoring";
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "Select which plan was sold before marking this lead won." }, { status: 400 });
   }
 
-  const { data: lead, error: readError } = await supabase.from("crm_leads").select("pipeline_stage, assigned_rep").eq("id", params.id).single();
+  const { data: lead, error: readError } = await supabase.from("crm_leads").select("pipeline_stage, assigned_rep, business_name, email, phone, website").eq("id", params.id).single();
   if (readError || !lead) return NextResponse.json({ error: "Lead not found or not accessible." }, { status: 404 });
   // Same stage twice (e.g. a repeated/duplicate "won" submission) is a
   // no-op -- this is the idempotency guard: it never reaches the revenue
@@ -94,6 +94,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         description: `${planKey.replace(/_/g, " ")} sale`,
       });
     }
+
+    // A "Won" deal is the moment a customer account actually needs to
+    // exist -- this is what makes "authenticated existing customer" a real
+    // concept instead of an aspiration. Best-effort: if this fails, the
+    // sale/revenue event above has already succeeded and must not be
+    // rolled back over it; the owner can provision manually from
+    // /team/settings/add-ons if needed.
+    try {
+      await provisionCustomerAccount({ leadId: params.id, businessName: lead.business_name, email: lead.email, phone: lead.phone, website: lead.website, planKey });
+    } catch (err) {
+      console.error("Customer account provisioning failed after Won", err);
+    }
   } else if (wasWon) {
     // Reopening a previously-won deal (moved off "won" to any other stage).
     // Never silently delete revenue history -- reverse the active event(s)
@@ -123,4 +135,55 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   return NextResponse.json({ ok: true });
+}
+
+// Runs on the service client -- a rep marking a deal "won" has no direct
+// Auth-admin rights of their own, and this is trusted server-side
+// bookkeeping (the same pattern as the existing team-invite flow), not
+// something the acting user's own session should need elevated RLS for.
+async function provisionCustomerAccount(params: { leadId: string; businessName: string | null; email: string | null; phone: string | null; website: string | null; planKey: string }) {
+  if (!params.email) {
+    console.warn(`Won lead ${params.leadId} has no email on file -- cannot provision a customer account yet.`);
+    return;
+  }
+  const service = createSupabaseServiceClient();
+
+  // Idempotent: a lead that was already provisioned (e.g. reopened then
+  // re-won) must never get a second business/account.
+  const { data: existingBusiness } = await service.from("businesses").select("id").eq("source_lead_id", params.leadId).maybeSingle();
+  if (existingBusiness) return;
+
+  // Reuse an existing auth account for this email if one already exists
+  // (e.g. the same person already has a business under SFB) rather than
+  // inviting a duplicate.
+  const { data: existingUser } = await service.from("users").select("id").eq("email", params.email).maybeSingle();
+
+  let ownerId = existingUser?.id ?? null;
+  if (!ownerId) {
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sfbconnect.com";
+    const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(params.email, {
+      redirectTo: `${siteUrl}/dashboard/login`,
+    });
+    if (inviteError || !invited?.user) throw new Error(inviteError?.message || "Could not invite customer.");
+    ownerId = invited.user.id;
+  }
+
+  const { data: business, error: businessError } = await service
+    .from("businesses")
+    .insert({
+      owner_id: ownerId,
+      legal_name: params.businessName,
+      website: params.website,
+      plan_key: params.planKey,
+      source_lead_id: params.leadId,
+    })
+    .select("id")
+    .single();
+  if (businessError || !business) throw new Error(businessError?.message || "Could not create business record.");
+
+  await service.from("billing_audit_log").insert({
+    business_id: business.id,
+    action: "customer_provisioned",
+    detail: { lead_id: params.leadId, plan_key: params.planKey, invited: !existingUser },
+  });
 }

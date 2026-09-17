@@ -36,6 +36,36 @@ const FAQS = [
     a: "It overlaps with certain technical SEO concepts but focuses specifically on how business information is structured, understood and represented for AI-assisted discovery.",
     color: "#FFFFFF",
   },
+  {
+    q: "Do I need add-ons?",
+    a: "No. Your SFB plan works on its own. Add-ons expand coverage, capacity, execution, or human support when your business needs more.",
+    color: "#4DD9A0",
+  },
+  {
+    q: "Can I add another location?",
+    a: "Yes. Eligible additional locations can be added separately without requiring a completely different base plan.",
+    color: "#4D8DFF",
+  },
+  {
+    q: "What are Action Credits?",
+    a: "Action Credits are additional execution capacity for eligible SFB actions beyond what's included with your plan.",
+    color: "#FFD84D",
+  },
+  {
+    q: "Do credits guarantee results?",
+    a: "No. Credits pay for the specified SFB work or analysis. They do not guarantee AI rankings, leads, or revenue.",
+    color: "#FF4D4D",
+  },
+  {
+    q: "Can I cancel recurring add-ons?",
+    a: "Yes. Recurring add-ons can be canceled at any time from your account, and stay active through the end of the period you've already paid for rather than ending immediately.",
+    color: "#A96CFF",
+  },
+  {
+    q: "Does Dominance still need add-ons?",
+    a: "Dominance includes SFB's highest level of core management. Add-ons are primarily useful when a business needs additional scale, locations, markets, capacity, or specialized services.",
+    color: "#FF8A3D",
+  },
 ];
 
 function FaqItem({

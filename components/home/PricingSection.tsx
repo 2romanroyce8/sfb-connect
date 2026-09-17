@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import DemoBookingForm from "@/components/marketing/DemoBookingForm";
 import RoiCalculator from "@/components/home/RoiCalculator";
+import { trackMarketingEvent } from "@/lib/marketingEvents";
 
 type Plan = {
   id: string;
@@ -190,6 +191,7 @@ function PlanCard({ plan, index, billing }: { plan: Plan; index: number; billing
 
           <Link
             href={plan.href}
+            onClick={() => trackMarketingEvent("pricing_plan_selected", { plan: plan.id, billing })}
             className="block w-full h-[42px] mt-[22px] rounded-[5px] text-[11px] font-semibold flex items-center justify-center transition-transform hover:scale-[1.02]"
             style={
               plan.buttonStyle === "light"

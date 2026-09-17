@@ -6,6 +6,7 @@ import ProcessSection from "@/components/home/ProcessSection";
 import AnalyzeSection from "@/components/home/AnalyzeSection";
 import PlatformsSection from "@/components/home/PlatformsSection";
 import PricingSection from "@/components/home/PricingSection";
+import ExpandSfbSection from "@/components/home/ExpandSfbSection";
 import FaqSection from "@/components/home/FaqSection";
 import FinalCta from "@/components/home/FinalCta";
 import Footer from "@/components/home/Footer";
@@ -22,6 +23,7 @@ export default function HomePage() {
         <ProcessSection />
       </BusinessLookupProvider>
       <PricingSection />
+      <ExpandSfbSection />
       <FaqSection />
       <FinalCta />
       <Footer />
