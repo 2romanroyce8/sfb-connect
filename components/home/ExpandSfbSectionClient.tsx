@@ -327,7 +327,7 @@ export default function ExpandSfbSectionClient({ products, packages }: { product
               </>
             )}
             <Link
-              href="/dashboard/login?next=/dashboard/billing"
+              href="/login?next=/dashboard/billing"
               onClick={() => trackMarketingEvent("addon_cta_clicked", { key: detail.key })}
               className="w-full h-[44px] rounded-[10px] bg-white text-black text-[13.5px] font-semibold flex items-center justify-center"
             >

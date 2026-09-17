@@ -162,7 +162,7 @@ async function provisionCustomerAccount(params: { leadId: string; businessName: 
   if (!ownerId) {
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sfbconnect.com";
     const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(params.email, {
-      redirectTo: `${siteUrl}/dashboard/login`,
+      redirectTo: `${siteUrl}/login`,
     });
     if (inviteError || !invited?.user) throw new Error(inviteError?.message || "Could not invite customer.");
     ownerId = invited.user.id;

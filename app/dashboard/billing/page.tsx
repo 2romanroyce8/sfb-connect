@@ -4,19 +4,19 @@ import { getEntitlements } from "@/lib/billing/entitlements";
 import { SFB_PLAN_LABELS, SFB_PLAN_PRICES, isPlanKey } from "@/lib/team/plans";
 import BillingDashboard from "@/components/dashboard/BillingDashboard";
 
-// This is the one authenticated area under /dashboard/* -- the rest of
-// /dashboard is a public demo/preview shell (no login), so the auth check
-// lives here rather than in a shared layout that would otherwise gate
-// pages that were never meant to require login.
+// middleware.ts already gates all of /dashboard/** for any authenticated
+// user and redirects unauthenticated visitors to the existing /login page.
+// The checks below only need to cover the "logged in, but not actually a
+// provisioned customer" case (e.g. a Sales OS rep account with no business).
 export default async function BillingPage() {
   const supabase = createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/dashboard/login?next=/dashboard/billing");
+  if (!user) redirect("/login?next=/dashboard/billing");
 
   const { data: business } = await supabase.from("businesses").select("id, legal_name, plan_key, stripe_customer_id").eq("owner_id", user.id).maybeSingle();
-  if (!business) redirect("/dashboard/login?next=/dashboard/billing");
+  if (!business) redirect("/login?next=/dashboard/billing");
 
   const [entitlements, { data: activeAddons }, { data: purchases }, { data: allProducts }, { data: creditPackages }, { data: opportunities }] = await Promise.all([
     getEntitlements(supabase, business.id),
