@@ -283,6 +283,68 @@ create table if not exists public.admin_notes (
 );
 
 -- ============================================================
+-- AI VISIBILITY MONITORING + INTELLIGENCE ENGINE V1 (2026-09-19)
+-- NOTE: ai_visibility_observations, action_catalog, and the rest of the
+-- billing/entitlement schema (customer_addons, credit_transactions, etc.)
+-- were created via migrations applied directly to the live DB and are NOT
+-- yet reflected as CREATE TABLE statements in this file -- a pre-existing
+-- drift issue from an earlier build pass, not introduced here. Only the
+-- two NEW tables from this pass are added below for now.
+-- ============================================================
+create table if not exists public.tracked_queries (
+  id uuid primary key default uuid_generate_v4(),
+  business_id uuid not null references public.businesses(id),
+  location_id uuid references public.business_locations(id),
+  query_text text not null,
+  normalized_query text not null,
+  query_type text not null check (query_type in ('discovery','service','local','comparison','brand','competitor')),
+  category text,
+  priority text not null default 'medium' check (priority in ('low','medium','high')),
+  status text not null default 'active' check (status in ('active','paused','archived')),
+  source text not null check (source in ('system_generated','research_discovered','team_added','customer_added')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists idx_tracked_queries_dedupe on public.tracked_queries(business_id, normalized_query, coalesce(location_id, '00000000-0000-0000-0000-000000000000'::uuid));
+
+create table if not exists public.ai_check_jobs (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid not null references public.projects(id),
+  tracked_query_id uuid not null references public.tracked_queries(id),
+  platform text not null check (platform in ('chatgpt','claude','perplexity','grok','google_ai')),
+  competitor_id uuid references public.competitors(id),
+  status text not null default 'queued' check (status in ('queued','running','completed','failed','skipped_not_configured')),
+  attempt_count integer not null default 0,
+  error_text text,
+  cost_estimate_cents numeric,
+  started_at timestamptz,
+  completed_at timestamptz,
+  duration_ms integer,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists idx_ai_check_jobs_identity on public.ai_check_jobs(project_id, tracked_query_id, platform, coalesce(competitor_id, '00000000-0000-0000-0000-000000000000'::uuid));
+
+alter table public.tracked_queries enable row level security;
+alter table public.ai_check_jobs enable row level security;
+create policy "tracked_queries_owner_read" on public.tracked_queries for select
+  using (exists (select 1 from public.businesses b where b.id = tracked_queries.business_id and (b.owner_id = auth.uid() or public.is_admin())));
+create policy "tracked_queries_team_owner_all" on public.tracked_queries for all using (public.is_team_owner());
+create policy "ai_check_jobs_team_owner_all" on public.ai_check_jobs for all using (public.is_team_owner());
+
+-- competitors: distinguish customer-entered from AI-discovered (existing
+-- rows are all customer-entered -- default preserves that truthfully).
+alter table public.competitors add column if not exists source text not null default 'customer_entered' check (source in ('customer_entered','ai_discovered'));
+alter table public.competitors add column if not exists discovered_at timestamptz;
+alter table public.competitors add column if not exists verification_status text not null default 'unverified' check (verification_status in ('unverified','verified','dismissed'));
+
+-- audit_findings: dedup/lifecycle key so the engine never opens the same
+-- finding twice for one business.
+alter table public.audit_findings add column if not exists finding_key text;
+create unique index if not exists idx_audit_findings_dedupe_key on public.audit_findings(business_id, finding_key) where finding_key is not null;
+
+alter table public.recommendations add column if not exists auto_generated boolean not null default false;
+
+-- ============================================================
 -- LEADS (pre-checkout capture)
 -- ============================================================
 create table if not exists public.leads (
