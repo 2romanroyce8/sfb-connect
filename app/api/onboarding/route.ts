@@ -181,29 +181,27 @@ export async function POST(req: NextRequest) {
   let projectId = existingProject?.id ?? null;
 
   if (!projectId) {
-    const targetCompletion = new Date();
-    targetCompletion.setDate(targetCompletion.getDate() + 14);
-
+    // This represents the baseline scan SFB will run to establish the
+    // customer's starting AI-presence measurement -- it starts "pending"
+    // because completing onboarding intake does not itself run any
+    // analysis; a real automated or admin-run scan still has to produce
+    // the actual presence_scores/audit_findings rows.
     const { data: projectRow } = await service
       .from("projects")
       .insert({
         business_id: businessId,
-        status: "submitted",
-        target_completion_at: targetCompletion.toISOString(),
+        status: "pending",
+        scan_type: "baseline",
       })
       .select("id")
       .single();
 
     if (projectRow) {
       projectId = projectRow.id;
-      await service.from("audits").insert({
-        project_id: projectRow.id,
-        audit_stage: "intake",
-      });
       await service.from("project_status_history").insert({
         project_id: projectRow.id,
-        status: "submitted",
-        note: "Business intake completed via onboarding.",
+        status: "pending",
+        note: "Business intake completed via onboarding -- baseline scan queued.",
       });
     }
   }

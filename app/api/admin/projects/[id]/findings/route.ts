@@ -3,8 +3,11 @@ import { requireAdmin } from "@/lib/adminGuard";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 /**
- * Adds an audit finding to a project's most recent audit (creating one if
- * none exists yet). Body: { categoryName, severity, finding, recommendation }
+ * Adds a finding directly to a scan run (project). The old `audits`
+ * workflow-stage intermediary table has been retired -- findings now
+ * attach straight to project_id + business_id (business_id resolved
+ * server-side, never client-supplied).
+ * Body: { categoryName, severity, finding, recommendation, platform, queryText, evidenceText }
  */
 export async function POST(
   req: NextRequest,
@@ -14,28 +17,21 @@ export async function POST(
   if (!guard.ok) return NextResponse.json({ error: guard.message }, { status: guard.status });
 
   const body = await req.json().catch(() => null);
-  const { categoryName, severity, finding, recommendation } = body || {};
+  const { categoryName, severity, finding, recommendation, platform, queryText, evidenceText } = body || {};
   if (!finding) {
     return NextResponse.json({ error: "finding is required." }, { status: 400 });
   }
 
   const service = createSupabaseServiceClient();
 
-  let { data: audit } = await service
-    .from("audits")
-    .select("id")
-    .eq("project_id", params.id)
-    .order("started_at", { ascending: false })
-    .limit(1)
+  const { data: project, error: projectErr } = await service
+    .from("projects")
+    .select("id, business_id")
+    .eq("id", params.id)
     .maybeSingle();
 
-  if (!audit) {
-    const { data: newAudit } = await service
-      .from("audits")
-      .insert({ project_id: params.id, audit_stage: "presence_audit" })
-      .select("id")
-      .single();
-    audit = newAudit;
+  if (projectErr || !project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
   let categoryId: string | null = null;
@@ -49,11 +45,15 @@ export async function POST(
   }
 
   const { error } = await service.from("audit_findings").insert({
-    audit_id: audit!.id,
+    project_id: project.id,
+    business_id: project.business_id,
     category_id: categoryId,
     severity: severity || "info",
     finding,
     recommendation: recommendation || null,
+    platform: platform || null,
+    query_text: queryText || null,
+    evidence_text: evidenceText || null,
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

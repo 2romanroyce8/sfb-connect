@@ -24,8 +24,19 @@ export async function POST(
   }
 
   const service = createSupabaseServiceClient();
+
+  const { data: project, error: projectErr } = await service
+    .from("projects")
+    .select("id, business_id")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (projectErr || !project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
   const { error } = await service.from("presence_scores").insert({
-    project_id: params.id,
+    project_id: project.id,
+    business_id: project.business_id,
     overall_score,
     identity_score,
     knowledge_score,

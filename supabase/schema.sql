@@ -96,11 +96,19 @@ create table if not exists public.competitors (
 -- ============================================================
 -- PROJECTS (one annual engagement per business)
 -- ============================================================
+-- A single SFB analysis/scan run for a business (NOT a customer-facing
+-- "project" -- reframed 2026-09-19 from a one-time 14-day managed-audit
+-- engagement into a reusable, repeatable scan run; a paying customer
+-- accumulates many of these over their lifetime).
 create table if not exists public.projects (
   id uuid primary key default uuid_generate_v4(),
   business_id uuid not null references public.businesses(id) on delete cascade,
-  status text not null default 'submitted'
-    check (status in ('submitted','analyzing','researching','optimizing','final_review','completed')),
+  status text not null default 'pending'
+    check (status in ('pending','running','completed','failed')),
+  scan_type text not null default 'manual'
+    check (scan_type in ('baseline','visibility_check','competitor_scan','knowledge_audit','website_ai_readiness','scheduled_monitoring','manual')),
+  location_id uuid references public.business_locations(id),
+  metadata jsonb not null default '{}'::jsonb,
   started_at timestamptz not null default now(),
   target_completion_at timestamptz,
   completed_at timestamptz,
@@ -118,39 +126,49 @@ create table if not exists public.project_status_history (
 );
 
 -- ============================================================
--- AUDITS
+-- AUDITS -- RETIRED 2026-09-19. The `audits` workflow-stage intermediary
+-- table (tied to the old 14-day managed-audit model) was dropped; findings
+-- attach directly to project_id + business_id now. audit_categories is
+-- kept (a real, still-useful 20-item taxonomy).
 -- ============================================================
-create table if not exists public.audits (
-  id uuid primary key default uuid_generate_v4(),
-  project_id uuid not null references public.projects(id) on delete cascade,
-  audit_stage text not null default 'intake'
-    check (audit_stage in ('intake','presence_audit','competitive_analysis','knowledge_optimization','presence_build','report')),
-  started_at timestamptz not null default now(),
-  completed_at timestamptz
-);
-
 create table if not exists public.audit_categories (
   id uuid primary key default uuid_generate_v4(),
   name text not null unique
 );
 
+-- Individual AI-presence findings, attached directly to a business + the
+-- scan run that produced them (no longer indirected through `audits`).
 create table if not exists public.audit_findings (
   id uuid primary key default uuid_generate_v4(),
-  audit_id uuid not null references public.audits(id) on delete cascade,
+  business_id uuid not null references public.businesses(id),
+  project_id uuid not null references public.projects(id),
+  location_id uuid references public.business_locations(id),
   category_id uuid references public.audit_categories(id),
+  platform text check (platform is null or platform in ('aggregate','chatgpt','claude','perplexity','grok','google_ai','website')),
+  query_text text,
+  evidence_text text,
   severity text check (severity in ('info','minor','moderate','critical')) default 'info',
   finding text not null,
   recommendation text,
   resolved boolean not null default false,
+  resolved_at timestamptz,
+  resolved_by uuid references public.users(id),
   created_at timestamptz not null default now()
 );
 
 -- ============================================================
--- PRESENCE SCORES
+-- PRESENCE SCORES -- historical AI-presence measurements. business_id is
+-- denormalized directly so RLS/queries never need to go through projects.
+-- Scores computed under different methodology_version values are never
+-- directly comparable -- never diff across versions.
 -- ============================================================
 create table if not exists public.presence_scores (
   id uuid primary key default uuid_generate_v4(),
+  business_id uuid not null references public.businesses(id),
   project_id uuid not null references public.projects(id) on delete cascade,
+  location_id uuid references public.business_locations(id),
+  platform text check (platform is null or platform in ('aggregate','chatgpt','claude','perplexity','grok','google_ai')),
+  methodology_version text not null default 'v1',
   overall_score integer not null check (overall_score between 0 and 100),
   identity_score integer check (identity_score between 0 and 100),
   knowledge_score integer check (knowledge_score between 0 and 100),
@@ -160,22 +178,38 @@ create table if not exists public.presence_scores (
   recorded_at timestamptz not null default now()
 );
 
+-- SFB-authored "you should do this based on intelligence" action items --
+-- distinct from expansion_opportunities (commercial expansion) and
+-- action_catalog (executable credit-metered work). May reference the
+-- specific finding that generated it.
 create table if not exists public.recommendations (
   id uuid primary key default uuid_generate_v4(),
-  project_id uuid not null references public.projects(id) on delete cascade,
+  business_id uuid not null references public.businesses(id),
+  project_id uuid references public.projects(id),
+  finding_id uuid references public.audit_findings(id),
+  location_id uuid references public.business_locations(id),
   title text not null,
   description text,
   priority text check (priority in ('low','medium','high')) default 'medium',
   status text check (status in ('pending','in_progress','done')) default 'pending',
+  accepted_at timestamptz,
+  started_at timestamptz,
+  completed_at timestamptz,
+  dismissed_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 -- ============================================================
--- REPORTS
+-- REPORTS -- real generated customer deliverables.
 -- ============================================================
 create table if not exists public.reports (
   id uuid primary key default uuid_generate_v4(),
-  project_id uuid not null references public.projects(id) on delete cascade,
+  business_id uuid not null references public.businesses(id),
+  project_id uuid references public.projects(id),
+  location_id uuid references public.business_locations(id),
+  report_type text check (report_type is null or report_type in ('initial','monthly','quarterly','competitor','ai_visibility','website_ai_readiness','knowledge_coverage')),
+  period_start date,
+  period_end date,
   file_url text,
   summary text,
   published_at timestamptz,
@@ -208,6 +242,16 @@ create table if not exists public.payments (
   created_at timestamptz not null default now()
 );
 
+-- LOGICALLY RETIRED 2026-09-19. businesses.plan_key + the entitlement
+-- engine (lib/billing/entitlements.ts) is now the SOLE authority for
+-- "is this a paid customer" -- this table must never be used for
+-- access/plan/billing/renewal/entitlement/portal-state decisions again.
+-- It has zero writers as of this commit (the one writer, /api/onboarding,
+-- was removed as part of closing a free-self-granted-membership
+-- vulnerability) and its one remaining reader is being removed from
+-- lib/customerPortal during this same pass. NOT physically dropped yet --
+-- keep the table until the new customer portal has shipped and passed
+-- regression testing, then drop it.
 create table if not exists public.subscriptions_or_annual_memberships (
   id uuid primary key default uuid_generate_v4(),
   business_id uuid not null references public.businesses(id) on delete cascade,
@@ -265,7 +309,6 @@ alter table public.business_social_profiles enable row level security;
 alter table public.competitors enable row level security;
 alter table public.projects enable row level security;
 alter table public.project_status_history enable row level security;
-alter table public.audits enable row level security;
 alter table public.audit_findings enable row level security;
 alter table public.presence_scores enable row level security;
 alter table public.recommendations enable row level security;
@@ -282,13 +325,39 @@ create or replace function public.is_admin() returns boolean as $$
   );
 $$ language sql security definer stable;
 
--- users: self read/update, admin full read
+-- users: self read/update, admin full read. NOTE: `role` can never be
+-- changed by a client session regardless of this policy -- see
+-- prevent_client_role_change() trigger below (added 2026-09-19 after an
+-- audit found this policy's missing WITH CHECK let a user self-update
+-- their own role to 'admin').
 create policy "users_self_select" on public.users for select using (id = auth.uid() or public.is_admin());
 create policy "users_self_update" on public.users for update using (id = auth.uid());
 
--- businesses: owner or admin
-create policy "businesses_owner_all" on public.businesses for all
+create or replace function public.prevent_client_role_change()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.role is distinct from old.role and current_user <> 'service_role' then
+    raise exception 'role cannot be changed directly by a client session';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_prevent_client_role_change on public.users;
+create trigger trg_prevent_client_role_change
+  before update on public.users
+  for each row execute function public.prevent_client_role_change();
+
+-- businesses: SELECT-only for the owner (fixed 2026-09-19 -- the original
+-- FOR ALL policy here had no separate WITH CHECK, which let any customer
+-- INSERT/UPDATE their own plan_key directly via the browser client with no
+-- payment). All writes now go through service-role-backed API routes.
+create policy "businesses_owner_read" on public.businesses for select
   using (owner_id = auth.uid() or public.is_admin());
+-- businesses_team_owner_all (is_team_owner(), all) is defined in the
+-- addon_billing_credits_entitlements migration, not duplicated here.
 
 -- child tables scoped through business ownership
 create policy "locations_owner_all" on public.business_locations for all
@@ -300,32 +369,36 @@ create policy "social_owner_all" on public.business_social_profiles for all
 create policy "competitors_owner_all" on public.competitors for all
   using (exists (select 1 from public.businesses b where b.id = business_id and (b.owner_id = auth.uid() or public.is_admin())));
 
-create policy "projects_owner_all" on public.projects for all
+-- projects: SELECT-only for the owner (fixed 2026-09-19, same class of fix
+-- as businesses -- a customer must not be able to fabricate/alter their
+-- own scan-run records). Admin writes via a separate ALL policy.
+create policy "projects_owner_read" on public.projects for select
   using (exists (select 1 from public.businesses b where b.id = business_id and (b.owner_id = auth.uid() or public.is_admin())));
+create policy "projects_admin_all" on public.projects for all using (public.is_admin());
+
 create policy "status_history_owner_read" on public.project_status_history for select
   using (exists (select 1 from public.projects p join public.businesses b on b.id = p.business_id where p.id = project_id and (b.owner_id = auth.uid() or public.is_admin())));
 create policy "status_history_admin_write" on public.project_status_history for insert
   with check (public.is_admin());
 
-create policy "audits_owner_read" on public.audits for select
-  using (exists (select 1 from public.projects p join public.businesses b on b.id = p.business_id where p.id = project_id and (b.owner_id = auth.uid() or public.is_admin())));
-create policy "audits_admin_write" on public.audits for insert with check (public.is_admin());
-create policy "audits_admin_update" on public.audits for update using (public.is_admin());
-
+-- audit_findings/presence_scores/recommendations/reports: simplified
+-- 2026-09-19 to use the direct business_id column added in the domain
+-- migration, instead of a 3-table join through the (now-retired for
+-- findings) audits/projects chain.
 create policy "findings_owner_read" on public.audit_findings for select
-  using (exists (select 1 from public.audits a join public.projects p on p.id = a.project_id join public.businesses b on b.id = p.business_id where a.id = audit_id and (b.owner_id = auth.uid() or public.is_admin())));
+  using (exists (select 1 from public.businesses b where b.id = audit_findings.business_id and (b.owner_id = auth.uid() or public.is_admin())));
 create policy "findings_admin_write" on public.audit_findings for all using (public.is_admin());
 
 create policy "scores_owner_read" on public.presence_scores for select
-  using (exists (select 1 from public.projects p join public.businesses b on b.id = p.business_id where p.id = project_id and (b.owner_id = auth.uid() or public.is_admin())));
+  using (exists (select 1 from public.businesses b where b.id = presence_scores.business_id and (b.owner_id = auth.uid() or public.is_admin())));
 create policy "scores_admin_write" on public.presence_scores for insert with check (public.is_admin());
 
 create policy "recs_owner_read" on public.recommendations for select
-  using (exists (select 1 from public.projects p join public.businesses b on b.id = p.business_id where p.id = project_id and (b.owner_id = auth.uid() or public.is_admin())));
+  using (exists (select 1 from public.businesses b where b.id = recommendations.business_id and (b.owner_id = auth.uid() or public.is_admin())));
 create policy "recs_admin_write" on public.recommendations for all using (public.is_admin());
 
 create policy "reports_owner_read" on public.reports for select
-  using (exists (select 1 from public.projects p join public.businesses b on b.id = p.business_id where p.id = project_id and (b.owner_id = auth.uid() or public.is_admin())));
+  using (exists (select 1 from public.businesses b where b.id = reports.business_id and (b.owner_id = auth.uid() or public.is_admin())));
 create policy "reports_admin_write" on public.reports for all using (public.is_admin());
 
 create policy "payments_owner_read" on public.payments for select using (user_id = auth.uid() or public.is_admin());

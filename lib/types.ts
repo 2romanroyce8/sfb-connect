@@ -1,28 +1,35 @@
-export type ProjectStatus =
-  | "submitted"
-  | "analyzing"
-  | "researching"
-  | "optimizing"
-  | "final_review"
-  | "completed";
+// Reframed from a one-time 14-day managed-audit workflow (submitted ->
+// analyzing -> ... -> completed) into a reusable SFB analysis/scan run --
+// a paying customer accumulates many of these over their lifetime, not one.
+export type ProjectStatus = "pending" | "running" | "completed" | "failed";
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
-  submitted: "Submitted",
-  analyzing: "Analyzing",
-  researching: "Researching",
-  optimizing: "Optimizing",
-  final_review: "Final Review",
+  pending: "Pending",
+  running: "Running",
   completed: "Completed",
+  failed: "Failed",
 };
 
-export const PROJECT_STATUS_ORDER: ProjectStatus[] = [
-  "submitted",
-  "analyzing",
-  "researching",
-  "optimizing",
-  "final_review",
-  "completed",
-];
+export const PROJECT_STATUS_ORDER: ProjectStatus[] = ["pending", "running", "completed", "failed"];
+
+export type ScanType =
+  | "baseline"
+  | "visibility_check"
+  | "competitor_scan"
+  | "knowledge_audit"
+  | "website_ai_readiness"
+  | "scheduled_monitoring"
+  | "manual";
+
+export const SCAN_TYPE_LABELS: Record<ScanType, string> = {
+  baseline: "Baseline Analysis",
+  visibility_check: "AI Visibility Check",
+  competitor_scan: "Competitor Scan",
+  knowledge_audit: "Knowledge Audit",
+  website_ai_readiness: "Website AI Readiness",
+  scheduled_monitoring: "Scheduled Monitoring",
+  manual: "Manual",
+};
 
 export interface PresenceScore {
   overall_score: number;
@@ -48,25 +55,44 @@ export interface Project {
   id: string;
   business_id: string;
   status: ProjectStatus;
+  scan_type: ScanType;
+  location_id: string | null;
   started_at: string;
   target_completion_at: string | null;
   completed_at: string | null;
+  metadata: Record<string, unknown>;
 }
 
 export interface Recommendation {
   id: string;
+  business_id: string;
+  finding_id: string | null;
+  location_id: string | null;
   title: string;
   description: string | null;
   priority: "low" | "medium" | "high";
   status: "pending" | "in_progress" | "done";
+  accepted_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  dismissed_at: string | null;
 }
 
 export interface AuditFinding {
   id: string;
+  business_id: string;
+  project_id: string;
+  location_id: string | null;
+  platform: string | null;
+  query_text: string | null;
+  evidence_text: string | null;
   finding: string;
   recommendation: string | null;
   severity: "info" | "minor" | "moderate" | "critical";
   resolved: boolean;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  created_at: string;
 }
 
 export type PaymentMethod = "cashapp" | "paypal" | "zelle";

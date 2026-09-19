@@ -10,12 +10,24 @@ export async function POST(
   if (!guard.ok) return NextResponse.json({ error: guard.message }, { status: guard.status });
 
   const body = await req.json().catch(() => null);
-  const { title, description, priority } = body || {};
+  const { title, description, priority, findingId } = body || {};
   if (!title) return NextResponse.json({ error: "title is required." }, { status: 400 });
 
   const service = createSupabaseServiceClient();
+
+  const { data: project, error: projectErr } = await service
+    .from("projects")
+    .select("id, business_id")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (projectErr || !project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
   const { error } = await service.from("recommendations").insert({
-    project_id: params.id,
+    project_id: project.id,
+    business_id: project.business_id,
+    finding_id: findingId || null,
     title,
     description: description || null,
     priority: priority || "medium",
@@ -39,9 +51,13 @@ export async function PATCH(
   }
 
   const service = createSupabaseServiceClient();
+  const update: Record<string, unknown> = { status };
+  if (status === "in_progress") update.started_at = new Date().toISOString();
+  if (status === "done") update.completed_at = new Date().toISOString();
+
   const { error } = await service
     .from("recommendations")
-    .update({ status })
+    .update(update)
     .eq("id", recommendationId)
     .eq("project_id", params.id);
 

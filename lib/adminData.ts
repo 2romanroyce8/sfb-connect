@@ -32,11 +32,13 @@ export async function getProjectForAdmin(projectId: string) {
     .eq("project_id", projectId)
     .order("recorded_at", { ascending: false });
 
-  const { data: audits } = await supabase
-    .from("audits")
-    .select("*, audit_findings(*, audit_categories(name))")
+  // `audits` (the old workflow-stage intermediary) has been retired --
+  // findings attach directly to project_id now.
+  const { data: findings } = await supabase
+    .from("audit_findings")
+    .select("*, audit_categories(name)")
     .eq("project_id", projectId)
-    .order("started_at", { ascending: false });
+    .order("created_at", { ascending: false });
 
   const { data: recommendations } = await supabase
     .from("recommendations")
@@ -62,5 +64,5 @@ export async function getProjectForAdmin(projectId: string) {
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
 
-  return { project, scores: scores || [], audits: audits || [], recommendations: recommendations || [], statusHistory: statusHistory || [], notes: notes || [], reports: reports || [] };
+  return { project, scores: scores || [], findings: findings || [], recommendations: recommendations || [], statusHistory: statusHistory || [], notes: notes || [], reports: reports || [] };
 }

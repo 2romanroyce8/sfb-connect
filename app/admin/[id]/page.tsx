@@ -20,7 +20,7 @@ export default async function AdminProjectDetailPage({
     return <div className="text-medium-gray">Project not found.</div>;
   }
 
-  const { project, scores, audits, recommendations, statusHistory, notes, reports } = data;
+  const { project, scores, findings, recommendations, statusHistory, notes, reports } = data;
   const business = (project as any).businesses;
   const latestScore = scores[0];
 
@@ -77,10 +77,10 @@ export default async function AdminProjectDetailPage({
       <section className="glass rounded-2xl p-6 mb-8">
         <h2 className="font-bold mb-4">Audit Findings</h2>
         <div className="mb-6 flex flex-col gap-3 max-h-[280px] overflow-y-auto">
-          {audits.flatMap((a: any) => a.audit_findings || []).length === 0 ? (
+          {findings.length === 0 ? (
             <p className="text-sm text-medium-gray">No findings yet.</p>
           ) : (
-            audits.flatMap((a: any) => a.audit_findings || []).map((f: any) => (
+            findings.map((f: any) => (
               <div key={f.id} className="border border-white/10 rounded-xl p-4 text-sm">
                 <div className="text-[11px] font-mono uppercase text-medium-gray mb-1">
                   {f.audit_categories?.name || "General"} · {f.severity}

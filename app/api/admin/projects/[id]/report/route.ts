@@ -14,14 +14,28 @@ export async function POST(
   if (!guard.ok) return NextResponse.json({ error: guard.message }, { status: guard.status });
 
   const body = await req.json().catch(() => null);
-  const { fileUrl, summary } = body || {};
+  const { fileUrl, summary, reportType, periodStart, periodEnd } = body || {};
   if (!fileUrl) return NextResponse.json({ error: "fileUrl is required." }, { status: 400 });
 
   const service = createSupabaseServiceClient();
+
+  const { data: project, error: projectErr } = await service
+    .from("projects")
+    .select("id, business_id")
+    .eq("id", params.id)
+    .maybeSingle();
+  if (projectErr || !project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
   const { error } = await service.from("reports").insert({
-    project_id: params.id,
+    project_id: project.id,
+    business_id: project.business_id,
     file_url: fileUrl,
     summary: summary || null,
+    report_type: reportType || null,
+    period_start: periodStart || null,
+    period_end: periodEnd || null,
     published_at: new Date().toISOString(),
   });
 
