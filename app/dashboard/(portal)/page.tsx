@@ -66,13 +66,30 @@ export default async function OverviewPage() {
         </div>
       </div>
 
-      <OverviewPresence presence={presence} />
+      <Link href="/dashboard/presence" className="block">
+        <OverviewPresence presence={presence} />
+      </Link>
+      {isEstablished && (
+        <div className="flex gap-4 -mt-8 mb-10">
+          <Link href="/dashboard/presence" className="text-[12px] font-medium text-neutral-900 underline underline-offset-2">
+            View Presence →
+          </Link>
+          <Link href="/dashboard/progress" className="text-[12px] font-medium text-neutral-900 underline underline-offset-2">
+            View Progress →
+          </Link>
+        </div>
+      )}
 
       {!isEstablished && <OverviewOnboarding stages={stages} />}
 
       {isEstablished && findings.length > 0 && (
         <section className="mb-10">
-          <h2 className="text-[13px] font-semibold text-neutral-900 mb-3">Recent Findings</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[13px] font-semibold text-neutral-900">Recent Findings</h2>
+            <Link href="/dashboard/actions" className="text-[11.5px] font-medium text-neutral-500 underline underline-offset-2">
+              View Actions →
+            </Link>
+          </div>
           <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-100">
             {findings.map((f) => (
               <div key={f.id} className="p-4 flex items-start justify-between gap-4">

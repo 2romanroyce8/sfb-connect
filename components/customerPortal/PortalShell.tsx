@@ -29,11 +29,11 @@ type NavItem = {
 
 const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutGrid, ready: true },
-  { href: "/dashboard/presence", label: "AI Presence", icon: Sparkles, ready: false },
-  { href: "/dashboard/progress", label: "Progress", icon: TrendingUp, ready: false },
-  { href: "/dashboard/actions", label: "Actions", icon: Zap, ready: false },
-  { href: "/dashboard/competitors", label: "Competitors", icon: Users, ready: false },
-  { href: "/dashboard/reports", label: "Reports", icon: FileText, ready: false },
+  { href: "/dashboard/presence", label: "AI Presence", icon: Sparkles, ready: true },
+  { href: "/dashboard/progress", label: "Progress", icon: TrendingUp, ready: true },
+  { href: "/dashboard/actions", label: "Actions", icon: Zap, ready: true },
+  { href: "/dashboard/competitors", label: "Competitors", icon: Users, ready: true },
+  { href: "/dashboard/reports", label: "Reports", icon: FileText, ready: true },
 ];
 
 const SECONDARY_NAV: NavItem[] = [
