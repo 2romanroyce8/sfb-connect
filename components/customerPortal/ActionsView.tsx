@@ -82,7 +82,26 @@ export default function ActionsView({
                     <span className={`shrink-0 text-[10.5px] font-medium rounded-full px-2 py-0.5 border ${PRIORITY_STYLE[r.priority]}`}>{r.priority}</span>
                   </div>
                   {r.description && <div className="text-[12.5px] text-neutral-500 mt-1">{r.description}</div>}
-                  <div className="text-[11px] text-neutral-400 mt-1.5">{r.status === "in_progress" ? "In progress" : "Pending"}</div>
+                  <div className="flex items-center justify-between gap-3 mt-2">
+                    <div className="text-[11px] text-neutral-400">{r.status === "in_progress" ? "In progress" : "Pending"}</div>
+                    {r.mappedAction && (
+                      <div className="flex items-center gap-2 text-[11.5px]">
+                        <span className="text-neutral-600">{r.mappedAction.name}</span>
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10.5px] font-medium ${
+                            creditSummary.available >= r.mappedAction.creditCost ? "bg-neutral-50 text-neutral-700 border-neutral-200" : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          {creditSummary.available >= r.mappedAction.creditCost ? `${r.mappedAction.creditCost} credits · Ready for approval` : `${r.mappedAction.creditCost} credits · Not enough credits`}
+                        </span>
+                        {creditSummary.available >= r.mappedAction.creditCost && (
+                          <button onClick={() => requestAction(r.mappedAction!.id)} disabled={requesting === r.mappedAction.id} className="h-7 px-2.5 rounded-full bg-neutral-900 text-white text-[11px] font-medium disabled:opacity-40">
+                            {requesting === r.mappedAction.id ? "..." : "Approve"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
           </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
-import { appendCreditTransaction } from "@/lib/billing/credits";
+import { appendCreditTransaction, getCreditBalance } from "@/lib/billing/credits";
 import type Stripe from "stripe";
 
 // ============================================================
@@ -64,6 +64,9 @@ export async function POST(req: NextRequest) {
       case "charge.refunded":
         await handleChargeRefunded(service, event.data.object as Stripe.Charge, event.id);
         break;
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(service, event.data.object as Stripe.Invoice, event.id);
+        break;
       default:
         // Real events we don't act on yet -- acknowledged, not an error.
         break;
@@ -117,16 +120,17 @@ async function handleCheckoutCompleted(service: ReturnType<typeof createSupabase
     // (which carries the real subscription item + period end) -- here we
     // just ensure a customer_addons row exists so it shows as active even
     // before that follow-up event lands.
-    const { data: existing } = await service.from("customer_addons").select("id").eq("business_id", businessId).eq("addon_product_id", purchase.addon_product_id).eq("status", "active").maybeSingle();
-    if (!existing) {
-      await service.from("customer_addons").insert({
-        business_id: businessId,
-        addon_product_id: purchase.addon_product_id,
-        quantity: purchase.quantity,
-        status: "active",
-        stripe_subscription_id: typeof session.subscription === "string" ? session.subscription : null,
-      });
-    }
+    // A partial unique index (one live row per business+product) now
+    // backstops this at the DB level -- a 23505 here means another event
+    // already created the live row; treat as an idempotent no-op.
+    const { error: addonErr } = await service.from("customer_addons").insert({
+      business_id: businessId,
+      addon_product_id: purchase.addon_product_id,
+      quantity: purchase.quantity,
+      status: "active",
+      stripe_subscription_id: typeof session.subscription === "string" ? session.subscription : null,
+    });
+    if (addonErr && addonErr.code !== "23505") throw new Error(`Could not activate add-on: ${addonErr.message}`);
   } else if (purchase.purchase_type === "addon_one_time") {
     // One-time add-ons (Knowledge Cleanup, Human Expert Review, etc.) grant
     // a one-off right, not an ongoing entitlement -- recorded as a
@@ -168,24 +172,65 @@ async function handleChargeRefunded(service: ReturnType<typeof createSupabaseSer
 
   await service.from("addon_purchases").update({ status: "refunded" }).eq("id", purchase.id);
 
+  let clampedNote: Record<string, unknown> = {};
   if (purchase.purchase_type === "credit_package") {
     const { data: pkg } = await service.from("credit_packages").select("credits").eq("id", purchase.credit_package_id).single();
     if (pkg) {
-      await appendCreditTransaction(service, {
-        businessId: purchase.business_id,
-        type: "REFUND",
-        amount: -pkg.credits,
-        source: "stripe_refund",
-        purchaseId: purchase.id,
-        description: "Purchase refunded",
-        idempotencyKey: `stripe_refund:${eventId}`,
-      });
+      // NEGATIVE-BALANCE GUARD: if the customer already spent some of the
+      // refunded credits, only claw back what remains. The ledger can never
+      // go below zero; the un-clawable remainder is recorded in the audit
+      // log for the owner to handle commercially (it is a real business
+      // decision, not something to hide inside a negative number).
+      const currentBalance = await getCreditBalance(service, purchase.business_id);
+      const clawback = Math.max(0, Math.min(pkg.credits, currentBalance));
+      if (clawback > 0) {
+        await appendCreditTransaction(service, {
+          businessId: purchase.business_id,
+          type: "REFUND",
+          amount: -clawback,
+          source: "stripe_refund",
+          purchaseId: purchase.id,
+          description: clawback < pkg.credits ? `Purchase refunded (${clawback} of ${pkg.credits} credits reclaimed -- remainder already used)` : "Purchase refunded",
+          idempotencyKey: `stripe_refund:${eventId}`,
+        });
+      }
+      if (clawback < pkg.credits) clampedNote = { credits_refunded_by_stripe: pkg.credits, credits_reclaimed: clawback, credits_already_used: pkg.credits - clawback };
     }
+  } else if (purchase.purchase_type === "addon_recurring") {
+    // A charge refund is NOT a subscription cancellation in Stripe -- the
+    // subscription stays live until a customer.subscription.deleted event.
+    // Access policy for a refunded recurring add-on is therefore decided by
+    // whether the owner also cancels it in Stripe; we record the refund and
+    // do not silently revoke here.
+    clampedNote = { policy: "recurring add-on refund recorded; access follows Stripe subscription state" };
+  } else if (purchase.purchase_type === "addon_one_time") {
+    // One-time add-ons have no customer_addons row (no ongoing entitlement
+    // to revoke); the refunded purchase record itself is the truth.
   }
 
   await service.from("billing_audit_log").insert({
     business_id: purchase.business_id,
     action: "purchase_refunded",
-    detail: { purchase_id: purchase.id, stripe_event_id: eventId },
+    detail: { purchase_id: purchase.id, stripe_event_id: eventId, ...clampedNote },
   });
+}
+
+async function handleInvoicePaymentFailed(service: ReturnType<typeof createSupabaseServiceClient>, invoice: Stripe.Invoice, eventId: string) {
+  // Stripe's Invoice type moved subscription under parent.subscription_details
+  // in recent API versions; tolerate both shapes without trusting either blindly.
+  const inv = invoice as unknown as { subscription?: string | { id: string } | null; parent?: { subscription_details?: { subscription?: string | { id: string } | null } | null } | null };
+  const raw = inv.subscription ?? inv.parent?.subscription_details?.subscription ?? null;
+  const subscriptionId = typeof raw === "string" ? raw : raw?.id ?? null;
+  if (!subscriptionId) return;
+
+  const { data: rows } = await service
+    .from("customer_addons")
+    .update({ status: "past_due", updated_at: new Date().toISOString() })
+    .eq("stripe_subscription_id", subscriptionId)
+    .in("status", ["active", "canceled_at_period_end"])
+    .select("id, business_id");
+
+  for (const row of rows ?? []) {
+    await service.from("billing_audit_log").insert({ business_id: row.business_id, action: "payment_failed", detail: { customer_addon_id: row.id, stripe_subscription_id: subscriptionId, stripe_event_id: eventId } });
+  }
 }

@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       await service.from("businesses").update({ stripe_customer_id: stripeCustomerId }).eq("id", business.id);
     }
 
+    if (!process.env.NEXT_PUBLIC_APP_URL) console.warn("NEXT_PUBLIC_APP_URL is not set -- falling back to the production domain for Stripe redirect URLs (wrong in staging).");
     const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sfbconnect.com";
 
     if (kind === "credits") {
@@ -58,7 +59,8 @@ export async function POST(req: NextRequest) {
         cancel_url: `${siteUrl}/dashboard/billing?purchase=canceled`,
         metadata: { business_id: business.id, purchase_id: purchase.id },
       });
-      await service.from("addon_purchases").update({ stripe_checkout_session_id: session.id }).eq("id", purchase.id);
+      const { error: linkErr } = await service.from("addon_purchases").update({ stripe_checkout_session_id: session.id }).eq("id", purchase.id);
+      if (linkErr) console.error("Could not link checkout session to purchase", { purchaseId: purchase.id, sessionId: session.id, error: linkErr.message });
       return NextResponse.json({ checkoutUrl: session.url });
     }
 
@@ -92,7 +94,8 @@ export async function POST(req: NextRequest) {
         metadata: { business_id: business.id, purchase_id: purchase.id },
         subscription_data: isRecurring ? { metadata: { business_id: business.id, addon_product_id: product.id, purchase_id: purchase.id } } : undefined,
       });
-      await service.from("addon_purchases").update({ stripe_checkout_session_id: session.id }).eq("id", purchase.id);
+      const { error: linkErr } = await service.from("addon_purchases").update({ stripe_checkout_session_id: session.id }).eq("id", purchase.id);
+      if (linkErr) console.error("Could not link checkout session to purchase", { purchaseId: purchase.id, sessionId: session.id, error: linkErr.message });
       return NextResponse.json({ checkoutUrl: session.url });
     }
 

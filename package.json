@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:research": "tsx --test tests/research/*.test.ts tests/lib/*.test.ts",
+    "test:intelligence": "tsx --test tests/intelligence/*.test.ts",
+    "test": "tsx --test tests/research/*.test.ts tests/lib/*.test.ts tests/intelligence/*.test.ts",
     "cf:preview": "npm install --no-save @opennextjs/cloudflare@latest wrangler@latest && opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf:deploy": "npm install --no-save @opennextjs/cloudflare@latest wrangler@latest && opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },

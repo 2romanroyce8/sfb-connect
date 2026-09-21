@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCustomerContext } from "@/lib/customerPortal/context";
 import BillingDashboard from "@/components/dashboard/BillingDashboard";
+import { getTrackedQueryUsage } from "@/lib/billing/queryAllowance";
 
 // Authorization is resolved by the ONE centralized getCustomerContext() --
 // this page never re-implements "is this a paid customer" itself. The
@@ -15,12 +16,13 @@ export default async function BillingPage() {
   const { context } = result;
   const supabase = createSupabaseServerClient();
 
-  const [{ data: activeAddons }, { data: purchases }, { data: allProducts }, { data: creditPackages }, { data: opportunities }] = await Promise.all([
+  const [{ data: activeAddons }, { data: purchases }, { data: allProducts }, { data: creditPackages }, { data: opportunities }, trackedQueryUsage] = await Promise.all([
     supabase.from("customer_addons").select("id, quantity, status, current_period_end, stripe_subscription_id, addon_products(key, name, base_price_cents, unit)").eq("business_id", context.business.id).eq("status", "active"),
     supabase.from("addon_purchases").select("id, purchase_type, quantity, amount_cents, status, created_at, addon_products(name), credit_packages(name)").eq("business_id", context.business.id).order("created_at", { ascending: false }).limit(20),
     supabase.from("addon_products").select("id, key, name, category, description, best_for, billing_type, unit, base_price_cents, featured, sort_order").eq("active", true).order("sort_order"),
     supabase.from("credit_packages").select("id, name, credits, price_cents").eq("active", true).order("sort_order"),
     supabase.from("expansion_opportunities").select("id, type, evidence, status, addon_products(id, name, base_price_cents)").eq("business_id", context.business.id).eq("status", "OPEN").order("detected_at", { ascending: false }),
+    getTrackedQueryUsage(supabase, context.business.id),
   ]);
 
   // Estimated recurring total: base plan + every active recurring add-on's
@@ -38,6 +40,7 @@ export default async function BillingPage() {
       planPriceCents={context.planPriceCents}
       estimatedMonthlyTotalCents={estimatedMonthlyTotalCents}
       entitlements={context.entitlements}
+      trackedQueryUsage={trackedQueryUsage}
       activeAddons={(activeAddons ?? []) as any}
       purchases={(purchases ?? []) as any}
       allProducts={(allProducts ?? []) as any}

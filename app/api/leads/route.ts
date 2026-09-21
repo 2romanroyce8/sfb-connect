@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const leadSchema = z.object({
   businessName: z.string().min(1).optional(),
@@ -28,7 +28,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = createSupabaseServiceClient();
+  // Anon/session client on purpose (RLS consistency fix, 2026-09-21): the
+  // `leads` table's `leads_public_insert` policy is the enforcing gate for
+  // this public endpoint, exactly as it already is for /api/services/inquiry.
+  // The previous service-role client silently bypassed RLS here, so any
+  // future tightening of that policy would never have applied to this route.
+  const supabase = createSupabaseServerClient();
   const { error } = await supabase.from("leads").insert({
     business_name: parsed.data.businessName,
     website: parsed.data.website,

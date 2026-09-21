@@ -28,6 +28,10 @@ export async function POST(req: NextRequest) {
       if (!product) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
       const stripeProductId = product.stripe_product_id || (await stripe.products.create({ name: product.name, metadata: { addon_key: product.key } })).id;
+      // Archive the previous Price (never delete -- existing subscriptions
+      // keep referencing it) so re-syncing after a price change doesn't
+      // leave an ever-growing pile of stale active prices in Stripe.
+      if (product.stripe_price_id) await stripe.prices.update(product.stripe_price_id, { active: false }).catch((e) => console.warn("Could not archive old price", e));
       const price = await stripe.prices.create({
         product: stripeProductId,
         currency: "usd",
@@ -44,6 +48,7 @@ export async function POST(req: NextRequest) {
     if (!pkg) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
     const stripeProductId = pkg.stripe_product_id || (await stripe.products.create({ name: pkg.name, metadata: { credit_package_id: pkg.id } })).id;
+    if (pkg.stripe_price_id) await stripe.prices.update(pkg.stripe_price_id, { active: false }).catch((e) => console.warn("Could not archive old price", e));
     const price = await stripe.prices.create({ product: stripeProductId, currency: "usd", unit_amount: pkg.price_cents });
 
     await supabase.from("credit_packages").update({ stripe_product_id: stripeProductId, stripe_price_id: price.id, updated_at: new Date().toISOString() }).eq("id", id);

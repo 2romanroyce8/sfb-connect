@@ -1,4 +1,5 @@
 import type { PresenceSummary } from "@/lib/customerPortal/overview";
+import EvidenceBadge from "./EvidenceBadge";
 
 /**
  * The dominant Overview metric. NEVER fabricates a number -- if there is
@@ -45,6 +46,7 @@ export default function OverviewPresence({ presence }: { presence: PresenceSumma
           Baseline was measured under a different methodology -- change isn&apos;t directly comparable yet.
         </div>
       )}
+      <EvidenceBadge score={current} />
     </section>
   );
 }

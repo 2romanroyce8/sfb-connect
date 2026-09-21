@@ -10,6 +10,10 @@ export type PresenceScoreSnapshot = {
   machine_readability_score: number | null;
   methodology_version: string;
   recorded_at: string;
+  evidence_confidence: "insufficient" | "low" | "medium" | "high" | null;
+  valid_observation_count: number | null;
+  queries_tested_count: number | null;
+  platforms_tested_count: number | null;
 };
 
 export type PresenceSummary =
@@ -35,7 +39,7 @@ export async function getPresenceSummary(businessId: string): Promise<PresenceSu
   const supabase = createSupabaseServerClient();
   const { data: scores } = await supabase
     .from("presence_scores")
-    .select("id, overall_score, identity_score, knowledge_score, authority_score, location_score, machine_readability_score, methodology_version, recorded_at")
+    .select("id, overall_score, identity_score, knowledge_score, authority_score, location_score, machine_readability_score, methodology_version, recorded_at, evidence_confidence, valid_observation_count, queries_tested_count, platforms_tested_count")
     .eq("business_id", businessId)
     .order("recorded_at", { ascending: false });
 

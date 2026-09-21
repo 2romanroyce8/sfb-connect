@@ -37,6 +37,7 @@ export default function BillingDashboard({
   planPriceCents,
   estimatedMonthlyTotalCents,
   entitlements,
+  trackedQueryUsage,
   activeAddons,
   purchases,
   allProducts,
@@ -48,6 +49,7 @@ export default function BillingDashboard({
   planPriceCents: number | null;
   estimatedMonthlyTotalCents: number;
   entitlements: Entitlements;
+  trackedQueryUsage: { active: number; allowance: number; remaining: number; atLimit: boolean };
   activeAddons: ActiveAddon[];
   purchases: Purchase[];
   allProducts: Product[];
@@ -138,6 +140,52 @@ export default function BillingDashboard({
             <div className="text-[22px] font-semibold">{money(estimatedMonthlyTotalCents)}</div>
             <div className="text-[11px] uppercase tracking-wide text-white/40">Estimated Monthly Total</div>
           </div>
+        </div>
+      </section>
+
+      {/* USAGE & ALLOWANCES -- tracked queries are the customer billing unit
+          (1 customer-intent question x 1 monitored location). Provider
+          checks are internal and never shown here. */}
+      <section className="mb-8">
+        <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Usage &amp; Allowances</div>
+        <div className="rounded-[16px] p-5" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <div className="text-[11px] text-white/40 mb-1">Tracked Queries</div>
+              <div className="text-[18px] font-semibold">
+                {trackedQueryUsage.active} <span className="text-white/40 text-[13px]">/ {trackedQueryUsage.allowance}</span>
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] text-white/40 mb-1">Locations</div>
+              <div className="text-[18px] font-semibold">{entitlements.locationAllowance}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-white/40 mb-1">Competitors</div>
+              <div className="text-[18px] font-semibold">{entitlements.competitorAllowance}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-white/40 mb-1">Action Credits</div>
+              <div className="text-[18px] font-semibold">{entitlements.creditBalance}</div>
+            </div>
+          </div>
+          <p className="text-[11.5px] text-white/40 mt-3">Tracked queries are the customer-intent searches SFB monitors for your business and location. Re-checking them across AI platforms never uses additional allowance.</p>
+          {trackedQueryUsage.atLimit && (() => {
+            const expansion = allProducts.find((p) => p.key === "ai_visibility_expansion");
+            return (
+              <div className="mt-4 rounded-[12px] p-4 flex items-center justify-between gap-3" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.10)" }}>
+                <div>
+                  <div className="text-[13px] font-medium">You&apos;ve reached your current monitoring allowance.</div>
+                  {expansion && <div className="text-[11.5px] text-white/50 mt-0.5">{expansion.name} adds more tracked queries for {money(expansion.base_price_cents)}/mo.</div>}
+                </div>
+                {expansion && (
+                  <button onClick={() => buyAddon(expansion.id)} disabled={busyId === expansion.id} className="shrink-0 h-9 px-4 rounded-full bg-white text-black text-[12px] font-semibold disabled:opacity-50">
+                    Expand Query Monitoring
+                  </button>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </section>
 

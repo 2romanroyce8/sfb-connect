@@ -1,11 +1,13 @@
 import type { PresenceSummary } from "@/lib/customerPortal/overview";
+import EvidenceBadge from "./EvidenceBadge";
 
 export default function PresenceHeader({ presence }: { presence: PresenceSummary }) {
   if (presence.status === "no_data") {
     return (
       <section className="mb-8 border border-neutral-200 rounded-2xl p-7">
         <div className="text-[12px] font-medium uppercase tracking-wide text-neutral-400 mb-2">AI Presence</div>
-        <div className="text-[18px] font-semibold text-neutral-900">Establishing your AI presence baseline</div>
+        <div className="text-[18px] font-semibold text-neutral-900">Not enough data yet</div>
+        <p className="text-[13px] text-neutral-500 mt-1">A score appears once at least one AI platform has been checked for your tracked queries.</p>
       </section>
     );
   }
@@ -38,6 +40,7 @@ export default function PresenceHeader({ presence }: { presence: PresenceSummary
           </div>
         </div>
       </div>
+      <EvidenceBadge score={current} />
       {presence.status === "single" && (
         <p className="text-[12.5px] text-neutral-500 mt-4">
           This is your baseline measurement. Progress will show here once a second comparable measurement is recorded.

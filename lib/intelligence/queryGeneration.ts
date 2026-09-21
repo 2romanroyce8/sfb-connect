@@ -1,4 +1,5 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { canCreateTrackedQueries } from "@/lib/billing/queryAllowance";
 
 /** Deterministic templates -- combinations of VERIFIED service + VERIFIED
  * location + real customer intent. No invented services, no invented
@@ -81,7 +82,16 @@ export async function ensureTrackedQueries(businessId: string, locationId: strin
   const { data: existing } = await existingQuery;
 
   const existingByNormalized = new Map((existing ?? []).map((r) => [r.normalized_query, r.id]));
-  const toInsert = generated.filter((g) => !existingByNormalized.has(g.normalizedQuery));
+  let toInsert = generated.filter((g) => !existingByNormalized.has(g.normalizedQuery));
+
+  // QUERY ALLOWANCE ENFORCEMENT (server-authoritative, the only gate).
+  // Only genuinely NEW active tracked queries count against the customer's
+  // allowance -- re-running this for existing queries charges nothing.
+  // Batch is sliced to what remains; never created over the limit.
+  if (toInsert.length > 0) {
+    const { allowed } = await canCreateTrackedQueries(supabase, businessId, toInsert.length);
+    toInsert = toInsert.slice(0, allowed);
+  }
 
   if (toInsert.length > 0) {
     const { data: inserted, error } = await supabase

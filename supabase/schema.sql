@@ -486,3 +486,62 @@ insert into public.audit_categories (name) values
   ('Frequently asked questions'), ('AI-readable service information'), ('Local business information'),
   ('Source freshness'), ('Competitive positioning'), ('Entity relationships')
 on conflict (name) do nothing;
+
+-- ============================================================
+-- PRODUCTION ACTIVATION + HARDENING (2026-09-21) -- additive
+-- ============================================================
+-- Scan coverage (fixes partial-scan false-resolution of findings)
+alter table public.projects add column if not exists queries_intended integer not null default 0;
+alter table public.projects add column if not exists queries_attempted integer not null default 0;
+alter table public.projects add column if not exists queries_completed integer not null default 0;
+alter table public.projects add column if not exists platforms_intended text[] not null default '{}';
+alter table public.projects add column if not exists checks_intended integer not null default 0;
+alter table public.projects add column if not exists checks_attempted integer not null default 0;
+alter table public.projects add column if not exists checks_completed integer not null default 0;
+alter table public.projects add column if not exists estimated_cost_cents numeric not null default 0;
+-- Evidence sufficiency stored WITH the score
+alter table public.presence_scores add column if not exists evidence_confidence text check (evidence_confidence is null or evidence_confidence in ('insufficient','low','medium','high'));
+alter table public.presence_scores add column if not exists valid_observation_count integer;
+alter table public.presence_scores add column if not exists queries_tested_count integer;
+alter table public.presence_scores add column if not exists platforms_tested_count integer;
+alter table public.presence_scores add column if not exists error_inconclusive_count integer;
+-- Provider execution telemetry
+alter table public.ai_check_jobs add column if not exists failure_code text check (failure_code is null or failure_code in ('NOT_CONFIGURED','DISABLED','AUTH_ERROR','RATE_LIMITED','TIMEOUT','PROVIDER_ERROR','INVALID_RESPONSE','ENTITY_EXTRACTION_ERROR','COST_LIMIT_REACHED','UNKNOWN'));
+alter table public.ai_check_jobs add column if not exists provider_model text;
+alter table public.ai_check_jobs add column if not exists usage_metadata jsonb;
+alter table public.ai_check_jobs add column if not exists cost_is_estimate boolean not null default true;
+-- Observation evidence
+alter table public.ai_visibility_observations add column if not exists match_confidence text check (match_confidence is null or match_confidence in ('confirmed_match','probable_match','ambiguous','not_match'));
+alter table public.ai_visibility_observations add column if not exists citation_urls jsonb;
+alter table public.ai_visibility_observations add column if not exists failure_code text;
+-- Recommendation -> Action Catalog mapping (owner-editable, deterministic)
+create table if not exists public.recommendation_action_mappings (
+  id uuid primary key default uuid_generate_v4(),
+  finding_kind text not null,
+  recommendation_type text not null,
+  action_catalog_id uuid references public.action_catalog(id),
+  minimum_plan text check (minimum_plan is null or minimum_plan in ('revenue_presence','revenue_growth','revenue_dominance')),
+  credit_cost_override integer,
+  requires_approval boolean not null default true,
+  auto_executable boolean not null default false,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists idx_rec_action_mapping_kind on public.recommendation_action_mappings(finding_kind, recommendation_type) where active = true;
+alter table public.recommendation_action_mappings enable row level security;
+create policy "rec_action_mappings_public_read" on public.recommendation_action_mappings for select using (active = true);
+create policy "rec_action_mappings_team_owner_all" on public.recommendation_action_mappings for all using (public.is_team_owner());
+alter table public.recommendations add column if not exists recommendation_type text;
+alter table public.recommendations add column if not exists action_catalog_id uuid references public.action_catalog(id);
+-- AI-discovered competitor provenance
+alter table public.competitors drop constraint if exists competitors_verification_status_check;
+alter table public.competitors add constraint competitors_verification_status_check check (verification_status in ('unverified','needs_review','verified','dismissed'));
+alter table public.competitors add column if not exists normalized_domain text;
+alter table public.competitors add column if not exists discovery_evidence jsonb;
+alter table public.competitors add column if not exists discovered_in_project_id uuid references public.projects(id);
+create unique index if not exists idx_competitors_business_domain on public.competitors(business_id, normalized_domain) where normalized_domain is not null;
+-- Stripe hardening
+alter table public.customer_addons drop constraint if exists customer_addons_status_check;
+alter table public.customer_addons add constraint customer_addons_status_check check (status in ('active','canceled_at_period_end','canceled','past_due','refunded'));
+create unique index if not exists idx_customer_addons_one_live_per_product on public.customer_addons(business_id, addon_product_id) where status in ('active','canceled_at_period_end','past_due');

@@ -9,16 +9,29 @@ export type RecommendationItem = {
   status: "pending" | "in_progress" | "done";
   finding_id: string | null;
   created_at: string;
+  /** Mapped executable action from recommendation_action_mappings, if any.
+   * Null = no deterministic mapping exists (never invented). Reaches
+   * READY FOR APPROVAL only -- nothing here executes or consumes credits. */
+  mappedAction: { id: string; name: string; creditCost: number } | null;
 };
 
 export async function getRecommendations(businessId: string): Promise<RecommendationItem[]> {
   const supabase = createSupabaseServerClient();
   const { data } = await supabase
     .from("recommendations")
-    .select("id, title, description, priority, status, finding_id, created_at")
+    .select("id, title, description, priority, status, finding_id, created_at, action_catalog(id, name, credit_cost)")
     .eq("business_id", businessId)
     .order("created_at", { ascending: false });
-  return data ?? [];
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    priority: r.priority,
+    status: r.status,
+    finding_id: r.finding_id,
+    created_at: r.created_at,
+    mappedAction: r.action_catalog ? { id: r.action_catalog.id, name: r.action_catalog.name, creditCost: r.action_catalog.credit_cost } : null,
+  }));
 }
 
 export type CatalogAction = {
