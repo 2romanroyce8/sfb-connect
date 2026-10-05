@@ -74,6 +74,41 @@ test("facebook profile type: pages -> BUSINESS_PAGE, numeric id personal name ->
   assert.equal(detectFacebookProfileType("https://facebook.com/supremeairnj", "Supreme Air LLC"), "BUSINESS_PAGE");
 });
 
+// ---- social path shape (observed live: platform chrome misclassified as first-party) ----
+test("social URLs are first-party only when profile-shaped; platform navigation is P0", () => {
+  assert.equal(classifyLinkType("https://www.youtube.com/@JunkSeekers", false).priority, 1);
+  assert.equal(classifyLinkType("https://www.instagram.com/sdjunkseekers/", false).priority, 1);
+  assert.equal(classifyLinkType("https://www.facebook.com/sandiegojunkseekers", false).priority, 1);
+  assert.equal(classifyLinkType("https://www.facebook.com/profile.php?id=61593970382006", false).priority, 1);
+  for (const noise of [
+    "https://www.youtube.com/t/contact_us/",
+    "https://www.youtube.com/creators/",
+    "https://www.youtube.com/new",
+    "https://www.youtube.com/",
+    "https://www.youtube.com/manifest.webmanifest",
+    "https://www.youtube.com/opensearch?locale=en_US",
+    "https://www.youtube.com/s/desktop/50ec8f0a/img/favicon.ico",
+    "https://tv.youtube.com/learn/nflsundayticket",
+    "https://www.facebook.com/data/manifest/?is_workplace_mobile_pwa_dogfooding=0",
+    "https://www.facebook.com/login/",
+    "https://www.instagram.com/explore/",
+  ]) {
+    assert.equal(classifyLinkType(noise, false).priority, 0, noise);
+  }
+});
+test("a platform's own account (x.com/YouTube picked up from YouTube chrome) is rejected, never attributed to the business", () => {
+  const g = graph();
+  g.socialProfiles.push({ platform: "x", handle: "YouTube", url: "https://x.com/YouTube", displayName: null, status: "verified", confidence: 0.6, sourceUrl: "https://www.youtube.com/@JunkSeekers" } as any);
+  const p = reconcileGraph(g, FB);
+  const x = p.socialProfiles.find((s) => s.platform === "x")!;
+  assert.equal(x.association, "rejected_unrelated");
+  assert.equal(x.status, "not_found");
+  assert.ok(!p.salesIntelligence.howTheySell.includes("X"));
+});
+test("vanity facebook URL with a two-word business name is a BUSINESS_PAGE, not a personal profile", () => {
+  assert.equal(detectFacebookProfileType("https://www.facebook.com/sandiegojunkseekers", "Junk Seekers"), "BUSINESS_PAGE");
+});
+
 // ---- link priority (§4) ----
 test("link priority: social=1, yelp=2, tracking=0, unknown other=3, official domain=1", () => {
   assert.deepEqual(classifyLinkType("https://instagram.com/x", false).priority, 1);

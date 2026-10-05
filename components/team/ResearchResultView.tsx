@@ -451,9 +451,13 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
       {/* Social */}
       <Section title="Social Profiles">
         {(["facebook", "instagram", "tiktok", "linkedin", "youtube", "x", "whatsapp"] as const).map((platform) => {
-          const row = graph.socialProfiles?.find((s) => s.platform === platform);
+          // Prefer the reconciled list: it drops accounts the engine picked up
+          // from platform chrome (e.g. x.com/YouTube) and carries association.
+          const reconciled = profile?.socialProfiles.find((s) => s.platform === platform);
+          const row = reconciled && reconciled.association !== "rejected_unrelated" ? reconciled : profile ? undefined : graph.socialProfiles?.find((s) => s.platform === platform);
           const url = row?.url || (row?.platform === "whatsapp" && row?.handle ? `https://wa.me/${row.handle.replace(/\D/g, "")}` : null);
-          return <LinkRow key={platform} label={platform} value={url || row?.handle || null} status={row?.status} />;
+          const label = reconciled && reconciled.association === "rejected_unrelated" ? `${platform} (platform account ignored)` : platform;
+          return <LinkRow key={platform} label={label} value={url || row?.handle || null} status={row?.status} />;
         })}
       </Section>
 

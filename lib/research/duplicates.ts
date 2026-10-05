@@ -21,7 +21,15 @@ export async function findDuplicates(
   const [leadsByDomain, leadsByPhone, leadsBySeed, researchByDomain, researchByPhone] = await Promise.all([
     domain ? supabase.from("crm_leads").select("id, business_name, website, archived").ilike("website", `%${domain}%`).limit(10) : Promise.resolve({ data: [] as any[] }),
     phone ? supabase.from("crm_leads").select("id, business_name, phone, archived").limit(200) : Promise.resolve({ data: [] as any[] }),
-    seeds.length ? supabase.from("crm_leads").select("id, business_name, source_urls, archived").overlaps("source_urls", seeds).limit(10) : Promise.resolve({ data: [] as any[] }),
+    // source_urls is jsonb (not text[]) on both tables -- use JSON containment
+    // (@>) per seed; an array-overlap operator here would silently match nothing.
+    seeds.length
+      ? supabase
+          .from("crm_leads")
+          .select("id, business_name, source_urls, archived")
+          .or(seeds.map((s) => `source_urls.cs.${JSON.stringify([s])}`).join(","))
+          .limit(10)
+      : Promise.resolve({ data: [] as any[] }),
     domain ? supabase.from("crm_research_results").select("id, business_name, website, status").eq("status", "pending").ilike("website", `%${domain}%`).limit(10) : Promise.resolve({ data: [] as any[] }),
     phone ? supabase.from("crm_research_results").select("id, business_name, phone, status").eq("status", "pending").limit(200) : Promise.resolve({ data: [] as any[] }),
   ]);

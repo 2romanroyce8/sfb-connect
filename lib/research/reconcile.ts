@@ -148,16 +148,53 @@ export function detectFacebookProfileType(seedUrl: string, businessName: string 
     // BUSINESS_PAGE -- we can't prove page-ness from a profile id.
     return businessName && /\b(llc|inc|co|services?|removal|hauling|roofing|hvac|plumbing|cleaning|landscap|repair|construction|auto|salon|studio|shop|store|cafe|restaurant|bar|grill|dental|law|realty|photography)\b/i.test(businessName) ? "PUBLIC_PROFILE" : "PERSONAL_PROFILE";
   }
-  // Vanity URL: a personal-name pattern (First Last, 2 capitalised words,
-  // no trade token) is PUBLIC_PROFILE at best; otherwise assume a Page.
-  if (businessName && /^[A-Z][a-z]+ [A-Z][a-z]+\.?( \(.*\))?$/.test(businessName.trim())) return "PUBLIC_PROFILE";
+  // Vanity URL (facebook.com/<slug>): overwhelmingly a Page. A "First Last"
+  // name heuristic was tried here and misfired on ordinary two-word
+  // business names ("Junk Seekers") on the first live run -- the name alone
+  // is not evidence of a personal account, so we don't claim it. Personal
+  // vs public profile is only inferred from numeric profile.php ids above;
+  // the identity gate's corroboration requirement covers the residual risk.
   return "BUSINESS_PAGE";
 }
 
 // ---------- link classification -> SourceEntity (Spec §4) ----------
 
 const BUSINESS_PROFILE_HOSTS = ["yelp.com", "bbb.org", "tripadvisor.com", "angi.com", "thumbtack.com", "homeadvisor.com", "houzz.com", "porch.com", "nextdoor.com", "yellowpages.com", "mapquest.com"];
-const IGNORE_PATTERNS = [/fbclid=/, /utm_/, /\/login/, /\/signup/, /\/ads?\//, /doubleclick/, /googletagmanager/, /amazon\.com/, /\/sharer/, /\/share\?/, /\/help\//, /\/privacy/, /\/terms/];
+const IGNORE_PATTERNS = [/fbclid=/, /utm_/, /\/login/, /\/signup/, /\/ads?\//, /doubleclick/, /googletagmanager/, /amazon\.com/, /\/sharer/, /\/share\?/, /\/help\//, /\/privacy/, /\/terms/, /\.(ico|png|jpe?g|gif|svg|webp|webmanifest|xml|json|css|js)(\?|$)/, /\/manifest/, /\/opensearch/, /\/data\//];
+
+/** A social-platform URL is only a first-party source when its path is
+ * shaped like a profile/page/channel. Everything else on the platform
+ * (/t/contact_us, /creators, /new, /howyoutubeworks, favicon, manifests,
+ * tv.youtube.com/learn/...) is platform navigation the crawler picked up
+ * from the page chrome -- observed live on the first production run. */
+export function isSocialProfilePath(url: string, platform: string): boolean {
+  let u: URL;
+  try { u = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`); } catch { return false; }
+  const host = u.hostname.toLowerCase();
+  const path = u.pathname.replace(/\/+$/, "");
+  const segs = path.split("/").filter(Boolean);
+  if (host.startsWith("tv.") || host.startsWith("music.") || host.startsWith("studio.") || host.startsWith("developers.") || host.startsWith("business.") || host.startsWith("about.")) return false;
+  switch (platform) {
+    case "facebook":
+      if (/^\/profile\.php$/.test(path) && u.searchParams.has("id")) return true;
+      if (segs[0] === "pages" || segs[0] === "people") return segs.length >= 2;
+      return segs.length === 1 && !FB_RESERVED.has(segs[0].toLowerCase());
+    case "instagram":
+    case "tiktok":
+    case "x":
+      return segs.length === 1 && !GENERIC_RESERVED.has(segs[0].toLowerCase().replace(/^@/, ""));
+    case "youtube":
+      if (segs.length === 1 && segs[0].startsWith("@")) return true;
+      return segs.length >= 2 && ["channel", "c", "user"].includes(segs[0]);
+    case "linkedin":
+      return segs.length >= 2 && ["company", "in", "school", "showcase"].includes(segs[0]);
+    default:
+      return segs.length === 1;
+  }
+}
+const PLATFORM_BRAND_HANDLES = new Set(["youtube", "youtubecreators", "teamyoutube", "instagram", "facebook", "facebookapp", "meta", "tiktok", "tiktok_us", "twitter", "x", "linkedin", "google", "googlemaps", "whatsapp", "pinterest", "snapchat", "threads", "yelp", "nextdoor", "linktree", "linktr_ee"]);
+const FB_RESERVED = new Set(["login", "home.php", "data", "help", "policies", "privacy", "terms", "ads", "business", "marketplace", "watch", "gaming", "groups", "events", "reel", "reels", "stories", "share", "sharer.php", "dialog", "plugins", "about", "careers", "developers", "settings", "messages", "notifications", "friends", "photo", "photo.php", "video.php", "hashtag", "search", "legal", "security", "l.php", "recover", "checkpoint", "r.php", "mobile", "lite"]);
+const GENERIC_RESERVED = new Set(["explore", "about", "legal", "privacy", "terms", "help", "accounts", "p", "reel", "reels", "stories", "tv", "direct", "login", "signup", "i", "home", "search", "hashtag", "settings", "foryou", "following", "live", "discover", "upload", "download", "business", "creators", "new", "t", "s", "feed", "trends"]);
 
 export function classifyLinkType(url: string, isOfficialDomain: boolean): { linkType: string; priority: 0 | 1 | 2 | 3 } {
   const lower = url.toLowerCase();
@@ -167,7 +204,10 @@ export function classifyLinkType(url: string, isOfficialDomain: boolean): { link
   if (cls.kind === "whatsapp") return { linkType: "whatsapp", priority: 1 };
   if (cls.kind === "booking") return { linkType: "booking", priority: 1 };
   if (cls.kind === "linktree") return { linkType: "bio_link_hub", priority: 1 };
-  if (cls.kind === "social") return { linkType: (cls as any).platform ?? "social", priority: 1 };
+  if (cls.kind === "social") {
+    const platform: string = (cls as any).platform ?? "social";
+    return isSocialProfilePath(url, platform) ? { linkType: platform, priority: 1 } : { linkType: "platform_nav", priority: 0 };
+  }
   const d = (canonicalDomain(url) || "").toLowerCase();
   if (d.includes("google.") && /maps|g\.page|business/.test(lower)) return { linkType: "google_business", priority: 2 };
   if (BUSINESS_PROFILE_HOSTS.some((h) => d === h || d.endsWith(`.${h}`))) return { linkType: "directory", priority: 2 };
@@ -199,7 +239,15 @@ export function buildSourceEntities(graph: BusinessGraph, officialDomain: string
     const fromOrdinal = entry.discoveredFrom ? ordinalByUrl.get(entry.discoveredFrom) ?? null : null;
     const parentIsFirstParty = fromOrdinal ? out.find((s) => s.ordinal === fromOrdinal)?.isFirstParty ?? false : false;
     const isFirstParty = entry.discoveryMethod === "seed" || isOfficialDomain || (priority === 1 && (parentIsFirstParty || entry.discoveryMethod === "bio_link" || entry.discoveryMethod === "social_link" || entry.discoveryMethod === "website_crawl"));
-    const association: Association = priority === 0 ? "not_applicable" : isFirstParty && (entry.discoveryMethod === "seed" || isOfficialDomain) ? "confirmed_first_party" : isFirstParty ? "likely_first_party" : priority === 3 ? "rejected_unrelated" : "uncertain";
+    // A platform shell we couldn't actually read yields no evidence, so it
+    // can't be "likely first-party" on its own (unless it IS the seed).
+    const association: Association =
+      priority === 0 ? "not_applicable"
+      : isFirstParty && (entry.discoveryMethod === "seed" || isOfficialDomain) ? "confirmed_first_party"
+      : fetchStatus === "generic_platform_shell" || fetchStatus === "blocked_login_wall" ? "uncertain"
+      : isFirstParty ? "likely_first_party"
+      : priority === 3 ? "rejected_unrelated"
+      : "uncertain";
     out.push({
       ordinal: i + 1,
       url: entry.url,
@@ -342,7 +390,10 @@ function buildSalesIntelligence(p: Omit<ResearchProfile, "salesIntelligence">): 
   for (const w of weaknesses.slice(0, 3)) callPrep.push(`Observed gap: ${w.toLowerCase()}.`);
   if (p.conflicts.length) callPrep.push("Ask which phone number is the main line -- sources disagree.");
 
-  const summary = `${name}${cat ? ` appears to operate as a ${cat.toLowerCase()} business` : ""}${city ? ` in ${city}` : ""}. ${p.website.status === "CONFIRMED" ? "Official website confirmed. " : ""}${howTheySell.length ? `Visible channels: ${Array.from(new Set(howTheySell)).join(", ")}.` : "No confirmed online channels beyond the seed source."}`.trim();
+  // schema.org types arrive as "LocalBusiness"/"HomeAndConstructionBusiness";
+  // humanize and avoid "a localbusiness business".
+  const humanCat = cat ? cat.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().replace(/\s*business$/, "").trim() : null;
+  const summary = `${name}${humanCat ? ` appears to operate as a ${humanCat} business` : ""}${city ? ` in ${city}` : ""}. ${p.website.status === "CONFIRMED" ? "Official website confirmed. " : ""}${howTheySell.length ? `Visible channels: ${Array.from(new Set(howTheySell)).join(", ")}.` : "No confirmed online channels beyond the seed source."}`.trim();
 
   return { summary, whatTheyDo: p.business.services.slice(0, 8), howTheySell: Array.from(new Set(howTheySell)), contactMethods, onlineStrengths: strengths, onlineWeaknesses: weaknesses, bestContactChannel: best, callPrep };
 }
@@ -381,6 +432,11 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   const serviceArea = graph.locations.filter((l) => l.locationType === "service_area");
 
   const socialProfiles = graph.socialProfiles.map((s) => {
+    // Observed live: a YouTube channel page's own chrome links to
+    // x.com/YouTube, and the crawler attributed it to the business. A handle
+    // that IS a platform brand is never the business's account.
+    const handle = (s.handle || s.url?.split("/").filter(Boolean).pop() || "").replace(/^@/, "").toLowerCase();
+    if (PLATFORM_BRAND_HANDLES.has(handle)) return { ...s, status: "not_found" as const, association: "rejected_unrelated" as Association };
     const srcEntity = sources.find((e) => s.url && e.url === s.url);
     const association: Association = srcEntity?.association ?? (s.status === "verified" ? "likely_first_party" : "uncertain");
     return { ...s, association };
