@@ -39,7 +39,22 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const { data: caller } = await supabase.from("users").select("team_role").eq("id", user.id).single();
   if (caller?.team_role !== "owner") return NextResponse.json({ error: "Only the owner can delete leads." }, { status: 403 });
 
-  const { error } = await supabase.from("crm_leads").delete().eq("id", params.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  const { error, count } = await supabase.from("crm_leads").delete({ count: "exact" }).eq("id", params.id);
+  if (error) {
+    // 23503 = a row elsewhere still points at this lead. After the
+    // 2026-10-05 migration the only remaining NO ACTION reference is
+    // businesses.source_lead_id -- i.e. this lead was marked Won and became
+    // a real customer account. That is deliberate: deleting it would erase
+    // a paying customer's provenance. Say so plainly instead of leaking a
+    // raw constraint name.
+    if (error.code === "23503") {
+      return NextResponse.json(
+        { error: "This lead was converted into a customer account, so it can't be deleted. Archive it instead to hide it from the pipeline." },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  if (!count) return NextResponse.json({ error: "Lead not found or already deleted." }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

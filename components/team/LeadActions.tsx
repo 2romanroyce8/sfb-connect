@@ -42,7 +42,14 @@ export default function LeadActions({
     setBusy(true);
     try {
       const res = await fetch(`/api/team/leads/${leadId}`, { method: "DELETE" });
-      if (res.ok) router.push("/team/leads");
+      if (res.ok) {
+        router.push("/team/leads");
+        return;
+      }
+      // Never fail silently -- the old version did, which made a blocked
+      // delete look like a dead button.
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Could not delete this lead.");
     } finally {
       setBusy(false);
     }
