@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowUpRight, Paperclip, Globe2, ChevronDown, X } from "lucide-react";
 import { normalizeUrl, canonicalDomain, classifyLink } from "@/lib/research/normalize";
-import type { ResearchScope } from "@/lib/research/LeadProfileBuilder";
+import { detectScope, DETECTED_SCOPE_LABEL } from "@/lib/research/scopeDetection";
 
-const SCOPE_OPTIONS: { value: ResearchScope; label: string; description: string }[] = [
-  { value: "public_web", label: "Public Web", description: "Full research fan-out — identify, crawl, discover everything." },
-  { value: "website_only", label: "Website Only", description: "Restrict to the official website and its own pages." },
-  { value: "social_profile", label: "Social Profile", description: "Seed from a social profile, then expand to the official site." },
-  { value: "google_business", label: "Google Business", description: "Seed from a Google Business / Maps listing." },
-  { value: "quick_contact", label: "Quick Contact Search", description: "Just phone, email, website and contact channels — no deep crawl." },
+// Research Spec §1: the user never has to pick an engine mode. AUTO detects
+// the scope from the pasted URL; Deep and Quick are the only overrides.
+export type UserScope = "AUTO" | "DEEP" | "QUICK";
+const SCOPE_OPTIONS: { value: UserScope; label: string; description: string }[] = [
+  { value: "AUTO", label: "Auto", description: "Detects the source type (Facebook, Instagram, Google, website, link hub) and researches accordingly." },
+  { value: "DEEP", label: "Deep", description: "Full discovery graph — every first-party link, verification passes, wider-web lookups." },
+  { value: "QUICK", label: "Quick", description: "Just phone, email, website and contact channels — no deep crawl." },
 ];
 
 function sourceTypeLabel(url: string): string {
@@ -27,18 +29,26 @@ export default function LeadResearchCommandBar({
   onSubmit,
   disabled,
 }: {
-  onSubmit: (sources: string[], scope: ResearchScope) => void;
+  onSubmit: (sources: string[], scope: UserScope) => void;
   disabled?: boolean;
 }) {
   const [value, setValue] = useState("");
   const [secondSource, setSecondSource] = useState("");
   const [showAttach, setShowAttach] = useState(false);
-  const [scope, setScope] = useState<ResearchScope>("public_web");
+  const [scope, setScope] = useState<UserScope>("AUTO");
   const [modeOpen, setModeOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const modeRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+
+  // Retry from the Research Queue's failed list lands here with ?source=.
+  useEffect(() => {
+    const prefill = searchParams?.get("source");
+    if (prefill && !value) setValue(prefill);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -81,6 +91,7 @@ export default function LeadResearchCommandBar({
   }
 
   const activeScope = SCOPE_OPTIONS.find((s) => s.value === scope)!;
+  const detectedLabel = value.trim() ? DETECTED_SCOPE_LABEL[detectScope(value.trim())] : null;
 
   return (
     <div className="w-full">
@@ -219,7 +230,7 @@ export default function LeadResearchCommandBar({
             >
               <Globe2 size={18} color="#5F5F5F" />
               <span style={{ fontSize: 14, fontWeight: 400, color: "#8A8A8A" }} className="truncate">
-                {activeScope.label}
+                {activeScope.label}{scope === "AUTO" && detectedLabel ? ` · ${detectedLabel}` : ""}
               </span>
               <ChevronDown size={13} color="#5F5F5F" className="ml-auto shrink-0" style={{ transform: modeOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }} />
             </button>

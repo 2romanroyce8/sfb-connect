@@ -25,7 +25,7 @@ export default async function AuditsPage() {
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Business Audits</div>
+        <div className="text-[20px] font-semibold text-[#F5F5F7]">Business Readiness Audits</div>
         <div className="text-[13px] text-[#6E6E73] mt-1">{rows.length} audited lead{rows.length === 1 ? "" : "s"}</div>
       </div>
 
@@ -33,7 +33,7 @@ export default async function AuditsPage() {
         <div className="rounded-[14px] p-10 text-center max-w-[520px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No audits yet</div>
           <p className="text-[13px] text-[#A1A1A6]">
-            Open a researched lead and generate its AI Presence Audit — it'll show up here.
+            Open a researched lead with a confirmed identity and generate its Business Readiness Audit — it'll show up here.
           </p>
         </div>
       ) : (

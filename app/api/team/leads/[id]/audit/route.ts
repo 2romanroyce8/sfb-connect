@@ -15,8 +15,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { data: lead } = await supabase.from("crm_leads").select("id").eq("id", params.id).single();
   if (!lead) return NextResponse.json({ error: "Lead not found or not accessible." }, { status: 404 });
 
+  const { data: caller } = await supabase.from("users").select("team_role").eq("id", user.id).single();
+  const isOwner = caller?.team_role === "owner";
+  const body = await req.json().catch(() => ({}));
+
   try {
-    const result = await computeAndSaveAudit(params.id, user.id);
+    // Identity gate (Research Spec §24): reps can't audit an unconfirmed
+    // business; the owner can, explicitly, with force=true.
+    const result = await computeAndSaveAudit(params.id, user.id, { allowUnconfirmedIdentity: isOwner && body?.force === true });
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Audit failed." }, { status: 400 });

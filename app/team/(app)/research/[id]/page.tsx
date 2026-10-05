@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import ResearchResultView from "@/components/team/ResearchResultView";
+import { reconcileGraph } from "@/lib/research/reconcile";
+import type { BusinessGraph } from "@/lib/research/types";
 
 export default async function ResearchResultPage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -22,5 +24,32 @@ export default async function ResearchResultPage({ params }: { params: { id: str
     reps = [{ id: user!.id, label: "Me" }];
   }
 
-  return <ResearchResultView result={result as any} reps={reps} />;
+  // Results researched before the entity layer existed carry no persisted
+  // profile. Derive one now from the stored graph -- a deterministic
+  // function of data we already have, not new research -- so the identity
+  // gate and sections still apply. Nothing is written back.
+  let view = result as any;
+  if (!result.reconciled_profile && result.graph_json && Array.isArray(result.source_urls) && result.source_urls[0]) {
+    try {
+      const derived = reconcileGraph(result.graph_json as BusinessGraph, result.source_urls[0]);
+      view = {
+        ...result,
+        reconciled_profile: derived,
+        identity_confidence: derived.identity.identityConfidence,
+        profile_type: derived.identity.profileType,
+        research_status: derived.metrics.researchStatus,
+        research_confidence_pct: derived.metrics.researchConfidencePct,
+        fields_verified: derived.metrics.fieldsVerified,
+        fields_total: derived.metrics.fieldsTotal,
+        sources_checked: derived.metrics.sourcesChecked,
+        sources_fetched: derived.metrics.sourcesFetched,
+        conflicts: derived.conflicts,
+        limitations: [...derived.limitations, { code: "DERIVED_FROM_LEGACY_GRAPH", message: "This result predates the identity layer; the profile shown was derived from the stored research graph when the page loaded." }],
+      };
+    } catch {
+      // leave the legacy view untouched rather than guess
+    }
+  }
+
+  return <ResearchResultView result={view} reps={reps} isOwner={isOwner} />;
 }

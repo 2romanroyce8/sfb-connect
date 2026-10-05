@@ -6,7 +6,7 @@ import ResearchProgressModule from "./ResearchProgressModule";
 import LeadResearchCommandBar from "./LeadResearchCommandBar";
 import ResearchUsageBar from "./ResearchUsageBar";
 import type { ResearchStage } from "@/lib/research/jobProgress";
-import type { ResearchScope } from "@/lib/research/LeadProfileBuilder";
+import type { UserScope } from "./LeadResearchCommandBar";
 
 type JobState =
   | { mode: "idle" }
@@ -19,18 +19,23 @@ type JobState =
       verifiedCount: number;
       sourcesCheckedCount: number;
       needsReviewCount: number;
+      identityConfidence?: string;
+      researchStatus?: string;
+      researchConfidencePct?: number;
+      conflictsCount?: number;
+      possibleDuplicates?: { kind: string; id: string; name: string | null; reason: string }[];
     }
   | { mode: "failed"; lastStage: ResearchStage | null; reason: string };
 
 export default function LeadImportForm() {
   const router = useRouter();
   const [job, setJob] = useState<JobState>({ mode: "idle" });
-  const lastSubmitRef = useRef<{ sources: string[]; scope: ResearchScope } | null>(null);
+  const lastSubmitRef = useRef<{ sources: string[]; scope: UserScope } | null>(null);
 
   // Real Server-Sent Events over a POST fetch stream — every event pushed
   // here mirrors a crm_research_jobs row update the backend just wrote, so
   // the percentage on screen is never a client-side simulation.
-  async function runResearch(sources: string[], scope: ResearchScope) {
+  async function runResearch(sources: string[], scope: UserScope) {
     lastSubmitRef.current = { sources, scope };
     setJob({ mode: "running", stage: "QUEUED", progressPercent: 2, sourcesFound: 0, elapsedMs: 0 });
 
@@ -70,6 +75,11 @@ export default function LeadImportForm() {
               verifiedCount: evt.verifiedCount,
               sourcesCheckedCount: evt.sourcesCheckedCount,
               needsReviewCount: evt.needsReviewCount,
+              identityConfidence: evt.identityConfidence,
+              researchStatus: evt.researchStatus,
+              researchConfidencePct: evt.researchConfidencePct,
+              conflictsCount: evt.conflictsCount,
+              possibleDuplicates: evt.possibleDuplicates,
             });
           } else if (evt.type === "error") {
             setJob({ mode: "failed", lastStage: evt.lastStage ?? null, reason: evt.message });
@@ -123,6 +133,25 @@ export default function LeadImportForm() {
                 onViewResults={() => router.push(`/team/research/${job.resultId}`)}
                 onResearchMore={() => router.push(`/team/research/${job.resultId}?more=1`)}
               />
+            )}
+            {job.mode === "complete" && (job.identityConfidence || (job.possibleDuplicates && job.possibleDuplicates.length > 0)) && (
+              <div className="mt-3 flex flex-col gap-2 text-[12.5px]">
+                {job.identityConfidence && job.identityConfidence !== "confirmed" && (
+                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,214,10,0.08)", color: "#FFD60A" }}>
+                    Identity {job.identityConfidence.replace("_", " ")} — review the result before saving it as a lead.
+                  </div>
+                )}
+                {job.conflictsCount ? (
+                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A" }}>
+                    {job.conflictsCount} field{job.conflictsCount > 1 ? "s" : ""} differ between sources.
+                  </div>
+                ) : null}
+                {job.possibleDuplicates && job.possibleDuplicates.length > 0 && (
+                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A" }}>
+                    Possible duplicate: {job.possibleDuplicates.map((d) => `${d.name || "Unnamed"} (${d.reason})`).join("; ")}
+                  </div>
+                )}
+              </div>
             )}
             {job.mode === "failed" && <ResearchProgressModule mode="failed" lastStage={job.lastStage} reason={job.reason} onRetry={retry} />}
 

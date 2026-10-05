@@ -66,7 +66,7 @@ function ScoreDial({ score }: { score: number }) {
   );
 }
 
-export default function AuditView({ lead, audit, categories }: { lead: Lead; audit: Audit; categories: Category[] }) {
+export default function AuditView({ lead, audit, categories, identityConfidence = null }: { lead: Lead; audit: Audit; categories: Category[]; identityConfidence?: string | null }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,8 +112,16 @@ export default function AuditView({ lead, audit, categories }: { lead: Lead; aud
 
   return (
     <div className="px-8 py-8 max-w-[900px]">
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6E6E73]">The Diagnostic</div>
-      <div className="text-[24px] font-semibold text-[#F5F5F7] mb-1">Your AI Presence Score.</div>
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6E6E73]">Business Readiness Audit</div>
+      <div className="text-[24px] font-semibold text-[#F5F5F7] mb-1">How ready is this business to be found by AI?</div>
+      <div className="text-[12.5px] text-[#6E6E73] mb-3 max-w-[720px]">
+        This is <span className="text-[#A1A1A6]">not</span> a measurement of whether ChatGPT or Perplexity currently recommend this business — that is the AI Visibility scan. It scores, from verified public evidence only, whether the business has the identity, knowledge, authority, location and machine-readability foundations those systems need.
+      </div>
+      {identityConfidence && identityConfidence !== "confirmed" && (
+        <div className="mb-4 rounded-[8px] px-3 py-2 text-[12.5px]" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.3)" }}>
+          Identity {identityConfidence.replace("_", " ")} — this audit was generated under an owner override. Scores may describe the wrong business.
+        </div>
+      )}
       <div className="flex items-center gap-3 text-[13px] text-[#A1A1A6] mb-8">
         <span>{lead.business_name || "Unnamed lead"}</span>
         {lead.website && (
@@ -167,7 +175,7 @@ export default function AuditView({ lead, audit, categories }: { lead: Lead; aud
           className="h-[38px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[#A1A1A6] hover:text-white disabled:opacity-60"
           style={{ border: "1px solid rgba(255,255,255,0.10)" }}
         >
-          <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> {loading ? "Regenerating…" : "Regenerate Audit"}
+          <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> {loading ? "Regenerating…" : "Regenerate Readiness Audit"}
         </button>
         <Link
           href={`/team/leads/${lead.id}/script`}

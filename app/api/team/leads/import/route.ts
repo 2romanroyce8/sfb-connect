@@ -3,6 +3,10 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/s
 import { buildLeadProfile, type ResearchScope } from "@/lib/research/LeadProfileBuilder";
 import { evaluateCompleteness } from "@/lib/research/CompletenessEvaluator";
 import { progressForStage, type ResearchStage } from "@/lib/research/jobProgress";
+import { reconcileGraph } from "@/lib/research/reconcile";
+import { detectScope, resolveEngineScope } from "@/lib/research/scopeDetection";
+import { findDuplicates } from "@/lib/research/duplicates";
+import { assertOk } from "@/lib/supabase/assertOk";
 import { classifySeedUrlType } from "@/lib/research/fetchSource";
 import type { ResearchInstrumentation } from "@/lib/research/types";
 
@@ -51,6 +55,10 @@ const VALID_SCOPES: ResearchScope[] = ["public_web", "website_only", "social_pro
 // same real state from the DB.
 // ============================================================
 
+function canonicalDomainOf(url: string): string | null {
+  try { return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.replace(/^www\./, "").toLowerCase(); } catch { return null; }
+}
+
 function sseEvent(data: unknown) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
@@ -68,7 +76,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const rawSources: string[] = (body.sources || []).filter((s: string) => s && s.trim());
   const location: string | undefined = body.location;
-  const scope: ResearchScope = VALID_SCOPES.includes(body.scope) ? body.scope : "public_web";
+  // Research Spec §1: AUTO detects the technical scope from the seed host;
+  // DEEP/QUICK are the only user-facing overrides. Legacy technical scope
+  // values are still honored for API callers.
+  const detectedScope = rawSources[0] ? detectScope(rawSources[0]) : "WEBSITE";
+  const override: "AUTO" | "DEEP" | "QUICK" = body.scope === "DEEP" || body.scope === "QUICK" ? body.scope : "AUTO";
+  const scope: ResearchScope = VALID_SCOPES.includes(body.scope) ? body.scope : resolveEngineScope(detectedScope, override);
   if (rawSources.length === 0) return new Response(JSON.stringify({ error: "At least one source URL is required." }), { status: 400 });
 
   const service = createSupabaseServiceClient();
@@ -158,9 +171,27 @@ export async function POST(req: NextRequest) {
           return;
         }
 
+        const profile = reconcileGraph(graph, rawSources[0]);
+        const duplicates = await findDuplicates(service, { website: website?.value, phone: phone?.value, seedUrls: rawSources });
+
         const { data: result, error } = await service
           .from("crm_research_results")
           .insert({
+            research_status: profile.metrics.researchStatus,
+            identity_confidence: profile.identity.identityConfidence,
+            profile_type: profile.identity.profileType,
+            detected_scope: detectedScope,
+            research_confidence_pct: profile.metrics.researchConfidencePct,
+            fields_verified: profile.metrics.fieldsVerified,
+            fields_total: profile.metrics.fieldsTotal,
+            sources_checked: profile.metrics.sourcesChecked,
+            sources_fetched: profile.metrics.sourcesFetched,
+            conflicts: profile.conflicts,
+            limitations: profile.limitations,
+            reconciled_profile: profile,
+            canonical_domain: website?.value ? (canonicalDomainOf(website.value) ?? null) : null,
+            primary_phone_e164: profile.contacts.phones.find((p) => p.status === "CONFIRMED" || p.status === "CONFLICT")?.normalized ?? null,
+            seed_canonical_url: rawSources[0],
             submitted_by: user.id,
             source_urls: rawSources,
             business_name: graph.businessName?.value || null,
@@ -191,9 +222,25 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        const { error: finalizeError } = await service
-          .from("crm_research_jobs")
-          .update({
+        if (profile.sources.length > 0) {
+          assertOk(
+            await service.from("crm_research_sources").insert(
+              profile.sources.map((src) => ({
+                research_result_id: result.id, ordinal: src.ordinal, url: src.url, canonical_url: src.canonicalUrl, platform: src.platform, link_type: src.linkType,
+                priority: src.priority, is_first_party: src.isFirstParty, association: src.association, discovered_from_ordinal: src.discoveredFromOrdinal,
+                discovery_method: src.discoveryMethod, depth: src.depth, fetch_status: src.fetchStatus, skip_reason: src.skipReason, profile_type: src.profileType,
+                fetched_at: src.fetchStatus === "fetched" ? new Date().toISOString() : null,
+              }))
+            ),
+            "persist research sources",
+            { resultId: result.id }
+          );
+        }
+
+        assertOk(
+          await service
+            .from("crm_research_jobs")
+            .update({
             research_result_id: result.id,
             status: "completed",
             current_step: "COMPLETE",
@@ -204,11 +251,10 @@ export async function POST(req: NextRequest) {
             completed_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq("id", job.id);
-        // This exact write silently failed for weeks (status "complete" vs the
-        // DB's 'completed' check constraint) and left 71 jobs "running" at
-        // 98% forever. Never swallow a job-finalization error again.
-        if (finalizeError) console.error("Research job finalize failed", { jobId: job.id, error: finalizeError.message });
+          .eq("id", job.id),
+          "finalize research job",
+          { jobId: job.id, resultId: result.id }
+        );
 
         push({
           type: "done",
@@ -219,6 +265,11 @@ export async function POST(req: NextRequest) {
           verifiedCount: completeness.checklist.filter((c) => c.found).length,
           sourcesCheckedCount: graph.sourceChecks.length,
           needsReviewCount: completeness.checklist.filter((c) => c.required && !c.found).length,
+          identityConfidence: profile.identity.identityConfidence,
+          researchStatus: profile.metrics.researchStatus,
+          researchConfidencePct: profile.metrics.researchConfidencePct,
+          conflictsCount: profile.conflicts.length,
+          possibleDuplicates: duplicates,
           elapsedMs: Date.now() - startedAt,
         });
       } catch (err) {

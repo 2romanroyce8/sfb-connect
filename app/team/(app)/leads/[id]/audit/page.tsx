@@ -35,5 +35,7 @@ export default async function LeadAuditPage({ params }: { params: { id: string }
         .eq("audit_id", audit.id)
     : { data: [] as any[] };
 
-  return <AuditView lead={lead as any} audit={audit as any} categories={(categories as any) || []} />;
+  const { data: research } = await supabase.from("crm_research_results").select("identity_confidence").eq("converted_lead_id", params.id).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+
+  return <AuditView lead={lead as any} audit={audit as any} categories={(categories as any) || []} identityConfidence={research?.identity_confidence ?? null} />;
 }

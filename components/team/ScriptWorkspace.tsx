@@ -118,7 +118,7 @@ export default function ScriptWorkspace({
     return (
       <div className="px-8 py-8 max-w-[640px]">
         <div className="text-[13.5px] text-[#6E6E73] mb-4">
-          Run the AI Presence Audit for this lead before generating a call script — the script is built entirely
+          Run the Business Readiness Audit for this lead before generating a call script — the script is built entirely
           from that audit's evidence.
         </div>
         <Link href={`/team/leads/${lead.id}/audit`} className="h-[38px] px-4 inline-flex items-center rounded-[8px] bg-white text-black text-[13px] font-semibold">

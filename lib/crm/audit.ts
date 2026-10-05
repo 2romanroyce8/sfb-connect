@@ -1,3 +1,4 @@
+import { assertOk } from "@/lib/supabase/assertOk";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { generateOpportunity, type OpportunityResult } from "./opportunity";
 
@@ -219,8 +220,25 @@ export function scoreAudit(evidence: EvidenceRow[]): AuditResult {
   return { overall, categories };
 }
 
-export async function computeAndSaveAudit(leadId: string, actorId: string) {
+export type AuditIdentityGate = { allowUnconfirmedIdentity?: boolean };
+
+/** Research Spec §24: an audit is only meaningful if the lead's identity is
+ * confirmed. Returns the research result's identity_confidence for the lead
+ * (null when the lead predates the entity layer or wasn't created from
+ * research). */
+export async function getLeadIdentityConfidence(leadId: string): Promise<string | null> {
   const service = createSupabaseServiceClient();
+  const { data } = await service.from("crm_research_results").select("identity_confidence").eq("converted_lead_id", leadId).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  return data?.identity_confidence ?? null;
+}
+
+export async function computeAndSaveAudit(leadId: string, actorId: string, gate: AuditIdentityGate = {}) {
+  const service = createSupabaseServiceClient();
+
+  const identityConfidence = await getLeadIdentityConfidence(leadId);
+  if (identityConfidence && identityConfidence !== "confirmed" && !gate.allowUnconfirmedIdentity) {
+    throw new Error(`Business identity is ${identityConfidence.replace("_", " ")} — a Business Readiness Audit would score the wrong business. Confirm the identity first (owner can override).`);
+  }
 
   const { data: evidence } = await service
     .from("crm_lead_evidence")
@@ -265,7 +283,7 @@ export async function computeAndSaveAudit(leadId: string, actorId: string) {
   if (error || !audit) throw new Error(error?.message || "Could not save audit.");
 
   for (const c of result.categories) {
-    await service.from("crm_audit_categories").insert({
+    assertOk(await service.from("crm_audit_categories").insert({
       audit_id: audit.id,
       category: c.category,
       score: c.score,
@@ -274,44 +292,44 @@ export async function computeAndSaveAudit(leadId: string, actorId: string) {
       negative_evidence: c.negative_evidence,
       unknowns: c.unknowns,
       recommended_fixes: c.recommended_fixes,
-    });
+    }), "insert audit category", { auditId: audit.id, category: c.category });
   }
 
-  await service
+  assertOk(await service
     .from("crm_leads")
     .update({ ai_overall_score: result.overall, updated_at: new Date().toISOString() })
-    .eq("id", leadId);
+    .eq("id", leadId), "update lead audit score", { leadId });
 
-  await service.from("crm_activities").insert({
+  assertOk(await service.from("crm_activities").insert({
     lead_id: leadId,
     rep_id: actorId,
     activity_type: "audit_completed",
-    description: `AI Presence Audit completed — ${result.overall}/100`,
-  });
+    description: `Business Readiness Audit completed — ${result.overall}/100`,
+  }), "log audit_completed activity", { leadId });
 
   // ---- Opportunity — derived from the same category results, no re-research ----
   const { data: lead } = await service.from("crm_leads").select("website").eq("id", leadId).single();
   const opportunity: OpportunityResult = generateOpportunity(result.categories, !!lead?.website);
 
-  await service.from("crm_opportunities").insert({
+  assertOk(await service.from("crm_opportunities").insert({
     lead_id: leadId,
     primary_offer: opportunity.primary,
     secondary_offer: opportunity.secondary,
     confidence: opportunity.confidence,
     reasoning: opportunity.why.join(" "),
-  });
+  }), "insert opportunity", { leadId });
 
-  await service
+  assertOk(await service
     .from("crm_leads")
     .update({ recommended_offer: opportunity.primary, updated_at: new Date().toISOString() })
-    .eq("id", leadId);
+    .eq("id", leadId), "update lead recommended offer", { leadId });
 
-  await service.from("crm_activities").insert({
+  assertOk(await service.from("crm_activities").insert({
     lead_id: leadId,
     rep_id: actorId,
     activity_type: "opportunity_generated",
     description: `Recommended offer: ${opportunity.primary.replace(/_/g, " ")} (${opportunity.confidence} confidence)`,
-  });
+  }), "log opportunity_generated activity", { leadId });
 
   return { auditId: audit.id, ...result, opportunity };
 }

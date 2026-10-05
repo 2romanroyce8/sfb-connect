@@ -26,6 +26,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { BusinessGraph } from "@/lib/research/types";
+import type { ResearchProfile } from "@/lib/research/reconcile";
 import type { ResearchStage } from "@/lib/research/jobProgress";
 import ResearchProgressModule from "./ResearchProgressModule";
 
@@ -48,7 +49,29 @@ type Result = {
   status: "pending" | "saved" | "discarded";
   converted_lead_id: string | null;
   created_at: string;
+  // Research Spec v1 entity layer (nullable for results predating it)
+  research_status?: "complete" | "completed_with_limitations" | "failed" | null;
+  identity_confidence?: "confirmed" | "uncertain" | "conflict" | "not_found" | null;
+  profile_type?: string | null;
+  detected_scope?: string | null;
+  research_confidence_pct?: number | null;
+  fields_verified?: number | null;
+  fields_total?: number | null;
+  sources_checked?: number | null;
+  sources_fetched?: number | null;
+  conflicts?: ResearchProfile["conflicts"] | null;
+  limitations?: ResearchProfile["limitations"] | null;
+  reconciled_profile?: ResearchProfile | null;
 };
+
+const IDENTITY_META: Record<string, { label: string; color: string; bg: string }> = {
+  confirmed: { label: "Identity confirmed", color: "#30D158", bg: "rgba(48,209,88,0.08)" },
+  uncertain: { label: "Identity uncertain", color: "#FFD60A", bg: "rgba(255,214,10,0.08)" },
+  conflict: { label: "Identity conflict", color: "#FF9F0A", bg: "rgba(255,159,10,0.1)" },
+  not_found: { label: "Identity not found", color: "#A1A1A6", bg: "rgba(110,110,115,0.12)" },
+};
+const FIELD_STATUS_COLOR: Record<string, string> = { CONFIRMED: "#30D158", UNCERTAIN: "#FFD60A", CONFLICT: "#FF9F0A", NOT_FOUND: "#6E6E73", INACCESSIBLE: "#6E6E73", INFERRED: "#8E8E93" };
+const FETCH_LABEL: Record<string, string> = { fetched: "Read", blocked_login_wall: "Login wall", unreachable: "Unreachable", skipped_priority: "Ignored", skipped_budget: "Skipped (budget)", generic_platform_shell: "Platform boilerplate", not_attempted: "Not attempted" };
 
 // Red is reserved for real errors/failures, never for ordinary missing
 // research data — that was the explicit complaint this fixes.
@@ -83,7 +106,7 @@ function telHref(raw: string): string {
   return `tel:+${digits.length === 10 ? "1" + digits : digits}`;
 }
 
-export default function ResearchResultView({ result: initialResult, reps }: { result: Result; reps: { id: string; label: string }[] }) {
+export default function ResearchResultView({ result: initialResult, reps, isOwner = false }: { result: Result; reps: { id: string; label: string }[]; isOwner?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [result, setResult] = useState(initialResult);
@@ -98,6 +121,8 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(false);
+  const [showSources, setShowSources] = useState(false);
+  const [duplicates, setDuplicates] = useState<{ kind: string; id: string; name: string | null; reason: string }[] | null>(null);
 
   type ReRunState =
     | { mode: "running"; stage: ResearchStage; progressPercent: number; sourcesFound: number; elapsedMs: number }
@@ -120,16 +145,24 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
     }
   }
 
-  async function saveAsLead() {
+  async function saveAsLead(force = false) {
     setBusy("save");
     setError(null);
     try {
       const res = await fetch(`/api/team/research/${result.id}/save-as-lead`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assignedRep }),
+        body: JSON.stringify({ assignedRep, force }),
       });
       const data = await res.json();
+      if (res.status === 409 && data.code === "POSSIBLE_DUPLICATE") {
+        setDuplicates(data.duplicates || []);
+        setBusy(null);
+        return;
+      }
+      if (res.status === 409 && data.code === "IDENTITY_BLOCK") {
+        throw new Error(`${data.error}${data.ownerCanOverride ? " As owner you can still save with “Save anyway”." : " Ask the owner to review, or add a source that confirms the business."}`);
+      }
       if (!res.ok) throw new Error(data.error);
       router.push(`/team/leads/${data.leadId}`);
     } catch (err) {
@@ -199,6 +232,27 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
   const serviceAreas = graph.locations?.filter((l) => l.locationType === "service_area") || [];
   const completeness = result.research_completeness_breakdown || [];
   const requiredMissing = completeness.filter((b) => b.percent < 100).length;
+  const profile = result.reconciled_profile ?? null;
+  const identity = result.identity_confidence ?? null;
+  const identityMeta = identity ? IDENTITY_META[identity] : null;
+  // Mirror of saveBlockReason() server-side -- the server is authoritative;
+  // this only decides what the button looks like before the click.
+  const saveBlocked =
+    !!profile &&
+    ((profile.identity.profileType === "PERSONAL_PROFILE" && identity !== "confirmed") ||
+      identity === "conflict" ||
+      identity === "not_found" ||
+      (identity === "uncertain" && (result.research_confidence_pct ?? 0) < 60));
+  const missingFields = profile
+    ? [
+        profile.identity.businessName.status !== "CONFIRMED" ? "Business name" : null,
+        profile.website.status !== "CONFIRMED" ? `Website (${profile.website.status.toLowerCase().replace("_", " ")})` : null,
+        !profile.contacts.phones.some((x) => x.status === "CONFIRMED" || x.status === "CONFLICT") ? "First-party phone" : null,
+        !profile.contacts.emails.some((x) => x.status === "CONFIRMED") ? "Public email" : null,
+        profile.locations.physical.length === 0 ? "Physical address" : null,
+        profile.business.services.length === 0 ? "Services" : null,
+      ].filter(Boolean) as string[]
+    : [];
 
   return (
     <div className="px-8 py-8 max-w-[980px]">
@@ -221,7 +275,33 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
           <div className="text-[22px] font-semibold text-[#F5F5F7]">{result.business_name || "Unidentified business"}</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1">Not yet a lead — review before saving.</div>
+          <div className="text-[13px] text-[#6E6E73] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>Not yet a lead — review before saving.</span>
+            {identityMeta && (
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px] font-semibold" style={{ color: identityMeta.color, background: identityMeta.bg }}>
+                {identityMeta.label}
+              </span>
+            )}
+            {result.profile_type && result.profile_type !== "UNKNOWN" && (
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "#8E8E93", background: "#151515" }}>
+                {result.profile_type.replace(/_/g, " ").toLowerCase()}
+              </span>
+            )}
+            {result.research_status === "completed_with_limitations" && (
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "#FFD60A", background: "rgba(255,214,10,0.08)" }}>
+                completed with limitations
+              </span>
+            )}
+          </div>
+          {profile && (
+            <div className="text-[12px] text-[#6E6E73] mt-2">
+              Research confidence <span className="text-[#F5F5F7] font-semibold">{result.research_confidence_pct}%</span>
+              <span className="mx-1.5 text-[#3A3A3C]">·</span>
+              {result.fields_verified}/{result.fields_total} fields verified
+              <span className="mx-1.5 text-[#3A3A3C]">·</span>
+              {result.sources_fetched}/{result.sources_checked} sources read
+            </div>
+          )}
         </div>
         {result.research_completeness != null && (
           <ResearchProgressModule
@@ -236,6 +316,48 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
       </div>
 
       {error && <p className="text-[13px] text-[#FF453A] mb-4">{error}</p>}
+
+      {profile && identity !== "confirmed" && result.status === "pending" && (
+        <div className="mb-5 rounded-[10px] p-3.5 text-[13px]" style={{ background: saveBlocked ? "rgba(255,159,10,0.08)" : "rgba(255,214,10,0.06)", border: `1px solid ${saveBlocked ? "rgba(255,159,10,0.35)" : "rgba(255,214,10,0.25)"}` }}>
+          <div className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: saveBlocked ? "#FF9F0A" : "#FFD60A" }}>
+            <TriangleAlert size={14} /> {saveBlocked ? "Identity not confirmed — saving is blocked" : "Identity not fully confirmed — review before saving"}
+          </div>
+          <ul className="text-[#A1A1A6] list-disc pl-5 space-y-0.5">
+            {profile.identity.identityNotes.map((n, i) => (
+              <li key={i}>{n}</li>
+            ))}
+          </ul>
+          <div className="text-[12px] text-[#6E6E73] mt-2">
+            Research engine rule: identity accuracy is never traded for completeness. Add a source that ties this account to the business (official website, Google Business listing) and run Research More.
+          </div>
+        </div>
+      )}
+
+      {duplicates && (
+        <div className="mb-5 rounded-[10px] p-3.5 text-[13px]" style={{ background: "rgba(255,159,10,0.08)", border: "1px solid rgba(255,159,10,0.35)" }}>
+          <div className="font-semibold mb-1.5 text-[#FF9F0A]">Possible duplicate</div>
+          <ul className="text-[#A1A1A6] space-y-1">
+            {duplicates.map((d) => (
+              <li key={d.id} className="flex items-center gap-2">
+                <span>{d.reason}:</span>
+                {d.kind === "lead" ? (
+                  <Link href={`/team/leads/${d.id}`} className="text-[#F5F5F7] underline">{d.name || "Unnamed lead"}</Link>
+                ) : (
+                  <Link href={`/team/research/${d.id}`} className="text-[#F5F5F7] underline">{d.name || "Pending research"}</Link>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="flex gap-2 mt-3">
+            <button onClick={() => saveAsLead(true)} disabled={!!busy} className="h-[32px] px-3 rounded-[7px] text-[12px] font-semibold" style={{ background: "rgba(255,159,10,0.15)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.4)" }}>
+              Save anyway — it's a different business
+            </button>
+            <button onClick={() => setDuplicates(null)} className="h-[32px] px-3 rounded-[7px] text-[12px] text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Summary / Edit */}
       <div className="rounded-[12px] p-5 mb-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -335,7 +457,96 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
         })}
       </Section>
 
-      {/* Sources checked */}
+      {profile && profile.conflicts.length > 0 && (
+        <Section title={`Conflicts (${profile.conflicts.length})`}>
+          {profile.conflicts.map((c, i) => (
+            <div key={i} className="px-4 py-3" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+              <div className="text-[12.5px] font-semibold text-[#FF9F0A] capitalize mb-1 flex items-center gap-1.5"><TriangleAlert size={13} /> {c.field}</div>
+              <div className="flex flex-col gap-1">
+                {c.values.map((v, vi) => (
+                  <div key={vi} className="text-[12.5px] text-[#F5F5F7] flex flex-wrap items-center gap-x-2">
+                    <span>{v.value}</span>
+                    {v.sources.map((src, si) => (
+                      <a key={si} href={src.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#6E6E73] hover:text-white underline truncate max-w-[280px]">{src.platform}: {src.url.replace(/^https?:\/\/(www\.)?/, "")}</a>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className="text-[11.5px] text-[#6E6E73] mt-1.5">{c.note}</div>
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {profile && (missingFields.length > 0 || profile.limitations.length > 0) && (
+        <Section title="Missing or Unverified">
+          {missingFields.length > 0 && (
+            <div className="px-4 py-3">
+              <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1.5">Not confirmed from public sources</div>
+              <div className="flex flex-wrap gap-1.5">
+                {missingFields.map((m) => (
+                  <span key={m} className="px-2.5 py-1 rounded-[6px] text-[12px] text-[#A1A1A6]" style={{ background: "#101010" }}>{m}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {profile.limitations.map((l, i) => (
+            <div key={i} className="px-4 py-2.5 text-[12.5px] text-[#A1A1A6] flex items-start gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <Lock size={13} className="mt-[2px] shrink-0 text-[#6E6E73]" /> <span><span className="text-[#6E6E73]">{l.code.replace(/_/g, " ").toLowerCase()}</span> — {l.message}</span>
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {profile && (
+        <Section title="Sales Intelligence">
+          <div className="px-4 py-3 text-[13px] text-[#F5F5F7]">{profile.salesIntelligence.summary}</div>
+          <div className="grid grid-cols-2 gap-x-6 px-4 pb-3 text-[12.5px]">
+            <IntelList title="How they sell" items={profile.salesIntelligence.howTheySell} empty="No confirmed channels" />
+            <IntelList title="Contact methods" items={profile.salesIntelligence.contactMethods} empty="No first-party contact method found" />
+            <IntelList title="Online strengths" items={profile.salesIntelligence.onlineStrengths} empty="None observed" color="#30D158" />
+            <IntelList title="Online weaknesses" items={profile.salesIntelligence.onlineWeaknesses} empty="None observed" color="#FFD60A" />
+          </div>
+          {profile.salesIntelligence.callPrep.length > 0 && (
+            <div className="px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1.5">Call prep{profile.salesIntelligence.bestContactChannel ? ` · best channel: ${profile.salesIntelligence.bestContactChannel}` : ""}</div>
+              <ul className="list-disc pl-5 text-[12.5px] text-[#A1A1A6] space-y-0.5">
+                {profile.salesIntelligence.callPrep.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="px-4 py-2 text-[10.5px] text-[#3A3A3C]" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            Generated from verified facts only. Nothing here is inferred beyond what the sources above show.
+          </div>
+        </Section>
+      )}
+
+      {profile && profile.sources.length > 0 && (
+        <div className="mb-5">
+          <button onClick={() => setShowSources((v) => !v)} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] hover:text-white mb-2">
+            <ChevronDown size={12} style={{ transform: showSources ? "none" : "rotate(-90deg)", transition: "transform 120ms" }} />
+            Sources ({profile.metrics.sourcesFetched} read · {profile.sources.filter((x) => x.isFirstParty).length} first-party · {profile.sources.length} total)
+          </button>
+          {showSources && (
+            <div className="rounded-[12px] overflow-hidden" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {[...profile.sources].sort((a, b) => (a.priority === 0 ? 9 : a.priority) - (b.priority === 0 ? 9 : b.priority) || a.ordinal - b.ordinal).map((src, i) => (
+                <div key={src.ordinal} className="flex items-center gap-2.5 px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, opacity: src.priority === 0 ? 0.5 : 1 }}>
+                  <span className="px-1.5 py-0.5 rounded-[4px] shrink-0 text-[10px] uppercase" style={{ background: src.isFirstParty ? "rgba(48,209,88,0.12)" : "#151515", color: src.isFirstParty ? "#30D158" : "#8E8E93" }}>
+                    {src.priority === 0 ? "ignored" : `P${src.priority} ${src.linkType.replace(/_/g, " ")}`}
+                  </span>
+                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-[#D0D0D0] truncate flex-1 hover:underline">{src.url}</a>
+                  <span className="text-[10.5px] text-[#6E6E73] shrink-0">{src.association.replace(/_/g, " ")}</span>
+                  <span className="text-[10.5px] shrink-0" style={{ color: src.fetchStatus === "fetched" ? "#30D158" : "#6E6E73" }}>{FETCH_LABEL[src.fetchStatus] ?? src.fetchStatus}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sources checked (legacy reachability list) */}
       <Section title="Sources Checked">
         {(graph.sourceChecks || []).map((c, i) => (
           <div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
@@ -438,9 +649,19 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
               ))}
             </select>
           )}
-          <button onClick={saveAsLead} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60">
-            {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save as Lead
-          </button>
+          {saveBlocked && !isOwner ? (
+            <button disabled className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold opacity-50 cursor-not-allowed" style={{ background: "#1C1C1E", color: "#A1A1A6" }} title="Identity not confirmed — owner review required">
+              <Lock size={14} /> Save blocked — identity unconfirmed
+            </button>
+          ) : saveBlocked && isOwner ? (
+            <button onClick={() => saveAsLead(true)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold disabled:opacity-60" style={{ background: "rgba(255,159,10,0.15)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.4)" }}>
+              {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <TriangleAlert size={14} />} Save anyway (owner override)
+            </button>
+          ) : (
+            <button onClick={() => saveAsLead(false)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60">
+              {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save as Lead
+            </button>
+          )}
           <button onClick={() => setShowMore((v) => !v)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[#A1A1A6] hover:text-white" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
             <RefreshCw size={14} /> Research More
           </button>
@@ -463,6 +684,25 @@ export default function ResearchResultView({ result: initialResult, reps }: { re
             <Plus size={13} /> Research
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+function IntelList({ title, items, empty, color }: { title: string; items: string[]; empty: string; color?: string }) {
+  return (
+    <div className="py-2">
+      <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1">{title}</div>
+      {items.length === 0 ? (
+        <div className="text-[#6E6E73]">{empty}</div>
+      ) : (
+        <ul className="space-y-0.5">
+          {items.map((it, i) => (
+            <li key={i} className="flex items-start gap-1.5 text-[#D0D0D0]">
+              <span className="mt-[6px] w-1 h-1 rounded-full shrink-0" style={{ background: color ?? "#6E6E73" }} /> {it}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
