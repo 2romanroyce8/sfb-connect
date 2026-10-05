@@ -89,17 +89,23 @@ export default function AuditView({ lead, audit, categories, identityConfidence 
   if (!audit) {
     return (
       <div className="px-8 py-8 max-w-[700px]">
-        <div className="text-[13.5px] text-[#6E6E73] mb-4">
-          No research evidence is on file for this lead yet, so an audit can't be generated. Run the lead
-          researcher first.
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6E6E73]">Business Readiness Audit</div>
+        <div className="text-[24px] font-semibold text-[#F5F5F7] mb-2">No audit has been generated yet.</div>
+        <div className="text-[13.5px] text-[#6E6E73] mb-4 max-w-[620px]">
+          Viewing this page does not create database records. Generate the audit explicitly after the lead has verified research evidence, so the score reflects SFB Connects' source-backed Business Readiness workflow.
         </div>
+        {identityConfidence && identityConfidence !== "confirmed" && (
+          <div className="mb-4 rounded-[8px] px-3 py-2 text-[12.5px]" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.3)" }}>
+            Identity {identityConfidence.replace("_", " ")} — add stronger source evidence before generating, or have the owner explicitly override.
+          </div>
+        )}
         {error && <p className="text-[13px] text-[#FF453A] mb-3">{error}</p>}
         <button
           onClick={regenerate}
           disabled={loading}
           className="h-[40px] px-4 rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60"
         >
-          {loading ? "Checking…" : "Try Again"}
+          {loading ? "Generating…" : "Generate Business Readiness Audit"}
         </button>
       </div>
     );
