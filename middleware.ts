@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { REMEMBER_COOKIE, applyPersistence, shouldPersist } from "@/lib/supabase/sessionPolicy";
+import { REMEMBER_COOKIE, hardenCookie, shouldPersist } from "@/lib/supabase/sessionPolicy";
 
 /**
  * Protects /dashboard/** for any authenticated user, /admin/** for
@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
         for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
         response = NextResponse.next({ request });
         for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options.maxAge === 0 ? options : applyPersistence(options, persist));
+          response.cookies.set(name, value, hardenCookie(options, request.nextUrl.protocol === "https:", persist));
         }
       },
     },

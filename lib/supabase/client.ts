@@ -1,7 +1,7 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
-import { REMEMBER_COOKIE, applyPersistence, shouldPersist } from "./sessionPolicy";
+import { REMEMBER_COOKIE, hardenCookie, shouldPersist } from "./sessionPolicy";
 
 type SetCookie = { name: string; value: string; options: Record<string, unknown> };
 
@@ -40,10 +40,9 @@ export function createSupabaseBrowserClient() {
       },
       setAll(cookiesToSet: SetCookie[]) {
         const persist = shouldPersist(readAllCookies().find((c) => c.name === REMEMBER_COOKIE)?.value);
+        const isHttps = typeof location !== "undefined" && location.protocol === "https:";
         for (const { name, value, options } of cookiesToSet) {
-          // A deletion (maxAge 0) must always go through untouched.
-          const opts = options.maxAge === 0 ? options : applyPersistence(options, persist);
-          document.cookie = serializeCookie(name, value, opts);
+          document.cookie = serializeCookie(name, value, hardenCookie(options, isHttps, persist));
         }
       },
     },

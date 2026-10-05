@@ -24,3 +24,11 @@ export function applyPersistence<T extends CookieAttrs>(options: T, persist: boo
   const { maxAge: _m, expires: _e, ...rest } = options;
   return rest as T;
 }
+
+/** Auth cookies are always Secure on HTTPS (the library default leaves the
+ * flag off). Deletions pass through untouched. */
+export function hardenCookie<T extends CookieAttrs>(options: T, isHttps: boolean, persist: boolean): T {
+  if (options.maxAge === 0) return options;
+  const withPersistence = applyPersistence(options, persist);
+  return isHttps ? ({ ...withPersistence, secure: true } as T) : withPersistence;
+}

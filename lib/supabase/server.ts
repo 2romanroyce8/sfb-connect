@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { REMEMBER_COOKIE, applyPersistence, shouldPersist } from "./sessionPolicy";
+import { REMEMBER_COOKIE, hardenCookie, shouldPersist } from "./sessionPolicy";
 
 /**
  * Server-side Supabase client for Server Components, Route Handlers and
@@ -20,7 +20,7 @@ export function createSupabaseServerClient() {
         const persist = shouldPersist(cookieStore.get(REMEMBER_COOKIE)?.value);
         try {
           for (const { name, value, options } of cookiesToSet) {
-            cookieStore.set(name, value, options.maxAge === 0 ? options : applyPersistence(options, persist));
+            cookieStore.set(name, value, hardenCookie(options, process.env.NODE_ENV === "production", persist));
           }
         } catch {
           // Called from a Server Component, which cannot write cookies. Safe:
