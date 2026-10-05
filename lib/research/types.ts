@@ -132,8 +132,26 @@ export type QAPassResult = {
   newSourcesFound: number;
 };
 
+/** Per-page metadata the entity layer needs to tell a PERSON apart from the
+ * BUSINESS they operate: the seed's own display name and bio text, kept
+ * separately from the collapsed businessName. */
+export type PageMeta = {
+  url: string;
+  requestedUrl: string;
+  sourceType: string;
+  isSeed: boolean;
+  title: string | null;
+  ogTitle: string | null;
+  description: string | null;
+};
+
 export type BusinessGraph = {
   businessName: Candidate | null;
+  // Every name candidate the engine saw, with its source -- so a Facebook
+  // display name ("John Smith") and a website business name ("Smith's Junk
+  // Removal") stay distinguishable downstream instead of collapsing into one.
+  nameCandidates?: Candidate[];
+  pageMeta?: PageMeta[];
   category: string | null;
   description: string | null;
   services: string[];

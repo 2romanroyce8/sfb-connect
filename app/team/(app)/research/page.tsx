@@ -10,7 +10,7 @@ export default async function ResearchQueuePage() {
   // the top so reps spend their time on the most saveable results.
   const { data: results } = await supabase
     .from("crm_research_results")
-    .select("id, business_name, website, phone, category, research_completeness, status, created_at, identity_confidence, research_status, research_confidence_pct, fields_verified, fields_total, conflicts, profile_type")
+    .select("id, business_name, website, phone, category, research_completeness, status, created_at, identity_confidence, research_status, research_confidence_pct, fields_verified, fields_total, conflicts, profile_type, entity_type, person_name, relationship_type, relationship_basis")
     .eq("status", "pending")
     .order("research_confidence_pct", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
@@ -75,7 +75,7 @@ export default async function ResearchQueuePage() {
           <table className="w-full text-[13px]">
             <thead>
               <tr style={{ background: "#0A0A0A" }}>
-                {["Business", "Identity", "Confidence", "Verified", "Conflicts", "Website", "Phone", "Researched"].map((h) => (
+                {["Business", "Entity", "Identity", "Confidence", "Verified", "Conflicts", "Website", "Phone", "Researched"].map((h) => (
                   <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
                     {h}
                   </th>
@@ -90,11 +90,24 @@ export default async function ResearchQueuePage() {
                       {r.business_name || "Unidentified business"}
                     </Link>
                   </td>
+                  <td className="px-4 py-3 text-[12px]">
+                    {r.entity_type === "PERSON_OPERATING_BUSINESS" ? (
+                      <span className="text-[#F5F5F7]">{r.person_name} <span className="text-[#6E6E73]">· {r.relationship_basis === "self_described" ? "self-described " : ""}{(r.relationship_type || "operator").toLowerCase()}</span></span>
+                    ) : r.entity_type === "PERSON" ? (
+                      <span className="text-[#A1A1A6]">Person · no business</span>
+                    ) : r.entity_type === "UNKNOWN" ? (
+                      <span className="text-[#FFD60A]">Signals · uncertain</span>
+                    ) : r.entity_type ? (
+                      <span className="text-[#A1A1A6]">{r.entity_type.toLowerCase()}</span>
+                    ) : (
+                      <span className="text-[#6E6E73]">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     {r.identity_confidence && r.research_confidence_pct != null ? (
                       <span className="text-[12px] font-semibold" style={{ color: IDENTITY_COLOR[r.identity_confidence] ?? "#A1A1A6" }}>
                         {r.identity_confidence.replace("_", " ")}
-                        {r.profile_type === "PERSONAL_PROFILE" && <span className="ml-1 text-[10.5px] font-normal text-[#6E6E73]">(personal profile)</span>}
+
                       </span>
                     ) : (
                       <span className="text-[#6E6E73]" title="Researched before the identity layer existed — open to see a derived profile">legacy</span>

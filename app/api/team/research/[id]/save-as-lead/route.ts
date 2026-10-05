@@ -32,9 +32,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { data: caller } = await supabase.from("users").select("team_role").eq("id", user.id).single();
   const isOwner = caller?.team_role === "owner";
 
-  // Research Spec §3 identity gate: a result whose identity can't be trusted
-  // must not become a lead. Owner may consciously override; reps may not.
+  // Save rule: a personal Facebook profile, a person-operated business, or an
+  // uncertain business are all saveable -- their status travels with them.
+  // The only block is a genuine identity collision (owner may override).
   const profile = (result.reconciled_profile as ResearchProfile | null) ?? null;
+  const entities = profile?.entities ?? null;
   const blockReason = profile ? saveBlockReason(profile) : null;
   if (blockReason && !(force && isOwner)) {
     return NextResponse.json({ error: blockReason, code: "IDENTITY_BLOCK", ownerCanOverride: isOwner }, { status: 409 });
@@ -52,14 +54,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .from("crm_leads")
     .insert({
       source_urls: result.source_urls,
-      business_name: result.business_name,
+      business_name: entities?.business?.name ?? result.business_name ?? entities?.person?.name ?? null,
+      source_type: entities?.sourceType ?? null,
+      entity_type: entities?.entityType ?? null,
+      relationship_type: entities?.relationship?.relationshipType ?? null,
+      relationship_basis: entities?.relationship?.basis ?? null,
       website: result.website,
       phone: result.phone,
       email: result.email,
       category: result.category,
       description: result.description,
       services: result.services,
-      owner_name: result.owner_name,
+      owner_name: entities?.person?.name ?? result.owner_name,
       city: result.city,
       state: result.state,
       service_area: graph.locations?.filter((l) => l.locationType === "service_area").map((l) => l.city).filter(Boolean).join(", ") || null,
@@ -80,7 +86,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   assertOk(await service.from("crm_activities").insert({ lead_id: lead.id, rep_id: user.id, activity_type: "lead_imported", description: "Lead saved from research results" }), "log lead_imported activity", { leadId: lead.id });
 
-  const auditResult = await computeAndSaveAudit(lead.id, user.id, { allowUnconfirmedIdentity: force && isOwner });
+  // A person record with no identified business has nothing to audit; the
+  // Business Readiness Audit is generated later if a business is attached.
+  const auditResult =
+    entities?.entityType === "PERSON"
+      ? null
+      : await computeAndSaveAudit(lead.id, user.id, { allowUnconfirmedIdentity: true });
 
   if (assignedRep && assignedRep !== user.id) {
     await notify(service, {
@@ -93,5 +104,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
   }
 
-  return NextResponse.json({ leadId: lead.id, overallScore: auditResult.overall, offer: auditResult.opportunity.primary });
+  return NextResponse.json({ leadId: lead.id, overallScore: auditResult?.overall ?? null, offer: auditResult?.opportunity.primary ?? null, entityType: entities?.entityType ?? null });
 }

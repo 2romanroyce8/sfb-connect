@@ -19,6 +19,54 @@ export type FieldStatus = "CONFIRMED" | "UNCERTAIN" | "NOT_FOUND" | "CONFLICT" |
 export type Confidence = "HIGH" | "MEDIUM" | "LOW";
 export type IdentityConfidence = "confirmed" | "uncertain" | "conflict" | "not_found";
 export type ProfileType = "BUSINESS_PAGE" | "CREATOR" | "PUBLIC_PROFILE" | "PERSONAL_PROFILE" | "GROUP" | "EVENT" | "UNKNOWN";
+
+// ---- Entity relationship layer ----
+// A Facebook personal profile is a SOURCE TYPE, never an identity verdict.
+// The engine answers "who is this account, what does it represent, and is
+// there a business connected to it?" -- not "is this a Facebook Page?".
+export type SourceType =
+  | "FACEBOOK_PAGE" | "FACEBOOK_PERSONAL_PROFILE" | "FACEBOOK_PROFESSIONAL_PROFILE" | "FACEBOOK_GROUP" | "FACEBOOK_EVENT" | "FACEBOOK_UNKNOWN"
+  | "WEBSITE" | "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "LINKEDIN" | "X" | "GOOGLE_BUSINESS" | "BIO_LINK_HUB" | "OTHER";
+export type EntityType = "PERSON" | "BUSINESS" | "PERSON_OPERATING_BUSINESS" | "CREATOR" | "ORGANIZATION" | "UNKNOWN";
+export type BusinessStatus = "BUSINESS" | "PERSON_OPERATING_BUSINESS" | "BUSINESS_IDENTITY_UNCERTAIN" | "NO_BUSINESS_IDENTIFIED";
+export type RelationshipType = "OWNER" | "FOUNDER" | "OPERATOR" | "REPRESENTATIVE" | "EMPLOYEE" | "UNKNOWN";
+export type RelationshipBasis = "corroborated" | "self_described" | "inferred";
+
+export type PersonEntity = {
+  name: string;
+  facebookUrl: string | null;
+  facebookUsername: string | null;
+  bio: string | null;
+  publicLocation: string | null;
+  role: RelationshipType | null;
+  confidence: Confidence;
+  sources: SourceRef[];
+};
+export type BusinessEntity = {
+  name: string | null;
+  candidates: { value: string; sources: SourceRef[]; strength: number }[];
+  status: FieldStatus;
+  confidence: Confidence;
+};
+export type EntityRelationship = {
+  relationshipType: RelationshipType;
+  basis: RelationshipBasis;
+  confidence: Confidence;
+  evidence: SourceRef[];
+  explanation: string[];
+};
+export type BusinessSignal = { signal: string; detail: string; sourceUrl: string | null };
+export type EntityModel = {
+  sourceType: SourceType;
+  sourceTypeBasis: "url" | "page_text" | "inferred";
+  entityType: EntityType;
+  businessStatus: BusinessStatus;
+  person: PersonEntity | null;
+  business: BusinessEntity | null;
+  relationship: EntityRelationship | null;
+  businessSignals: BusinessSignal[];
+  notes: string[];
+};
 export type Association = "confirmed_first_party" | "likely_first_party" | "uncertain" | "rejected_unrelated" | "not_applicable";
 
 export type SourceRef = { url: string; platform: string; observedAt: string; excerpt?: string | null };
@@ -76,6 +124,7 @@ export type ResearchProfile = {
   conflicts: Conflict[];
   limitations: Limitation[];
   metrics: { researchConfidencePct: number; fieldsVerified: number; fieldsTotal: number; sourcesChecked: number; sourcesFetched: number; researchStatus: "complete" | "completed_with_limitations" };
+  entities: EntityModel;
   salesIntelligence: SalesIntelligence;
 };
 
@@ -132,29 +181,268 @@ export function platformOf(url: string): string {
   return "website";
 }
 
-/** Facebook-only: what kind of account is this? Conservative -- anything we
- * can't tell from the URL shape is UNKNOWN, and the engine's own name
- * heuristics decide PERSONAL_PROFILE vs BUSINESS_PAGE downstream. */
+const TRADE_TOKENS = /\b(llc|inc|co|corp|company|services?|removal|hauling|junk|roofing|hvac|plumbing|cleaning|landscap\w*|lawn|repair|construction|contract\w*|remodel\w*|auto|towing|detailing|salon|barber|studio|shop|store|boutique|cafe|restaurant|bar|grill|catering|bakery|dental|law|legal|realty|real estate|photography|fitness|gym|pressure wash\w*|window|pest|moving|movers|electric\w*|painting|flooring|tile|fence|concrete|handyman|notary|insurance|tax|accounting|consulting|marketing|design|agency|group|solutions|enterprises?|logistics|transport\w*|trucking|dumpster|disposal|recycling)\b/i;
+const ROLE_TOKENS: { re: RegExp; role: RelationshipType }[] = [
+  { re: /\b(owner|proprietor|owner[- ]operator)\b/i, role: "OWNER" },
+  { re: /\b(founder|co-?founder|ceo|president)\b/i, role: "FOUNDER" },
+  { re: /\b(operator|operating|run(?:s|ning)? (?:my|our|a) (?:own )?business)\b/i, role: "OPERATOR" },
+  { re: /\b(manager|director|general manager|gm)\b/i, role: "REPRESENTATIVE" },
+  { re: /\b(sales|representative|rep|agent|consultant|realtor)\b/i, role: "REPRESENTATIVE" },
+  { re: /\b(works? at|employee|technician|driver|crew)\b/i, role: "EMPLOYEE" },
+];
+const CTA_TOKENS = /\b(call|text|book(?:ing)?|schedule|free (?:estimate|quote)s?|licensed|insured|serving|we (?:offer|provide|specialize)|dm (?:for|to)|message (?:for|to) (?:book|quote|pricing)|same[- ]day|24\/7|open (?:mon|tue|wed|thu|fri|sat|sun|daily))\b/i;
+
+/** Legacy adapter kept for callers/tests that still read identity.profileType. */
 export function detectFacebookProfileType(seedUrl: string, businessName: string | null): ProfileType {
-  const u = seedUrl.toLowerCase();
-  if (!/facebook\.com|fb\.com/.test(u)) return "UNKNOWN";
-  if (/\/groups\//.test(u)) return "GROUP";
-  if (/\/events\//.test(u)) return "EVENT";
-  if (/\/pages\//.test(u)) return "BUSINESS_PAGE";
-  if (/\/people\//.test(u)) return "PUBLIC_PROFILE";
-  if (/profile\.php\?id=/.test(u)) {
-    // Numeric profile ids are usually personal; a business-looking name
-    // (contains a trade/LLC token) tips it to PUBLIC_PROFILE, never to
-    // BUSINESS_PAGE -- we can't prove page-ness from a profile id.
-    return businessName && /\b(llc|inc|co|services?|removal|hauling|roofing|hvac|plumbing|cleaning|landscap|repair|construction|auto|salon|studio|shop|store|cafe|restaurant|bar|grill|dental|law|realty|photography)\b/i.test(businessName) ? "PUBLIC_PROFILE" : "PERSONAL_PROFILE";
+  const st = classifyFacebookSourceType(seedUrl, null, businessName);
+  switch (st.sourceType) {
+    case "FACEBOOK_GROUP": return "GROUP";
+    case "FACEBOOK_EVENT": return "EVENT";
+    case "FACEBOOK_PAGE": return "BUSINESS_PAGE";
+    case "FACEBOOK_PERSONAL_PROFILE": return businessName && TRADE_TOKENS.test(businessName) ? "PUBLIC_PROFILE" : "PERSONAL_PROFILE";
+    case "FACEBOOK_PROFESSIONAL_PROFILE": return "PUBLIC_PROFILE";
+    case "FACEBOOK_UNKNOWN": return "BUSINESS_PAGE";
+    default: return "UNKNOWN";
   }
-  // Vanity URL (facebook.com/<slug>): overwhelmingly a Page. A "First Last"
-  // name heuristic was tried here and misfired on ordinary two-word
-  // business names ("Junk Seekers") on the first live run -- the name alone
-  // is not evidence of a personal account, so we don't claim it. Personal
-  // vs public profile is only inferred from numeric profile.php ids above;
-  // the identity gate's corroboration requirement covers the residual risk.
-  return "BUSINESS_PAGE";
+}
+
+/** Source-type classification. URL shape first; then the seed page's own
+ * og:description, which on Facebook is a reliable tell: personal profiles
+ * read "<Name> is on Facebook. Join Facebook to connect with <Name>..."
+ * while Pages read "<Name>. 1,234 likes · 12 talking about this. <about>".
+ * Vanity URLs with neither signal stay FACEBOOK_UNKNOWN -- we don't guess. */
+export function classifyFacebookSourceType(seedUrl: string, seedDescription: string | null, seedDisplayName: string | null): { sourceType: SourceType; basis: "url" | "page_text" | "inferred" } {
+  const u = seedUrl.toLowerCase();
+  const platform = platformOf(seedUrl);
+  if (platform !== "facebook") {
+    const map: Record<string, SourceType> = { instagram: "INSTAGRAM", tiktok: "TIKTOK", youtube: "YOUTUBE", linkedin: "LINKEDIN", x: "X", google_business: "GOOGLE_BUSINESS", bio_link_hub: "BIO_LINK_HUB", website: "WEBSITE" };
+    return { sourceType: map[platform] ?? "OTHER", basis: "url" };
+  }
+  if (/\/groups\//.test(u)) return { sourceType: "FACEBOOK_GROUP", basis: "url" };
+  if (/\/events\//.test(u)) return { sourceType: "FACEBOOK_EVENT", basis: "url" };
+  if (/\/pages\//.test(u)) return { sourceType: "FACEBOOK_PAGE", basis: "url" };
+  const desc = seedDescription ?? "";
+  if (/\bis on facebook\b|join facebook to connect with/i.test(desc)) {
+    // Professional mode shows a category/role line in the intro; a trade or
+    // role token in the bio text is the only public tell we have.
+    const professional = TRADE_TOKENS.test(desc.replace(/join facebook.*$/i, "")) || ROLE_TOKENS.some((r) => r.re.test(desc));
+    return { sourceType: professional ? "FACEBOOK_PROFESSIONAL_PROFILE" : "FACEBOOK_PERSONAL_PROFILE", basis: "page_text" };
+  }
+  if (/\d[\d,.]*\s*(likes|followers)|talking about this|were here|check-ins/i.test(desc)) return { sourceType: "FACEBOOK_PAGE", basis: "page_text" };
+  if (/\/people\//.test(u) || /profile\.php\?id=/.test(u)) return { sourceType: "FACEBOOK_PERSONAL_PROFILE", basis: "url" };
+  return { sourceType: "FACEBOOK_UNKNOWN", basis: "inferred" };
+}
+
+function cleanDisplayName(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const v = raw.replace(/\s*[|–—-]\s*facebook\s*$/i, "").replace(/\s*\|\s*.*$/, "").replace(/\s+/g, " ").trim();
+  if (!v || /^facebook$/i.test(v) || /log in|sign up/i.test(v)) return null;
+  return v;
+}
+
+/** "First Last" / "First M. Last" with no trade token -- a shape test, used
+ * only for seeds already known to be profiles (never to decide page-ness). */
+export function looksLikePersonName(name: string | null): boolean {
+  if (!name) return false;
+  const n = name.trim();
+  if (TRADE_TOKENS.test(n)) return false;
+  if (/[&@#\d]/.test(n)) return false;
+  const words = n.split(/\s+/);
+  if (words.length < 2 || words.length > 4) return false;
+  return words.every((w) => /^[A-Z][a-z'’.-]*$|^[A-Z]\.$|^(de|van|von|da|del|la|le|bin|al)$/.test(w));
+}
+
+function extractBusinessMentionsFromBio(bio: string): { name: string; role: RelationshipType | null; excerpt: string }[] {
+  const out: { name: string; role: RelationshipType | null; excerpt: string }[] = [];
+  const text = bio.replace(/join facebook to connect with.*$/i, "").replace(/\s+/g, " ").trim();
+  // "Owner of Smith's Junk Removal", "Founder @ Acme LLC", "CEO at Jones Auto Group"
+  const roleRe = /\b(owner|proprietor|founder|co-?founder|ceo|president|operator|manager|director|general manager|sales|agent|realtor|consultant)\s*(?:of|at|@|-|–|\||for|,)\s*([A-Z][\w&'’.\-]*(?:\s+[A-Za-z&'’.\-]+){0,6})/g;
+  let m: RegExpExecArray | null;
+  while ((m = roleRe.exec(text))) {
+    const name = m[2].replace(/[.,;:]+$/, "").replace(/\s+(serving|in|call|text|book|located|based|since|licensed|insured)\b.*$/i, "").trim();
+    if (name.length >= 3) out.push({ name, role: ROLE_TOKENS.find((r) => r.re.test(m![1]))?.role ?? null, excerpt: m[0] });
+  }
+  // Bare trade-token business names: "Smith's Junk Removal LLC", "Elite Pressure Washing"
+  const tradeRe = /\b((?:[A-Z][\w'’&.-]*\s+){0,4}[A-Z]?[\w'’&.-]*(?:LLC|Inc\.?|Co\.?|Corp\.?|Services?|Removal|Hauling|Cleaning|Roofing|Plumbing|HVAC|Landscaping|Construction|Realty|Photography|Studio|Salon|Auto|Repair|Detailing|Towing|Movers|Moving|Dumpsters?|Disposal|Pressure Washing|Lawn Care|Electric|Painting|Flooring|Fencing|Concrete|Handyman|Catering|Bakery|Fitness|Agency|Solutions|Enterprises?|Logistics|Trucking|Transport))\b/g;
+  while ((m = tradeRe.exec(text))) {
+    const name = m[1].trim();
+    if (name.split(/\s+/).length >= 2 && !out.some((o) => normalizeBusinessName(o.name) === normalizeBusinessName(name))) out.push({ name, role: null, excerpt: m[0] });
+  }
+  return out;
+}
+
+function humanizeDomain(domain: string): string {
+  return domain.replace(/\.(com|net|org|co|us|biz|io|llc|services)$/i, "").replace(/[-_]/g, " ");
+}
+
+export function analyzeEntities(
+  graph: BusinessGraph,
+  seedUrl: string,
+  website: FieldValue<string>,
+  phones: PhoneValue[],
+  emails: FieldValue<string>[],
+  channels: { kind: string; value: string }[],
+  socialProfiles: (SocialProfileRecord & { association: Association })[],
+  firstPartyUrls: Set<string>
+): { entities: EntityModel; identityConfidence: IdentityConfidence; identityStatus: FieldStatus; notes: string[]; conflicts: Conflict[] } {
+  const notes: string[] = [];
+  const conflicts: Conflict[] = [];
+  const seedMeta = graph.pageMeta?.find((p) => p.isSeed) ?? null;
+  const seedDisplayName = cleanDisplayName(seedMeta?.ogTitle ?? seedMeta?.title ?? (graph.businessName?.sourceUrl === seedUrl ? graph.businessName.value : null));
+  const seedBio = seedMeta?.description ?? (graph.pageMeta ? null : graph.description); // legacy graphs: description was the first page's meta
+  const { sourceType, basis } = classifyFacebookSourceType(seedUrl, seedBio, seedDisplayName);
+  const isProfileSeed = sourceType === "FACEBOOK_PERSONAL_PROFILE" || sourceType === "FACEBOOK_PROFESSIONAL_PROFILE" || (sourceType === "FACEBOOK_UNKNOWN" && looksLikePersonName(seedDisplayName));
+  const officialDomain = website.value ? (canonicalDomain(website.value) || "").toLowerCase() : "";
+  const seedRef = (excerpt?: string | null) => ref(seedUrl, excerpt);
+
+  // ---- business name candidates, source by source (never collapsed) ----
+  type Cand = { value: string; sources: SourceRef[]; strength: number; origin: "website" | "bio" | "social" | "directory" | "domain" | "engine" };
+  const cands: Cand[] = [];
+  const addCand = (value: string, src: SourceRef, strength: number, origin: Cand["origin"]) => {
+    const v = value.replace(/\s+/g, " ").trim();
+    if (!v || v.length < 2) return;
+    if (seedDisplayName && isProfileSeed && normalizeBusinessName(v) === normalizeBusinessName(seedDisplayName)) return; // that's the person, not a business
+    const existing = cands.find((c) => normalizeBusinessName(c.value) === normalizeBusinessName(v));
+    if (existing) { existing.sources.push(src); existing.strength = Math.max(existing.strength, strength); return; }
+    cands.push({ value: v, sources: [src], strength, origin });
+  };
+  for (const c of graph.nameCandidates ?? []) {
+    const d = (canonicalDomain(c.sourceUrl) || "").toLowerCase();
+    const fromSeed = c.sourceUrl === seedUrl || platformOf(c.sourceUrl) === "facebook";
+    if (fromSeed) continue; // seed names are handled via display name / bio
+    const onOfficial = !!officialDomain && d === officialDomain;
+    if (onOfficial) addCand(c.value, ref(c.sourceUrl), Math.max(2, c.strength), "website");
+    else if (platformOf(c.sourceUrl) === "google_business" || platformOf(c.sourceUrl) === "yelp" || platformOf(c.sourceUrl) === "bbb") addCand(c.value, ref(c.sourceUrl), 2, "directory");
+    else if (firstPartyUrls.has(c.sourceUrl) && c.strength >= 2) addCand(c.value, ref(c.sourceUrl), 1, "social");
+  }
+  const bioMentions = seedBio ? extractBusinessMentionsFromBio(seedBio) : [];
+  for (const m of bioMentions) addCand(m.name, seedRef(m.excerpt), 1, "bio");
+  if (!isProfileSeed && graph.businessName?.value) addCand(graph.businessName.value, ref(graph.businessName.sourceUrl), graph.businessName.strength, "engine");
+  if (cands.length === 0 && officialDomain && isProfileSeed) addCand(humanizeDomain(officialDomain), ref(website.value), 0, "domain");
+
+  // ---- business signals (public evidence only) ----
+  const signals: BusinessSignal[] = [];
+  if (website.status === "CONFIRMED") signals.push({ signal: "website", detail: website.value!, sourceUrl: website.sources[0]?.url ?? null });
+  for (const p of phones.filter((p) => p.status === "CONFIRMED" || p.status === "CONFLICT")) signals.push({ signal: "phone", detail: p.value!, sourceUrl: p.sources[0]?.url ?? null });
+  for (const e of emails.filter((e) => e.status === "CONFIRMED")) signals.push({ signal: "email", detail: e.value!, sourceUrl: e.sources[0]?.url ?? null });
+  for (const ch of channels) signals.push({ signal: ch.kind, detail: ch.value, sourceUrl: null });
+  for (const sp of socialProfiles.filter((x) => x.association === "confirmed_first_party" || x.association === "likely_first_party")) if (sp.platform !== "facebook") signals.push({ signal: `social_${sp.platform}`, detail: sp.handle || sp.url || "", sourceUrl: sp.url ?? null });
+  if (graph.services.length) signals.push({ signal: "services", detail: graph.services.slice(0, 5).join(", "), sourceUrl: null });
+  if (graph.category) signals.push({ signal: "category", detail: graph.category, sourceUrl: null });
+  if (seedBio) {
+    const bioText = seedBio.replace(/join facebook to connect with.*$/i, "");
+    const role = ROLE_TOKENS.find((r) => r.re.test(bioText));
+    if (role) signals.push({ signal: "role_in_bio", detail: bioText.match(role.re)![0], sourceUrl: seedUrl });
+    if (TRADE_TOKENS.test(bioText)) signals.push({ signal: "trade_terms_in_bio", detail: bioText.match(TRADE_TOKENS)![0], sourceUrl: seedUrl });
+    if (CTA_TOKENS.test(bioText)) signals.push({ signal: "call_to_action_in_bio", detail: bioText.match(CTA_TOKENS)![0], sourceUrl: seedUrl });
+  }
+  for (const m of bioMentions) signals.push({ signal: "business_name_in_bio", detail: m.name, sourceUrl: seedUrl });
+
+  // ---- pick the business name: strongest, with independent-source count ----
+  cands.sort((a, b) => b.strength - a.strength || b.sources.length - a.sources.length);
+  const top = cands[0] ?? null;
+  const independentSources = (c: Cand) => new Set(c.sources.map((s) => platformOf(s.url) === "website" ? (canonicalDomain(s.url) || s.url) : platformOf(s.url))).size;
+  // Independent corroboration also counts a bio mention that matches a website/directory name.
+  const strongOthers = cands.filter((c) => c !== top && c.strength >= 2 && c.sources.some((s) => firstPartyUrls.has(s.url)));
+  if (top && strongOthers.length) {
+    conflicts.push({ field: "business_name", values: [top, ...strongOthers].map((c) => ({ value: c.value, sources: c.sources })), note: "First-party sources name different businesses. Could be a rebrand, a parent/DBA pair, or the wrong website -- confirm which business this account represents before saving." });
+  }
+
+  // ---- person ----
+  let person: PersonEntity | null = null;
+  const bioRole = seedBio ? ROLE_TOKENS.find((r) => r.re.test(seedBio.replace(/join facebook.*$/i, "")))?.role ?? null : null;
+  if (isProfileSeed && seedDisplayName) {
+    const fbUser = (() => { try { const u = new URL(seedUrl); const id = u.searchParams.get("id"); return id ? `profile.php?id=${id}` : u.pathname.split("/").filter(Boolean)[0] ?? null; } catch { return null; } })();
+    person = {
+      name: seedDisplayName,
+      facebookUrl: seedUrl,
+      facebookUsername: fbUser,
+      bio: seedBio ? seedBio.replace(/\s*join facebook to connect with.*$/i, "").trim() || null : null,
+      publicLocation: graph.locations.find((l) => l.sourceUrl === seedUrl && (l.city || l.state)) ? [graph.locations.find((l) => l.sourceUrl === seedUrl)!.city, graph.locations.find((l) => l.sourceUrl === seedUrl)!.state].filter(Boolean).join(", ") : null,
+      role: bioRole ?? (bioMentions.find((m) => m.role)?.role ?? null),
+      confidence: "HIGH", // the display name of the fetched profile is a direct observation
+      sources: [seedRef(seedDisplayName)],
+    };
+  } else if (graph.ownerName) {
+    person = { name: graph.ownerName, facebookUrl: null, facebookUsername: null, bio: null, publicLocation: null, role: "OWNER", confidence: "MEDIUM", sources: website.sources };
+  }
+
+  // ---- classify ----
+  let entityType: EntityType = "UNKNOWN";
+  let businessStatus: BusinessStatus = "NO_BUSINESS_IDENTIFIED";
+  let identityConfidence: IdentityConfidence = "not_found";
+  let identityStatus: FieldStatus = "NOT_FOUND";
+  let relationship: EntityRelationship | null = null;
+  let business: BusinessEntity | null = null;
+
+  const corroboration = top ? independentSources(top) + (top.origin !== "bio" && bioMentions.some((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value)) ? 1 : 0) : 0;
+  const hardSignals = signals.filter((s) => ["website", "phone", "email", "booking", "whatsapp"].includes(s.signal)).length;
+
+  if (conflicts.length) {
+    identityConfidence = "conflict"; identityStatus = "CONFLICT";
+    businessStatus = "BUSINESS_IDENTITY_UNCERTAIN"; entityType = isProfileSeed ? "UNKNOWN" : "BUSINESS";
+    business = { name: null, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "CONFLICT", confidence: "LOW" };
+    notes.push("Two or more first-party sources name different businesses -- genuine identity collision.");
+  } else if (top && (top.strength >= 2 || corroboration >= 2 || (top.strength >= 1 && hardSignals >= 1))) {
+    const confirmed = corroboration >= 2 || (top.strength >= 2 && hardSignals >= 1);
+    identityConfidence = confirmed ? "confirmed" : "uncertain"; identityStatus = confirmed ? "CONFIRMED" : "UNCERTAIN";
+    business = { name: top.value, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: identityStatus, confidence: confirmed ? (corroboration >= 3 ? "HIGH" : "HIGH") : "MEDIUM" };
+    if (isProfileSeed && person) {
+      entityType = "PERSON_OPERATING_BUSINESS"; businessStatus = "PERSON_OPERATING_BUSINESS";
+      const selfDescribed = bioMentions.some((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value));
+      // Corroborated = an independent source (website JSON-LD founder/employee, or the site naming the person) ties the person to the business.
+      const siteNamesPerson = !!graph.ownerName && normalizeBusinessName(graph.ownerName) === normalizeBusinessName(person.name);
+      const basisRel: RelationshipBasis = siteNamesPerson ? "corroborated" : selfDescribed ? "self_described" : "inferred";
+      const relType: RelationshipType = person.role ?? (siteNamesPerson ? "OWNER" : "UNKNOWN");
+      const explanation: string[] = [];
+      if (selfDescribed) explanation.push(`Facebook bio describes ${person.name} as ${(person.role ?? "connected to").toString().toLowerCase().replace("_", " ")} of ${top.value}.`);
+      if (website.status === "CONFIRMED") explanation.push(`Profile links to ${website.value} which names ${top.value}.`);
+      if (siteNamesPerson) explanation.push(`The business website names ${person.name}.`);
+      for (const sp of socialProfiles.filter((x) => x.association !== "rejected_unrelated" && x.platform !== "facebook" && x.url)) if (top.sources.some((s) => s.url === sp.url)) explanation.push(`${sp.platform} account matches ${top.value}.`);
+      if (!explanation.length) explanation.push(`${top.value} was found through links on the profile; the relationship itself is inferred, not stated.`);
+      relationship = {
+        relationshipType: relType,
+        basis: basisRel,
+        confidence: basisRel === "corroborated" ? "HIGH" : basisRel === "self_described" ? (confirmed ? "MEDIUM" : "LOW") : "LOW",
+        evidence: Array.from(new Map([...top.sources, ...person.sources].map((s) => [s.url, s])).values()),
+        explanation,
+      };
+      if (basisRel === "self_described") notes.push(`Relationship is self-described on the Facebook profile only -- shown as "self-described ${relType.toLowerCase()}", not confirmed owner.`);
+      if (!confirmed) notes.push("Business identified from a single source; add the website or Google Business listing to confirm.");
+    } else {
+      entityType = "BUSINESS"; businessStatus = "BUSINESS";
+      if (person) relationship = { relationshipType: person.role ?? "OWNER", basis: "corroborated", confidence: "MEDIUM", evidence: person.sources, explanation: [`Structured data on the website names ${person.name}.`] };
+      if (!confirmed) notes.push("Business name found but only weakly corroborated by a second signal (domain/phone).");
+    }
+  } else if (isProfileSeed && (signals.length >= 2 || top)) {
+    entityType = "UNKNOWN"; businessStatus = "BUSINESS_IDENTITY_UNCERTAIN";
+    identityConfidence = "uncertain"; identityStatus = "UNCERTAIN";
+    business = { name: null, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "UNCERTAIN", confidence: "LOW" };
+    notes.push(`Business signals detected (${signals.map((s) => s.signal.replace(/_/g, " ")).slice(0, 5).join(", ")}) but the exact business could not be identified${top ? ` -- possibly "${top.value}"` : ""}. Add the business website or listing and Research More.`);
+  } else if (isProfileSeed) {
+    entityType = "PERSON"; businessStatus = "NO_BUSINESS_IDENTIFIED";
+    identityConfidence = "not_found"; identityStatus = "NOT_FOUND";
+    notes.push(`${person?.name ?? "This account"} appears to be an individual with no public business connection found. The profile research is retained; no company has been invented.`);
+  } else if (sourceType === "FACEBOOK_GROUP" || sourceType === "FACEBOOK_EVENT") {
+    entityType = "ORGANIZATION"; businessStatus = "BUSINESS_IDENTITY_UNCERTAIN"; identityConfidence = "uncertain"; identityStatus = "UNCERTAIN";
+    notes.push(`Seed is a Facebook ${sourceType === "FACEBOOK_GROUP" ? "group" : "event"}, not a business account.`);
+  } else if (graph.businessName?.value) {
+    entityType = "BUSINESS"; businessStatus = "BUSINESS"; identityConfidence = "uncertain"; identityStatus = "UNCERTAIN";
+    business = { name: graph.businessName.value, candidates: [{ value: graph.businessName.value, sources: [ref(graph.businessName.sourceUrl)], strength: graph.businessName.strength }], status: "UNCERTAIN", confidence: "LOW" };
+    notes.push("Business name comes from a single weak source.");
+  } else {
+    notes.push("No business name could be established from public sources.");
+  }
+
+  if (sourceType === "FACEBOOK_UNKNOWN") notes.push("Facebook vanity URL: could not tell Page from profile by URL or page text; classification is inferred from the account's display name.");
+
+  return {
+    entities: { sourceType, sourceTypeBasis: basis, entityType, businessStatus, person, business, relationship, businessSignals: signals, notes },
+    identityConfidence,
+    identityStatus,
+    notes,
+    conflicts,
+  };
 }
 
 // ---------- link classification -> SourceEntity (Spec §4) ----------
@@ -317,49 +605,29 @@ function reconcileEmails(contacts: ContactMethodRecord[], firstPartyUrls: Set<st
   });
 }
 
-function reconcileIdentity(graph: BusinessGraph, seedUrl: string, website: FieldValue<string>, phones: PhoneValue[]): ResearchProfile["identity"] {
-  const name = graph.businessName;
-  const profileType = detectFacebookProfileType(seedUrl, name?.value ?? null);
-  const notes: string[] = [];
-  let identityConfidence: IdentityConfidence = "not_found";
-  let status: FieldStatus = "NOT_FOUND";
-
-  if (name?.value) {
-    // Strong corroboration = the name appears alongside a confirmed website
-    // domain or a first-party phone. Name alone (strength<=1) is UNCERTAIN.
-    const corroborated = (website.status === "CONFIRMED") || phones.some((p) => p.status === "CONFIRMED" || p.status === "CONFLICT");
-    if (name.strength >= 3 && corroborated) { identityConfidence = "confirmed"; status = "CONFIRMED"; }
-    else if (name.strength >= 2 || corroborated) { identityConfidence = "uncertain"; status = "UNCERTAIN"; notes.push("Business name found but only weakly corroborated by a second signal (domain/phone)."); }
-    else { identityConfidence = "uncertain"; status = "UNCERTAIN"; notes.push("Business name comes from a single weak source."); }
-  } else {
-    notes.push("No business name could be established from public sources.");
-  }
-
-  if (profileType === "PERSONAL_PROFILE") {
-    identityConfidence = identityConfidence === "confirmed" ? "uncertain" : identityConfidence;
-    notes.push("Seed appears to be a personal Facebook profile, not a business Page. Identity is capped at UNCERTAIN until a business entity is corroborated by a second source.");
-  }
-  if (profileType === "GROUP" || profileType === "EVENT") {
-    identityConfidence = "uncertain";
-    notes.push(`Seed is a Facebook ${profileType.toLowerCase()}, not a business account.`);
-  }
-
-  const nameRef = name ? [ref(name.sourceUrl)] : [];
+function reconcileIdentity(graph: BusinessGraph, seedUrl: string, analysis: ReturnType<typeof analyzeEntities>): ResearchProfile["identity"] {
+  const { entities, identityConfidence, identityStatus } = analysis;
+  const bizName = entities.business?.name ?? null;
+  const bizSources = entities.business?.candidates.find((c) => c.value === bizName)?.sources ?? [];
+  const displayNames: { value: string; sources: SourceRef[] }[] = [];
+  if (entities.person) displayNames.push({ value: entities.person.name, sources: entities.person.sources });
+  if (bizName) displayNames.push({ value: bizName, sources: bizSources });
   return {
-    businessName: { value: name?.value ?? null, status, confidence: toConfidence(status, nameRef.length, name && name.strength >= 3 ? 1 : 0), sources: nameRef },
-    displayNames: name?.value ? [{ value: name.value, sources: nameRef }] : [],
-    profileType,
+    businessName: { value: bizName, status: identityStatus, confidence: entities.business?.confidence ?? "LOW", sources: bizSources },
+    displayNames,
+    profileType: detectFacebookProfileType(seedUrl, graph.businessName?.value ?? null),
     category: { value: graph.category, status: graph.category ? "INFERRED" : "NOT_FOUND", confidence: "LOW", sources: [] },
     description: { value: graph.description, status: graph.description ? "CONFIRMED" : "NOT_FOUND", confidence: graph.description ? "MEDIUM" : "LOW", sources: [] },
     identityConfidence,
-    identityNotes: notes,
+    identityNotes: analysis.notes,
   };
 }
 
 // ---------- sales intelligence (Spec §10) -- template-driven, facts only ----------
 
 function buildSalesIntelligence(p: Omit<ResearchProfile, "salesIntelligence">): SalesIntelligence {
-  const name = p.identity.businessName.value ?? "This business";
+  const ent = p.entities;
+  const name = ent.business?.name ?? p.identity.businessName.value ?? (ent.entityType === "PERSON" && ent.person ? ent.person.name : "This business");
   const cat = p.identity.category.value;
   const city = p.locations.physical[0]?.city ?? p.locations.serviceArea[0]?.city ?? null;
   const strengths: string[] = [];
@@ -386,14 +654,24 @@ function buildSalesIntelligence(p: Omit<ResearchProfile, "salesIntelligence">): 
 
   const best = confirmedPhones[0] ? `Phone ${confirmedPhones[0].value}` : p.contacts.channels.find((c) => c.kind === "whatsapp") ? "WhatsApp" : p.contacts.emails[0]?.value ? `Email ${p.contacts.emails[0].value}` : null;
   const callPrep: string[] = [];
-  if (p.identity.identityConfidence !== "confirmed") callPrep.push("Identity is not fully confirmed -- verify you have the right business in the first 10 seconds of the call.");
+  if (ent.entityType === "PERSON") callPrep.push(`No business was identified for ${ent.person?.name ?? "this profile"} -- this is a person record, not a business lead.`);
+  else if (ent.entityType === "PERSON_OPERATING_BUSINESS" && ent.relationship) {
+    if (ent.relationship.basis === "self_described") callPrep.push(`${ent.person?.name} is a self-described ${ent.relationship.relationshipType.toLowerCase()} of ${ent.business?.name} (Facebook bio only) -- confirm the role early in the call.`);
+    else if (ent.relationship.basis === "inferred") callPrep.push(`${ent.business?.name} was found via links on ${ent.person?.name}'s profile; the connection is inferred -- confirm they run it.`);
+    else callPrep.push(`Ask for ${ent.person?.name} -- ${ent.relationship.relationshipType.toLowerCase()} of ${ent.business?.name} (corroborated).`);
+  } else if (p.identity.identityConfidence !== "confirmed") callPrep.push("Identity is not fully confirmed -- verify you have the right business in the first 10 seconds of the call.");
   for (const w of weaknesses.slice(0, 3)) callPrep.push(`Observed gap: ${w.toLowerCase()}.`);
   if (p.conflicts.length) callPrep.push("Ask which phone number is the main line -- sources disagree.");
 
   // schema.org types arrive as "LocalBusiness"/"HomeAndConstructionBusiness";
   // humanize and avoid "a localbusiness business".
   const humanCat = cat ? cat.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().replace(/\s*business$/, "").trim() : null;
-  const summary = `${name}${humanCat ? ` appears to operate as a ${humanCat} business` : ""}${city ? ` in ${city}` : ""}. ${p.website.status === "CONFIRMED" ? "Official website confirmed. " : ""}${howTheySell.length ? `Visible channels: ${Array.from(new Set(howTheySell)).join(", ")}.` : "No confirmed online channels beyond the seed source."}`.trim();
+  const lead =
+    ent.entityType === "PERSON" ? `${name} appears to be an individual; no business was identified from public sources.`
+    : ent.entityType === "PERSON_OPERATING_BUSINESS" && ent.person && ent.business?.name ? `${ent.person.name} ${ent.relationship?.basis === "corroborated" ? "is the" : "appears to be the"} ${(ent.relationship?.relationshipType ?? "operator").toLowerCase()} of ${ent.business.name}${humanCat ? `, a ${humanCat} business` : ""}${city ? ` in ${city}` : ""}.`
+    : ent.businessStatus === "BUSINESS_IDENTITY_UNCERTAIN" ? `${ent.person?.name ?? "This account"} shows business signals but the exact business is uncertain${ent.business?.candidates[0] ? ` (possibly ${ent.business.candidates[0].value})` : ""}.`
+    : `${name}${humanCat ? ` appears to operate as a ${humanCat} business` : ""}${city ? ` in ${city}` : ""}.`;
+  const summary = `${lead} ${p.website.status === "CONFIRMED" ? "Official website confirmed. " : ""}${howTheySell.length ? `Visible channels: ${Array.from(new Set(howTheySell)).join(", ")}.` : "No confirmed online channels beyond the seed source."}`.trim();
 
   return { summary, whatTheyDo: p.business.services.slice(0, 8), howTheySell: Array.from(new Set(howTheySell)), contactMethods, onlineStrengths: strengths, onlineWeaknesses: weaknesses, bestContactChannel: best, callPrep };
 }
@@ -426,8 +704,6 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
     .filter((c) => c.value && ["whatsapp", "booking", "contact_form"].includes(c.type))
     .map((c) => ({ kind: c.type, value: c.value!, sources: [ref(c.sourceUrl)] }));
 
-  const identity = reconcileIdentity(graph, seedUrl, website, phones);
-
   const physical = graph.locations.filter((l) => l.locationType === "primary" || l.locationType === "branch");
   const serviceArea = graph.locations.filter((l) => l.locationType === "service_area");
 
@@ -442,14 +718,22 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
     return { ...s, association };
   });
 
+  const analysis = analyzeEntities(graph, seedUrl, website, phones, emails, channels, socialProfiles, firstPartyUrls);
+  conflicts.push(...analysis.conflicts);
+  const identity = reconcileIdentity(graph, seedUrl, analysis);
+  const entities = analysis.entities;
+
   const limitations: Limitation[] = [];
-  if (identity.identityConfidence !== "confirmed") limitations.push({ code: "IDENTITY_NOT_CONFIRMED", message: "Business identity could not be confirmed with two independent signals." });
+  if (entities.businessStatus === "BUSINESS_IDENTITY_UNCERTAIN") limitations.push({ code: "BUSINESS_IDENTITY_UNCERTAIN", message: "Business signals exist but the exact business could not be confirmed." });
+  else if (entities.businessStatus !== "NO_BUSINESS_IDENTIFIED" && identity.identityConfidence !== "confirmed") limitations.push({ code: "IDENTITY_NOT_CONFIRMED", message: "Business identity could not be confirmed with two independent signals." });
+  if (entities.relationship?.basis === "self_described") limitations.push({ code: "RELATIONSHIP_SELF_DESCRIBED", message: "The person-to-business relationship is stated only on the Facebook profile; no independent source confirms it." });
   if (website.status === "INACCESSIBLE") limitations.push({ code: "DISCOVERY_UNAVAILABLE", message: "Wider-web website discovery did not run (no search provider configured)." });
   const blocked = sources.filter((s) => s.fetchStatus === "blocked_login_wall" || s.fetchStatus === "generic_platform_shell");
   if (blocked.length) limitations.push({ code: "SOURCES_INACCESSIBLE", message: `${blocked.length} source(s) were login-walled or returned platform boilerplate and could not be read.` });
 
   const checks: Record<string, boolean> = {
-    identity: identity.identityConfidence === "confirmed",
+    // A confirmed PERSON with no business is a correctly identified entity, not a miss.
+    identity: identity.identityConfidence === "confirmed" || (entities.entityType === "PERSON" && !!entities.person),
     phone: phones.some((p) => p.status === "CONFIRMED" || p.status === "CONFLICT"),
     website: website.status === "CONFIRMED",
     email: emails.some((e) => e.status === "CONFIRMED"),
@@ -473,6 +757,7 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
     sources,
     conflicts,
     limitations,
+    entities,
     metrics: {
       researchConfidencePct: Math.round((100 * earned) / totalWeight),
       fieldsVerified,
@@ -485,12 +770,12 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   return { ...base, salesIntelligence: buildSalesIntelligence(base) };
 }
 
-/** Spec §3 hard rule: block Save when identity can't be trusted. Owner may
- * override explicitly; reps may not. */
+/** Save rule: never block because the seed is a personal profile, isn't a
+ * Page, or the business name differs from the person's name. Block ONLY on
+ * a genuine identity collision -- the one case where saving would present
+ * a claim as confirmed that the sources themselves dispute. Owner may
+ * override explicitly. Everything else is saveable with its status shown. */
 export function saveBlockReason(profile: ResearchProfile): string | null {
-  if (profile.identity.profileType === "PERSONAL_PROFILE" && profile.identity.identityConfidence !== "confirmed") return "Seed looks like a personal profile and the business identity is not corroborated by a second source.";
-  if (profile.identity.identityConfidence === "conflict") return "Sources disagree about which business this is.";
-  if (profile.identity.identityConfidence === "not_found") return "No business identity could be established.";
-  if (profile.identity.identityConfidence === "uncertain" && profile.metrics.researchConfidencePct < 60) return `Identity is uncertain and research confidence is only ${profile.metrics.researchConfidencePct}%.`;
+  if (profile.identity.identityConfidence === "conflict") return "First-party sources name different businesses for this account. Resolve which one it is (edit the business name or remove the wrong source) before saving.";
   return null;
 }

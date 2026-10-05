@@ -5,6 +5,7 @@ import { evaluateCompleteness } from "@/lib/research/CompletenessEvaluator";
 import { progressForStage, type ResearchStage } from "@/lib/research/jobProgress";
 import { reconcileGraph } from "@/lib/research/reconcile";
 import { assertOk } from "@/lib/supabase/assertOk";
+import { profileColumns, persistProfileEntities } from "@/lib/research/persistProfile";
 import type { BusinessGraph } from "@/lib/research/types";
 
 function sseEvent(data: unknown) {
@@ -81,27 +82,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         const { error } = await service
           .from("crm_research_results")
           .update({
-            research_status: profile.metrics.researchStatus,
-            identity_confidence: profile.identity.identityConfidence,
-            profile_type: profile.identity.profileType,
-            research_confidence_pct: profile.metrics.researchConfidencePct,
-            fields_verified: profile.metrics.fieldsVerified,
-            fields_total: profile.metrics.fieldsTotal,
-            sources_checked: profile.metrics.sourcesChecked,
-            sources_fetched: profile.metrics.sourcesFetched,
-            conflicts: profile.conflicts,
-            limitations: profile.limitations,
-            reconciled_profile: profile,
-            primary_phone_e164: profile.contacts.phones.find((p) => p.status === "CONFIRMED" || p.status === "CONFLICT")?.normalized ?? null,
+            ...profileColumns(profile),
             source_urls: allSources,
-            business_name: graph.businessName?.value || result.business_name,
+            business_name: profile.entities.business?.name ?? profile.entities.person?.name ?? graph.businessName?.value ?? result.business_name,
             website: website?.value || result.website,
             phone: phone?.value || result.phone,
             email: email?.value || result.email,
             category: graph.category || result.category,
             description: graph.description || result.description,
             services: graph.services.length > 0 ? graph.services : result.services,
-            owner_name: graph.ownerName || result.owner_name,
+            owner_name: profile.entities.person?.name ?? graph.ownerName ?? result.owner_name,
             research_completeness: completeness.overallPercent,
             research_completeness_breakdown: completeness.breakdown,
             graph_json: graph as unknown as BusinessGraph,
@@ -119,22 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           return;
         }
 
-        // Replace the source-entity rows for this result with the re-run's view.
-        assertOk(await service.from("crm_research_sources").delete().eq("research_result_id", params.id), "clear research sources", { resultId: params.id });
-        if (profile.sources.length > 0) {
-          assertOk(
-            await service.from("crm_research_sources").insert(
-              profile.sources.map((src) => ({
-                research_result_id: params.id, ordinal: src.ordinal, url: src.url, canonical_url: src.canonicalUrl, platform: src.platform, link_type: src.linkType,
-                priority: src.priority, is_first_party: src.isFirstParty, association: src.association, discovered_from_ordinal: src.discoveredFromOrdinal,
-                discovery_method: src.discoveryMethod, depth: src.depth, fetch_status: src.fetchStatus, skip_reason: src.skipReason, profile_type: src.profileType,
-                fetched_at: src.fetchStatus === "fetched" ? new Date().toISOString() : null,
-              }))
-            ),
-            "persist research sources",
-            { resultId: params.id }
-          );
-        }
+        await persistProfileEntities(service, params.id, profile);
 
         assertOk(
           await service

@@ -44,6 +44,13 @@ export default async function ResearchResultPage({ params }: { params: { id: str
         sources_checked: derived.metrics.sourcesChecked,
         sources_fetched: derived.metrics.sourcesFetched,
         conflicts: derived.conflicts,
+        source_type: derived.entities.sourceType,
+        entity_type: derived.entities.entityType,
+        business_status: derived.entities.businessStatus,
+        person_name: derived.entities.person?.name ?? null,
+        relationship_type: derived.entities.relationship?.relationshipType ?? null,
+        relationship_basis: derived.entities.relationship?.basis ?? null,
+        relationship_confidence: derived.entities.relationship?.confidence ?? null,
         limitations: [...derived.limitations, { code: "DERIVED_FROM_LEGACY_GRAPH", message: "This result predates the identity layer; the profile shown was derived from the stored research graph when the page loaded." }],
       };
     } catch {

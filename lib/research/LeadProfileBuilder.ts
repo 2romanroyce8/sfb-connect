@@ -18,7 +18,7 @@
 // new sources and reopen the discovery queue — bounded to a couple of
 // cycles so this can't loop forever — before the job is allowed to finish.
 // ============================================================
-import type { BusinessGraph, Candidate, FetchedPage, SourceCheck, SourceLogEntry, QAPassResult, ResearchInstrumentation, FetchOutcome } from "./types";
+import type { PageMeta, BusinessGraph, Candidate, FetchedPage, SourceCheck, SourceLogEntry, QAPassResult, ResearchInstrumentation, FetchOutcome } from "./types";
 import { fetchPage, classifySeedUrlType } from "./fetchSource";
 import { discoverLinks } from "./LinkDiscoveryService";
 import { discoverContacts } from "./ContactDiscoveryService";
@@ -348,11 +348,23 @@ export async function buildLeadProfile(
     let hasMetaDescription = false;
     let hasAggregateRating = false;
 
+    const normSeed = (u: string) => u.toLowerCase().replace(/^https?:\/\/(www\.|m\.|mbasic\.)?/, "").replace(/\/+$/, "");
+    const seedKeys = new Set(seedSources.map(normSeed));
+    const pageMeta: PageMeta[] = [];
     for (const page of contentPages) {
       const capStrength = (s: number) => (isWiderWebDiscovered(page) ? Math.min(s, 1) : s);
       const title = extractTitle(page.html);
       const ogTitle = extractMeta(page.html, "og:title");
       const metaDesc = extractMeta(page.html, "description") || extractMeta(page.html, "og:description");
+      pageMeta.push({
+        url: page.finalUrl,
+        requestedUrl: page.url,
+        sourceType: page.sourceType,
+        isSeed: seedKeys.has(normSeed(page.url)) || seedKeys.has(normSeed(page.finalUrl)),
+        title: title ? decodeEntities(title) : null,
+        ogTitle: ogTitle ? decodeEntities(ogTitle) : null,
+        description: metaDesc ? decodeEntities(metaDesc) : null,
+      });
       if (metaDesc) {
         hasMetaDescription = true;
         if (!description) description = metaDesc;
@@ -408,6 +420,8 @@ export async function buildLeadProfile(
 
     return {
       businessName: name.value ? { value: name.value, sourceUrl: name.sources[0] || "", sourceType: "website" as const, strength: 3 } : null,
+      nameCandidates,
+      pageMeta,
       category: categoryResolved.value,
       description,
       services: Array.from(services),

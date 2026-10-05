@@ -235,9 +235,12 @@ export async function getLeadIdentityConfidence(leadId: string): Promise<string 
 export async function computeAndSaveAudit(leadId: string, actorId: string, gate: AuditIdentityGate = {}) {
   const service = createSupabaseServiceClient();
 
+  // Gate only on a genuine identity collision -- an uncertain or
+  // self-described business is auditable, and the AuditView shows the
+  // confidence warning alongside the score. Owner can override a conflict.
   const identityConfidence = await getLeadIdentityConfidence(leadId);
-  if (identityConfidence && identityConfidence !== "confirmed" && !gate.allowUnconfirmedIdentity) {
-    throw new Error(`Business identity is ${identityConfidence.replace("_", " ")} — a Business Readiness Audit would score the wrong business. Confirm the identity first (owner can override).`);
+  if (identityConfidence === "conflict" && !gate.allowUnconfirmedIdentity) {
+    throw new Error("First-party sources disagree about which business this is — resolve the conflict before auditing (owner can override).");
   }
 
   const { data: evidence } = await service

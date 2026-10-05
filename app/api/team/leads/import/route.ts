@@ -7,6 +7,7 @@ import { reconcileGraph } from "@/lib/research/reconcile";
 import { detectScope, resolveEngineScope } from "@/lib/research/scopeDetection";
 import { findDuplicates } from "@/lib/research/duplicates";
 import { assertOk } from "@/lib/supabase/assertOk";
+import { profileColumns, persistProfileEntities } from "@/lib/research/persistProfile";
 import { classifySeedUrlType } from "@/lib/research/fetchSource";
 import type { ResearchInstrumentation } from "@/lib/research/types";
 
@@ -177,31 +178,20 @@ export async function POST(req: NextRequest) {
         const { data: result, error } = await service
           .from("crm_research_results")
           .insert({
-            research_status: profile.metrics.researchStatus,
-            identity_confidence: profile.identity.identityConfidence,
-            profile_type: profile.identity.profileType,
+            ...profileColumns(profile),
             detected_scope: detectedScope,
-            research_confidence_pct: profile.metrics.researchConfidencePct,
-            fields_verified: profile.metrics.fieldsVerified,
-            fields_total: profile.metrics.fieldsTotal,
-            sources_checked: profile.metrics.sourcesChecked,
-            sources_fetched: profile.metrics.sourcesFetched,
-            conflicts: profile.conflicts,
-            limitations: profile.limitations,
-            reconciled_profile: profile,
             canonical_domain: website?.value ? (canonicalDomainOf(website.value) ?? null) : null,
-            primary_phone_e164: profile.contacts.phones.find((p) => p.status === "CONFIRMED" || p.status === "CONFLICT")?.normalized ?? null,
             seed_canonical_url: rawSources[0],
             submitted_by: user.id,
             source_urls: rawSources,
-            business_name: graph.businessName?.value || null,
+            business_name: profile.entities.business?.name ?? profile.entities.person?.name ?? graph.businessName?.value ?? null,
+            owner_name: profile.entities.person?.name ?? graph.ownerName ?? null,
             website: website?.value || null,
             phone: phone?.value || null,
             email: email?.value || null,
             category: graph.category,
             description: graph.description,
             services: graph.services,
-            owner_name: graph.ownerName,
             city: location?.split(",")[0]?.trim() || graph.locations.find((l) => l.locationType === "primary")?.city || null,
             state: location?.split(",")[1]?.trim() || graph.locations.find((l) => l.locationType === "primary")?.state || null,
             research_completeness: completeness.overallPercent,
@@ -222,20 +212,7 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        if (profile.sources.length > 0) {
-          assertOk(
-            await service.from("crm_research_sources").insert(
-              profile.sources.map((src) => ({
-                research_result_id: result.id, ordinal: src.ordinal, url: src.url, canonical_url: src.canonicalUrl, platform: src.platform, link_type: src.linkType,
-                priority: src.priority, is_first_party: src.isFirstParty, association: src.association, discovered_from_ordinal: src.discoveredFromOrdinal,
-                discovery_method: src.discoveryMethod, depth: src.depth, fetch_status: src.fetchStatus, skip_reason: src.skipReason, profile_type: src.profileType,
-                fetched_at: src.fetchStatus === "fetched" ? new Date().toISOString() : null,
-              }))
-            ),
-            "persist research sources",
-            { resultId: result.id }
-          );
-        }
+        await persistProfileEntities(service, result.id, profile);
 
         assertOk(
           await service

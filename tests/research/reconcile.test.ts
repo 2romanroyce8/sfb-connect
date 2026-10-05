@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { reconcileGraph, saveBlockReason, detectFacebookProfileType, normalizePhoneE164, normalizeBusinessName, classifyLinkType } from "../../lib/research/reconcile";
+import { reconcileGraph, saveBlockReason, detectFacebookProfileType, classifyFacebookSourceType, looksLikePersonName, normalizePhoneE164, normalizeBusinessName, classifyLinkType } from "../../lib/research/reconcile";
 import { detectScope, resolveEngineScope } from "../../lib/research/scopeDetection";
 import type { BusinessGraph } from "../../lib/research/types";
 
@@ -169,20 +169,142 @@ test("reconcile: no pricing evidence -> explicit NO_PUBLIC_PRICING_FOUND weaknes
 });
 
 // ---- identity gate (§3 hard rule) ----
-test("identity gate: personal profile with weak name and no phone/site -> UNCERTAIN and Save blocked", () => {
-  const g = graph({
-    businessName: { value: "Wayne D.", sourceUrl: "https://facebook.com/profile.php?id=100099", sourceType: "facebook", strength: 1 },
-    contactMethods: [],
-    locations: [],
-    socialProfiles: [],
-    sourceLog: [{ url: "https://facebook.com/profile.php?id=100099", sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }],
-  });
-  const p = reconcileGraph(g, "https://facebook.com/profile.php?id=100099");
-  assert.equal(p.identity.profileType, "PERSONAL_PROFILE");
-  assert.equal(p.identity.identityConfidence, "uncertain");
-  assert.ok(saveBlockReason(p));
-  assert.ok(p.salesIntelligence.callPrep[0].includes("Identity is not fully confirmed"));
+// ---- Facebook personal profiles are a SOURCE TYPE, not an identity verdict ----
+const WAYNE = "https://facebook.com/profile.php?id=100099";
+const personalSeedMeta = (name: string, bio: string, url = WAYNE) => [{ url, requestedUrl: url, sourceType: "facebook", isSeed: true, title: `${name} | Facebook`, ogTitle: name, description: bio }];
+
+test("source type: facebook og:description tells personal profile from Page; vanity with no text is UNKNOWN", () => {
+  assert.equal(classifyFacebookSourceType("https://facebook.com/wayne.d", "Wayne D is on Facebook. Join Facebook to connect with Wayne D and others you may know.", "Wayne D").sourceType, "FACEBOOK_PERSONAL_PROFILE");
+  assert.equal(classifyFacebookSourceType("https://facebook.com/wayne.d", "Wayne D is on Facebook. Owner of Wayne's Junk Removal. Join Facebook to connect...", "Wayne D").sourceType, "FACEBOOK_PROFESSIONAL_PROFILE");
+  assert.equal(classifyFacebookSourceType("https://facebook.com/supremeairnj", "Supreme Air LLC, Edison, New Jersey. 1,234 likes · 5 talking about this. HVAC contractor", "Supreme Air LLC").sourceType, "FACEBOOK_PAGE");
+  assert.equal(classifyFacebookSourceType("https://facebook.com/somebiz", null, "Some Biz").sourceType, "FACEBOOK_UNKNOWN");
+  assert.equal(classifyFacebookSourceType(WAYNE, null, "Wayne D").sourceType, "FACEBOOK_PERSONAL_PROFILE");
+  assert.equal(classifyFacebookSourceType("https://facebook.com/groups/njhvac", null, null).sourceType, "FACEBOOK_GROUP");
+  assert.ok(looksLikePersonName("John Smith")); assert.ok(!looksLikePersonName("Junk Seekers")); assert.ok(!looksLikePersonName("Smith's Junk Removal"));
 });
+
+test("CASE 1 personal / non-business: PERSON entity, no business invented, NOT blocked", () => {
+  const g = graph({
+    businessName: { value: "Wayne D.", sourceUrl: WAYNE, sourceType: "facebook", strength: 1 },
+    nameCandidates: [{ value: "Wayne D.", sourceUrl: WAYNE, sourceType: "facebook", strength: 2 }],
+    pageMeta: personalSeedMeta("Wayne D.", "Wayne D. is on Facebook. Join Facebook to connect with Wayne D. and others you may know."),
+    contactMethods: [], locations: [], socialProfiles: [], services: [], category: null,
+    sourceLog: [{ url: WAYNE, sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }],
+  });
+  const p = reconcileGraph(g, WAYNE);
+  assert.equal(p.entities.sourceType, "FACEBOOK_PERSONAL_PROFILE");
+  assert.equal(p.entities.entityType, "PERSON");
+  assert.equal(p.entities.businessStatus, "NO_BUSINESS_IDENTIFIED");
+  assert.equal(p.entities.person?.name, "Wayne D.");
+  assert.equal(p.entities.business, null);
+  assert.equal(p.identity.businessName.value, null); // never fabricate a company
+  assert.equal(saveBlockReason(p), null); // saveable as person research
+  assert.ok(p.salesIntelligence.summary.includes("no business was identified"));
+});
+
+test("CASE 2 person operating a business (spec example): John Smith -> Smith's Junk Removal, OWNER, HIGH, two entities never collapsed", () => {
+  const FBJ = "https://facebook.com/johnsmith", SITEJ = "https://smithsjunkremoval.com";
+  const g = graph({
+    businessName: { value: "Smith's Junk Removal", sourceUrl: SITEJ, sourceType: "website", strength: 3 },
+    nameCandidates: [
+      { value: "John Smith", sourceUrl: FBJ, sourceType: "facebook", strength: 2 },
+      { value: "Smith's Junk Removal", sourceUrl: SITEJ, sourceType: "website", strength: 3 },
+      { value: "Smith's Junk Removal", sourceUrl: "https://maps.google.com/?cid=55", sourceType: "google_business", strength: 2 },
+    ],
+    pageMeta: personalSeedMeta("John Smith", "John Smith is on Facebook. Owner of Smith's Junk Removal. Serving Tampa Bay. Call 813-555-1234. Join Facebook to connect with John Smith.", FBJ),
+    ownerName: "John Smith",
+    category: "Junk Removal", services: ["Junk removal", "Hauling"],
+    contactMethods: [
+      { type: "phone", value: "813-555-1234", status: "verified", confidence: 0.9, sourceUrl: FBJ },
+      { type: "phone", value: "(813) 555-1234", status: "verified", confidence: 0.9, sourceUrl: SITEJ },
+      { type: "website", value: SITEJ, status: "verified", confidence: 0.9, sourceUrl: FBJ },
+    ],
+    locations: [{ name: null, address: null, city: "Tampa", state: "FL", postalCode: null, locationType: "service_area", status: "verified", confidence: 0.7, sourceUrl: SITEJ }],
+    socialProfiles: [{ platform: "instagram", handle: "smithsjunkremoval", url: "https://instagram.com/smithsjunkremoval", displayName: null, status: "verified", confidence: 0.8, sourceUrl: SITEJ }],
+    sourceLog: [
+      { url: FBJ, sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      { url: SITEJ, sourceType: "website", discoveredFrom: FBJ, discoveryMethod: "link_extraction", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      { url: "https://maps.google.com/?cid=55", sourceType: "google_business", discoveredFrom: SITEJ, discoveryMethod: "link_extraction", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: false },
+    ],
+  });
+  const p = reconcileGraph(g, FBJ);
+  assert.equal(p.entities.sourceType, "FACEBOOK_PROFESSIONAL_PROFILE");
+  assert.equal(p.entities.entityType, "PERSON_OPERATING_BUSINESS");
+  assert.equal(p.entities.person?.name, "John Smith");
+  assert.equal(p.entities.business?.name, "Smith's Junk Removal");
+  assert.equal(p.entities.relationship?.relationshipType, "OWNER");
+  assert.equal(p.entities.relationship?.basis, "corroborated"); // website JSON-LD names John Smith
+  assert.equal(p.entities.relationship?.confidence, "HIGH");
+  assert.equal(p.identity.identityConfidence, "confirmed");
+  assert.equal(p.identity.businessName.value, "Smith's Junk Removal");
+  assert.deepEqual(p.identity.displayNames.map((d) => d.value), ["John Smith", "Smith's Junk Removal"]);
+  assert.equal(p.contacts.phones.length, 1);
+  assert.equal(saveBlockReason(p), null);
+  assert.ok(p.salesIntelligence.summary.startsWith("John Smith is the owner of Smith's Junk Removal"));
+});
+
+test("CASE 2b self-described only: bio says owner, no independent tie -> relationship self_described / MEDIUM, saveable", () => {
+  const FBJ = "https://facebook.com/janedoe", SITEJ = "https://janescleaning.com";
+  const g = graph({
+    businessName: { value: "Jane's Cleaning LLC", sourceUrl: SITEJ, sourceType: "website", strength: 3 },
+    nameCandidates: [{ value: "Jane Doe", sourceUrl: FBJ, sourceType: "facebook", strength: 2 }, { value: "Jane's Cleaning LLC", sourceUrl: SITEJ, sourceType: "website", strength: 3 }],
+    pageMeta: personalSeedMeta("Jane Doe", "Jane Doe is on Facebook. Founder of Jane's Cleaning LLC. Join Facebook to connect with Jane Doe.", FBJ),
+    ownerName: null, category: null, services: [],
+    contactMethods: [{ type: "website", value: SITEJ, status: "verified", confidence: 0.9, sourceUrl: FBJ }],
+    locations: [], socialProfiles: [],
+    sourceLog: [
+      { url: FBJ, sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      { url: SITEJ, sourceType: "website", discoveredFrom: FBJ, discoveryMethod: "link_extraction", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+    ],
+  });
+  const p = reconcileGraph(g, FBJ);
+  assert.equal(p.entities.entityType, "PERSON_OPERATING_BUSINESS");
+  assert.equal(p.entities.relationship?.relationshipType, "FOUNDER");
+  assert.equal(p.entities.relationship?.basis, "self_described");
+  assert.notEqual(p.entities.relationship?.confidence, "HIGH"); // never upgraded without independent evidence
+  assert.ok(p.limitations.some((l) => l.code === "RELATIONSHIP_SELF_DESCRIBED"));
+  assert.equal(saveBlockReason(p), null);
+});
+
+test("CASE 3 business signals but no identifiable business -> BUSINESS_IDENTITY_UNCERTAIN, communicated not blocked", () => {
+  const g = graph({
+    businessName: { value: "Mike Jones", sourceUrl: WAYNE, sourceType: "facebook", strength: 2 },
+    nameCandidates: [{ value: "Mike Jones", sourceUrl: WAYNE, sourceType: "facebook", strength: 2 }],
+    pageMeta: personalSeedMeta("Mike Jones", "Mike Jones is on Facebook. Licensed & insured. Free estimates, call or text 555-0100. Serving Orlando. Join Facebook to connect with Mike Jones."),
+    contactMethods: [{ type: "phone", value: "407-555-0100", status: "verified", confidence: 0.8, sourceUrl: WAYNE }],
+    locations: [], socialProfiles: [], services: [], category: null,
+    sourceLog: [{ url: WAYNE, sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }],
+  });
+  const p = reconcileGraph(g, WAYNE);
+  assert.equal(p.entities.businessStatus, "BUSINESS_IDENTITY_UNCERTAIN");
+  assert.equal(p.entities.entityType, "UNKNOWN");
+  assert.equal(p.identity.identityConfidence, "uncertain");
+  assert.equal(p.identity.businessName.value, null); // not fabricated
+  assert.ok(p.entities.businessSignals.some((s) => s.signal === "phone"));
+  assert.ok(p.entities.businessSignals.some((s) => s.signal === "call_to_action_in_bio"));
+  assert.equal(saveBlockReason(p), null);
+});
+
+test("genuine identity collision: two first-party sources name different businesses -> CONFLICT is the only Save block", () => {
+  const FBJ = "https://facebook.com/acme", SITE1 = "https://acmeroofing.com";
+  const g = graph({
+    businessName: { value: "Acme Roofing", sourceUrl: SITE1, sourceType: "website", strength: 3 },
+    nameCandidates: [{ value: "Acme Roofing", sourceUrl: SITE1, sourceType: "website", strength: 3 }, { value: "Zenith Solar LLC", sourceUrl: SITE1 + "/about", sourceType: "website", strength: 3 }],
+    pageMeta: [{ url: FBJ, requestedUrl: FBJ, sourceType: "facebook", isSeed: true, title: "Acme Roofing", ogTitle: "Acme Roofing", description: "Acme Roofing. 300 likes · 2 talking about this. Roofing" }],
+    contactMethods: [{ type: "website", value: SITE1, status: "verified", confidence: 0.9, sourceUrl: FBJ }],
+    locations: [], socialProfiles: [], services: [], category: null,
+    sourceLog: [
+      { url: FBJ, sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      { url: SITE1, sourceType: "website", discoveredFrom: FBJ, discoveryMethod: "link_extraction", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      { url: SITE1 + "/about", sourceType: "website", discoveredFrom: SITE1, discoveryMethod: "website_crawl", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+    ],
+  });
+  const p = reconcileGraph(g, FBJ);
+  assert.equal(p.identity.identityConfidence, "conflict");
+  assert.ok(p.conflicts.some((c) => c.field === "business_name"));
+  assert.ok(saveBlockReason(p));
+});
+
 test("identity gate: name-only match (World Bank Group class) with different-domain site stays UNCERTAIN", () => {
   const g = graph({
     businessName: { value: "World Bank Group", sourceUrl: "https://facebook.com/arturo", sourceType: "facebook", strength: 1 },
@@ -200,5 +322,5 @@ test("research confidence %: full graph scores high; empty graph scores 0 with N
   const empty = reconcileGraph(graph({ businessName: null, contactMethods: [], locations: [], socialProfiles: [], services: [], category: null, sourceLog: [] }), FB);
   assert.equal(empty.metrics.researchConfidencePct, 0);
   assert.equal(empty.identity.identityConfidence, "not_found");
-  assert.ok(saveBlockReason(empty));
+  assert.equal(saveBlockReason(empty), null); // nothing found is a status, not a block
 });

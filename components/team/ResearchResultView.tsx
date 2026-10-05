@@ -62,7 +62,24 @@ type Result = {
   conflicts?: ResearchProfile["conflicts"] | null;
   limitations?: ResearchProfile["limitations"] | null;
   reconciled_profile?: ResearchProfile | null;
+  source_type?: string | null;
+  entity_type?: string | null;
+  business_status?: string | null;
+  person_name?: string | null;
+  relationship_type?: string | null;
+  relationship_basis?: string | null;
+  relationship_confidence?: string | null;
 };
+
+const SOURCE_TYPE_LABEL: Record<string, string> = {
+  FACEBOOK_PAGE: "Facebook Page", FACEBOOK_PERSONAL_PROFILE: "Facebook personal profile", FACEBOOK_PROFESSIONAL_PROFILE: "Facebook professional profile",
+  FACEBOOK_GROUP: "Facebook group", FACEBOOK_EVENT: "Facebook event", FACEBOOK_UNKNOWN: "Facebook (page or profile)",
+  WEBSITE: "Website", INSTAGRAM: "Instagram", TIKTOK: "TikTok", YOUTUBE: "YouTube", LINKEDIN: "LinkedIn", X: "X", GOOGLE_BUSINESS: "Google Business", BIO_LINK_HUB: "Bio-link hub", OTHER: "Other",
+};
+const ENTITY_TYPE_LABEL: Record<string, string> = {
+  PERSON: "Personal profile", BUSINESS: "Business", PERSON_OPERATING_BUSINESS: "Person operating a business", CREATOR: "Creator", ORGANIZATION: "Organization", UNKNOWN: "Business signals detected",
+};
+const CONFIDENCE_COLOR: Record<string, string> = { HIGH: "#30D158", MEDIUM: "#FFD60A", LOW: "#A1A1A6" };
 
 const IDENTITY_META: Record<string, { label: string; color: string; bg: string }> = {
   confirmed: { label: "Identity confirmed", color: "#30D158", bg: "rgba(48,209,88,0.08)" },
@@ -161,7 +178,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
         return;
       }
       if (res.status === 409 && data.code === "IDENTITY_BLOCK") {
-        throw new Error(`${data.error}${data.ownerCanOverride ? " As owner you can still save with “Save anyway”." : " Ask the owner to review, or add a source that confirms the business."}`);
+        throw new Error(`${data.error}${data.ownerCanOverride ? " As owner you can still save with “Save anyway”." : " Resolve the conflict (edit the business name or remove the wrong source), or ask the owner to review."}`);
       }
       if (!res.ok) throw new Error(data.error);
       router.push(`/team/leads/${data.leadId}`);
@@ -236,13 +253,11 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
   const identity = result.identity_confidence ?? null;
   const identityMeta = identity ? IDENTITY_META[identity] : null;
   // Mirror of saveBlockReason() server-side -- the server is authoritative;
-  // this only decides what the button looks like before the click.
-  const saveBlocked =
-    !!profile &&
-    ((profile.identity.profileType === "PERSONAL_PROFILE" && identity !== "confirmed") ||
-      identity === "conflict" ||
-      identity === "not_found" ||
-      (identity === "uncertain" && (result.research_confidence_pct ?? 0) < 60));
+  // this only decides what the button looks like before the click. The ONLY
+  // block is a genuine identity collision; a personal profile, a
+  // person-operated business or an uncertain business are all saveable.
+  const saveBlocked = !!profile && identity === "conflict";
+  const ent = profile?.entities ?? null;
   const missingFields = profile
     ? [
         profile.identity.businessName.status !== "CONFIRMED" ? "Business name" : null,
@@ -277,14 +292,19 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
           <div className="text-[22px] font-semibold text-[#F5F5F7]">{result.business_name || "Unidentified business"}</div>
           <div className="text-[13px] text-[#6E6E73] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>Not yet a lead — review before saving.</span>
-            {identityMeta && (
-              <span className="px-2 py-0.5 rounded-[5px] text-[11px] font-semibold" style={{ color: identityMeta.color, background: identityMeta.bg }}>
-                {identityMeta.label}
+            {ent && (
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "#8E8E93", background: "#151515" }}>
+                {SOURCE_TYPE_LABEL[ent.sourceType] ?? ent.sourceType}
               </span>
             )}
-            {result.profile_type && result.profile_type !== "UNKNOWN" && (
-              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "#8E8E93", background: "#151515" }}>
-                {result.profile_type.replace(/_/g, " ").toLowerCase()}
+            {ent && (
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px] font-semibold" style={{ color: ent.entityType === "PERSON" ? "#A1A1A6" : ent.entityType === "UNKNOWN" ? "#FFD60A" : "#F5F5F7", background: "#151515" }}>
+                {ENTITY_TYPE_LABEL[ent.entityType] ?? ent.entityType}
+              </span>
+            )}
+            {identityMeta && ent?.entityType !== "PERSON" && (
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px] font-semibold" style={{ color: identityMeta.color, background: identityMeta.bg }}>
+                {ent?.entityType === "PERSON_OPERATING_BUSINESS" || ent?.entityType === "BUSINESS" ? `Business identity ${identity}` : identityMeta.label}
               </span>
             )}
             {result.research_status === "completed_with_limitations" && (
@@ -317,19 +337,83 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
 
       {error && <p className="text-[13px] text-[#FF453A] mb-4">{error}</p>}
 
-      {profile && identity !== "confirmed" && result.status === "pending" && (
-        <div className="mb-5 rounded-[10px] p-3.5 text-[13px]" style={{ background: saveBlocked ? "rgba(255,159,10,0.08)" : "rgba(255,214,10,0.06)", border: `1px solid ${saveBlocked ? "rgba(255,159,10,0.35)" : "rgba(255,214,10,0.25)"}` }}>
-          <div className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: saveBlocked ? "#FF9F0A" : "#FFD60A" }}>
-            <TriangleAlert size={14} /> {saveBlocked ? "Identity not confirmed — saving is blocked" : "Identity not fully confirmed — review before saving"}
+      {ent && (ent.person || ent.business || ent.businessStatus !== "BUSINESS") && (
+        <div className="mb-5 rounded-[12px] p-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-3">
+            {ent.entityType === "PERSON_OPERATING_BUSINESS" ? "Business relationship detected" : ent.entityType === "PERSON" ? "Personal profile — no business identified" : ent.entityType === "UNKNOWN" ? "Business signals detected — identity uncertain" : "Entity"}
           </div>
-          <ul className="text-[#A1A1A6] list-disc pl-5 space-y-0.5">
-            {profile.identity.identityNotes.map((n, i) => (
-              <li key={i}>{n}</li>
-            ))}
-          </ul>
-          <div className="text-[12px] text-[#6E6E73] mt-2">
-            Research engine rule: identity accuracy is never traded for completeness. Add a source that ties this account to the business (official website, Google Business listing) and run Research More.
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[13px]">
+            {ent.person && (
+              <div>
+                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Person</div>
+                <div className="text-[#F5F5F7] mt-0.5">{ent.person.name}</div>
+                {ent.person.facebookUsername && <div className="text-[11px] text-[#6E6E73] truncate">{ent.person.facebookUsername}</div>}
+              </div>
+            )}
+            <div>
+              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Business</div>
+              {ent.business?.name ? (
+                <div className="text-[#F5F5F7] mt-0.5">{ent.business.name}</div>
+              ) : ent.business?.candidates[0] ? (
+                <div className="text-[#FFD60A] mt-0.5">Possible: {ent.business.candidates[0].value}</div>
+              ) : (
+                <div className="text-[#6E6E73] mt-0.5">No business identified</div>
+              )}
+            </div>
+            {ent.relationship && (
+              <div>
+                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Relationship</div>
+                <div className="text-[#F5F5F7] mt-0.5 capitalize">
+                  {ent.relationship.basis === "self_described" ? "Self-described " : ent.relationship.basis === "inferred" ? "Inferred " : ""}
+                  {ent.relationship.relationshipType.toLowerCase()}
+                </div>
+              </div>
+            )}
+            {ent.relationship && (
+              <div>
+                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Relationship confidence</div>
+                <div className="mt-0.5 font-semibold" style={{ color: CONFIDENCE_COLOR[ent.relationship.confidence] }}>{ent.relationship.confidence}</div>
+              </div>
+            )}
           </div>
+          {ent.relationship && ent.relationship.explanation.length > 0 && (
+            <div className="mt-3 text-[12px] text-[#A1A1A6]">
+              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] mb-1">Why</div>
+              <ul className="list-disc pl-5 space-y-0.5">
+                {ent.relationship.explanation.map((x, i) => (
+                  <li key={i}>{x}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {ent.businessSignals.length > 0 && ent.entityType !== "BUSINESS" && (
+            <div className="mt-3">
+              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] mb-1">Public business signals ({ent.businessSignals.length})</div>
+              <div className="flex flex-wrap gap-1.5">
+                {ent.businessSignals.map((sg, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-[5px] text-[11px] text-[#A1A1A6]" style={{ background: "#101010" }} title={sg.detail}>
+                    {sg.signal.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {ent.notes.length > 0 && (
+            <ul className="mt-3 text-[12px] text-[#8E8E93] list-disc pl-5 space-y-0.5">
+              {ent.notes.map((n, i) => (
+                <li key={i}>{n}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {saveBlocked && result.status === "pending" && (
+        <div className="mb-5 rounded-[10px] p-3.5 text-[13px]" style={{ background: "rgba(255,159,10,0.08)", border: "1px solid rgba(255,159,10,0.35)" }}>
+          <div className="font-semibold mb-1 flex items-center gap-1.5 text-[#FF9F0A]">
+            <TriangleAlert size={14} /> Identity conflict — saving is blocked
+          </div>
+          <div className="text-[#A1A1A6]">First-party sources name different businesses for this account. Edit the business name or remove the wrong source, then save. See Conflicts below.</div>
         </div>
       )}
 
@@ -654,8 +738,8 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             </select>
           )}
           {saveBlocked && !isOwner ? (
-            <button disabled className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold opacity-50 cursor-not-allowed" style={{ background: "#1C1C1E", color: "#A1A1A6" }} title="Identity not confirmed — owner review required">
-              <Lock size={14} /> Save blocked — identity unconfirmed
+            <button disabled className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold opacity-50 cursor-not-allowed" style={{ background: "#1C1C1E", color: "#A1A1A6" }} title="Sources name different businesses — owner review required">
+              <Lock size={14} /> Save blocked — identity conflict
             </button>
           ) : saveBlocked && isOwner ? (
             <button onClick={() => saveAsLead(true)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold disabled:opacity-60" style={{ background: "rgba(255,159,10,0.15)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.4)" }}>
@@ -663,7 +747,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             </button>
           ) : (
             <button onClick={() => saveAsLead(false)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60">
-              {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save as Lead
+              {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {ent?.entityType === "PERSON" ? "Save as Person Record" : "Save as Lead"}
             </button>
           )}
           <button onClick={() => setShowMore((v) => !v)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[#A1A1A6] hover:text-white" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
