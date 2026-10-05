@@ -56,7 +56,12 @@ export async function middleware(request: NextRequest) {
 
   // SFB Sales OS — internal team CRM, entirely separate from the customer
   // portal above. /team/login is the only public route in this tree.
-  if (path.startsWith("/team") && path !== "/team/login") {
+  // /team/login, /team/forgot-password and /team/reset-password are the only
+  // public routes in this tree -- the latter two must be reachable while
+  // logged OUT or password recovery is impossible (this exact gap is why
+  // "Forgot password?" used to bounce straight back to the login page).
+  const TEAM_PUBLIC = ["/team/login", "/team/forgot-password", "/team/reset-password"];
+  if (path.startsWith("/team") && !TEAM_PUBLIC.includes(path)) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/team/login";

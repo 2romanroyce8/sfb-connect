@@ -58,8 +58,10 @@ export async function POST(
       if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 });
       const { data: profile } = await service.from("users").select("email").eq("id", userId).single();
       if (!profile?.email) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      // Must land on the page that actually completes the recovery and lets
+      // the user set a new password -- /team/login can't do that.
       const { error } = await service.auth.resetPasswordForEmail(profile.email, {
-        redirectTo: `${siteUrl}/team/login`,
+        redirectTo: `${siteUrl}/team/reset-password`,
       });
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true });
