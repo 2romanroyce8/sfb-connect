@@ -128,3 +128,47 @@ test("reconcile: instagram personal account operating a business -> PERSON_OPERA
   assert.equal(p.entities.relationship?.basis, "corroborated"); // website names Maria Flores
   assert.equal(saveBlockReason(p), null);
 });
+
+test("live-observed: website sub-page titles and taglines never create a business-name conflict; they support the name they contain", () => {
+  const IG = "https://www.instagram.com/sdjunkseekers/", WEB = "https://junkseekers.com/";
+  const g: BusinessGraph = {
+    businessName: { value: "Junk Seekers", sourceUrl: WEB, sourceType: "website", strength: 3 },
+    nameCandidates: [
+      { value: "Junk Seekers", sourceUrl: WEB, sourceType: "website", strength: 3 },
+      { value: "San Diego's Trusted Hauling & Junk Removal", sourceUrl: WEB, sourceType: "website", strength: 2 },
+      { value: "San Diego", sourceUrl: WEB, sourceType: "website", strength: 1 },
+      { value: "Contact Junk Seekers", sourceUrl: WEB + "contact", sourceType: "website", strength: 2 },
+      { value: "About Junk Seekers", sourceUrl: WEB + "about", sourceType: "website", strength: 2 },
+      { value: "Areas We Serve in San Diego County", sourceUrl: WEB + "areas-we-serve", sourceType: "website", strength: 2 },
+      { value: "Appliance Removal Services in San Diego", sourceUrl: WEB + "appliance-removal-services", sourceType: "website", strength: 2 },
+      { value: "Junk Seekers", sourceUrl: "https://www.youtube.com/@JunkSeekers", sourceType: "youtube", strength: 2 },
+    ],
+    pageMeta: [
+      { url: IG, requestedUrl: IG, sourceType: "instagram", isSeed: true, title: null, ogTitle: null, description: null },
+      ...[WEB, WEB + "contact", WEB + "about", WEB + "areas-we-serve", WEB + "appliance-removal-services"].map((u) => ({ url: u, requestedUrl: u, sourceType: "website", isSeed: false, linksToSeed: true, title: null, ogTitle: null, description: null })),
+    ],
+    category: "Junk Removal", description: null, services: ["Junk removal"], ownerName: null,
+    contactMethods: [
+      { type: "phone", value: "(619) 916-8419", status: "verified", confidence: 0.9, sourceUrl: WEB },
+      { type: "email", value: "info@junkseekers.com", status: "verified", confidence: 0.9, sourceUrl: WEB + "contact" },
+      { type: "website", value: WEB, status: "verified", confidence: 0.9, sourceUrl: IG },
+    ],
+    locations: [{ name: null, address: null, city: "Spring Valley", state: "CA", postalCode: null, locationType: "primary", status: "verified", confidence: 0.8, sourceUrl: WEB }],
+    socialProfiles: [], sourceChecks: [], qaResults: [],
+    sourceLog: [
+      { url: IG, sourceType: "instagram", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", genericPlatformContent: true, primaryPassDone: true, verificationPassDone: true },
+      { url: WEB, sourceType: "website", discoveredFrom: IG, discoveryMethod: "search_discovery", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      ...["contact", "about", "areas-we-serve", "appliance-removal-services"].map((p) => ({ url: WEB + p, sourceType: "website", discoveredFrom: WEB, discoveryMethod: "website_crawl" as const, fetchStatus: "ok" as const, primaryPassDone: true, verificationPassDone: true })),
+    ],
+    signals: { hasJsonLd: true, hasHttps: true, hasMetaDescription: true, hasAggregateRating: false },
+    instagramRecovery: { status: "found", handle: "sdjunkseekers", displayName: null, postsFound: 0, backlinkCandidates: 3, provider: "exa", reason: null },
+  } as BusinessGraph;
+  const p = reconcileGraph(g, IG);
+  assert.equal(p.conflicts.length, 0);
+  assert.equal(p.entities.business?.name, "Junk Seekers");
+  assert.equal(p.entities.business?.candidates.length, 1); // every title variant folded into the one name
+  assert.ok(p.entities.business!.candidates[0].sources.length >= 4); // site + contact + about + youtube
+  assert.equal(p.identity.identityConfidence, "confirmed"); // website links back to @sdjunkseekers + first-party phone
+  assert.equal(p.entities.entityType, "BUSINESS");
+  assert.equal(saveBlockReason(p), null);
+});

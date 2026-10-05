@@ -337,12 +337,31 @@ export function analyzeEntities(
   // ---- business name candidates, source by source (never collapsed) ----
   type Cand = { value: string; sources: SourceRef[]; strength: number; origin: "website" | "bio" | "social" | "directory" | "domain" | "engine" };
   const cands: Cand[] = [];
+  const PAGE_TITLE_PREFIX = /^(contact|about|about us|home|services?|our services|areas? we serve|locations?|faq|reviews?|gallery|blog|careers?|pricing|book(?:ing)?|schedule|get a quote|free quote|welcome to)\b[\s:|-]*/i;
   const addCand = (value: string, src: SourceRef, strength: number, origin: Cand["origin"]) => {
-    const v = value.replace(/\s+/g, " ").trim();
+    let v = decodeHtmlText(value)!.replace(/\s+/g, " ").trim();
     if (!v || v.length < 2) return;
     if (seedDisplayName && isProfileSeed && normalizeBusinessName(v) === normalizeBusinessName(seedDisplayName)) return; // that's the person, not a business
-    const existing = cands.find((c) => normalizeBusinessName(c.value) === normalizeBusinessName(v));
+    if (isGenericServicePhrase(v)) return; // "Appliance Removal Services", "San Diego Junk Removal"
+    if (/^[A-Z][a-z]+(?: [A-Z][a-z]+)?(?:, [A-Z]{2})?$/.test(v) && graph.locations.some((l) => l.city && v.toLowerCase().startsWith(l.city.toLowerCase()))) return; // a bare city, not a name
+    const stripped = v.replace(PAGE_TITLE_PREFIX, "").trim();
+    if (stripped && stripped !== v) {
+      if (/^(in|of|for|near|around|to|at)\b/i.test(stripped)) return; // "Areas We Serve in San Diego County" -> nothing nameable left
+      v = stripped; strength = Math.min(strength, 1); // "Contact Junk Seekers" -> supports "Junk Seekers", weakly
+    }
+    const nv = normalizeBusinessName(v);
+    if (!nv) return;
+    const existing = cands.find((c) => normalizeBusinessName(c.value) === nv);
     if (existing) { existing.sources.push(src); existing.strength = Math.max(existing.strength, strength); return; }
+    // A longer variant that CONTAINS an existing name ("San Diego's Trusted
+    // Hauling & Junk Removal | Junk Seekers" vs "Junk Seekers") is the same
+    // entity's tagline/page title -- supporting evidence, never a rival.
+    const container = cands.find((c) => { const nc = normalizeBusinessName(c.value); return nc.length >= 4 && (nv.includes(nc) || nc.includes(nv)); });
+    if (container) {
+      // keep the shorter, cleaner form as the canonical name
+      if (nv.length < normalizeBusinessName(container.value).length && strength >= container.strength) container.value = v;
+      container.sources.push(src); container.strength = Math.max(container.strength, strength); return;
+    }
     cands.push({ value: v, sources: [src], strength, origin });
   };
   for (const c of graph.nameCandidates ?? []) {
@@ -351,7 +370,12 @@ export function analyzeEntities(
     if (fromSeed) continue; // seed names are handled via display name / bio
     const onOfficial = !!officialDomain && d === officialDomain;
     const linksBack = backlinkUrls.has(c.sourceUrl);
-    if (onOfficial || linksBack) addCand(c.value, ref(c.sourceUrl), Math.max(linksBack ? 3 : 2, c.strength), "website");
+    // Keep the engine's own evidence grade (1 = <title>, 2 = og:title,
+    // 3 = JSON-LD). Being on the official/backlinked site is corroboration,
+    // not a promotion: lifting every sub-page <title> ("Contact Junk
+    // Seekers", "Areas We Serve in San Diego County") to full strength
+    // manufactured a fake identity conflict on the first live Instagram run.
+    if (onOfficial || linksBack) addCand(c.value, ref(c.sourceUrl), c.strength, "website");
     else if (platformOf(c.sourceUrl) === "google_business" || platformOf(c.sourceUrl) === "yelp" || platformOf(c.sourceUrl) === "bbb") addCand(c.value, ref(c.sourceUrl), 2, "directory");
     else if (firstPartyUrls.has(c.sourceUrl) && c.strength >= 2) addCand(c.value, ref(c.sourceUrl), 1, "social");
   }
@@ -379,11 +403,30 @@ export function analyzeEntities(
   for (const m of bioMentions) signals.push({ signal: "business_name_in_bio", detail: m.name, sourceUrl: seedUrl });
 
   // ---- pick the business name: strongest, with independent-source count ----
+  // Once a structured-data-grade name exists, long weak phrases from the same
+  // site are its taglines and page titles ("San Diego's Trusted Hauling &
+  // Junk Removal", "Appliance Removal Services in San Diego"), and bare
+  // <title> fragments are too noisy to be names at all. Candidates from OTHER
+  // sources are kept -- a weak rival is still worth showing as "possible".
+  const anchor = cands.find((c) => c.strength >= 3);
+  if (anchor) {
+    const anchorDomains = new Set(anchor.sources.map((sr) => (canonicalDomain(sr.url) || "").toLowerCase()));
+    for (let i = cands.length - 1; i >= 0; i--) {
+      const c = cands[i];
+      if (c === anchor) continue;
+      const sameSite = c.sources.every((sr) => anchorDomains.has((canonicalDomain(sr.url) || "").toLowerCase()));
+      const longPhrase = c.value.split(/\s+/).length >= 4;
+      if (c.strength <= 1 || (sameSite && c.strength <= 2 && longPhrase)) cands.splice(i, 1);
+    }
+  }
   cands.sort((a, b) => b.strength - a.strength || b.sources.length - a.sources.length);
   const top = cands[0] ?? null;
   const independentSources = (c: Cand) => new Set(c.sources.map((s) => platformOf(s.url) === "website" ? (canonicalDomain(s.url) || s.url) : platformOf(s.url))).size;
   // Independent corroboration also counts a bio mention that matches a website/directory name.
-  const strongOthers = cands.filter((c) => c !== top && c.strength >= 2 && c.sources.some((s) => firstPartyUrls.has(s.url)));
+  // Only a rival the sources themselves assert as THE business (JSON-LD /
+  // resolved official name, strength 3) on a first-party page is a genuine
+  // collision. og:titles and page titles never are -- they are taglines.
+  const strongOthers = cands.filter((c) => c !== top && c.strength >= 3 && top!.strength >= 3 && c.sources.some((s) => firstPartyUrls.has(s.url)));
   if (top && strongOthers.length) {
     conflicts.push({ field: "business_name", values: [top, ...strongOthers].map((c) => ({ value: c.value, sources: c.sources })), note: "First-party sources name different businesses. Could be a rebrand, a parent/DBA pair, or the wrong website -- confirm which business this account represents before saving." });
   }
