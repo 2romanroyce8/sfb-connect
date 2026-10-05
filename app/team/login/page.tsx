@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { UserRound, LockKeyhole, ArrowRight, Loader2 } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createSupabaseBrowserClient, getRememberPreference, setRememberPreference } from "@/lib/supabase/client";
 
 // Third pass on this screen: no card, no labels, no placeholder copy — just
 // two wide dark fields floating in a vignetted black frame with a tiny
@@ -22,11 +22,17 @@ function TeamLoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Default ON; remembers whatever the user picked last time on this device.
+  const [remember, setRemember] = useState(true);
+  useEffect(() => setRemember(getRememberPreference()), []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    // Must be written BEFORE signing in so the very first auth cookies
+    // already carry (or omit) the long-lived expiry.
+    setRememberPreference(remember);
     const supabase = createSupabaseBrowserClient();
     const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -185,6 +191,30 @@ function TeamLoginForm() {
           </div>
 
           {error && <p style={{ fontSize: 10, fontWeight: 400, color: "#B96A6A", marginTop: 9, textAlign: "center" }}>{error}</p>}
+
+          <label
+            className="flex items-center gap-2 select-none cursor-pointer"
+            style={{ marginTop: 18, fontSize: 10, fontWeight: 400, color: remember ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.3)", letterSpacing: "0.04em" }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 3,
+                border: "1px solid rgba(255,255,255,0.22)",
+                background: remember ? "#D8D8D8" : "transparent",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "background 120ms",
+              }}
+            >
+              {remember && <span style={{ width: 6, height: 6, borderRadius: 1, background: "#050505" }} />}
+            </span>
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="sr-only" aria-label="Stay signed in" />
+            Stay signed in
+          </label>
 
           <div className="w-full flex justify-center" style={{ marginTop: 65 }}>
             <button
