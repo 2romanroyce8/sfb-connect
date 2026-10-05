@@ -12,6 +12,10 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
+  // Self-heal: anything 'running' with no heartbeat for 15 min is dead.
+  // Without this, a single function timeout leaves a 98% card forever.
+  await supabase.rpc("expire_stale_research_jobs");
+
   const { data: jobs } = await supabase
     .from("crm_research_jobs")
     .select("id, started_for, status, current_step, progress_percent, sources_found, created_at, updated_at")

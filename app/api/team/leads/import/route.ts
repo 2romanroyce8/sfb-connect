@@ -191,11 +191,11 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        await service
+        const { error: finalizeError } = await service
           .from("crm_research_jobs")
           .update({
             research_result_id: result.id,
-            status: "complete",
+            status: "completed",
             current_step: "COMPLETE",
             progress_percent: 100,
             research_completed: true,
@@ -205,6 +205,10 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", job.id);
+        // This exact write silently failed for weeks (status "complete" vs the
+        // DB's 'completed' check constraint) and left 71 jobs "running" at
+        // 98% forever. Never swallow a job-finalization error again.
+        if (finalizeError) console.error("Research job finalize failed", { jobId: job.id, error: finalizeError.message });
 
         push({
           type: "done",

@@ -104,10 +104,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           return;
         }
 
-        await service
+        const { error: finalizeError } = await service
           .from("crm_research_jobs")
-          .update({ status: "complete", current_step: "COMPLETE", progress_percent: 100, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .update({ status: "completed", current_step: "COMPLETE", progress_percent: 100, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq("id", job.id);
+          if (finalizeError) console.error("Research job finalize failed", { jobId: job.id, error: finalizeError.message });
 
         push({
           type: "done",
