@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { reconcileGraph, saveBlockReason, detectFacebookProfileType, classifyFacebookSourceType, looksLikePersonName, normalizePhoneE164, normalizeBusinessName, classifyLinkType } from "../../lib/research/reconcile";
+import { reconcileGraph, saveBlockReason, detectFacebookProfileType, classifyFacebookSourceType, looksLikePersonName, isGenericServicePhrase, decodeHtmlText, normalizePhoneE164, normalizeBusinessName, classifyLinkType } from "../../lib/research/reconcile";
 import { detectScope, resolveEngineScope } from "../../lib/research/scopeDetection";
 import type { BusinessGraph } from "../../lib/research/types";
 
@@ -169,6 +169,49 @@ test("reconcile: no pricing evidence -> explicit NO_PUBLIC_PRICING_FOUND weaknes
 });
 
 // ---- identity gate (§3 hard rule) ----
+test("live-observed: a service phrase in a bio is never a business-name candidate; facebook og entities decode", () => {
+  assert.ok(isGenericServicePhrase("Commercial Junk Removal"));
+  assert.ok(isGenericServicePhrase("Residential & Commercial Cleaning Services"));
+  assert.ok(!isGenericServicePhrase("Smith's Junk Removal"));
+  assert.ok(!isGenericServicePhrase("Junk Cobras"));
+  assert.equal(decodeHtmlText("Junk Cobras, El Segundo. 12 followers &#xb7; 3 talking &amp; more &#x1f40d;"), "Junk Cobras, El Segundo. 12 followers · 3 talking & more 🐍");
+});
+test("live-observed: profile.php?id seed whose page text says followers/talking about this is a FACEBOOK_PAGE -> BUSINESS, no fake second business from its about text", () => {
+  const SEED = "https://www.facebook.com/profile.php?id=61593970382006";
+  const g = graph({
+    businessName: { value: "Junk Cobras", sourceUrl: "https://www.facebook.com/people/Junk-Cobras/61593970382006/", sourceType: "facebook", strength: 3 },
+    nameCandidates: [{ value: "Junk Cobras", sourceUrl: "https://www.facebook.com/people/Junk-Cobras/61593970382006/", sourceType: "facebook", strength: 2 }],
+    pageMeta: [{ url: "https://www.facebook.com/people/Junk-Cobras/61593970382006/", requestedUrl: SEED, sourceType: "facebook", isSeed: true, title: "Junk Cobras | El Segundo CA", ogTitle: "Junk Cobras | El Segundo CA", description: "Junk Cobras, El Segundo. 12 followers &#xb7; 3 talking about this. Residential & Commercial Junk Removal &#x1f40d; Serving Los Angeles & Orange County." }],
+    category: "Hauling & Junk Removal", services: [],
+    contactMethods: [{ type: "phone", value: "(310) 493-4855", status: "verified", confidence: 0.8, sourceUrl: SEED }],
+    locations: [], socialProfiles: [],
+    sourceLog: [{ url: SEED, sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }],
+  });
+  const p = reconcileGraph(g, SEED);
+  assert.equal(p.entities.sourceType, "FACEBOOK_PAGE");
+  assert.equal(p.entities.entityType, "BUSINESS");
+  assert.equal(p.entities.business?.name, "Junk Cobras");
+  assert.equal(p.entities.business?.candidates.length, 1); // no "Commercial Junk Removal" ghost candidate
+  // The Page states its own name and phone: identity of WHO this is is
+  // confirmed; the missing website is a completeness gap, not an identity one.
+  assert.equal(p.identity.identityConfidence, "confirmed");
+  assert.equal(saveBlockReason(p), null);
+});
+test("live-observed: phone attributed to the seed's redirect target (people/<Name>/<id>/) counts as first-party", () => {
+  const SEED = "https://www.facebook.com/profile.php?id=61593970382006", FINAL = "https://www.facebook.com/people/Junk-Cobras/61593970382006/";
+  const g = graph({
+    businessName: { value: "Junk Cobras", sourceUrl: FINAL, sourceType: "facebook", strength: 3 },
+    nameCandidates: [], category: null, services: [],
+    pageMeta: [{ url: FINAL, requestedUrl: SEED, sourceType: "facebook", isSeed: true, title: "Junk Cobras", ogTitle: "Junk Cobras", description: "Junk Cobras, El Segundo. 12 followers · 3 talking about this." }],
+    contactMethods: [{ type: "phone", value: "(310) 493-4855", status: "verified", confidence: 0.8, sourceUrl: FINAL }],
+    locations: [], socialProfiles: [],
+    sourceLog: [{ url: SEED, sourceType: "facebook", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }],
+  });
+  const p = reconcileGraph(g, SEED);
+  assert.equal(p.contacts.phones[0].status, "CONFIRMED");
+  assert.ok(p.salesIntelligence.contactMethods.some((c) => c.startsWith("Phone")));
+});
+
 // ---- Facebook personal profiles are a SOURCE TYPE, not an identity verdict ----
 const WAYNE = "https://facebook.com/profile.php?id=100099";
 const personalSeedMeta = (name: string, bio: string, url = WAYNE) => [{ url, requestedUrl: url, sourceType: "facebook", isSeed: true, title: `${name} | Facebook`, ogTitle: name, description: bio }];

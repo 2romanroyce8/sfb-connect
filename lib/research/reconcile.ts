@@ -260,15 +260,35 @@ function extractBusinessMentionsFromBio(bio: string): { name: string; role: Rela
   let m: RegExpExecArray | null;
   while ((m = roleRe.exec(text))) {
     const name = m[2].replace(/[.,;:]+$/, "").replace(/\s+(serving|in|call|text|book|located|based|since|licensed|insured)\b.*$/i, "").trim();
-    if (name.length >= 3) out.push({ name, role: ROLE_TOKENS.find((r) => r.re.test(m![1]))?.role ?? null, excerpt: m[0] });
+    if (name.length >= 3 && !isGenericServicePhrase(name)) out.push({ name, role: ROLE_TOKENS.find((r) => r.re.test(m![1]))?.role ?? null, excerpt: m[0] });
   }
   // Bare trade-token business names: "Smith's Junk Removal LLC", "Elite Pressure Washing"
   const tradeRe = /\b((?:[A-Z][\w'’&.-]*\s+){0,4}[A-Z]?[\w'’&.-]*(?:LLC|Inc\.?|Co\.?|Corp\.?|Services?|Removal|Hauling|Cleaning|Roofing|Plumbing|HVAC|Landscaping|Construction|Realty|Photography|Studio|Salon|Auto|Repair|Detailing|Towing|Movers|Moving|Dumpsters?|Disposal|Pressure Washing|Lawn Care|Electric|Painting|Flooring|Fencing|Concrete|Handyman|Catering|Bakery|Fitness|Agency|Solutions|Enterprises?|Logistics|Trucking|Transport))\b/g;
   while ((m = tradeRe.exec(text))) {
     const name = m[1].trim();
-    if (name.split(/\s+/).length >= 2 && !out.some((o) => normalizeBusinessName(o.name) === normalizeBusinessName(name))) out.push({ name, role: null, excerpt: m[0] });
+    if (name.split(/\s+/).length >= 2 && !isGenericServicePhrase(name) && !out.some((o) => normalizeBusinessName(o.name) === normalizeBusinessName(name))) out.push({ name, role: null, excerpt: m[0] });
   }
   return out;
+}
+
+// Words that describe what a business DOES, not what it is CALLED. A bio
+// fragment made only of these ("Commercial Junk Removal", "Residential
+// Cleaning Services") is a service description, never a business name --
+// observed live on the first Page run after the entity layer shipped.
+const GENERIC_NAME_WORDS = new Set(["residential", "commercial", "industrial", "local", "professional", "affordable", "quality", "premium", "reliable", "licensed", "insured", "full", "service", "services", "junk", "removal", "hauling", "cleaning", "roofing", "plumbing", "hvac", "landscaping", "lawn", "care", "construction", "repair", "repairs", "auto", "detailing", "towing", "moving", "movers", "dumpster", "dumpsters", "disposal", "pressure", "washing", "electric", "electrical", "painting", "flooring", "fencing", "concrete", "handyman", "catering", "bakery", "fitness", "photography", "and", "&", "the", "of", "for", "in", "serving", "area", "areas", "llc", "inc", "co", "company"]);
+export function isGenericServicePhrase(name: string): boolean {
+  const words = name.toLowerCase().replace(/[^a-z&\s]/g, " ").split(/\s+/).filter(Boolean);
+  return words.length > 0 && words.every((w) => GENERIC_NAME_WORDS.has(w));
+}
+
+/** Decodes the numeric/hex HTML entities Facebook leaves in og text
+ * ("&#xb7;" middle dot, "&#x1f40d;" emoji) plus the common named ones. */
+export function decodeHtmlText(input: string | null | undefined): string | null {
+  if (!input) return input ?? null;
+  return input
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => { try { return String.fromCodePoint(parseInt(h, 16)); } catch { return ""; } })
+    .replace(/&#(\d+);/g, (_, d) => { try { return String.fromCodePoint(parseInt(d, 10)); } catch { return ""; } })
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ");
 }
 
 function humanizeDomain(domain: string): string {
@@ -288,8 +308,8 @@ export function analyzeEntities(
   const notes: string[] = [];
   const conflicts: Conflict[] = [];
   const seedMeta = graph.pageMeta?.find((p) => p.isSeed) ?? null;
-  const seedDisplayName = cleanDisplayName(seedMeta?.ogTitle ?? seedMeta?.title ?? (graph.businessName?.sourceUrl === seedUrl ? graph.businessName.value : null));
-  const seedBio = seedMeta?.description ?? (graph.pageMeta ? null : graph.description); // legacy graphs: description was the first page's meta
+  const seedDisplayName = cleanDisplayName(decodeHtmlText(seedMeta?.ogTitle ?? seedMeta?.title ?? (graph.businessName?.sourceUrl === seedUrl ? graph.businessName.value : null)));
+  const seedBio = decodeHtmlText(seedMeta?.description ?? (graph.pageMeta ? null : graph.description)); // legacy graphs: description was the first page's meta
   const { sourceType, basis } = classifyFacebookSourceType(seedUrl, seedBio, seedDisplayName);
   const isProfileSeed = sourceType === "FACEBOOK_PERSONAL_PROFILE" || sourceType === "FACEBOOK_PROFESSIONAL_PROFILE" || (sourceType === "FACEBOOK_UNKNOWN" && looksLikePersonName(seedDisplayName));
   const officialDomain = website.value ? (canonicalDomain(website.value) || "").toLowerCase() : "";
@@ -315,7 +335,7 @@ export function analyzeEntities(
     else if (platformOf(c.sourceUrl) === "google_business" || platformOf(c.sourceUrl) === "yelp" || platformOf(c.sourceUrl) === "bbb") addCand(c.value, ref(c.sourceUrl), 2, "directory");
     else if (firstPartyUrls.has(c.sourceUrl) && c.strength >= 2) addCand(c.value, ref(c.sourceUrl), 1, "social");
   }
-  const bioMentions = seedBio ? extractBusinessMentionsFromBio(seedBio) : [];
+  const bioMentions = seedBio && isProfileSeed ? extractBusinessMentionsFromBio(seedBio) : [];
   for (const m of bioMentions) addCand(m.name, seedRef(m.excerpt), 1, "bio");
   if (!isProfileSeed && graph.businessName?.value) addCand(graph.businessName.value, ref(graph.businessName.sourceUrl), graph.businessName.strength, "engine");
   if (cands.length === 0 && officialDomain && isProfileSeed) addCand(humanizeDomain(officialDomain), ref(website.value), 0, "domain");
@@ -693,6 +713,12 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   // the source log recorded them under a different URL form.
   firstPartyUrls.add(seedUrl);
   if (websiteCandidate?.value) firstPartyUrls.add(websiteCandidate.value);
+  // Observed live: facebook.com/profile.php?id=N redirects to
+  // facebook.com/people/<Name>/N/ and the engine attributes phone/name to
+  // the redirect target. Every fetched URL the engine flagged as the seed
+  // page is first-party, whatever form the URL took.
+  for (const m of graph.pageMeta ?? []) if (m.isSeed) { firstPartyUrls.add(m.url); firstPartyUrls.add(m.requestedUrl); }
+  for (const s of sources) if (firstPartyUrls.has(s.url) && !s.isFirstParty) { s.isFirstParty = true; if (s.association === "uncertain") s.association = "confirmed_first_party"; }
 
   const website: FieldValue<string> = websiteCandidate?.value
     ? { value: websiteCandidate.value, status: websiteCandidate.status === "verified" ? "CONFIRMED" : websiteCandidate.status === "conflict" ? "CONFLICT" : "UNCERTAIN", confidence: websiteCandidate.status === "verified" ? "HIGH" : "LOW", sources: [ref(websiteCandidate.sourceUrl)] }
