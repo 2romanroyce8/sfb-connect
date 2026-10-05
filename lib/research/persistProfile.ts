@@ -39,7 +39,7 @@ export async function persistProfileEntities(service: SupabaseClient, resultId: 
         profile.sources.map((src) => ({
           research_result_id: resultId, ordinal: src.ordinal, url: src.url, canonical_url: src.canonicalUrl, platform: src.platform, link_type: src.linkType,
           priority: src.priority, is_first_party: src.isFirstParty, association: src.association, discovered_from_ordinal: src.discoveredFromOrdinal,
-          discovery_method: src.discoveryMethod, depth: src.depth, fetch_status: src.fetchStatus, skip_reason: src.skipReason, profile_type: src.profileType,
+          discovery_method: src.discoveryMethod, depth: src.depth, fetch_status: src.fetchStatus, skip_reason: src.skipReason, profile_type: src.profileType, links_to_seed: src.linksToSeed,
           fetched_at: src.fetchStatus === "fetched" ? new Date().toISOString() : null,
         }))
       ),

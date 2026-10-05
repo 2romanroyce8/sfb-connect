@@ -26,6 +26,7 @@ export type ProfileType = "BUSINESS_PAGE" | "CREATOR" | "PUBLIC_PROFILE" | "PERS
 // there a business connected to it?" -- not "is this a Facebook Page?".
 export type SourceType =
   | "FACEBOOK_PAGE" | "FACEBOOK_PERSONAL_PROFILE" | "FACEBOOK_PROFESSIONAL_PROFILE" | "FACEBOOK_GROUP" | "FACEBOOK_EVENT" | "FACEBOOK_UNKNOWN"
+  | "INSTAGRAM_BUSINESS_ACCOUNT" | "INSTAGRAM_PERSONAL_ACCOUNT" | "INSTAGRAM_CREATOR_ACCOUNT" | "INSTAGRAM_UNKNOWN"
   | "WEBSITE" | "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "LINKEDIN" | "X" | "GOOGLE_BUSINESS" | "BIO_LINK_HUB" | "OTHER";
 export type EntityType = "PERSON" | "BUSINESS" | "PERSON_OPERATING_BUSINESS" | "CREATOR" | "ORGANIZATION" | "UNKNOWN";
 export type BusinessStatus = "BUSINESS" | "PERSON_OPERATING_BUSINESS" | "BUSINESS_IDENTITY_UNCERTAIN" | "NO_BUSINESS_IDENTIFIED";
@@ -93,9 +94,10 @@ export type SourceEntity = {
   discoveredFromOrdinal: number | null;
   discoveryMethod: string;
   depth: number | null;
-  fetchStatus: "fetched" | "blocked_login_wall" | "unreachable" | "skipped_priority" | "skipped_budget" | "generic_platform_shell" | "not_attempted";
+  fetchStatus: "fetched" | "indexed_public" | "blocked_login_wall" | "unreachable" | "skipped_priority" | "skipped_budget" | "generic_platform_shell" | "not_attempted";
   skipReason: string | null;
   profileType: ProfileType | null;
+  linksToSeed: boolean;
 };
 
 export type Conflict = { field: string; values: { value: string; sources: SourceRef[] }[]; note: string };
@@ -214,8 +216,21 @@ export function detectFacebookProfileType(seedUrl: string, businessName: string 
 export function classifyFacebookSourceType(seedUrl: string, seedDescription: string | null, seedDisplayName: string | null): { sourceType: SourceType; basis: "url" | "page_text" | "inferred" } {
   const u = seedUrl.toLowerCase();
   const platform = platformOf(seedUrl);
+  if (platform === "instagram") {
+    // Instagram publishes no public account-type flag we can read without a
+    // session, so this is always an inference from the account's own public
+    // text: trade/role/CTA language -> business; person-shaped display name
+    // with none of that -> personal. Otherwise honestly UNKNOWN.
+    const text = seedDescription ?? "";
+    const businessy = TRADE_TOKENS.test(text) || CTA_TOKENS.test(text) || (seedDisplayName ? TRADE_TOKENS.test(seedDisplayName) : false);
+    const roley = ROLE_TOKENS.some((r) => r.re.test(text));
+    if (seedDisplayName && looksLikePersonName(seedDisplayName) && (roley || businessy)) return { sourceType: "INSTAGRAM_PERSONAL_ACCOUNT", basis: "inferred" };
+    if (seedDisplayName && looksLikePersonName(seedDisplayName)) return { sourceType: "INSTAGRAM_PERSONAL_ACCOUNT", basis: "inferred" };
+    if (businessy) return { sourceType: "INSTAGRAM_BUSINESS_ACCOUNT", basis: "inferred" };
+    return { sourceType: "INSTAGRAM_UNKNOWN", basis: "inferred" };
+  }
   if (platform !== "facebook") {
-    const map: Record<string, SourceType> = { instagram: "INSTAGRAM", tiktok: "TIKTOK", youtube: "YOUTUBE", linkedin: "LINKEDIN", x: "X", google_business: "GOOGLE_BUSINESS", bio_link_hub: "BIO_LINK_HUB", website: "WEBSITE" };
+    const map: Record<string, SourceType> = { tiktok: "TIKTOK", youtube: "YOUTUBE", linkedin: "LINKEDIN", x: "X", google_business: "GOOGLE_BUSINESS", bio_link_hub: "BIO_LINK_HUB", website: "WEBSITE" };
     return { sourceType: map[platform] ?? "OTHER", basis: "url" };
   }
   if (/\/groups\//.test(u)) return { sourceType: "FACEBOOK_GROUP", basis: "url" };
@@ -311,7 +326,11 @@ export function analyzeEntities(
   const seedDisplayName = cleanDisplayName(decodeHtmlText(seedMeta?.ogTitle ?? seedMeta?.title ?? (graph.businessName?.sourceUrl === seedUrl ? graph.businessName.value : null)));
   const seedBio = decodeHtmlText(seedMeta?.description ?? (graph.pageMeta ? null : graph.description)); // legacy graphs: description was the first page's meta
   const { sourceType, basis } = classifyFacebookSourceType(seedUrl, seedBio, seedDisplayName);
-  const isProfileSeed = sourceType === "FACEBOOK_PERSONAL_PROFILE" || sourceType === "FACEBOOK_PROFESSIONAL_PROFILE" || (sourceType === "FACEBOOK_UNKNOWN" && looksLikePersonName(seedDisplayName));
+  const isProfileSeed = sourceType === "FACEBOOK_PERSONAL_PROFILE" || sourceType === "FACEBOOK_PROFESSIONAL_PROFILE" || sourceType === "INSTAGRAM_PERSONAL_ACCOUNT" || ((sourceType === "FACEBOOK_UNKNOWN" || sourceType === "INSTAGRAM_UNKNOWN") && looksLikePersonName(seedDisplayName));
+  const seedHandle = (() => { try { const u = new URL(seedUrl); const seg = u.pathname.split("/").filter(Boolean)[0]; return seg ? seg.replace(/^@/, "") : null; } catch { return null; } })();
+  // Pages that link back to the exact seed account are tied to the entity by
+  // the entity itself -- strongest corroboration there is.
+  const backlinkUrls = new Set((graph.pageMeta ?? []).filter((m) => m.linksToSeed).map((m) => m.url));
   const officialDomain = website.value ? (canonicalDomain(website.value) || "").toLowerCase() : "";
   const seedRef = (excerpt?: string | null) => ref(seedUrl, excerpt);
 
@@ -331,11 +350,12 @@ export function analyzeEntities(
     const fromSeed = c.sourceUrl === seedUrl || platformOf(c.sourceUrl) === "facebook";
     if (fromSeed) continue; // seed names are handled via display name / bio
     const onOfficial = !!officialDomain && d === officialDomain;
-    if (onOfficial) addCand(c.value, ref(c.sourceUrl), Math.max(2, c.strength), "website");
+    const linksBack = backlinkUrls.has(c.sourceUrl);
+    if (onOfficial || linksBack) addCand(c.value, ref(c.sourceUrl), Math.max(linksBack ? 3 : 2, c.strength), "website");
     else if (platformOf(c.sourceUrl) === "google_business" || platformOf(c.sourceUrl) === "yelp" || platformOf(c.sourceUrl) === "bbb") addCand(c.value, ref(c.sourceUrl), 2, "directory");
     else if (firstPartyUrls.has(c.sourceUrl) && c.strength >= 2) addCand(c.value, ref(c.sourceUrl), 1, "social");
   }
-  const bioMentions = seedBio && isProfileSeed ? extractBusinessMentionsFromBio(seedBio) : [];
+  const bioMentions = seedBio && (isProfileSeed || sourceType.startsWith("INSTAGRAM")) ? extractBusinessMentionsFromBio(seedBio) : [];
   for (const m of bioMentions) addCand(m.name, seedRef(m.excerpt), 1, "bio");
   if (!isProfileSeed && graph.businessName?.value) addCand(graph.businessName.value, ref(graph.businessName.sourceUrl), graph.businessName.strength, "engine");
   if (cands.length === 0 && officialDomain && isProfileSeed) addCand(humanizeDomain(officialDomain), ref(website.value), 0, "domain");
@@ -376,7 +396,7 @@ export function analyzeEntities(
     person = {
       name: seedDisplayName,
       facebookUrl: seedUrl,
-      facebookUsername: fbUser,
+      facebookUsername: sourceType.startsWith("INSTAGRAM") && fbUser ? `@${fbUser}` : fbUser,
       bio: seedBio ? seedBio.replace(/\s*join facebook to connect with.*$/i, "").trim() || null : null,
       publicLocation: graph.locations.find((l) => l.sourceUrl === seedUrl && (l.city || l.state)) ? [graph.locations.find((l) => l.sourceUrl === seedUrl)!.city, graph.locations.find((l) => l.sourceUrl === seedUrl)!.state].filter(Boolean).join(", ") : null,
       role: bioRole ?? (bioMentions.find((m) => m.role)?.role ?? null),
@@ -395,7 +415,8 @@ export function analyzeEntities(
   let relationship: EntityRelationship | null = null;
   let business: BusinessEntity | null = null;
 
-  const corroboration = top ? independentSources(top) + (top.origin !== "bio" && bioMentions.some((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value)) ? 1 : 0) : 0;
+  const linksBackToSeed = top ? top.sources.some((sr) => backlinkUrls.has(sr.url)) : false;
+  const corroboration = top ? independentSources(top) + (top.origin !== "bio" && bioMentions.some((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value)) ? 1 : 0) + (linksBackToSeed ? 1 : 0) : 0;
   const hardSignals = signals.filter((s) => ["website", "phone", "email", "booking", "whatsapp"].includes(s.signal)).length;
 
   if (conflicts.length) {
@@ -417,6 +438,7 @@ export function analyzeEntities(
       const explanation: string[] = [];
       if (selfDescribed) explanation.push(`Facebook bio describes ${person.name} as ${(person.role ?? "connected to").toString().toLowerCase().replace("_", " ")} of ${top.value}.`);
       if (website.status === "CONFIRMED") explanation.push(`Profile links to ${website.value} which names ${top.value}.`);
+      if (linksBackToSeed) explanation.push(`${top.value}'s website links back to this exact ${seedHandle ? `@${seedHandle}` : "account"} -- cross-link verified.`);
       if (siteNamesPerson) explanation.push(`The business website names ${person.name}.`);
       for (const sp of socialProfiles.filter((x) => x.association !== "rejected_unrelated" && x.platform !== "facebook" && x.url)) if (top.sources.some((s) => s.url === sp.url)) explanation.push(`${sp.platform} account matches ${top.value}.`);
       if (!explanation.length) explanation.push(`${top.value} was found through links on the profile; the relationship itself is inferred, not stated.`);
@@ -432,6 +454,7 @@ export function analyzeEntities(
     } else {
       entityType = "BUSINESS"; businessStatus = "BUSINESS";
       if (person) relationship = { relationshipType: person.role ?? "OWNER", basis: "corroborated", confidence: "MEDIUM", evidence: person.sources, explanation: [`Structured data on the website names ${person.name}.`] };
+      if (linksBackToSeed) notes.push(`${top.value}'s website links back to this exact account -- cross-link verified.`);
       if (!confirmed) notes.push("Business name found but only weakly corroborated by a second signal (domain/phone).");
     }
   } else if (isProfileSeed && (signals.length >= 2 || top)) {
@@ -532,12 +555,14 @@ export function buildSourceEntities(graph: BusinessGraph, officialDomain: string
   log.forEach((entry, i) => {
     const d = (canonicalDomain(entry.url) || "").toLowerCase();
     const isOfficialDomain = !!officialDomain && d === officialDomain;
-    const { linkType, priority } = classifyLinkType(entry.url, isOfficialDomain);
+    let { linkType, priority } = classifyLinkType(entry.url, isOfficialDomain);
+    if (entry.indexedOnly) { linkType = "instagram_post"; priority = 1; }
     // Priority 0 = noise (tracking params, share links, platform nav). Even
     // if the crawler touched it, it is not a source of truth and must not
     // count toward sources_fetched.
     const fetchStatus: SourceEntity["fetchStatus"] =
       priority === 0 ? "skipped_priority"
+      : entry.indexedOnly ? "indexed_public"
       : entry.genericPlatformContent ? "generic_platform_shell"
       : entry.fetchStatus === "ok" ? "fetched"
       : /login|wall|blocked/i.test(entry.blockedReason || "") ? "blocked_login_wall"
@@ -546,12 +571,14 @@ export function buildSourceEntities(graph: BusinessGraph, officialDomain: string
     // discovered directly from a first-party page via its own links.
     const fromOrdinal = entry.discoveredFrom ? ordinalByUrl.get(entry.discoveredFrom) ?? null : null;
     const parentIsFirstParty = fromOrdinal ? out.find((s) => s.ordinal === fromOrdinal)?.isFirstParty ?? false : false;
-    const isFirstParty = entry.discoveryMethod === "seed" || isOfficialDomain || (priority === 1 && (parentIsFirstParty || entry.discoveryMethod === "bio_link" || entry.discoveryMethod === "social_link" || entry.discoveryMethod === "website_crawl"));
+    const meta = (graph.pageMeta ?? []).find((m) => m.url === entry.url || m.requestedUrl === entry.url);
+    const linksToSeed = !!meta?.linksToSeed;
+    const isFirstParty = entry.discoveryMethod === "seed" || isOfficialDomain || !!meta?.sameAccountAsSeed || linksToSeed || (priority === 1 && (parentIsFirstParty || entry.discoveryMethod === "bio_link" || entry.discoveryMethod === "social_link" || entry.discoveryMethod === "website_crawl"));
     // A platform shell we couldn't actually read yields no evidence, so it
     // can't be "likely first-party" on its own (unless it IS the seed).
     const association: Association =
       priority === 0 ? "not_applicable"
-      : isFirstParty && (entry.discoveryMethod === "seed" || isOfficialDomain) ? "confirmed_first_party"
+      : isFirstParty && (entry.discoveryMethod === "seed" || isOfficialDomain || linksToSeed || meta?.sameAccountAsSeed) ? "confirmed_first_party"
       : fetchStatus === "generic_platform_shell" || fetchStatus === "blocked_login_wall" ? "uncertain"
       : isFirstParty ? "likely_first_party"
       : priority === 3 ? "rejected_unrelated"
@@ -571,6 +598,7 @@ export function buildSourceEntities(graph: BusinessGraph, officialDomain: string
       fetchStatus,
       skipReason: priority === 0 ? `ignored: ${linkType}` : entry.blockedReason ?? null,
       profileType: null,
+      linksToSeed,
     });
   });
   return out;
@@ -717,11 +745,12 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   // facebook.com/people/<Name>/N/ and the engine attributes phone/name to
   // the redirect target. Every fetched URL the engine flagged as the seed
   // page is first-party, whatever form the URL took.
-  for (const m of graph.pageMeta ?? []) if (m.isSeed) { firstPartyUrls.add(m.url); firstPartyUrls.add(m.requestedUrl); }
+  for (const m of graph.pageMeta ?? []) if (m.isSeed || m.sameAccountAsSeed || m.linksToSeed) { firstPartyUrls.add(m.url); firstPartyUrls.add(m.requestedUrl); }
   for (const s of sources) if (firstPartyUrls.has(s.url) && !s.isFirstParty) { s.isFirstParty = true; if (s.association === "uncertain") s.association = "confirmed_first_party"; }
 
+  const websiteLinksBack = !!websiteCandidate?.value && (graph.pageMeta ?? []).some((m) => m.linksToSeed && (canonicalDomain(m.url) || "").toLowerCase() === officialDomain);
   const website: FieldValue<string> = websiteCandidate?.value
-    ? { value: websiteCandidate.value, status: websiteCandidate.status === "verified" ? "CONFIRMED" : websiteCandidate.status === "conflict" ? "CONFLICT" : "UNCERTAIN", confidence: websiteCandidate.status === "verified" ? "HIGH" : "LOW", sources: [ref(websiteCandidate.sourceUrl)] }
+    ? { value: websiteCandidate.value, status: websiteCandidate.status === "verified" || websiteLinksBack ? "CONFIRMED" : websiteCandidate.status === "conflict" ? "CONFLICT" : "UNCERTAIN", confidence: websiteCandidate.status === "verified" || websiteLinksBack ? "HIGH" : "LOW", sources: [ref(websiteCandidate.sourceUrl), ...(websiteLinksBack ? [ref(websiteCandidate.value, "links back to the seed account")] : [])] }
     : { value: null, status: graph.websiteDiscovery?.status === "discovery_unavailable" ? "INACCESSIBLE" : "NOT_FOUND", confidence: "LOW", sources: [] };
 
   const { phones, conflicts } = reconcilePhones(graph.contactMethods, firstPartyUrls);
@@ -754,6 +783,16 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   else if (entities.businessStatus !== "NO_BUSINESS_IDENTIFIED" && identity.identityConfidence !== "confirmed") limitations.push({ code: "IDENTITY_NOT_CONFIRMED", message: "Business identity could not be confirmed with two independent signals." });
   if (entities.relationship?.basis === "self_described") limitations.push({ code: "RELATIONSHIP_SELF_DESCRIBED", message: "The person-to-business relationship is stated only on the Facebook profile; no independent source confirms it." });
   if (website.status === "INACCESSIBLE") limitations.push({ code: "DISCOVERY_UNAVAILABLE", message: "Wider-web website discovery did not run (no search provider configured)." });
+  if (graph.instagramRecovery && graph.instagramRecovery.status !== "not_applicable") {
+    const r = graph.instagramRecovery;
+    limitations.push({
+      code: "INSTAGRAM_PROFILE_LOGIN_WALLED",
+      message: r.status === "found"
+        ? `Instagram serves the profile page only to logged-in browsers; identity was recovered from ${r.postsFound} public post${r.postsFound === 1 ? "" : "s"} and ${r.backlinkCandidates} page${r.backlinkCandidates === 1 ? "" : "s"} linking to @${r.handle} in the public search index (${r.provider}). Bio, follower count and account type are not readable.`
+        : r.status === "not_found" ? `Instagram profile is login-walled and no public posts or pages linking to @${r.handle} were found in the search index.`
+        : `Instagram profile is login-walled and public-index recovery could not run: ${r.reason}`,
+    });
+  }
   const blocked = sources.filter((s) => s.fetchStatus === "blocked_login_wall" || s.fetchStatus === "generic_platform_shell");
   if (blocked.length) limitations.push({ code: "SOURCES_INACCESSIBLE", message: `${blocked.length} source(s) were login-walled or returned platform boilerplate and could not be read.` });
 
@@ -789,7 +828,7 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
       fieldsVerified,
       fieldsTotal: Object.keys(checks).length,
       sourcesChecked: sources.length,
-      sourcesFetched: sources.filter((s) => s.fetchStatus === "fetched").length,
+      sourcesFetched: sources.filter((s) => s.fetchStatus === "fetched" || s.fetchStatus === "indexed_public").length,
       researchStatus: limitations.length ? "completed_with_limitations" : "complete",
     },
   };

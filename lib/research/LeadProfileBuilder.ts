@@ -31,6 +31,7 @@ import { classifyCategoryHeuristic } from "./CategoryClassifier";
 import { discoverOfficialWebsite, type WebsiteDiscoveryOutcome } from "./discovery/websiteDiscovery";
 import { isRejectedPath, sortByPriority, MAX_PAGES_PER_DOMAIN } from "./CrawlPriority";
 import { isGenericPlatformContent } from "./GenericPlatformContent";
+import { recoverInstagramFromPublicIndex, instagramHandleFromUrl, type InstagramRecoveryOutcome } from "./InstagramRecovery";
 import type { ResearchStage } from "./jobProgress";
 import {
   runIdentityQA,
@@ -303,6 +304,13 @@ export async function buildLeadProfile(
   await drainQueue();
   let allPages = Array.from(visited.values());
 
+  // Buffers filled by the Instagram public-index recovery below; empty for
+  // every other seed. aggregate() folds them in alongside fetched pages.
+  const indexPageMeta: PageMeta[] = [];
+  const indexContacts: { phone: Candidate[]; email: Candidate[] } = { phone: [], email: [] };
+  const indexNameCandidates: Candidate[] = [];
+  let instagramRecovery: BusinessGraph["instagramRecovery"] | undefined;
+
   // ---- AGGREGATE EXTRACTION over the full discovery-graph result ----
   async function aggregate() {
     // Platform-generic shell content (bare homepage, login wall) is
@@ -331,6 +339,8 @@ export async function buildLeadProfile(
       bookingLinks.push(...discoverLinks(page).bookingLinks);
     }
     const contacts = discoverContacts(contentPages, Array.from(new Set(bookingLinks)));
+    for (const c of indexContacts.phone) contacts.phone.push(c);
+    for (const c of indexContacts.email) contacts.email.push(c);
 
     await onStage?.("EXTRACTING_LOCATIONS", { sourcesFound: visited.size });
     const locations = skipLocationsAndSocials ? [] : discoverLocations(contentPages);
@@ -348,10 +358,15 @@ export async function buildLeadProfile(
     let hasMetaDescription = false;
     let hasAggregateRating = false;
 
-    const normSeed = (u: string) => u.toLowerCase().replace(/^https?:\/\/(www\.|m\.|mbasic\.)?/, "").replace(/\/+$/, "");
+    const normSeed = (u: string) => u.toLowerCase().replace(/^https?:\/\/(www\.|m\.|mbasic\.)?/, "").replace(/\/+$/, "").replace(/\?.*$/, "");
     const seedKeys = new Set(seedSources.map(normSeed));
-    const pageMeta: PageMeta[] = [];
+    const pageMeta: PageMeta[] = [...indexPageMeta];
     for (const page of contentPages) {
+      // Cross-link verification: does this page link to the exact seed
+      // URL/handle? A website whose footer points at instagram.com/<seed
+      // handle> (or the seed Facebook page) is tied to the same entity by
+      // the entity itself -- the strongest association signal we have.
+      const linksToSeed = extractLinks(page.html, page.finalUrl).some((l) => seedKeys.has(normSeed(l)));
       const capStrength = (s: number) => (isWiderWebDiscovered(page) ? Math.min(s, 1) : s);
       const title = extractTitle(page.html);
       const ogTitle = extractMeta(page.html, "og:title");
@@ -361,6 +376,7 @@ export async function buildLeadProfile(
         requestedUrl: page.url,
         sourceType: page.sourceType,
         isSeed: seedKeys.has(normSeed(page.url)) || seedKeys.has(normSeed(page.finalUrl)),
+        linksToSeed: linksToSeed || undefined,
         title: title ? decodeEntities(title) : null,
         ogTitle: ogTitle ? decodeEntities(ogTitle) : null,
         description: metaDesc ? decodeEntities(metaDesc) : null,
@@ -397,6 +413,7 @@ export async function buildLeadProfile(
       }
     }
 
+    for (const c of indexNameCandidates) nameCandidates.push(c);
     const heuristicCategory = classifyCategoryHeuristic(contentPages);
     if (heuristicCategory) categoryCandidates.push(heuristicCategory);
 
@@ -434,6 +451,49 @@ export async function buildLeadProfile(
   }
 
   let extracted = await aggregate();
+
+  // ---- INSTAGRAM: public-index recovery (first-class source) ----
+  // The profile page is login-walled to any non-browser client; the account's
+  // public posts and the pages that link to the exact handle are not. Read
+  // those, tie every result to the EXACT handle, and hand backlink pages to
+  // the SAME discovery graph for fetch + verification. Never a bypass.
+  const igSeed = seedSources.find((sUrl) => instagramHandleFromUrl(sUrl));
+  if (igSeed && scope !== "website_only") {
+    const seedPage = seedPageByUrl.get(igSeed);
+    const seedUsable = !!seedPage?.ok && !isGenericPlatformContent(seedPage);
+    if (!seedUsable) {
+      await onStage?.("DISCOVERING_SOURCES", { sourcesFound: visited.size });
+      const outcome: InstagramRecoveryOutcome = await recoverInstagramFromPublicIndex(igSeed);
+      if (outcome.status === "found") {
+        instagramRecovery = { status: "found", handle: outcome.handle, displayName: outcome.displayName, postsFound: outcome.posts.length, backlinkCandidates: outcome.websiteCandidates.length + outcome.directoryCandidates.length, provider: outcome.provider, reason: null };
+        // The seed account, as the index knows it: display name + caption
+        // text standing in for the bio the login wall hides.
+        indexPageMeta.push({ url: igSeed, requestedUrl: igSeed, sourceType: "instagram", isSeed: true, title: outcome.displayName, ogTitle: outcome.displayName, description: outcome.captionText.slice(0, 1200) || null });
+        if (outcome.displayName) indexNameCandidates.push({ value: outcome.displayName, sourceUrl: igSeed, sourceType: "instagram", strength: 2 });
+        for (const post of outcome.posts) {
+          indexPageMeta.push({ url: post.url, requestedUrl: post.url, sourceType: "instagram", isSeed: false, sameAccountAsSeed: true, title: post.title, ogTitle: outcome.displayName, description: post.caption });
+          sourceLog.push({ url: post.url, sourceType: "instagram", discoveredFrom: igSeed, discoveryMethod: "public_index", fetchStatus: "ok", indexedOnly: true, primaryPassDone: true, verificationPassDone: false });
+        }
+        const firstPost = outcome.posts[0]?.url ?? igSeed;
+        for (const ph of outcome.phones) indexContacts.phone.push({ value: ph, sourceUrl: firstPost, sourceType: "instagram", strength: 2 });
+        for (const em of outcome.emails) indexContacts.email.push({ value: em, sourceUrl: firstPost, sourceType: "instagram", strength: 2 });
+        // Backlink candidates enter the graph like any other source: fetched,
+        // link-extracted, and verified. aggregate() marks the ones that
+        // really link back to instagram.com/<handle> (linksToSeed).
+        for (const cand of [...outcome.websiteCandidates, ...outcome.mentionedUrls.map((u) => (/^https?:\/\//i.test(u) ? u : `https://${u}`))].slice(0, 4)) enqueue(cand, igSeed, "search_discovery", 1);
+        for (const dir of outcome.directoryCandidates) enqueue(dir, igSeed, "search_discovery", 1);
+        await drainQueue();
+        allPages = Array.from(visited.values());
+        extracted = await aggregate();
+      } else if (outcome.status === "not_found") {
+        instagramRecovery = { status: "not_found", handle: outcome.handle, displayName: null, postsFound: 0, backlinkCandidates: 0, provider: outcome.provider, reason: "No public posts or pages linking to this exact handle are in the search index." };
+      } else {
+        instagramRecovery = { status: "unavailable", handle: outcome.handle || null, displayName: null, postsFound: 0, backlinkCandidates: 0, provider: null, reason: outcome.reason };
+      }
+    } else {
+      instagramRecovery = { status: "not_applicable", handle: instagramHandleFromUrl(igSeed), displayName: null, postsFound: 0, backlinkCandidates: 0, provider: null, reason: "Profile page was readable directly." };
+    }
+  }
 
   // ---- RECURSIVE EXPANSION: independent wider-web website discovery ----
   // If nothing the seed linked to (or anything found while crawling it)
@@ -542,6 +602,7 @@ export async function buildLeadProfile(
     sourceChecks,
     sourceLog,
     qaResults,
+    ...(instagramRecovery ? { instagramRecovery } : {}),
     ...(websiteDiscovery
       ? {
           websiteDiscovery: {

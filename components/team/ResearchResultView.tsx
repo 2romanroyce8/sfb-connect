@@ -74,6 +74,7 @@ type Result = {
 const SOURCE_TYPE_LABEL: Record<string, string> = {
   FACEBOOK_PAGE: "Facebook Page", FACEBOOK_PERSONAL_PROFILE: "Facebook personal profile", FACEBOOK_PROFESSIONAL_PROFILE: "Facebook professional profile",
   FACEBOOK_GROUP: "Facebook group", FACEBOOK_EVENT: "Facebook event", FACEBOOK_UNKNOWN: "Facebook (page or profile)",
+  INSTAGRAM_BUSINESS_ACCOUNT: "Instagram business account (inferred)", INSTAGRAM_PERSONAL_ACCOUNT: "Instagram personal account (inferred)", INSTAGRAM_CREATOR_ACCOUNT: "Instagram creator account", INSTAGRAM_UNKNOWN: "Instagram account",
   WEBSITE: "Website", INSTAGRAM: "Instagram", TIKTOK: "TikTok", YOUTUBE: "YouTube", LINKEDIN: "LinkedIn", X: "X", GOOGLE_BUSINESS: "Google Business", BIO_LINK_HUB: "Bio-link hub", OTHER: "Other",
 };
 const ENTITY_TYPE_LABEL: Record<string, string> = {
@@ -88,7 +89,7 @@ const IDENTITY_META: Record<string, { label: string; color: string; bg: string }
   not_found: { label: "Identity not found", color: "#A1A1A6", bg: "rgba(110,110,115,0.12)" },
 };
 const FIELD_STATUS_COLOR: Record<string, string> = { CONFIRMED: "#30D158", UNCERTAIN: "#FFD60A", CONFLICT: "#FF9F0A", NOT_FOUND: "#6E6E73", INACCESSIBLE: "#6E6E73", INFERRED: "#8E8E93" };
-const FETCH_LABEL: Record<string, string> = { fetched: "Read", blocked_login_wall: "Login wall", unreachable: "Unreachable", skipped_priority: "Ignored", skipped_budget: "Skipped (budget)", generic_platform_shell: "Platform boilerplate", not_attempted: "Not attempted" };
+const FETCH_LABEL: Record<string, string> = { fetched: "Read", indexed_public: "Public index", blocked_login_wall: "Login wall", unreachable: "Unreachable", skipped_priority: "Ignored", skipped_budget: "Skipped (budget)", generic_platform_shell: "Platform boilerplate", not_attempted: "Not attempted" };
 
 // Red is reserved for real errors/failures, never for ordinary missing
 // research data — that was the explicit complaint this fixes.
@@ -625,7 +626,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
                     {src.priority === 0 ? "ignored" : `P${src.priority} ${src.linkType.replace(/_/g, " ")}`}
                   </span>
                   <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-[#D0D0D0] truncate flex-1 hover:underline">{src.url}</a>
-                  <span className="text-[10.5px] text-[#6E6E73] shrink-0">{src.association.replace(/_/g, " ")}</span>
+                  <span className="text-[10.5px] text-[#6E6E73] shrink-0">{src.linksToSeed ? "links back to seed · " : ""}{src.association.replace(/_/g, " ")}</span>
                   <span className="text-[10.5px] shrink-0" style={{ color: src.fetchStatus === "fetched" ? "#30D158" : "#6E6E73" }}>{FETCH_LABEL[src.fetchStatus] ?? src.fetchStatus}</span>
                 </div>
               ))}

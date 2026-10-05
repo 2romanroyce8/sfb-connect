@@ -105,7 +105,7 @@ export type LocationRecord = {
 // the owner inspect exactly which extraction step failed when a rep reports
 // a missed Linktree/website/social. discoveryMethod distinguishes "we found
 // this by reading another page" from "the rep pasted this directly".
-export type DiscoveryMethod = "seed" | "bio_link" | "link_extraction" | "social_link" | "website_crawl" | "gap_analysis" | "qa_reopen" | "search_discovery";
+export type DiscoveryMethod = "seed" | "bio_link" | "link_extraction" | "social_link" | "website_crawl" | "gap_analysis" | "qa_reopen" | "search_discovery" | "public_index";
 
 export type SourceLogEntry = {
   url: string;
@@ -122,6 +122,11 @@ export type SourceLogEntry = {
   // contributes nothing to identity resolution or further discovery. See
   // GenericPlatformContent.ts for why this exists.
   genericPlatformContent?: boolean;
+  // True when this source was never fetched by us: it is a public page a
+  // search index already holds (e.g. an Instagram post of the seed account
+  // when the profile itself is login-walled). Honest status, distinct from
+  // "fetched".
+  indexedOnly?: boolean;
 };
 
 export type QAPassResult = {
@@ -140,6 +145,13 @@ export type PageMeta = {
   requestedUrl: string;
   sourceType: string;
   isSeed: boolean;
+  // The seed ACCOUNT's own content reached by another URL (an Instagram
+  // post of the seed handle). First-party like the seed itself.
+  sameAccountAsSeed?: boolean;
+  // This page carries an outbound link to the exact seed URL/handle -- the
+  // strongest cross-link verification that it belongs to the same entity
+  // (a website whose footer links to instagram.com/<seed handle>).
+  linksToSeed?: boolean;
   title: string | null;
   ogTitle: string | null;
   description: string | null;
@@ -152,6 +164,18 @@ export type BusinessGraph = {
   // Removal") stay distinguishable downstream instead of collapsing into one.
   nameCandidates?: Candidate[];
   pageMeta?: PageMeta[];
+  // Honest record of the Instagram public-index recovery step (the profile
+  // page is login-walled to every non-browser client; public posts and
+  // pages linking to the exact handle are read from a search index).
+  instagramRecovery?: {
+    status: "found" | "not_found" | "unavailable" | "not_applicable";
+    handle: string | null;
+    displayName: string | null;
+    postsFound: number;
+    backlinkCandidates: number;
+    provider: string | null;
+    reason: string | null;
+  };
   category: string | null;
   description: string | null;
   services: string[];
