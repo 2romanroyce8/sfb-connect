@@ -11,11 +11,11 @@ const SEED: SeedEntity = {
   canonicalUrl: "https://www.facebook.com/people/Supreme-Air-LLC/61574342053650/",
   platform: "facebook", platformId: "61574342053650", username: null,
   displayName: "Supreme Air LLC", entityHint: "business",
-  phones: ["(732) 213-0373"], emails: [], domains: [], resolved: true, resolvedFrom: "page",
+  phones: ["(732) 213-0373"], emails: [], regions: ["NJ"], domains: [], resolved: true, resolvedFrom: "page",
 };
 const facts = (over: Partial<PageFacts>): PageFacts => ({
   url: "https://example.com/", sourceType: "website", isSeed: false, discoveryMethod: "search_discovery", parentStatus: null, parentIsChrome: false, parentIsSeed: false,
-  names: [], phones: [], emails: [], outboundUrls: [], isGenericPlatformContent: false, onTrustedOfficialDomain: false, ...over,
+  names: [], phones: [], emails: [], regions: [], outboundUrls: [], isGenericPlatformContent: false, onTrustedOfficialDomain: false, ...over,
 });
 
 test("TEST 10: profile.php?id= -- the exact numeric Facebook id is the seed identity, across every URL shape", () => {
@@ -61,10 +61,21 @@ test("TEST 4: an unrelated external link on the official website is POSSIBLE at 
   assert.equal(anon.status, "POSSIBLE_MATCH");
 });
 
-test("TEST 6: similar names never merge -- 'Supreme Air Conditioning' in another state with a different phone is a different entity", () => {
-  // a name containment match alone is PROBABLE, never MATCHED; with a different phone it stays PROBABLE and never contributes a conflicting number as 'verified'
-  const m = matchPageToSeed(facts({ url: "https://supremeairtx.example/", names: ["Supreme Air Conditioning"], phones: ["512-555-0100"] }), SEED);
-  assert.notEqual(m.status, "MATCHED");
+test("TEST 6 (live, Maryland): a same-name business that publishes a different phone or sits in another state is POSSIBLE at most -- it never contributes", () => {
+  const md = matchPageToSeed(facts({ url: "https://supremeairllc.org/", names: ["Supreme Air LLC"], phones: ["410-781-1002"], regions: ["MD"] }), SEED);
+  assert.equal(md.status, "POSSIBLE_MATCH");
+  assert.ok(md.reasons.some((r) => /different business with the same name/.test(r)));
+  const sameNoPhone = matchPageToSeed(facts({ url: "https://supreme-air.com/", names: ["Supreme Air LLC"] }), SEED);
+  assert.equal(sameNoPhone.status, "PROBABLE_MATCH");
+  const samePhone = matchPageToSeed(facts({ url: "https://supreme-air.com/", names: ["Supreme Air LLC"], phones: ["(732) 213-0373"], regions: ["NJ"] }), SEED);
+  assert.equal(samePhone.status, "MATCHED");
+  assert.ok(matchPageToSeed(facts({ url: "https://supremeairtx.example/", names: ["Supreme Air Conditioning"], phones: ["512-555-0100"] }), SEED).status !== "MATCHED");
+});
+test("regions in text: 'serving New Jersey' -> NJ; 'Halethorpe, MD 21227' -> MD; bare words never", () => {
+  const { regionsInText } = require("../../lib/research/entityMatch") as typeof import("../../lib/research/entityMatch");
+  assert.deepEqual(regionsInText("HVAC Company serving New Jersey"), ["NJ"]);
+  assert.deepEqual(regionsInText("1234 Main St, Halethorpe, MD 21227"), ["MD"]);
+  assert.deepEqual(regionsInText("We make junk disappear"), []);
 });
 
 test("TEST 8: a social account with a different username matches only with corroborating evidence", () => {
@@ -117,6 +128,10 @@ test("END TO END: the Supreme Air graph as it was crawled -- with the lock, the 
   assert.equal(p.contacts.emails.length, 0); // swbw.com email gone
   assert.equal(p.locations.physical.length, 0); // Hannibal, MO gone
   assert.ok(p.socialProfiles.every((sp) => sp.platform !== "youtube" || sp.association === "rejected_unrelated"));
+  // and a share-link that is not a profile, plus a rejected source's own X account, never survive as the business's socials
+  const gg = g as any; const g2 = { ...gg, socialProfiles: [...gg.socialProfiles, { platform: "linkedin", handle: null, url: "https://linkedin.com/sharing/share-offsite", displayName: null, status: "verified", confidence: 0.8, sourceUrl: PG }, { platform: "x", handle: "PRcom", url: "https://x.com/PRcom", displayName: null, status: "verified", confidence: 0.8, sourceUrl: PG }], sourceLog: [...gg.sourceLog, { url: "https://twitter.com/PRcom", sourceType: "x", discoveredFrom: PG, discoveryMethod: "social_link", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }], pageMeta: [...gg.pageMeta, { url: "https://twitter.com/PRcom", requestedUrl: "https://twitter.com/PRcom", sourceType: "x", isSeed: false, trusted: false, entityMatch: { status: "REJECTED", reasons: ["different identity"] }, title: null, ogTitle: "PR.com", description: null }] } as unknown as BusinessGraph;
+  const p2 = reconcileGraph(g2, FB);
+  assert.ok(p2.socialProfiles.filter((sp) => sp.platform === "linkedin" || sp.platform === "x").every((sp) => sp.association === "rejected_unrelated"));
   assert.ok(p.limitations.some((l) => l.code === "FIELDS_REMOVED_UNMATCHED_SOURCE"));
   const byUrl = Object.fromEntries(p.sources.map((s) => [s.url, s]));
   assert.equal(byUrl[FB].entityMatch, "MATCHED");

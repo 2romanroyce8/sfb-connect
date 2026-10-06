@@ -963,7 +963,14 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   const keepEmails = emails.filter((e) => { const allBad = e.sources.length > 0 && e.sources.every((sr) => bad(sr.url)); if (allBad) removed.push(`email ${e.value}`); return !allBad; });
   const keepPhysical = physical.filter((l) => { const b = bad(l.sourceUrl); if (b) removed.push(`location ${[l.city, l.state].filter(Boolean).join(", ")}`); return !b; });
   const keepService = serviceArea.filter((l) => !bad(l.sourceUrl));
-  const keepSocials = socialProfiles.map((sp) => (sp.url && bad(sp.url)) || (sp.sourceUrl && bad(sp.sourceUrl)) ? { ...sp, status: "not_found" as const, association: "rejected_unrelated" as Association } : sp);
+  const handleOf = (u: string | null | undefined) => { if (!u) return ""; try { const x = new URL(/^https?:\/\//i.test(u) ? u : `https://${u}`); return `${platformOf(u)}:${x.pathname.split("/").filter(Boolean).join("/").toLowerCase().replace(/^@/, "")}`; } catch { return ""; } };
+  const rejectedHandles = new Set(sources.filter((src) => src.entityMatch === "REJECTED" || src.entityMatch === "UNVERIFIED").map((src) => handleOf(src.url)).filter(Boolean));
+  const keepSocials = socialProfiles.map((sp) => {
+    const notProfile = !!sp.url && sp.platform !== "whatsapp" && !isSocialProfilePath(sp.url, sp.platform);
+    const fromBad = (sp.url && bad(sp.url)) || (sp.sourceUrl && bad(sp.sourceUrl)) || rejectedHandles.has(handleOf(sp.url));
+    if (notProfile || fromBad) { removed.push(`${sp.platform} ${sp.url ?? sp.handle ?? ""}`); return { ...sp, status: "not_found" as const, association: "rejected_unrelated" as Association }; }
+    return sp;
+  });
   if (website.value && (bad(websiteCandidate?.sourceUrl ?? null) || bad(website.value)) && website.status !== "CONFIRMED") { removed.push(`website ${website.value}`); website.value = null; website.status = "NOT_FOUND"; website.sources = []; }
   if (removed.length) limitations.push({ code: "FIELDS_REMOVED_UNMATCHED_SOURCE", message: `Removed ${removed.length} field value(s) whose only sources failed entity matching: ${removed.slice(0, 5).join("; ")}.` });
 

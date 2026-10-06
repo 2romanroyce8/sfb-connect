@@ -97,7 +97,16 @@ const INFRA_HOST_SUFFIXES = [
   // official website of an HVAC company. These describe a NUMBER, never a
   // business; no legitimate small business is hosted on one.
   "phone.gd",
+  "sync.me",
   "callfilter.app",
+  "radaris.com",
+  "cyberbackgroundchecks.com",
+  "clustrmaps.com",
+  "searchpeoplefree.com",
+  "truepeoplesearch.com",
+  "numberguru.com",
+  "revealname.com",
+  "yellowbook.com",
   "whitepages.com",
   "spokeo.com",
   "truecaller.com",

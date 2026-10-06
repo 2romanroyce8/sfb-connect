@@ -91,7 +91,7 @@ const RESERVED_ROUTES: Record<SocialPlatformId, Set<string>> = {
   tiktok: new Set(["login", "discover", "music", "tag", "about", "legal", "business", "foryou", "upload", "embed"]),
   youtube: new Set(["watch", "results", "playlist", "feed", "shorts", "about", "account", "upload", "gaming", "premium", "live", "embed", "redirect"]),
   x: new Set(["home", "explore", "notifications", "messages", "settings", "search", "i", "intent", "hashtag", "login", "tos", "privacy", "about", "jobs"]),
-  linkedin: new Set(["help", "legal", "login", "signup", "about", "jobs", "learning"]),
+  linkedin: new Set(["help", "legal", "login", "signup", "about", "jobs", "learning", "sharing", "pulse", "posts", "feed", "top-content", "games", "directory", "authwall", "checkpoint", "uas"]),
 };
 
 function detectPlatform(hostname: string): SocialPlatformId | null {

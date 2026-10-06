@@ -39,6 +39,7 @@ export type SeedEntity = {
   entityHint: "business" | "person" | "unknown";
   phones: string[]; // E.164-ish digits found on the seed page itself
   emails: string[];
+  regions: string[]; // US state codes the seed page itself mentions ("serving New Jersey" -> NJ)
   domains: string[]; // outbound non-social, non-infra domains the seed page itself links to
   resolved: boolean; // did the seed page (or index recovery) yield an identity
   resolvedFrom: "page" | "index" | "url" | "none";
@@ -80,12 +81,25 @@ export function urlNamesSeed(url: string, seed: SeedEntity): boolean {
 
 /** Platform infrastructure / navigation / boilerplate: never a business source. */
 export function isPlatformBoilerplateUrl(url: string): boolean {
+  // Static assets / manifests / feeds first -- x.com/manifest.json is a
+  // one-segment path that would otherwise look "profile-shaped".
+  if (/\.(ico|png|jpe?g|gif|svg|webp|webmanifest|xml|json|css|js|txt)(\?|$)/i.test(url)) return true;
+  if (/\/(manifest|opensearch|feeds?|sitemap|robots)\b/i.test(url)) return true;
   const cls = classifyLink(url);
   if (cls.kind === "infra") return true;
   if (cls.kind === "social") return !isSocialProfilePath(url, (cls as { platform: string }).platform);
-  if (/\.(ico|png|jpe?g|gif|svg|webp|webmanifest|xml|json|css|js)(\?|$)/i.test(url)) return true;
-  if (/\/(manifest|opensearch|feeds?)\b/i.test(url)) return true;
   return false;
+}
+
+const US_STATES: Record<string, string> = { alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA", colorado: "CO", connecticut: "CT", delaware: "DE", florida: "FL", georgia: "GA", hawaii: "HI", idaho: "ID", illinois: "IL", indiana: "IN", iowa: "IA", kansas: "KS", kentucky: "KY", louisiana: "LA", maine: "ME", maryland: "MD", massachusetts: "MA", michigan: "MI", minnesota: "MN", mississippi: "MS", missouri: "MO", montana: "MT", nebraska: "NE", nevada: "NV", "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY", "north carolina": "NC", "north dakota": "ND", ohio: "OH", oklahoma: "OK", oregon: "OR", pennsylvania: "PA", "rhode island": "RI", "south carolina": "SC", "south dakota": "SD", tennessee: "TN", texas: "TX", utah: "UT", vermont: "VT", virginia: "VA", washington: "WA", "west virginia": "WV", wisconsin: "WI", wyoming: "WY" };
+/** US state codes mentioned in free text ("serving New Jersey", "Edison, NJ 08817"). Conservative: two-letter codes only when followed by a ZIP or preceded by a comma. */
+export function regionsInText(text: string | null | undefined): string[] {
+  if (!text) return [];
+  const out = new Set<string>();
+  const lower = text.toLowerCase();
+  for (const [name, code] of Object.entries(US_STATES)) if (new RegExp(`\\b${name}\\b`).test(lower)) out.add(code);
+  for (const m of text.matchAll(/,\s*([A-Z]{2})\b(?:\s+\d{5})?/g)) if (Object.values(US_STATES).includes(m[1])) out.add(m[1]);
+  return Array.from(out);
 }
 
 export type PageFacts = {
@@ -99,6 +113,7 @@ export type PageFacts = {
   names: string[]; // published names on the page (JSON-LD name, og:title, adapter display name)
   phones: string[];
   emails: string[];
+  regions: string[]; // US state codes mentioned on the page
   outboundUrls: string[];
   isGenericPlatformContent: boolean;
   onTrustedOfficialDomain: boolean;
@@ -143,6 +158,18 @@ export function matchPageToSeed(page: PageFacts, seed: SeedEntity | null): Entit
   const publishesOtherOrg = page.names.length > 0 && seedName.length >= 3 && !nameMatch && !linksBack && !phoneMatch && !emailMatch && !seedLinksHere;
 
   if (linksBack || (nameMatch && (phoneMatch || emailMatch || seedLinksHere))) return { status: "MATCHED", reasons };
+  // TEST 6 -- similar names never merge. A name-only match is downgraded when
+  // the page CONTRADICTS the seed: it publishes phones and none is the
+  // seed's, or it is clearly in a different state. Observed live: "Supreme
+  // Air LLC" in Maryland (410) admitted to a New Jersey seed (732) by name.
+  if (nameMatch && !phoneMatch && !emailMatch) {
+    const phoneContradiction = seedPhones.size > 0 && page.phones.length > 0;
+    const regionContradiction = seed.regions.length > 0 && page.regions.length > 0 && !page.regions.some((r) => seed.regions.includes(r));
+    if (phoneContradiction || regionContradiction) {
+      const why = [phoneContradiction ? `publishes phone(s) ${page.phones.slice(0, 2).join(", ")} -- none is the seed's` : null, regionContradiction ? `located in ${page.regions.join("/")} while the seed says ${seed.regions.join("/")}` : null].filter(Boolean).join("; ");
+      return { status: "POSSIBLE_MATCH", reasons: [...reasons, `Name matches but the page ${why}. Likely a different business with the same name.`] };
+    }
+  }
   if (nameMatch || phoneMatch || emailMatch) return { status: "PROBABLE_MATCH", reasons };
   if (seedLinksHere) {
     // The account's own published link: strong for Facebook/Instagram seeds,

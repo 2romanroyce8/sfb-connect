@@ -182,6 +182,7 @@ export type SeedEntity = {
   entityHint: "business" | "person" | "unknown";
   phones: string[];
   emails: string[];
+  regions: string[];
   domains: string[];
   resolved: boolean;
   resolvedFrom: "page" | "index" | "url" | "none";

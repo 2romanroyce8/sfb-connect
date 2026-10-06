@@ -32,7 +32,7 @@ import { discoverOfficialWebsite, type WebsiteDiscoveryOutcome } from "./discove
 import { isRejectedPath, sortByPriority, MAX_PAGES_PER_DOMAIN } from "./CrawlPriority";
 import { isGenericPlatformContent } from "./GenericPlatformContent";
 import { adapterForUrl, adapterForPlatform, type ProfileExtract } from "./sources/adapters";
-import { matchPageToSeed, urlNamesSeed, facebookIdFromUrl, isPlatformBoilerplateUrl, normalizeName, CONTRIBUTING_STATUSES, EXPANDABLE_STATUSES, PLATFORM_CHROME_SOURCES, type EntityMatch } from "./entityMatch";
+import { matchPageToSeed, urlNamesSeed, facebookIdFromUrl, isPlatformBoilerplateUrl, regionsInText, CONTRIBUTING_STATUSES, EXPANDABLE_STATUSES, PLATFORM_CHROME_SOURCES, type EntityMatch } from "./entityMatch";
 import { isSocialProfilePath } from "./normalize";
 import { extractPhoneNumbers, extractVisibleEmails, extractMailtoEmails } from "./htmlExtract";
 import { recoverFromPublicIndex, type PublicIndexOutcome } from "./sources/publicIndex";
@@ -383,6 +383,7 @@ export async function buildLeadProfile(
       names: names.filter(Boolean),
       phones: extractPhoneNumbers(page.html),
       emails: [...extractMailtoEmails(page.html), ...extractVisibleEmails(page.html)],
+      regions: regionsInText([extractMeta(page.html, "description"), extractMeta(page.html, "og:description"), page.html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/g, " ").slice(0, 20000)].filter(Boolean).join(" ")),
       outboundUrls: extractLinks(page.html, page.finalUrl),
       isGenericPlatformContent: isGenericPlatformContent(page),
       onTrustedOfficialDomain: !!officialWebsite && domainKey(page.finalUrl) === domainKey(officialWebsite) && (pageMatch.get(urlKey(officialWebsite))?.status === "MATCHED" || pageMatch.get(urlKey(officialWebsite))?.status === "PROBABLE_MATCH" || seedSources.some((sUrl) => urlKey(sUrl) === urlKey(officialWebsite!))),
@@ -421,13 +422,14 @@ export async function buildLeadProfile(
     }
     const phones = page?.ok ? extractPhoneNumbers(page.html) : [];
     const emails = page?.ok ? [...extractMailtoEmails(page.html), ...extractVisibleEmails(page.html)] : [];
+    const regions = page?.ok && !isGenericPlatformContent(page) ? regionsInText([extract?.bio, extract?.location, extractMeta(page.html, "description"), extractMeta(page.html, "og:description")].filter(Boolean).join(" ")) : [];
     const links = page?.ok && !isGenericPlatformContent(page) ? discoverLinks(page) : null;
     const domains = new Set<string>();
     if (links?.officialWebsite && !isPlatformBoilerplateUrl(links.officialWebsite)) { const d = canonicalDomain(links.officialWebsite); if (d) domains.add(d.toLowerCase()); }
     if (extract?.website) { const d = canonicalDomain(extract.website); if (d) domains.add(d.toLowerCase()); }
     const personLike = !!displayName && /^[A-Z][a-z'’.-]+(?: [A-Z][a-z'’.-]+){1,3}$/.test(displayName) && !/\b(llc|inc|co|services?|removal|hauling|roofing|hvac|plumbing|cleaning|landscap|repair|construction|auto|salon|studio|shop|store|cafe|restaurant|bar|grill|dental|law|realty|photography|air|group|solutions)\b/i.test(displayName);
     const entityHint: SeedEntity["entityHint"] = extract?.flags.business || extract?.flags.organization || extract?.urlKind === "company" ? "business" : extract?.urlKind === "person" ? "person" : personLike ? "person" : displayName ? "business" : "unknown";
-    return { url: seedUrl, canonicalUrl, platform, platformId, username, displayName, entityHint, phones, emails, domains: Array.from(domains), resolved: !!displayName, resolvedFrom };
+    return { url: seedUrl, canonicalUrl, platform, platformId, username, displayName, entityHint, phones, emails, regions, domains: Array.from(domains), resolved: !!displayName, resolvedFrom };
   }
 
   // SEED FIRST: fetch and process the seed URL(s) alone, resolve + lock the
@@ -569,12 +571,23 @@ export async function buildLeadProfile(
     const contacts = discoverContacts(trustedPages, Array.from(new Set(bookingLinks)));
     for (const c of indexContacts.phone) contacts.phone.push(c);
     for (const c of indexContacts.email) contacts.email.push(c);
+    // The seed page's own contacts are the entity speaking for itself --
+    // top-ranked, never outvoted by a discovered page.
+    if (seedEntity?.resolved) {
+      const e164 = (raw: string) => { const d = raw.replace(/\D/g, ""); return d.length === 10 ? `+1${d}` : d.length === 11 && d.startsWith("1") ? `+${d}` : raw; };
+      for (const ph of seedEntity.phones) contacts.phone.push({ value: e164(ph), sourceUrl: seedEntity.canonicalUrl, sourceType: seedEntity.platform, strength: 3 });
+      for (const em of seedEntity.emails) contacts.email.push({ value: em, sourceUrl: seedEntity.canonicalUrl, sourceType: seedEntity.platform, strength: 3 });
+    }
 
     await onStage?.("EXTRACTING_LOCATIONS", { sourcesFound: visited.size });
     const locations = skipLocationsAndSocials ? [] : discoverLocations(trustedPages);
 
     await onStage?.("EXTRACTING_SOCIALS", { sourcesFound: visited.size });
-    const socialProfiles = skipLocationsAndSocials ? [] : discoverSocialProfiles(trustedPages);
+    // Social accounts are attributed only from pages MATCHED to the seed (the
+    // seed itself, a backlinked site, the verified official site) -- a
+    // name-only PROBABLE page's social links are that page's, not ours.
+    const matchedPages = trustedPages.filter((p) => { const m = pageMatch.get(urlKey(p.finalUrl)) ?? pageMatch.get(urlKey(p.url)); return !m || m.status === "MATCHED"; });
+    const socialProfiles = skipLocationsAndSocials ? [] : discoverSocialProfiles(matchedPages);
 
     await onStage?.("CLASSIFYING_BUSINESS", { sourcesFound: visited.size });
     const nameCandidates: Candidate[] = [];
@@ -681,6 +694,10 @@ export async function buildLeadProfile(
     await onStage?.("CROSS_VALIDATING", { sourcesFound: visited.size });
     const contactMethods = [
       { type: "phone" as const, ...normalizeResolved(resolveField(contacts.phone)) },
+      // Every OTHER distinct phone with real evidence stays visible as its own
+      // record so the entity layer can show a CONFLICT instead of a silent
+      // overwrite (TEST 9).
+      ...Array.from(new Map(contacts.phone.filter((c) => c.strength >= 2 && c.value.replace(/\D/g, "").slice(-10) !== (resolveField(contacts.phone).value ?? "").replace(/\D/g, "").slice(-10)).map((c) => [c.value.replace(/\D/g, "").slice(-10), c] as const)).values()).map((c) => ({ type: "phone" as const, value: c.value, status: "uncertain" as const, confidence: 0.5, sourceUrl: c.sourceUrl })),
       { type: "email" as const, ...normalizeResolved(resolveField(contacts.email)) },
       { type: "whatsapp" as const, ...normalizeResolved(resolveField(contacts.whatsapp)) },
       {
@@ -818,7 +835,8 @@ export async function buildLeadProfile(
     // a phone and a location are verified, more sources cannot make the
     // identity more correct -- they can only contaminate it.
     const sufficient = !!seedEntity?.resolved && !!officialWebsite && extracted.contactMethods.some((c) => c.type === "phone" && c.value) && extracted.locations.some((l) => l.city || l.state);
-    const newSourcesTotal: QueuedSource[] = sufficient ? [] : [...qa3New, ...qa7New].filter((src) => !isPlatformBoilerplateUrl(src.url));
+    const parentContributes = (from: string) => { const m = pageMatch.get(urlKey(from)); return m ? CONTRIBUTING_STATUSES.has(m.status) : seedSources.some((sUrl) => urlKey(sUrl) === urlKey(from)); };
+    const newSourcesTotal: QueuedSource[] = sufficient ? [] : [...qa3New, ...qa7New].filter((src) => !isPlatformBoilerplateUrl(src.url) && parentContributes(src.discoveredFrom));
     if (newSourcesTotal.length === 0 || cycle === MAX_QA_REOPEN_CYCLES || visited.size >= MAX_TOTAL_SOURCES) {
       await onStage?.("QA_8", { sourcesFound: visited.size });
       qaResults.push(runFinalProfileQA(ctx, queue.length === 0));
