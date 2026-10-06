@@ -160,6 +160,9 @@ export type PageMeta = {
   // seed, or a page the account itself linked to). Only trusted pages may
   // contribute contacts, locations, socials, category and services.
   trusted?: boolean;
+  // Entity-match verdict for this page against the locked seed entity, with
+  // the reasons. See lib/research/entityMatch.ts.
+  entityMatch?: { status: "MATCHED" | "PROBABLE_MATCH" | "POSSIBLE_MATCH" | "UNVERIFIED" | "CONFLICTING" | "REJECTED"; reasons: string[] };
   accountFlags?: { business?: boolean; verified?: boolean; organization?: boolean; seller?: boolean; private?: boolean };
   // Structured company facts a platform publishes (LinkedIn company pages).
   companyFacts?: { industry?: string | null; size?: string | null; headquarters?: string | null; founded?: string | null; specialties?: string[]; website?: string | null };
@@ -169,7 +172,25 @@ export type PageMeta = {
   description: string | null;
 };
 
+export type SeedEntity = {
+  url: string;
+  canonicalUrl: string;
+  platform: string;
+  platformId: string | null;
+  username: string | null;
+  displayName: string | null;
+  entityHint: "business" | "person" | "unknown";
+  phones: string[];
+  emails: string[];
+  domains: string[];
+  resolved: boolean;
+  resolvedFrom: "page" | "index" | "url" | "none";
+};
+
 export type BusinessGraph = {
+  // The locked seed entity: resolved from the exact URL the user gave BEFORE
+  // any discovery, never redefined by discovered sources.
+  seedEntity?: SeedEntity;
   businessName: Candidate | null;
   // Every name candidate the engine saw, with its source -- so a Facebook
   // display name ("John Smith") and a website business name ("Smith's Junk

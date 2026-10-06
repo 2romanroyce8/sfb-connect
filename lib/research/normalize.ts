@@ -92,6 +92,33 @@ const SOCIAL_HOSTS: Record<string, "facebook" | "instagram" | "tiktok" | "linked
 // this is the fix for that exact bug (it was previously unfiltered and
 // could win the "official website" vote by link-frequency alone).
 const INFRA_HOST_SUFFIXES = [
+  // Phone-lookup / people-search / spam-report sites. Observed live
+  // 2026-10-05: phone.gd ranked for a phone query and was accepted as the
+  // official website of an HVAC company. These describe a NUMBER, never a
+  // business; no legitimate small business is hosted on one.
+  "phone.gd",
+  "callfilter.app",
+  "whitepages.com",
+  "spokeo.com",
+  "truecaller.com",
+  "numlookup.com",
+  "fastpeoplesearch.com",
+  "beenverified.com",
+  "intelius.com",
+  "zabasearch.com",
+  "thatsthem.com",
+  "usphonebook.com",
+  "callercenter.com",
+  "nuwber.com",
+  "peoplefinders.com",
+  "spydialer.com",
+  "411.com",
+  "phonenum.info",
+  "reversephonelookup.com",
+  "whocalledme.com",
+  "whocallsme.com",
+  "800notes.com",
+  "shouldianswer.com",
   // Observed live 2026-10-05: abs.twimg.com (X) and static.licdn.com
   // (LinkedIn) each won "official website" on a social seed.
   "twimg.com",
@@ -223,7 +250,7 @@ export const RESERVED_SOCIAL_ROUTES: Record<string, string[]> = {
   facebook: ["login", "login.php", "share", "sharer", "watch", "marketplace", "groups", "events", "help", "privacy", "policies", "settings", "ads", "business", "developers", "plugins", "dialog", "l.php", "tr", "photo.php", "video.php", "home.php", "about", "legal"],
   instagram: ["explore", "accounts", "direct", "reels", "reel", "stories", "p", "about", "developer", "legal", "tv", "embed", "graphql", "popular", "web", "lite"],
   tiktok: ["login", "discover", "music", "tag", "about", "legal", "business", "foryou", "upload", "embed"],
-  youtube: ["watch", "results", "playlist", "feed", "shorts", "about", "account", "upload", "gaming", "premium", "live", "embed", "redirect"],
+  youtube: ["watch", "results", "playlist", "feed", "feeds", "shorts", "about", "account", "upload", "gaming", "premium", "live", "embed", "redirect", "howyoutubeworks", "creators", "ads", "new", "t", "s", "opensearch", "manifest.webmanifest", "intl", "yt", "trends", "kids", "music", "tv", "learn", "jobs", "press", "policies", "signin", "logout", "oops", "error", "img", "static"],
   x: ["home", "explore", "notifications", "messages", "settings", "search", "i", "intent", "hashtag", "login", "tos", "privacy", "about", "jobs"],
   linkedin: ["help", "legal", "login", "signup", "about", "jobs", "learning", "pulse", "posts", "top-content", "games", "feed", "directory", "news", "events", "groups", "salary", "services", "products", "advice", "premium", "sales", "talent", "business", "marketing", "safety", "uas", "authwall", "checkpoint"],
 };
@@ -283,4 +310,40 @@ export function isSocialOrDirectoryHost(url: string): boolean {
   if (isInfraHost(url)) return true;
   const domain = canonicalDomain(url) || "";
   return matchesSocialHost(domain) || ["google.com", "yelp.com", "bbb.org", "yellowpages.com"].includes(domain);
+}
+
+
+// ---- Profile-shaped social URLs ----
+// A social-platform URL is a business source only when its path is shaped
+// like a profile / page / channel. Everything else on the platform
+// (/t/contact_us, /creators, /howyoutubeworks, favicons, manifests,
+// tv.youtube.com/learn/...) is navigation the crawler picks up from page
+// chrome. Shared by the engine (enqueue gate) and the reconciler.
+const FB_RESERVED_PATHS = new Set(["login", "home.php", "data", "help", "policies", "privacy", "terms", "ads", "business", "marketplace", "watch", "gaming", "groups", "events", "reel", "reels", "stories", "share", "sharer.php", "dialog", "plugins", "about", "careers", "developers", "settings", "messages", "notifications", "friends", "photo", "photo.php", "video.php", "hashtag", "search", "legal", "security", "l.php", "recover", "checkpoint", "r.php", "mobile", "lite", "p"]);
+const GENERIC_RESERVED_PATHS = new Set(["explore", "about", "legal", "privacy", "terms", "help", "accounts", "p", "reel", "reels", "stories", "tv", "direct", "login", "signup", "i", "home", "search", "hashtag", "settings", "foryou", "following", "live", "discover", "upload", "download", "business", "creators", "new", "t", "s", "feed", "trends", "intent", "share"]);
+export function isSocialProfilePath(url: string, platform: string): boolean {
+  let u: URL;
+  try { u = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`); } catch { return false; }
+  const host = u.hostname.toLowerCase();
+  const path = u.pathname.replace(/\/+$/, "");
+  const segs = path.split("/").filter(Boolean);
+  if (/^(tv|music|studio|developers|business|about|support|help|creators|ads|kids|artists)\./.test(host)) return false;
+  switch (platform) {
+    case "facebook":
+      if (/^\/profile\.php$/.test(path) && u.searchParams.has("id")) return true;
+      if (segs[0] === "pages" || segs[0] === "people") return segs.length >= 2;
+      if (segs[0] === "p") return segs.length === 2 && /-\d{6,}$/.test(segs[1]); // facebook.com/p/Name-<id>/
+      return segs.length === 1 && !FB_RESERVED_PATHS.has(segs[0].toLowerCase());
+    case "instagram":
+    case "tiktok":
+    case "x":
+      return segs.length === 1 && !GENERIC_RESERVED_PATHS.has(segs[0].toLowerCase().replace(/^@/, ""));
+    case "youtube":
+      if (segs.length === 1 && segs[0].startsWith("@")) return true;
+      return segs.length >= 2 && ["channel", "c", "user"].includes(segs[0]);
+    case "linkedin":
+      return segs.length >= 2 && ["company", "in", "school", "showcase"].includes(segs[0]);
+    default:
+      return segs.length === 1;
+  }
 }

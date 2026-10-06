@@ -1,5 +1,7 @@
 import type { BusinessGraph, Candidate, ContactMethodRecord, LocationRecord, SocialProfileRecord, SourceLogEntry } from "./types";
-import { canonicalDomain, classifyLink } from "./normalize";
+import { canonicalDomain, classifyLink, isSocialProfilePath } from "./normalize";
+import type { EntityMatchStatus } from "./entityMatch";
+import { normalizeName as normalizeSeedName } from "./entityMatch";
 
 // ============================================================
 // ENTITY RECONCILIATION LAYER (Research Spec §2-§7, §10)
@@ -104,6 +106,11 @@ export type SourceEntity = {
   skipReason: string | null;
   profileType: ProfileType | null;
   linksToSeed: boolean;
+  // Verdict of the entity matcher against the locked seed, with reasons.
+  entityMatch: EntityMatchStatus;
+  entityMatchReasons: string[];
+  sourceEntityName: string | null;
+  sourceQuality: "PRIMARY" | "VERIFIED" | "CORROBORATING" | "WEAK" | "IRRELEVANT";
 };
 
 export type Conflict = { field: string; values: { value: string; sources: SourceRef[] }[]; note: string };
@@ -133,6 +140,7 @@ export type ResearchProfile = {
   limitations: Limitation[];
   metrics: { researchConfidencePct: number; fieldsVerified: number; fieldsTotal: number; sourcesChecked: number; sourcesFetched: number; researchStatus: "complete" | "completed_with_limitations" };
   entities: EntityModel;
+  seed: BusinessGraph["seedEntity"] | null;
   salesIntelligence: SalesIntelligence;
 };
 
@@ -467,6 +475,16 @@ export function analyzeEntities(
   }
   for (const m of bioMentions) signals.push({ signal: "business_name_in_bio", detail: m.name, sourceUrl: seedUrl });
 
+  // ---- SEED LOCK: a resolved business-type seed names the business. Other
+  // candidates corroborate (fold in) or stay possibilities; none replaces it.
+  const seedLock = graph.seedEntity?.resolved && graph.seedEntity.entityHint === "business" && graph.seedEntity.displayName ? graph.seedEntity : null;
+  if (seedLock) {
+    const sn = normalizeSeedName(seedLock.displayName!);
+    const existing = cands.find((c) => { const nc = normalizeBusinessName(c.value); return nc === sn || nc.includes(sn) || sn.includes(nc); });
+    if (existing) { existing.value = seedLock.displayName!; existing.strength = 3; existing.eligible = true; existing.sources.push(ref(seedLock.canonicalUrl, "seed display name")); }
+    else cands.unshift({ value: seedLock.displayName!, sources: [ref(seedLock.canonicalUrl, "seed display name")], strength: 3, origin: "engine", eligible: true });
+    for (const c of cands) if (c.value !== seedLock.displayName) { c.eligible = c.eligible && c.strength >= 3 && c.sources.some((sr) => backlinkUrls.has(sr.url)); } // only a backlinked JSON-LD name can even be a rival
+  }
   // ---- pick the business name: strongest, with independent-source count ----
   // Once a structured-data-grade name exists, long weak phrases from the same
   // site are its taglines and page titles ("San Diego's Trusted Hauling &
@@ -618,36 +636,7 @@ export function analyzeEntities(
 const BUSINESS_PROFILE_HOSTS = ["yelp.com", "bbb.org", "tripadvisor.com", "angi.com", "thumbtack.com", "homeadvisor.com", "houzz.com", "porch.com", "nextdoor.com", "yellowpages.com", "mapquest.com"];
 const IGNORE_PATTERNS = [/fbclid=/, /utm_/, /\/login/, /\/signup/, /\/ads?\//, /doubleclick/, /googletagmanager/, /amazon\.com/, /\/sharer/, /\/share\?/, /\/help\//, /\/privacy/, /\/terms/, /\.(ico|png|jpe?g|gif|svg|webp|webmanifest|xml|json|css|js)(\?|$)/, /\/manifest/, /\/opensearch/, /\/data\//];
 
-/** A social-platform URL is only a first-party source when its path is
- * shaped like a profile/page/channel. Everything else on the platform
- * (/t/contact_us, /creators, /new, /howyoutubeworks, favicon, manifests,
- * tv.youtube.com/learn/...) is platform navigation the crawler picked up
- * from the page chrome -- observed live on the first production run. */
-export function isSocialProfilePath(url: string, platform: string): boolean {
-  let u: URL;
-  try { u = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`); } catch { return false; }
-  const host = u.hostname.toLowerCase();
-  const path = u.pathname.replace(/\/+$/, "");
-  const segs = path.split("/").filter(Boolean);
-  if (host.startsWith("tv.") || host.startsWith("music.") || host.startsWith("studio.") || host.startsWith("developers.") || host.startsWith("business.") || host.startsWith("about.")) return false;
-  switch (platform) {
-    case "facebook":
-      if (/^\/profile\.php$/.test(path) && u.searchParams.has("id")) return true;
-      if (segs[0] === "pages" || segs[0] === "people") return segs.length >= 2;
-      return segs.length === 1 && !FB_RESERVED.has(segs[0].toLowerCase());
-    case "instagram":
-    case "tiktok":
-    case "x":
-      return segs.length === 1 && !GENERIC_RESERVED.has(segs[0].toLowerCase().replace(/^@/, ""));
-    case "youtube":
-      if (segs.length === 1 && segs[0].startsWith("@")) return true;
-      return segs.length >= 2 && ["channel", "c", "user"].includes(segs[0]);
-    case "linkedin":
-      return segs.length >= 2 && ["company", "in", "school", "showcase"].includes(segs[0]);
-    default:
-      return segs.length === 1;
-  }
-}
+export { isSocialProfilePath } from "./normalize";
 const PLATFORM_BRAND_HANDLES = new Set(["tiktokcreators", "tiktokforbusiness", "linkedinnews", "linkedinhelp", "xdevelopers", "youtube", "youtubecreators", "teamyoutube", "instagram", "facebook", "facebookapp", "meta", "tiktok", "tiktok_us", "twitter", "x", "linkedin", "google", "googlemaps", "whatsapp", "pinterest", "snapchat", "threads", "yelp", "nextdoor", "linktree", "linktr_ee"]);
 const FB_RESERVED = new Set(["login", "home.php", "data", "help", "policies", "privacy", "terms", "ads", "business", "marketplace", "watch", "gaming", "groups", "events", "reel", "reels", "stories", "share", "sharer.php", "dialog", "plugins", "about", "careers", "developers", "settings", "messages", "notifications", "friends", "photo", "photo.php", "video.php", "hashtag", "search", "legal", "security", "l.php", "recover", "checkpoint", "r.php", "mobile", "lite"]);
 const GENERIC_RESERVED = new Set(["explore", "about", "legal", "privacy", "terms", "help", "accounts", "p", "reel", "reels", "stories", "tv", "direct", "login", "signup", "i", "home", "search", "hashtag", "settings", "foryou", "following", "live", "discover", "upload", "download", "business", "creators", "new", "t", "s", "feed", "trends"]);
@@ -708,6 +697,10 @@ export function buildSourceEntities(graph: BusinessGraph, officialDomain: string
       : isFirstParty ? "likely_first_party"
       : priority === 3 ? "rejected_unrelated"
       : "uncertain";
+    const em = meta?.entityMatch ?? null;
+    const entityMatch: EntityMatchStatus = em?.status ?? (entry.discoveryMethod === "seed" ? "MATCHED" : priority === 0 ? "REJECTED" : association === "confirmed_first_party" ? "MATCHED" : association === "likely_first_party" ? "PROBABLE_MATCH" : association === "rejected_unrelated" ? "REJECTED" : entry.indexedOnly ? "MATCHED" : "UNVERIFIED");
+    const entityMatchReasons = em?.reasons ?? (entry.discoveryMethod === "seed" ? ["This is the seed URL."] : entry.indexedOnly ? ["Indexed post of the exact seed account."] : priority === 0 ? ["Platform infrastructure or navigation."] : []);
+    const sourceQuality: SourceEntity["sourceQuality"] = entry.discoveryMethod === "seed" ? "PRIMARY" : entityMatch === "MATCHED" ? "VERIFIED" : entityMatch === "PROBABLE_MATCH" ? "CORROBORATING" : entityMatch === "POSSIBLE_MATCH" || entityMatch === "UNVERIFIED" ? "WEAK" : "IRRELEVANT";
     out.push({
       ordinal: i + 1,
       url: entry.url,
@@ -715,8 +708,12 @@ export function buildSourceEntities(graph: BusinessGraph, officialDomain: string
       platform: platformOf(entry.url),
       linkType,
       priority,
-      isFirstParty,
-      association,
+      isFirstParty: isFirstParty && entityMatch !== "REJECTED" && entityMatch !== "UNVERIFIED",
+      association: entityMatch === "REJECTED" ? "rejected_unrelated" : entityMatch === "UNVERIFIED" ? "uncertain" : association,
+      entityMatch,
+      entityMatchReasons,
+      sourceEntityName: meta?.ogTitle ?? null,
+      sourceQuality,
       discoveredFromOrdinal: fromOrdinal,
       discoveryMethod: entry.discoveryMethod,
       depth: null,
@@ -957,17 +954,31 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   const earned = CHECKLIST_WEIGHTS.reduce((a, b) => a + (checks[b.key] ? b.weight : 0), 0);
   const fieldsVerified = Object.values(checks).filter(Boolean).length;
 
+  // ---- PRE-SAVE FAIL-SAFE: no field may rest on a source that failed entity
+  // matching. The engine already gates extraction; this is the last line.
+  const statusByUrl = new Map(sources.map((src) => [src.url, src.entityMatch] as const));
+  const bad = (u: string | null | undefined) => { if (!u) return false; const st = statusByUrl.get(u); return st === "REJECTED" || st === "UNVERIFIED"; };
+  const removed: string[] = [];
+  const keepPhones = phones.filter((p) => { const allBad = p.sources.length > 0 && p.sources.every((sr) => bad(sr.url)); if (allBad) removed.push(`phone ${p.value}`); return !allBad; });
+  const keepEmails = emails.filter((e) => { const allBad = e.sources.length > 0 && e.sources.every((sr) => bad(sr.url)); if (allBad) removed.push(`email ${e.value}`); return !allBad; });
+  const keepPhysical = physical.filter((l) => { const b = bad(l.sourceUrl); if (b) removed.push(`location ${[l.city, l.state].filter(Boolean).join(", ")}`); return !b; });
+  const keepService = serviceArea.filter((l) => !bad(l.sourceUrl));
+  const keepSocials = socialProfiles.map((sp) => (sp.url && bad(sp.url)) || (sp.sourceUrl && bad(sp.sourceUrl)) ? { ...sp, status: "not_found" as const, association: "rejected_unrelated" as Association } : sp);
+  if (website.value && (bad(websiteCandidate?.sourceUrl ?? null) || bad(website.value)) && website.status !== "CONFIRMED") { removed.push(`website ${website.value}`); website.value = null; website.status = "NOT_FOUND"; website.sources = []; }
+  if (removed.length) limitations.push({ code: "FIELDS_REMOVED_UNMATCHED_SOURCE", message: `Removed ${removed.length} field value(s) whose only sources failed entity matching: ${removed.slice(0, 5).join("; ")}.` });
+
   const base: Omit<ResearchProfile, "salesIntelligence"> = {
     identity,
-    contacts: { phones, emails, channels },
-    locations: { physical, serviceArea },
+    contacts: { phones: keepPhones, emails: keepEmails, channels },
+    locations: { physical: keepPhysical, serviceArea: keepService },
     website,
-    socialProfiles,
+    socialProfiles: keepSocials,
     business: { services: graph.services, pricing: { note: "NO_PUBLIC_PRICING_FOUND" } },
     sources,
     conflicts,
     limitations,
     entities,
+    seed: graph.seedEntity ?? null,
     metrics: {
       researchConfidencePct: Math.round((100 * earned) / totalWeight),
       fieldsVerified,

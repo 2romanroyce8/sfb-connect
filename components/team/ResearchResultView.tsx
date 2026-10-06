@@ -317,6 +317,14 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
               </span>
             )}
           </div>
+          {profile?.seed && (
+            <div className="text-[11.5px] text-[#6E6E73] mt-2">
+              Seed: <span className="text-[#A1A1A6]">{profile.seed.platform}{profile.seed.platformId ? ` id ${profile.seed.platformId}` : profile.seed.username ? ` @${profile.seed.username.replace(/^@/, "")}` : ""}</span>
+              {profile.seed.displayName && <> · resolved as <span className="text-[#F5F5F7]">{profile.seed.displayName}</span> <span className="text-[#6E6E73]">({profile.seed.resolvedFrom})</span></>}
+              {!profile.seed.resolved && <span className="text-[#FFD60A]"> · seed identity not resolved</span>}
+              {profile.seed.resolved && profile.seed.entityHint === "business" && <span className="text-[#30D158]"> · locked</span>}
+            </div>
+          )}
           {profile && (
             <div className="text-[12px] text-[#6E6E73] mt-2">
               Research confidence <span className="text-[#F5F5F7] font-semibold">{result.research_confidence_pct}%</span>
@@ -629,7 +637,9 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
                     {src.priority === 0 ? "ignored" : `P${src.priority} ${src.linkType.replace(/_/g, " ")}`}
                   </span>
                   <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-[#D0D0D0] truncate flex-1 hover:underline">{src.url}</a>
-                  <span className="text-[10.5px] text-[#6E6E73] shrink-0">{src.linksToSeed ? "links back to seed · " : ""}{src.association.replace(/_/g, " ")}</span>
+                  <span className="text-[10.5px] shrink-0" title={(src.entityMatchReasons ?? []).join(" ")} style={{ color: src.entityMatch === "MATCHED" ? "#30D158" : src.entityMatch === "PROBABLE_MATCH" ? "#A1A1A6" : src.entityMatch === "REJECTED" ? "#FF453A" : "#FFD60A" }}>
+                    {src.entityMatch ? src.entityMatch.replace(/_/g, " ").toLowerCase() : src.association.replace(/_/g, " ")}
+                  </span>
                   <span className="text-[10.5px] shrink-0" style={{ color: src.fetchStatus === "fetched" ? "#30D158" : "#6E6E73" }}>{FETCH_LABEL[src.fetchStatus] ?? src.fetchStatus}</span>
                 </div>
               ))}
@@ -881,7 +891,8 @@ function LocationRow({ label, value, status }: { label: string; value: string | 
       </div>
       {mapsUrl ? (
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#F5F5F7] truncate max-w-[400px] hover:underline flex items-center gap-1.5">
-          {value} <ExternalLink size={11} className="text-[#6E6E73] shrink-0" />
+          <span>{value}</span>
+          <ExternalLink size={11} className="text-[#6E6E73] shrink-0" aria-hidden="true" focusable="false" />
         </a>
       ) : (
         <span className="text-[13px] text-[#F5F5F7] truncate max-w-[400px]">Not found</span>
@@ -902,7 +913,8 @@ function LinkRow({ label, value, status }: { label: string; value: string | null
       </div>
       {href ? (
         <a href={href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#F5F5F7] truncate max-w-[400px] hover:underline flex items-center gap-1.5">
-          {value} <ExternalLink size={11} className="text-[#6E6E73] shrink-0" />
+          <span>{value}</span>
+          <ExternalLink size={11} className="text-[#6E6E73] shrink-0" aria-hidden="true" focusable="false" />
         </a>
       ) : (
         <span className="text-[13px] text-[#6E6E73] truncate max-w-[400px]">Not found</span>

@@ -26,6 +26,12 @@ export function profileColumns(profile: ResearchProfile) {
     relationship_type: e.relationship?.relationshipType ?? null,
     relationship_basis: e.relationship?.basis ?? null,
     relationship_confidence: e.relationship?.confidence ?? null,
+    seed_platform: profile.seed?.platform ?? null,
+    seed_platform_id: profile.seed?.platformId ?? null,
+    seed_username: profile.seed?.username ?? null,
+    seed_display_name: profile.seed?.displayName ?? null,
+    seed_entity_hint: profile.seed?.entityHint ?? null,
+    seed_resolved: profile.seed?.resolved ?? null,
   };
 }
 
@@ -40,6 +46,7 @@ export async function persistProfileEntities(service: SupabaseClient, resultId: 
           research_result_id: resultId, ordinal: src.ordinal, url: src.url, canonical_url: src.canonicalUrl, platform: src.platform, link_type: src.linkType,
           priority: src.priority, is_first_party: src.isFirstParty, association: src.association, discovered_from_ordinal: src.discoveredFromOrdinal,
           discovery_method: src.discoveryMethod, depth: src.depth, fetch_status: src.fetchStatus, skip_reason: src.skipReason, profile_type: src.profileType, links_to_seed: src.linksToSeed,
+          entity_match_status: src.entityMatch, entity_match_reasons: src.entityMatchReasons, source_entity_name: src.sourceEntityName, source_quality: src.sourceQuality,
           fetched_at: src.fetchStatus === "fetched" ? new Date().toISOString() : null,
         }))
       ),

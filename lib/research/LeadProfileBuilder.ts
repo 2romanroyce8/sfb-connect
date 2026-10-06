@@ -18,7 +18,7 @@
 // new sources and reopen the discovery queue — bounded to a couple of
 // cycles so this can't loop forever — before the job is allowed to finish.
 // ============================================================
-import type { PageMeta, BusinessGraph, Candidate, FetchedPage, SourceCheck, SourceLogEntry, QAPassResult, ResearchInstrumentation, FetchOutcome } from "./types";
+import type { SeedEntity, PageMeta, BusinessGraph, Candidate, FetchedPage, SourceCheck, SourceLogEntry, QAPassResult, ResearchInstrumentation, FetchOutcome } from "./types";
 import { fetchPage, classifySeedUrlType, classifySourceType } from "./fetchSource";
 import { discoverLinks } from "./LinkDiscoveryService";
 import { discoverContacts } from "./ContactDiscoveryService";
@@ -32,6 +32,9 @@ import { discoverOfficialWebsite, type WebsiteDiscoveryOutcome } from "./discove
 import { isRejectedPath, sortByPriority, MAX_PAGES_PER_DOMAIN } from "./CrawlPriority";
 import { isGenericPlatformContent } from "./GenericPlatformContent";
 import { adapterForUrl, adapterForPlatform, type ProfileExtract } from "./sources/adapters";
+import { matchPageToSeed, urlNamesSeed, facebookIdFromUrl, isPlatformBoilerplateUrl, normalizeName, CONTRIBUTING_STATUSES, EXPANDABLE_STATUSES, PLATFORM_CHROME_SOURCES, type EntityMatch } from "./entityMatch";
+import { isSocialProfilePath } from "./normalize";
+import { extractPhoneNumbers, extractVisibleEmails, extractMailtoEmails } from "./htmlExtract";
 import { recoverFromPublicIndex, type PublicIndexOutcome } from "./sources/publicIndex";
 import type { ResearchStage } from "./jobProgress";
 import {
@@ -161,6 +164,12 @@ export async function buildLeadProfile(
 
   const visited = new Map<string, FetchedPage>();
   const profileExtracts = new Map<string, ProfileExtract>();
+  // SEED ENTITY LOCK -- resolved from the seed page(s) before any expansion,
+  // then immutable for the rest of the job. Every discovered page is matched
+  // against it (pageMatch) before it may expand or contribute fields.
+  let seedEntity: SeedEntity | null = null;
+  const pageMatch = new Map<string, EntityMatch>();
+  const itemMeta = new Map<string, { discoveryMethod: SourceLogEntry["discoveryMethod"]; discoveredFrom: string | null }>();
   const sourceLog: SourceLogEntry[] = [];
   const queuedKeys = new Set<string>();
   const queue: QueueItem[] = [];
@@ -183,6 +192,11 @@ export async function buildLeadProfile(
   function enqueue(url: string, discoveredFrom: string | null, discoveryMethod: SourceLogEntry["discoveryMethod"], depth: number) {
     if (depth > MAX_DEPTH) return;
     if (isRejectedPath(url)) return; // admin/auth/commerce/legal/tracking-archive noise -- never worth a fetch
+    // Platform infrastructure / navigation (youtube.com/howyoutubeworks,
+    // /creators, manifests, feeds, CDN assets, lookup/spam sites) is never a
+    // business source -- not fetched, not counted. Seeds are always allowed.
+    if (discoveryMethod !== "seed" && isPlatformBoilerplateUrl(url)) return;
+    if (!itemMeta.has(urlKey(url))) itemMeta.set(urlKey(url), { discoveryMethod, discoveredFrom });
     const key = urlKey(url);
     if (queuedKeys.has(key) || visited.has(key)) return;
     const domain = domainKey(url) || url.toLowerCase();
@@ -257,6 +271,14 @@ export async function buildLeadProfile(
     const genericContent = isGenericPlatformContent(page);
     logEntry.genericPlatformContent = genericContent || undefined;
 
+    // ENTITY MATCH against the locked seed (null while the seed itself is
+    // being processed). Decides whether this page may expand or contribute.
+    const match = evaluatePageMatch(page, item);
+    pageMatch.set(urlKey(page.finalUrl), match);
+    pageMatch.set(urlKey(item.url), match);
+    const mayContribute = item.discoveryMethod === "seed" || CONTRIBUTING_STATUSES.has(match.status);
+    const mayExpand = item.discoveryMethod === "seed" || EXPANDABLE_STATUSES.has(match.status);
+
     // SOURCE ADAPTER: what does this platform's own rendered page publish?
     // (TikTok hydration JSON, LinkedIn company About, X og tags.) Stored per
     // page; aggregate() prefers it over generic <title>/og:title text, and
@@ -281,17 +303,25 @@ export async function buildLeadProfile(
     // engine an unrelated company (Kalicube) as THE business, and X's CDN
     // became the official website. Only the account-published link (from
     // the adapter) may set the official website for these platforms.
-    const PLATFORM_CHROME_SOURCES = new Set(["linkedin", "x", "tiktok", "youtube"]);
     const platformChrome = PLATFORM_CHROME_SOURCES.has(page.sourceType);
-    if (!officialWebsite && primary.officialWebsite && !platformChrome) officialWebsite = primary.officialWebsite;
+    // OFFICIAL WEBSITE GATE: discovery != verification. A page may nominate
+    // the official website only if it is the seed, or it has itself been
+    // matched to the seed (MATCHED / PROBABLE). A search hit that merely
+    // declares itself a "website" (LinkDiscoveryService self-declaration)
+    // is a candidate, not the answer -- this is exactly how phone.gd became
+    // an HVAC company's website.
+    if (!officialWebsite && primary.officialWebsite && !platformChrome && mayContribute) officialWebsite = primary.officialWebsite;
     // From platform chrome, a "social link" to the SAME platform is the
     // platform's own navigation (LinkedIn -> /pulse articles, /company/<ad>,
     // /games). Observed live: 14 such pages burned the crawl budget before the
     // discovered official website could be fetched.
     const samePlatform = (u: string) => platformChrome && classifySourceType(u) === page.sourceType;
-    if (!skipExpansion && !genericContent) {
+    const profileShaped = (u: string) => { const c = classifyLink(u); return c.kind !== "social" || isSocialProfilePath(u, (c as { platform: string }).platform); };
+    // UNVERIFIED / REJECTED pages are dead ends: finding them is not a reason
+    // to follow them. Only matched pages (and the seed) expand the graph.
+    if (!skipExpansion && !genericContent && mayExpand) {
       for (const bioUrl of primary.linkInBioPages) enqueue(bioUrl, item.url, "bio_link", item.depth + 1);
-      for (const s of primary.socials) if (!samePlatform(s.url)) enqueue(s.url, item.url, "social_link", item.depth + 1);
+      for (const s of primary.socials) if (!samePlatform(s.url) && profileShaped(s.url)) enqueue(s.url, item.url, "social_link", item.depth + 1);
     }
 
     // VERIFICATION EXTRACTION — independently re-scans every raw href on
@@ -299,11 +329,11 @@ export async function buildLeadProfile(
     // so a bio-link or social host primary's ordering happened to skip
     // still gets caught before this source is marked done.
     await onStage?.("VERIFYING_SOURCES", { sourcesFound: visited.size });
-    if (!skipExpansion && !genericContent) {
+    if (!skipExpansion && !genericContent && mayExpand) {
       for (const link of extractLinks(page.html, page.finalUrl)) {
         const cls = classifyLink(link);
         if (cls.kind === "linktree") enqueue(link, item.url, "bio_link", item.depth + 1);
-        if (cls.kind === "social" && !samePlatform(link)) enqueue(link, item.url, "social_link", item.depth + 1);
+        if (cls.kind === "social" && !samePlatform(link) && profileShaped(link)) enqueue(link, item.url, "social_link", item.depth + 1);
       }
     }
     logEntry.verificationPassDone = true;
@@ -317,7 +347,7 @@ export async function buildLeadProfile(
 
     // This page IS the official website -> queue its business-information
     // sub-pages (contact/about/services/etc), once.
-    if (officialWebsite && urlKey(page.finalUrl) === urlKey(officialWebsite) && !websiteSubPagesQueued) {
+    if (officialWebsite && urlKey(page.finalUrl) === urlKey(officialWebsite) && !websiteSubPagesQueued && mayExpand) {
       await onStage?.("READING_WEBSITE", { sourcesFound: visited.size });
       for (const sub of discoverWebsiteSubPages(page)) enqueue(sub, page.finalUrl, "website_crawl", item.depth + 1);
       websiteSubPagesQueued = true;
@@ -331,6 +361,86 @@ export async function buildLeadProfile(
     }
   }
 
+  /** Published names / contacts / outbound links of a fetched page, as the
+   * entity matcher needs them. */
+  function pageFacts(page: FetchedPage, item: QueueItem) {
+    const extract = profileExtracts.get(urlKey(page.finalUrl)) ?? profileExtracts.get(urlKey(item.url)) ?? null;
+    const names: string[] = [];
+    if (extract?.displayName) names.push(extract.displayName);
+    const ld = findLocalBusiness(extractJsonLd(page.html)); if (ld?.name) names.push(decodeEntities(String(ld.name)));
+    const og = extractMeta(page.html, "og:title"); if (og) names.push(decodeEntities(og.split(/[|–—-]/)[0]).trim());
+    const parentKey = item.discoveredFrom ? urlKey(item.discoveredFrom) : null;
+    const parent = parentKey ? visited.get(parentKey) : undefined;
+    const isSeedUrl = (u: string) => seedSources.some((sUrl) => urlKey(sUrl) === urlKey(u)) || (seedEntity ? urlNamesSeed(u, seedEntity) : false);
+    return {
+      url: page.finalUrl,
+      sourceType: page.sourceType,
+      isSeed: item.discoveryMethod === "seed" || isSeedUrl(page.finalUrl),
+      discoveryMethod: item.discoveryMethod,
+      parentStatus: parentKey ? pageMatch.get(parentKey)?.status ?? null : null,
+      parentIsChrome: parent ? PLATFORM_CHROME_SOURCES.has(parent.sourceType) : false,
+      parentIsSeed: !!item.discoveredFrom && isSeedUrl(item.discoveredFrom),
+      names: names.filter(Boolean),
+      phones: extractPhoneNumbers(page.html),
+      emails: [...extractMailtoEmails(page.html), ...extractVisibleEmails(page.html)],
+      outboundUrls: extractLinks(page.html, page.finalUrl),
+      isGenericPlatformContent: isGenericPlatformContent(page),
+      onTrustedOfficialDomain: !!officialWebsite && domainKey(page.finalUrl) === domainKey(officialWebsite) && (pageMatch.get(urlKey(officialWebsite))?.status === "MATCHED" || pageMatch.get(urlKey(officialWebsite))?.status === "PROBABLE_MATCH" || seedSources.some((sUrl) => urlKey(sUrl) === urlKey(officialWebsite!))),
+    };
+  }
+  function evaluatePageMatch(page: FetchedPage, item: QueueItem): EntityMatch {
+    if (item.discoveryMethod === "seed") return { status: "MATCHED", reasons: ["This is the seed URL."] };
+    return matchPageToSeed(pageFacts(page, item), seedEntity);
+  }
+
+  /** SEED RESOLUTION: what exact entity does the user's URL represent? Built
+   * from the seed page(s) only -- adapter extract, og tags, contacts and
+   * outbound links on that page. Nothing discovered later can change it. */
+  function resolveSeedEntity(): SeedEntity {
+    const seedUrl = seedSources[0];
+    const page = seedPageByUrl.get(seedUrl) ?? Array.from(seedPageByUrl.values())[0] ?? null;
+    const platform = classifySourceType(seedUrl);
+    const adapter = adapterForUrl(seedUrl);
+    const extract = page ? (profileExtracts.get(urlKey(page.finalUrl)) ?? profileExtracts.get(urlKey(seedUrl)) ?? null) : null;
+    const canonicalUrl = page?.finalUrl ?? seedUrl;
+    const platformId = platform === "facebook" ? (facebookIdFromUrl(seedUrl) ?? facebookIdFromUrl(canonicalUrl)) : null;
+    const username = adapter ? adapter.handleFromUrl(seedUrl) : null;
+    let displayName: string | null = extract?.displayName ?? null;
+    let resolvedFrom: SeedEntity["resolvedFrom"] = "none";
+    if (page?.ok && !isGenericPlatformContent(page)) {
+      if (!displayName) {
+        const og = extractMeta(page.html, "og:title") ?? extractTitle(page.html);
+        if (og) displayName = decodeEntities(og).replace(/\s*[|–—-]\s*(facebook|instagram|tiktok|linkedin|x)\s*$/i, "").replace(/\s*\|\s*.*$/, "").trim() || null;
+      }
+      if (displayName) resolvedFrom = "page";
+    }
+    if (!displayName) {
+      // URL text identity (facebook.com/people/Supreme-Air-LLC/<id>) -- weak but real.
+      const slug = extractHandleFromSeeds([seedUrl]);
+      if (slug && !/^\d+$/.test(slug) && !/^profile\.php/.test(slug)) { displayName = slug.replace(/[-_.]+/g, " ").trim(); resolvedFrom = "url"; }
+    }
+    const phones = page?.ok ? extractPhoneNumbers(page.html) : [];
+    const emails = page?.ok ? [...extractMailtoEmails(page.html), ...extractVisibleEmails(page.html)] : [];
+    const links = page?.ok && !isGenericPlatformContent(page) ? discoverLinks(page) : null;
+    const domains = new Set<string>();
+    if (links?.officialWebsite && !isPlatformBoilerplateUrl(links.officialWebsite)) { const d = canonicalDomain(links.officialWebsite); if (d) domains.add(d.toLowerCase()); }
+    if (extract?.website) { const d = canonicalDomain(extract.website); if (d) domains.add(d.toLowerCase()); }
+    const personLike = !!displayName && /^[A-Z][a-z'’.-]+(?: [A-Z][a-z'’.-]+){1,3}$/.test(displayName) && !/\b(llc|inc|co|services?|removal|hauling|roofing|hvac|plumbing|cleaning|landscap|repair|construction|auto|salon|studio|shop|store|cafe|restaurant|bar|grill|dental|law|realty|photography|air|group|solutions)\b/i.test(displayName);
+    const entityHint: SeedEntity["entityHint"] = extract?.flags.business || extract?.flags.organization || extract?.urlKind === "company" ? "business" : extract?.urlKind === "person" ? "person" : personLike ? "person" : displayName ? "business" : "unknown";
+    return { url: seedUrl, canonicalUrl, platform, platformId, username, displayName, entityHint, phones, emails, domains: Array.from(domains), resolved: !!displayName, resolvedFrom };
+  }
+
+  // SEED FIRST: fetch and process the seed URL(s) alone, resolve + lock the
+  // seed entity, and only then let discovery run against it.
+  await onStage?.("DISCOVERING_SOURCES", { sourcesFound: 0 });
+  const seedItems = queue.splice(0, queue.length).filter((q) => q.discoveryMethod === "seed");
+  const deferred = queue.splice(0, queue.length);
+  for (const seedItem of seedItems) await processNode(seedItem);
+  seedEntity = resolveSeedEntity();
+  // Children enqueued while processing the seed were matched with
+  // seedEntity === null; re-evaluate them lazily as they are processed (the
+  // match is computed at fetch time, after the lock, so nothing to redo).
+  queue.push(...deferred);
   await drainQueue();
   let allPages = Array.from(visited.values());
 
@@ -445,7 +555,11 @@ export async function buildLeadProfile(
       trustCache.set(k, t);
       return t;
     };
-    const trustedPages = contentPages.filter((p) => isTrusted(p));
+    // A page contributes fields only when its entity match says so; the
+    // older link-propagation trust is kept as a secondary route for seeds
+    // whose entity could not be resolved at all.
+    const isContributing = (p: FetchedPage) => { const m = pageMatch.get(urlKey(p.finalUrl)) ?? pageMatch.get(urlKey(p.url)); return m ? CONTRIBUTING_STATUSES.has(m.status) : isTrusted(p); };
+    const trustedPages = contentPages.filter((p) => isContributing(p));
 
     await onStage?.("EXTRACTING_CONTACTS", { sourcesFound: visited.size });
     const bookingLinks: string[] = [];
@@ -483,7 +597,8 @@ export async function buildLeadProfile(
       // Same-platform pages (x.com/<handle>/photo linking to x.com/<handle>)
       // are the seed talking about itself -- not a cross-link.
       const linksToSeed = pageLinksBack(page);
-      const trusted = isTrusted(page);
+      const trusted = isContributing(page);
+      const entityMatch = pageMatch.get(urlKey(page.finalUrl)) ?? pageMatch.get(urlKey(page.url)) ?? undefined;
       const capStrength = (s: number) => (isWiderWebDiscovered(page) ? Math.min(s, 1) : s);
       const title = extractTitle(page.html);
       const ogTitle = extractMeta(page.html, "og:title");
@@ -495,6 +610,7 @@ export async function buildLeadProfile(
         isSeed: seedKeys.has(normSeed(page.url)) || seedKeys.has(normSeed(page.finalUrl)),
         linksToSeed: linksToSeed || undefined,
         trusted,
+        entityMatch,
         title: title ? decodeEntities(title) : null,
         ogTitle: ogTitle ? decodeEntities(ogTitle) : null,
         description: metaDesc ? decodeEntities(metaDesc) : null,
@@ -552,7 +668,14 @@ export async function buildLeadProfile(
     const heuristicCategory = classifyCategoryHeuristic(trustedPages);
     if (heuristicCategory) categoryCandidates.push(heuristicCategory);
 
-    const name = resolveField(nameCandidates);
+    // NAME LOCK: when the seed resolved a business-type display name, that IS
+    // the business name. Other pages' names can corroborate it or be shown as
+    // possibilities -- they can never replace it. (Person-type seeds leave the
+    // person/business split to the entity layer.)
+    const lockedName = seedEntity?.resolved && seedEntity.displayName && seedEntity.entityHint === "business" ? seedEntity.displayName : null;
+    const name = lockedName
+      ? { value: lockedName, status: "verified" as const, confidence: 0.95, sources: [seedEntity!.canonicalUrl] }
+      : resolveField(nameCandidates.filter((c) => { const m = pageMatch.get(urlKey(c.sourceUrl)); return !m || CONTRIBUTING_STATUSES.has(m.status) || m.status === "POSSIBLE_MATCH"; }));
     const categoryResolved = resolveField(categoryCandidates);
 
     await onStage?.("CROSS_VALIDATING", { sourcesFound: visited.size });
@@ -571,7 +694,7 @@ export async function buildLeadProfile(
     ];
 
     return {
-      businessName: name.value ? { value: name.value, sourceUrl: name.sources[0] || "", sourceType: "website" as const, strength: 3 } : null,
+      businessName: name.value ? { value: name.value, sourceUrl: name.sources[0] || "", sourceType: lockedName ? (seedEntity!.platform as string) : ("website" as const), strength: 3 } : null,
       nameCandidates,
       pageMeta,
       category: categoryResolved.value,
@@ -606,6 +729,7 @@ export async function buildLeadProfile(
         // The seed account as the index knows it: display name + the text of
         // its own indexed posts/pages standing in for the bio we can't read.
         indexPageMeta.push({ url: socialSeed.url, requestedUrl: socialSeed.url, sourceType: adapter.platform, isSeed: true, title: outcome.displayName, ogTitle: outcome.displayName, description: outcome.captionText.slice(0, 1500) || null });
+        if (seedEntity && !seedEntity.resolved && outcome.displayName) seedEntity = { ...seedEntity, displayName: outcome.displayName, resolved: true, resolvedFrom: "index", phones: Array.from(new Set([...seedEntity.phones, ...outcome.phones])), emails: Array.from(new Set([...seedEntity.emails, ...outcome.emails])) };
         if (outcome.displayName) indexNameCandidates.push({ value: outcome.displayName, sourceUrl: socialSeed.url, sourceType: adapter.platform, strength: 2 });
         for (const post of outcome.posts) {
           indexPageMeta.push({ url: post.url, requestedUrl: post.url, sourceType: adapter.platform, isSeed: false, sameAccountAsSeed: true, title: post.title, ogTitle: outcome.displayName, description: post.caption });
@@ -690,7 +814,11 @@ export async function buildLeadProfile(
 
     qaResults.push(qa1, qa2, qa3, qa4, qa5, qa6, qa7);
 
-    const newSourcesTotal: QueuedSource[] = [...qa3New, ...qa7New];
+    // DO NOT OVER-RESEARCH: once the seed is resolved and the official site,
+    // a phone and a location are verified, more sources cannot make the
+    // identity more correct -- they can only contaminate it.
+    const sufficient = !!seedEntity?.resolved && !!officialWebsite && extracted.contactMethods.some((c) => c.type === "phone" && c.value) && extracted.locations.some((l) => l.city || l.state);
+    const newSourcesTotal: QueuedSource[] = sufficient ? [] : [...qa3New, ...qa7New].filter((src) => !isPlatformBoilerplateUrl(src.url));
     if (newSourcesTotal.length === 0 || cycle === MAX_QA_REOPEN_CYCLES || visited.size >= MAX_TOTAL_SOURCES) {
       await onStage?.("QA_8", { sourcesFound: visited.size });
       qaResults.push(runFinalProfileQA(ctx, queue.length === 0));
@@ -737,6 +865,7 @@ export async function buildLeadProfile(
 
   const graph: BusinessGraph = {
     ...extracted,
+    ...(seedEntity ? { seedEntity } : {}),
     sourceChecks,
     sourceLog,
     qaResults,
