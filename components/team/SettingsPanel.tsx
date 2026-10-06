@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { COMMON_TIMEZONES } from "@/lib/crm/commonTimezones";
 import ConnectedAgentsSection from "./ConnectedAgentsSection";
+import DangerZoneSection from "./DangerZoneSection";
 
 type Profile = {
   full_name: string | null;
@@ -303,6 +304,12 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
       <Section title="Connected Agents" id="agents">
         <ConnectedAgentsSection />
       </Section>
+
+      {profile.team_role === "owner" && (
+        <Section title="Danger Zone — Data Control (owner only)" id="danger">
+          <DangerZoneSection />
+        </Section>
+      )}
 
       <Section title="Notifications, Sales Defaults, Calendar Defaults, AI Defaults">
         <p className="text-[12.5px] text-[#6E6E73] leading-relaxed">
