@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { REMEMBER_COOKIE, hardenCookie, shouldPersist } from "@/lib/supabase/sessionPolicy";
+import { AGENT_SESSION_COOKIE, isMutatingMethod } from "@/lib/agent/readOnly";
 
 /**
  * Protects /dashboard/** for any authenticated user, /admin/** for
@@ -46,6 +47,31 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
+  // ---- Delegated agent browser sessions ----------------------------------
+  // A browser opened through an agent handoff carries `sfb_agent` (the
+  // authorization id). Every request re-checks that the authorization is
+  // still active -- revoking in Settings kills the browser on its next
+  // request -- and every mutating request is refused: agent sessions are
+  // read-only regardless of the user's own role.
+  const agentAuthorizationId = request.cookies.get(AGENT_SESSION_COOKIE)?.value;
+  if (agentAuthorizationId) {
+    const active = await agentAuthorizationActive(agentAuthorizationId, user?.id ?? null);
+    if (!active) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/team/login";
+      url.search = "";
+      url.searchParams.set("error", "agent_revoked");
+      const out = path.startsWith("/api/") ? NextResponse.json({ error: "agent_revoked", message: "This agent authorization has been revoked." }, { status: 401 }) : NextResponse.redirect(url);
+      for (const c of request.cookies.getAll()) out.cookies.set(c.name, "", { path: "/", maxAge: 0 });
+      return out;
+    }
+    if (isMutatingMethod(request.method)) {
+      return NextResponse.json({ error: "read_only_agent_session", message: "Delegated agent sessions are read-only. Writes require the user's own login." }, { status: 403 });
+    }
+    response.headers.set("x-sfb-agent-session", "read-only");
+  }
+  if (path.startsWith("/api/")) return response;
+
   const needsAuth = path.startsWith("/dashboard") || path.startsWith("/admin") || path.startsWith("/onboarding");
   if (needsAuth && !user) {
     const url = request.nextUrl.clone();
@@ -86,6 +112,23 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+/** Edge-safe check (plain REST, service role) -- no node-only crypto here. */
+async function agentAuthorizationActive(id: string, userId: string | null): Promise<boolean> {
+  if (!userId || !/^[0-9a-f-]{36}$/i.test(id)) return false;
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/agent_authorizations?id=eq.${id}&select=status,user_id,scopes`, {
+      headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return false;
+    const rows = (await res.json()) as { status: string; user_id: string; scopes: string[] }[];
+    const row = rows[0];
+    return !!row && row.status === "active" && row.user_id === userId && row.scopes.includes("sfb:browser");
+  } catch {
+    return false;
+  }
+}
+
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*", "/team/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*", "/team/:path*", "/api/team/:path*", "/api/crm/:path*"],
 };

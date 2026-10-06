@@ -17,6 +17,7 @@ function TeamLoginForm() {
   const params = useSearchParams();
   const next = params.get("next") || "/team/dashboard";
   const notAuthorized = params.get("error") === "not_authorized";
+  const agentError = params.get("error")?.startsWith("agent_") ? params.get("error") : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -138,6 +139,11 @@ function TeamLoginForm() {
           {notAuthorized && (
             <p style={{ fontSize: 10, color: "#B96A6A", marginBottom: 14, textAlign: "center" }}>
               That account doesn&apos;t have team access.
+            </p>
+          )}
+          {agentError && (
+            <p style={{ fontSize: 10, color: "#B96A6A", marginBottom: 14, textAlign: "center" }}>
+              {agentError === "agent_revoked" ? "That agent's access has been revoked. Sign in yourself to continue." : agentError === "agent_link_invalid" ? "That agent sign-in link has expired or was already used." : "The agent session could not be opened."}
             </p>
           )}
 

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { COMMON_TIMEZONES } from "@/lib/crm/commonTimezones";
+import ConnectedAgentsSection from "./ConnectedAgentsSection";
 
 type Profile = {
   full_name: string | null;
@@ -297,6 +298,10 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
             {passwordMsg && <span className="text-[12px] text-[#A1A1A6]">{passwordMsg}</span>}
           </div>
         </div>
+      </Section>
+
+      <Section title="Connected Agents" id="agents">
+        <ConnectedAgentsSection />
       </Section>
 
       <Section title="Notifications, Sales Defaults, Calendar Defaults, AI Defaults">
