@@ -79,8 +79,8 @@ export async function rotateRefreshToken(refreshToken: string): Promise<{ author
   const { data: row } = await s.from("agent_tokens").select("authorization_id, revoked_at, expires_at, replaced_by_hash").eq("token_hash", hash).eq("kind", "refresh").maybeSingle();
   if (!row) return null;
   if (row.revoked_at || row.replaced_by_hash) {
-    // Reuse of a rotated token = theft signal. Kill everything on this authorization.
-    await revokeAuthorization(row.authorization_id, "refresh_token_reuse");
+    // Reuse of a rotated token = theft signal. The caller revokes the whole
+    // authorization through revokeAuthorizationFully (delegated sessions too).
     return { reuse: true, authorizationId: row.authorization_id };
   }
   if (new Date(row.expires_at).getTime() < Date.now()) return null;
@@ -107,9 +107,10 @@ export async function revokeAuthorization(id: string, reason: string) {
   await s.from("agent_browser_handoffs").update({ used_at: now }).eq("authorization_id", id).is("used_at", null);
 }
 
-export async function revokeByToken(token: string) {
+/** Resolves a presented access/refresh token to its authorization id (hash lookup only). */
+export async function authorizationIdForToken(token: string): Promise<string | null> {
   const { data } = await svc().from("agent_tokens").select("authorization_id").eq("token_hash", sha256(token)).maybeSingle();
-  if (data) await revokeAuthorization(data.authorization_id, "client_revocation");
+  return data?.authorization_id ?? null;
 }
 
 export async function touchAuthorization(id: string) {

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { consumeAuthCode, issueTokenPair, rotateRefreshToken, getAuthorization, rateLimit, audit } from "@/lib/agent/store";
 import { verifyPkce } from "@/lib/agent/crypto";
+import { revokeAuthorizationFully } from "@/lib/agent/revoke";
 import { oauthError, authenticateClient, readForm, canonicalRedirectUri } from "@/lib/agent/oauth";
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
     const rotated = await rotateRefreshToken(rt);
     if (!rotated) return oauthError(400, "invalid_grant", "Refresh token is invalid or expired.");
     if ("reuse" in rotated) {
+      await revokeAuthorizationFully(rotated.authorizationId, "refresh_token_reuse");
       await audit({ authorizationId: rotated.authorizationId, userId: null, clientId: auth.client.client_id, accessMethod: "oauth", action: "refresh_token_reuse", result: "denied", detail: { note: "authorization revoked" } });
       return oauthError(400, "invalid_grant", "Refresh token reuse detected; the authorization has been revoked.");
     }
