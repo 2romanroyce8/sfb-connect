@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
             seed_canonical_url: rawSources[0],
             submitted_by: user.id,
             source_urls: rawSources,
-            business_name: profile.entities.business?.name ?? profile.entities.person?.name ?? graph.businessName?.value ?? null,
+            business_name: profile.entities.business?.name ?? profile.entities.person?.name ?? profile.entities.business?.candidates[0]?.value ?? null,
             owner_name: profile.entities.person?.name ?? graph.ownerName ?? null,
             website: website?.value || null,
             phone: phone?.value || null,

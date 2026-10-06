@@ -19,7 +19,7 @@
 // cycles so this can't loop forever — before the job is allowed to finish.
 // ============================================================
 import type { PageMeta, BusinessGraph, Candidate, FetchedPage, SourceCheck, SourceLogEntry, QAPassResult, ResearchInstrumentation, FetchOutcome } from "./types";
-import { fetchPage, classifySeedUrlType } from "./fetchSource";
+import { fetchPage, classifySeedUrlType, classifySourceType } from "./fetchSource";
 import { discoverLinks } from "./LinkDiscoveryService";
 import { discoverContacts } from "./ContactDiscoveryService";
 import { discoverLocations } from "./LocationDiscoveryService";
@@ -268,14 +268,22 @@ export async function buildLeadProfile(
         profileExtracts.set(urlKey(page.finalUrl), extract);
         profileExtracts.set(urlKey(item.url), extract);
         if (!officialWebsite && extract.website && item.discoveryMethod === "seed") officialWebsite = extract.website;
-        if (!skipExpansion) for (const l of extract.links) enqueue(l, item.url, "link_extraction", item.depth + 1);
+        if (!skipExpansion) for (const l of extract.links) enqueue(l, item.url, "bio_link", item.depth + 1);
       }
     }
 
     // PRIMARY EXTRACTION
     const primary = genericContent ? { officialWebsite: null, linkInBioPages: [], socials: [], bookingLinks: [] } : discoverLinks(page);
     logEntry.primaryPassDone = true;
-    if (!officialWebsite && primary.officialWebsite) officialWebsite = primary.officialWebsite;
+    // A LinkedIn / X / TikTok / YouTube page's generic outbound links are the
+    // PLATFORM's (sidebar "people also viewed", ads, CDN, footer), not the
+    // account's. Observed live: a LinkedIn profile's sidebar handed the
+    // engine an unrelated company (Kalicube) as THE business, and X's CDN
+    // became the official website. Only the account-published link (from
+    // the adapter) may set the official website for these platforms.
+    const PLATFORM_CHROME_SOURCES = new Set(["linkedin", "x", "tiktok", "youtube"]);
+    const platformChrome = PLATFORM_CHROME_SOURCES.has(page.sourceType);
+    if (!officialWebsite && primary.officialWebsite && !platformChrome) officialWebsite = primary.officialWebsite;
     if (!skipExpansion && !genericContent) {
       for (const bioUrl of primary.linkInBioPages) enqueue(bioUrl, item.url, "bio_link", item.depth + 1);
       for (const s of primary.socials) enqueue(s.url, item.url, "social_link", item.depth + 1);
@@ -377,13 +385,16 @@ export async function buildLeadProfile(
 
     const normSeed = (u: string) => u.toLowerCase().replace(/^https?:\/\/(www\.|m\.|mbasic\.)?/, "").replace(/\/+$/, "").replace(/\?.*$/, "");
     const seedKeys = new Set(seedSources.map(normSeed));
+    const seedSourceTypes = new Set(seedSources.map((u) => classifySourceType(u)));
     const pageMeta: PageMeta[] = [...indexPageMeta];
     for (const page of contentPages) {
       // Cross-link verification: does this page link to the exact seed
       // URL/handle? A website whose footer points at instagram.com/<seed
       // handle> (or the seed Facebook page) is tied to the same entity by
       // the entity itself -- the strongest association signal we have.
-      const linksToSeed = extractLinks(page.html, page.finalUrl).some((l) => seedKeys.has(normSeed(l)));
+      // Same-platform pages (x.com/<handle>/photo linking to x.com/<handle>)
+      // are the seed talking about itself -- not a cross-link.
+      const linksToSeed = !seedSourceTypes.has(page.sourceType) && extractLinks(page.html, page.finalUrl).some((l) => seedKeys.has(normSeed(l)));
       const capStrength = (s: number) => (isWiderWebDiscovered(page) ? Math.min(s, 1) : s);
       const title = extractTitle(page.html);
       const ogTitle = extractMeta(page.html, "og:title");

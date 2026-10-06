@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           .update({
             ...profileColumns(profile),
             source_urls: allSources,
-            business_name: profile.entities.business?.name ?? profile.entities.person?.name ?? graph.businessName?.value ?? result.business_name,
+            business_name: profile.entities.business?.name ?? profile.entities.person?.name ?? profile.entities.business?.candidates[0]?.value ?? result.business_name,
             website: website?.value || result.website,
             phone: phone?.value || result.phone,
             email: email?.value || result.email,

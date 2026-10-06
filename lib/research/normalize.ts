@@ -92,6 +92,14 @@ const SOCIAL_HOSTS: Record<string, "facebook" | "instagram" | "tiktok" | "linked
 // this is the fix for that exact bug (it was previously unfiltered and
 // could win the "official website" vote by link-frequency alone).
 const INFRA_HOST_SUFFIXES = [
+  // Observed live 2026-10-05: abs.twimg.com (X) and static.licdn.com
+  // (LinkedIn) each won "official website" on a social seed.
+  "twimg.com",
+  "licdn.com",
+  "ytimg.com",
+  "ggpht.com",
+  "gstatic.com",
+  "googleusercontent.com",
   "fbcdn.net",
   "fbsbx.com",
   "cdninstagram.com",

@@ -372,17 +372,26 @@ export function analyzeEntities(
   const seedHandle = (() => { try { const u = new URL(seedUrl); const seg = u.pathname.split("/").filter(Boolean)[0]; return seg ? seg.replace(/^@/, "") : null; } catch { return null; } })();
   // Pages that link back to the exact seed account are tied to the entity by
   // the entity itself -- strongest corroboration there is.
-  const backlinkUrls = new Set((graph.pageMeta ?? []).filter((m) => m.linksToSeed).map((m) => m.url));
+  const seedPlatform = platformOf(seedUrl);
+  const backlinkUrls = new Set((graph.pageMeta ?? []).filter((m) => m.linksToSeed && platformOf(m.url) !== seedPlatform).map((m) => m.url));
   const officialDomain = website.value ? (canonicalDomain(website.value) || "").toLowerCase() : "";
   const seedRef = (excerpt?: string | null) => ref(seedUrl, excerpt);
 
   // ---- business name candidates, source by source (never collapsed) ----
-  type Cand = { value: string; sources: SourceRef[]; strength: number; origin: "website" | "bio" | "social" | "directory" | "domain" | "engine" };
+  // eligible = may become THE business. A name found on some page the graph
+  // reached is only eligible when the page is tied to the seed entity:
+  // official website, links back to the seed, or the name matches what the
+  // account itself says (display name / bio / headline). Anything else is
+  // shown as a possibility, never promoted. This is the rule that stops a
+  // LinkedIn sidebar company from becoming the lead.
+  type Cand = { value: string; sources: SourceRef[]; strength: number; origin: "website" | "bio" | "social" | "directory" | "domain" | "engine"; eligible: boolean };
   const cands: Cand[] = [];
   const PAGE_TITLE_PREFIX = /^(contact|about|about us|home|services?|our services|areas? we serve|locations?|faq|reviews?|gallery|blog|careers?|pricing|book(?:ing)?|schedule|get a quote|free quote|welcome to)\b[\s:|-]*/i;
-  const addCand = (value: string, src: SourceRef, strength: number, origin: Cand["origin"]) => {
+  const IMPERATIVE_TITLE = /^(manage|get|find|learn|join|watch|shop|view|see|discover|explore|download|sign|start|request|book|schedule|call|contact|read|browse|search|track|check|apply|enter|log|login|create)\b/i;
+  const addCand = (value: string, src: SourceRef, strength: number, origin: Cand["origin"], eligible = true) => {
     let v = decodeHtmlText(value)!.replace(/\s+/g, " ").trim();
     if (!v || v.length < 2) return;
+    if (IMPERATIVE_TITLE.test(v) && v.split(/\s+/).length <= 5) return; // "Manage Your Appointments" is a page, not a name
     if (seedDisplayName && isProfileSeed && normalizeBusinessName(v) === normalizeBusinessName(seedDisplayName)) return; // that's the person, not a business
     if (isGenericServicePhrase(v)) return; // "Appliance Removal Services", "San Diego Junk Removal"
     if (/^[A-Z][a-z]+(?: [A-Z][a-z]+)?(?:, [A-Z]{2})?$/.test(v) && graph.locations.some((l) => l.city && v.toLowerCase().startsWith(l.city.toLowerCase()))) return; // a bare city, not a name
@@ -394,7 +403,7 @@ export function analyzeEntities(
     const nv = normalizeBusinessName(v);
     if (!nv) return;
     const existing = cands.find((c) => normalizeBusinessName(c.value) === nv);
-    if (existing) { existing.sources.push(src); existing.strength = Math.max(existing.strength, strength); return; }
+    if (existing) { existing.sources.push(src); existing.strength = Math.max(existing.strength, strength); existing.eligible = existing.eligible || eligible; return; }
     // A longer variant that CONTAINS an existing name ("San Diego's Trusted
     // Hauling & Junk Removal | Junk Seekers" vs "Junk Seekers") is the same
     // entity's tagline/page title -- supporting evidence, never a rival.
@@ -402,26 +411,40 @@ export function analyzeEntities(
     if (container) {
       // keep the shorter, cleaner form as the canonical name
       if (nv.length < normalizeBusinessName(container.value).length && strength >= container.strength) container.value = v;
-      container.sources.push(src); container.strength = Math.max(container.strength, strength); return;
+      container.sources.push(src); container.strength = Math.max(container.strength, strength); container.eligible = container.eligible || eligible; return;
     }
-    cands.push({ value: v, sources: [src], strength, origin });
+    cands.push({ value: v, sources: [src], strength, origin, eligible });
   };
+  // What the account itself says it is: display name (for business accounts)
+  // and every business mentioned in its bio/headline.
+  const selfNames: string[] = [];
+  const bioMentionsEarly = seedBio && (isProfileSeed || sourceType.startsWith("INSTAGRAM") || sourceType.startsWith("X_") || sourceType.startsWith("TIKTOK") || sourceType === "LINKEDIN_PERSON_PROFILE") ? extractBusinessMentionsFromBio(seedBio) : [];
+  for (const m of bioMentionsEarly) selfNames.push(normalizeBusinessName(m.name));
+  if (seedDisplayName && !isProfileSeed) selfNames.push(normalizeBusinessName(seedDisplayName));
+  if (seedMeta?.headline) selfNames.push(normalizeBusinessName(seedMeta.headline));
+  const matchesSelf = (value: string) => { const nv = normalizeBusinessName(value); return nv.length >= 3 && selfNames.some((sn) => sn.length >= 3 && (sn.includes(nv) || nv.includes(sn))); };
   for (const c of graph.nameCandidates ?? []) {
     const d = (canonicalDomain(c.sourceUrl) || "").toLowerCase();
     const fromSeed = c.sourceUrl === seedUrl || platformOf(c.sourceUrl) === "facebook";
     if (fromSeed) continue; // seed names are handled via display name / bio
-    const onOfficial = !!officialDomain && d === officialDomain;
+    // "Official" only counts when the website itself is trusted (verified by
+    // the engine or linking back to the seed). An uncertain website guess --
+    // e.g. a sidebar company a LinkedIn page happened to link to -- confers
+    // no eligibility on the names found there.
+    const onOfficial = !!officialDomain && d === officialDomain && website.status === "CONFIRMED";
     const linksBack = backlinkUrls.has(c.sourceUrl);
+    const selfMatch = matchesSelf(c.value);
     // Keep the engine's own evidence grade (1 = <title>, 2 = og:title,
     // 3 = JSON-LD). Being on the official/backlinked site is corroboration,
     // not a promotion: lifting every sub-page <title> ("Contact Junk
     // Seekers", "Areas We Serve in San Diego County") to full strength
     // manufactured a fake identity conflict on the first live Instagram run.
-    if (onOfficial || linksBack) addCand(c.value, ref(c.sourceUrl), c.strength, "website");
-    else if (platformOf(c.sourceUrl) === "google_business" || platformOf(c.sourceUrl) === "yelp" || platformOf(c.sourceUrl) === "bbb") addCand(c.value, ref(c.sourceUrl), 2, "directory");
-    else if (firstPartyUrls.has(c.sourceUrl) && c.strength >= 2) addCand(c.value, ref(c.sourceUrl), 1, "social");
+    if (onOfficial || linksBack) addCand(c.value, ref(c.sourceUrl), c.strength, "website", true);
+    else if (platformOf(c.sourceUrl) === "google_business" || platformOf(c.sourceUrl) === "yelp" || platformOf(c.sourceUrl) === "bbb") addCand(c.value, ref(c.sourceUrl), 2, "directory", selfMatch);
+    else if (selfMatch) addCand(c.value, ref(c.sourceUrl), c.strength, "website", true);
+    else if (c.strength >= 2) addCand(c.value, ref(c.sourceUrl), Math.min(c.strength, 2), "website", false); // reachable page, no tie to the seed -- a possibility only
   }
-  const bioMentions = seedBio && (isProfileSeed || sourceType.startsWith("INSTAGRAM") || sourceType.startsWith("X_") || sourceType.startsWith("TIKTOK") || sourceType === "LINKEDIN_PERSON_PROFILE") ? extractBusinessMentionsFromBio(seedBio) : [];
+  const bioMentions = bioMentionsEarly;
   for (const m of bioMentions) addCand(m.name, seedRef(m.excerpt), 1, "bio");
   if (!isProfileSeed && graph.businessName?.value) addCand(graph.businessName.value, ref(graph.businessName.sourceUrl), graph.businessName.strength, "engine");
   if (cands.length === 0 && officialDomain && isProfileSeed) addCand(humanizeDomain(officialDomain), ref(website.value), 0, "domain");
@@ -450,7 +473,7 @@ export function analyzeEntities(
   // Junk Removal", "Appliance Removal Services in San Diego"), and bare
   // <title> fragments are too noisy to be names at all. Candidates from OTHER
   // sources are kept -- a weak rival is still worth showing as "possible".
-  const anchor = cands.find((c) => c.strength >= 3);
+  const anchor = cands.find((c) => c.eligible && c.strength >= 3);
   if (anchor) {
     const anchorDomains = new Set(anchor.sources.map((sr) => (canonicalDomain(sr.url) || "").toLowerCase()));
     for (let i = cands.length - 1; i >= 0; i--) {
@@ -461,14 +484,16 @@ export function analyzeEntities(
       if (c.strength <= 1 || (sameSite && c.strength <= 2 && longPhrase)) cands.splice(i, 1);
     }
   }
-  cands.sort((a, b) => b.strength - a.strength || b.sources.length - a.sources.length);
-  const top = cands[0] ?? null;
+  cands.sort((a, b) => Number(b.eligible) - Number(a.eligible) || b.strength - a.strength || b.sources.length - a.sources.length);
+  const top = cands.find((c) => c.eligible) ?? null;
+  const ineligibleOnly = !top && cands.length > 0;
+  if (ineligibleOnly) notes.push(`Pages were reached that name ${cands.slice(0, 2).map((c) => `"${c.value}"`).join(" / ")}, but nothing ties them to this account (no link back, no match with what the account says). Shown as possibilities only.`);
   const independentSources = (c: Cand) => new Set(c.sources.map((s) => platformOf(s.url) === "website" ? (canonicalDomain(s.url) || s.url) : platformOf(s.url))).size;
   // Independent corroboration also counts a bio mention that matches a website/directory name.
   // Only a rival the sources themselves assert as THE business (JSON-LD /
   // resolved official name, strength 3) on a first-party page is a genuine
   // collision. og:titles and page titles never are -- they are taglines.
-  const strongOthers = cands.filter((c) => c !== top && c.strength >= 3 && top!.strength >= 3 && c.sources.some((s) => firstPartyUrls.has(s.url)));
+  const strongOthers = cands.filter((c) => c !== top && c.eligible && c.strength >= 3 && top!.strength >= 3 && c.sources.some((s) => firstPartyUrls.has(s.url)));
   if (top && strongOthers.length) {
     conflicts.push({ field: "business_name", values: [top, ...strongOthers].map((c) => ({ value: c.value, sources: c.sources })), note: "First-party sources name different businesses. Could be a rebrand, a parent/DBA pair, or the wrong website -- confirm which business this account represents before saving." });
   }
@@ -548,7 +573,7 @@ export function analyzeEntities(
       if (linksBackToSeed) notes.push(`${top.value}'s website links back to this exact account -- cross-link verified.`);
       if (!confirmed) notes.push("Business name found but only weakly corroborated by a second signal (domain/phone).");
     }
-  } else if (isProfileSeed && (signals.length >= 2 || top)) {
+  } else if ((isProfileSeed && (signals.length >= 2 || top)) || ineligibleOnly) {
     entityType = "UNKNOWN"; businessStatus = "BUSINESS_IDENTITY_UNCERTAIN";
     identityConfidence = "uncertain"; identityStatus = "UNCERTAIN";
     business = { name: null, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "UNCERTAIN", confidence: "LOW" };

@@ -127,3 +127,75 @@ test("employer field never implies ownership: 'Sales Manager at 1-800-GOT-JUNK?'
   assert.ok(p.entities.notes.some((n) => /not its operator/.test(n)));
   assert.equal(saveBlockReason(p), null);
 });
+
+// ---- regressions from the first live LinkedIn / X / TikTok runs (2026-10-05) ----
+import { classifyLink } from "../../lib/research/normalize";
+
+test("live-observed: platform CDN hosts are infrastructure, never a website (abs.twimg.com, static.licdn.com)", () => {
+  assert.equal(classifyLink("https://abs.twimg.com/responsive-web/client-web/main.js").kind, "infra");
+  assert.equal(classifyLink("https://static.licdn.com/aero-v1/sc/h/abc").kind, "infra");
+  assert.equal(classifyLink("https://i.ytimg.com/vi/x/hqdefault.jpg").kind, "infra");
+});
+
+test("LinkedIn /in/ page that renders: og:title splits into person + headline; description becomes bio; not a business flag", () => {
+  const html = '<html><head><title>Brian Scudamore - 1-800-GOT-JUNK? | LinkedIn</title><meta property="og:title" content="Brian Scudamore - 1-800-GOT-JUNK? | LinkedIn"><meta name="description" content="Brian Scudamore is the founder and CEO of O2E Brands, the banner company for… · Experience: 1-800-GOT-JUNK? · Education: Kindergarten Graduate · Location: Vancouver · 500+ connections on LinkedIn. View Brian Scudamore’s profile on LinkedIn, a professional community of 1 billion members."></head><body></body></html>';
+  const ex = linkedinAdapter.extractProfile(page("https://ca.linkedin.com/in/scudamore", html, "linkedin"))!;
+  assert.equal(ex.displayName, "Brian Scudamore");
+  assert.equal(ex.headline, "1-800-GOT-JUNK?");
+  assert.ok(ex.bio!.startsWith("Brian Scudamore is the founder and CEO of O2E Brands"));
+  assert.equal(ex.location, "Vancouver");
+  assert.equal(ex.flags.business, undefined);
+  assert.equal(ex.urlKind, "person");
+});
+
+test("live-observed (Kalicube): a company reached through a LinkedIn profile's sidebar is NEVER the business -- no link back, no match with the headline/bio", () => {
+  const LI = "https://ca.linkedin.com/in/scudamore", KAL = "https://kalicube.com/", GOT = "https://www.1800gotjunk.com/";
+  const g = {
+    businessName: { value: "Kalicube", sourceUrl: KAL, sourceType: "website", strength: 3 },
+    nameCandidates: [
+      { value: "Brian Scudamore", sourceUrl: LI, sourceType: "linkedin", strength: 2 },
+      { value: "Kalicube", sourceUrl: KAL, sourceType: "website", strength: 3 },
+      { value: "1-800-GOT-JUNK?", sourceUrl: GOT, sourceType: "website", strength: 3 },
+    ],
+    pageMeta: [
+      { url: LI, requestedUrl: "https://www.linkedin.com/in/scudamore", sourceType: "linkedin", isSeed: true, title: "Brian Scudamore - 1-800-GOT-JUNK? | LinkedIn", ogTitle: "Brian Scudamore", headline: "1-800-GOT-JUNK?", description: "1-800-GOT-JUNK? | Brian Scudamore is the founder and CEO of O2E Brands, the banner company for 1-800-GOT-JUNK?" },
+      { url: KAL, requestedUrl: KAL, sourceType: "website", isSeed: false, title: "Kalicube", ogTitle: "Kalicube", description: "Services de marketing" },
+      { url: GOT, requestedUrl: GOT, sourceType: "website", isSeed: false, title: "1-800-GOT-JUNK?", ogTitle: "1-800-GOT-JUNK?", description: null },
+    ],
+    category: null, description: null, services: [], ownerName: null,
+    contactMethods: [{ type: "website", value: KAL, status: "uncertain", confidence: 0.4, sourceUrl: LI }],
+    locations: [{ name: null, address: null, city: "Aubais", state: "Gard", postalCode: null, locationType: "primary", status: "verified", confidence: 0.7, sourceUrl: KAL }],
+    socialProfiles: [], sourceChecks: [], qaResults: [],
+    sourceLog: [
+      { url: LI, sourceType: "linkedin", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      { url: KAL, sourceType: "website", discoveredFrom: LI, discoveryMethod: "link_extraction", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+      { url: GOT, sourceType: "website", discoveredFrom: LI, discoveryMethod: "search_discovery", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
+    ],
+    signals: { hasJsonLd: true, hasHttps: true, hasMetaDescription: true, hasAggregateRating: false },
+  } as unknown as BusinessGraph;
+  const p = reconcileGraph(g, "https://www.linkedin.com/in/scudamore");
+  assert.notEqual(p.entities.business?.name, "Kalicube");
+  assert.equal(p.entities.business?.name, "1-800-GOT-JUNK?"); // matches the headline the account itself publishes
+  assert.equal(p.entities.person?.name, "Brian Scudamore");
+  assert.equal(p.entities.entityType, "PERSON_OPERATING_BUSINESS");
+  assert.ok(["FOUNDER", "CEO"].includes(p.entities.relationship?.relationshipType ?? ""));
+  assert.equal(saveBlockReason(p), null);
+});
+
+test("live-observed: a page title like 'Manage Your Appointments' is never a business-name candidate", () => {
+  const X = "https://x.com/1800GOTJUNK", GOT = "https://www.1800gotjunk.com/";
+  const g = {
+    businessName: { value: "1-800-GOT-JUNK?", sourceUrl: GOT, sourceType: "website", strength: 3 },
+    nameCandidates: [{ value: "1-800-GOT-JUNK?", sourceUrl: X, sourceType: "x", strength: 3 }, { value: "1-800-GOT-JUNK?", sourceUrl: GOT, sourceType: "website", strength: 3 }, { value: "Manage Your Appointments", sourceUrl: GOT + "us_en/manage", sourceType: "website", strength: 2 }],
+    pageMeta: [{ url: X, requestedUrl: X, sourceType: "x", isSeed: true, title: "1-800-GOT-JUNK? (@1800GOTJUNK) / X", ogTitle: "1-800-GOT-JUNK?", description: "We make junk disappear. All you have to do is point!", accountFlags: {} }, { url: GOT, requestedUrl: GOT, sourceType: "website", isSeed: false, linksToSeed: true, title: null, ogTitle: null, description: null }],
+    category: null, description: null, services: [], ownerName: null,
+    contactMethods: [{ type: "website", value: GOT, status: "verified", confidence: 0.9, sourceUrl: X }, { type: "phone", value: "1-800-468-5865", status: "verified", confidence: 0.9, sourceUrl: GOT }],
+    locations: [], socialProfiles: [], sourceChecks: [], qaResults: [],
+    sourceLog: [{ url: X, sourceType: "x", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }, { url: GOT, sourceType: "website", discoveredFrom: X, discoveryMethod: "search_discovery", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }],
+    signals: { hasJsonLd: true, hasHttps: true, hasMetaDescription: true, hasAggregateRating: false },
+  } as unknown as BusinessGraph;
+  const p = reconcileGraph(g, X);
+  assert.equal(p.entities.sourceType, "X_BUSINESS_PROFILE");
+  assert.deepEqual(p.entities.business?.candidates.map((c) => c.value), ["1-800-GOT-JUNK?"]);
+  assert.equal(p.identity.identityConfidence, "confirmed");
+});

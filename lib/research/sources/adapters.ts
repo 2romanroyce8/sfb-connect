@@ -198,9 +198,19 @@ export const linkedinAdapter: SocialAdapter = {
     const u = urlOf(page.finalUrl); const kind = u ? segs(u)[0]?.toLowerCase() : null;
     const ogTitle = meta(page, "og:title");
     if (!ogTitle || !/\|\s*LinkedIn$/i.test(ogTitle)) return null;
-    const name = ogTitle.replace(/\s*\|\s*LinkedIn\s*$/i, "").trim();
-    if (!name || /^linkedin$|sign up|log in/i.test(name)) return null;
+    const full = ogTitle.replace(/\s*\|\s*LinkedIn\s*$/i, "").trim();
+    if (!full || /^linkedin$|sign up|log in/i.test(full)) return null;
     const desc = meta(page, "description") ?? meta(page, "og:description");
+    if (kind === "in") {
+      // "Brian Scudamore - 1-800-GOT-JUNK? | LinkedIn": person - headline.
+      const [personName, ...rest] = full.split(/\s+-\s+/);
+      const headline = rest.join(" - ").trim() || null;
+      // "Brian Scudamore is the founder and CEO of O2E Brands… · Experience: 1-800-GOT-JUNK? · Location: Vancouver · 500+ connections on LinkedIn. View …"
+      const bio = desc ? desc.replace(/\s*·\s*\d[\d,+]*\s*connections.*$/i, "").replace(/View .*?profile on LinkedIn.*$/i, "").trim() || null : null;
+      const loc = desc?.match(/Location:\s*([^·]+)/i)?.[1]?.trim() ?? null;
+      return { platform: "linkedin", handle: this.handleFromUrl(page.finalUrl), displayName: personName.trim(), bio, headline, website: null, links: [], location: loc, category: null, flags: {}, urlKind: "person" };
+    }
+    const name = full;
     // "Name | 16,542 followers on LinkedIn. <tagline> | <about...>"
     const about = desc ? desc.replace(/^.*?followers on LinkedIn\.\s*/i, "").trim() : null;
     const field = (f: string) => { const mm = page.html.match(new RegExp(`data-test-id="about-us__${f}"[\\s\\S]{0,400}?<dd[^>]*>\\s*(?:<a[^>]*>)?\\s*([^<]{1,300})`)); return mm ? decodeEntities(mm[1]).trim() || null : null; };
