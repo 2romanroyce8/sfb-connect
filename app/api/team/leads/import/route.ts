@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
             source_urls: rawSources,
             business_name: profile.entities.business?.name ?? profile.entities.person?.name ?? profile.entities.business?.candidates[0]?.value ?? null,
             owner_name: profile.entities.person?.name ?? graph.ownerName ?? null,
-            website: website?.value || null,
+            website: profile.website.status === "CONFIRMED" || profile.website.status === "UNCERTAIN" ? profile.website.value : website?.value || null,
             phone: phone?.value || null,
             email: email?.value || null,
             category: graph.category,

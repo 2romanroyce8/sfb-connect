@@ -385,6 +385,26 @@ export async function buildLeadProfile(
       if (!linksBackCache.has(k)) linksBackCache.set(k, !seedTypes.has(page.sourceType) && extractLinks(page.html, page.finalUrl).some((l) => seedKeySet.has(normSeedUrl(l))));
       return linksBackCache.get(k)!;
     };
+    // What the seed account itself says it is (adapter-published display name
+    // for business/organization accounts, LinkedIn headline). A reached page
+    // whose own published name matches is entity-matched by the account's
+    // own words -- e.g. 1800gotjunk.com for a profile headlined
+    // "1-800-GOT-JUNK?".
+    const normName = (v: string) => v.toLowerCase().replace(/&amp;/g, "&").replace(/\b(llc|inc|co|corp|corporation|company|ltd|the)\b\.?/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+    const seedSelfNames = new Set<string>();
+    for (const sUrl of seedSources) {
+      const ex = profileExtracts.get(urlKey(sUrl));
+      if (!ex) continue;
+      if (ex.headline) for (const part of ex.headline.split(/\s*[|·•]\s*/)) { const n = normName(part); if (n.length >= 4) seedSelfNames.add(n); }
+      if (ex.displayName && (ex.flags.business || ex.flags.organization || ex.urlKind === "company")) { const n = normName(ex.displayName); if (n.length >= 4) seedSelfNames.add(n); }
+    }
+    const selfNameMatch = (page: FetchedPage): boolean => {
+      if (seedSelfNames.size === 0 || CHROME.has(page.sourceType)) return false;
+      const names: string[] = [];
+      const ld = findLocalBusiness(extractJsonLd(page.html)); if (ld?.name) names.push(String(ld.name));
+      const og = extractMeta(page.html, "og:title"); if (og) names.push(decodeEntities(og.split(/[|–—-]/)[0]));
+      return names.some((nm) => { const n = normName(nm); return n.length >= 4 && Array.from(seedSelfNames).some((sn) => n === sn || n.includes(sn) || sn.includes(n)); });
+    };
     const trustCache = new Map<string, boolean>();
     const isTrusted = (page: FetchedPage, depth = 0): boolean => {
       const k = urlKey(page.finalUrl);
@@ -395,18 +415,19 @@ export async function buildLeadProfile(
       if (isSeed) t = true;
       else if (officialDomainNow && domainKey(page.finalUrl) === officialDomainNow) t = true;
       else if (pageLinksBack(page)) t = true;
+      else if (selfNameMatch(page)) t = true;
       else if (depth < 6) {
         const entry = logByKey.get(urlKey(page.url)) ?? logByKey.get(k);
         const via = entry?.discoveryMethod;
         if (entry?.discoveredFrom && via && !["search_discovery", "gap_analysis", "qa_reopen", "public_index"].includes(via)) {
           const parent = visited.get(urlKey(entry.discoveredFrom));
           if (parent) {
-            const parentIsSeed = seedKeySet.has(normSeedUrl(parent.url)) || seedKeySet.has(normSeedUrl(parent.finalUrl));
             const parentIsChrome = CHROME.has(parent.sourceType);
-            // bio_link = the account's own published link: trusted even from chrome.
-            if (via === "bio_link" ? isTrusted(parent, depth + 1) : (!parentIsChrome || parentIsSeed) && isTrusted(parent, depth + 1)) t = true;
-            if (parentIsChrome && !parentIsSeed) t = false; // never inherit through platform chrome
-            if (via === "bio_link" && isTrusted(parent, depth + 1)) t = true;
+            // Through platform chrome (LinkedIn / X / TikTok / YouTube -- seed
+            // included: its sidebar is still the platform's), only the
+            // account's own published link (bio_link) carries trust.
+            if (parentIsChrome) t = via === "bio_link" && isTrusted(parent, depth + 1);
+            else t = isTrusted(parent, depth + 1);
           }
         }
       }
@@ -609,8 +630,12 @@ export async function buildLeadProfile(
   if (!officialWebsite && !skipExpansion) {
     await onStage?.("DISCOVERING_SOURCES", { sourcesFound: visited.size });
     const primaryLocation = extracted.locations.find((l) => l.city || l.state);
+    // A person-profile seed's engine name is the PERSON; the business to
+    // search for is what the headline/bio says ("1-800-GOT-JUNK?").
+    const seedExtract = seedSources.map((u) => profileExtracts.get(urlKey(u))).find(Boolean) ?? null;
+    const statedBusiness = seedExtract?.headline ? seedExtract.headline.split(/\s*[|·•]\s*/)[0].replace(/^(founder|co-?founder|ceo|owner|president)[^A-Za-z0-9]+(?:of|at|@)?\s*/i, "").trim() || null : null;
     websiteDiscovery = await discoverOfficialWebsite({
-      businessName: extracted.businessName?.value ?? null,
+      businessName: statedBusiness ?? extracted.businessName?.value ?? null,
       handle: extractHandleFromSeeds(seedSources),
       city: primaryLocation?.city ?? null,
       state: primaryLocation?.state ?? null,
