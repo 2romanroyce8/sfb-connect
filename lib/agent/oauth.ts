@@ -37,13 +37,23 @@ export function protectedResourceMetadata(origin: string) {
   };
 }
 
-/** Exact-match redirect URI validation (RFC 8252 loopback: port may vary). */
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+/** Loopback redirect URIs (RFC 8252 §7.3) are canonicalised to 127.0.0.1 so
+ * the three loopback spellings compare equal. Needed in practice because
+ * the hosting runtime rewrites "127.0.0.1" to "localhost" inside query
+ * values before the handler sees them. Non-loopback URIs are untouched. */
+export function canonicalRedirectUri(uri: string): string {
+  try { const u = new URL(uri); if (LOOPBACK_HOSTS.has(u.hostname)) { u.hostname = "127.0.0.1"; return u.toString(); } return uri; } catch { return uri; }
+}
+
+/** Exact-match redirect URI validation; loopback URIs may vary in port. */
 export function redirectUriAllowed(client: AgentClient, uri: string): boolean {
   let u: URL;
-  try { u = new URL(uri); } catch { return false; }
-  if (client.redirect_uris.includes(uri)) return true;
-  if (u.hostname === "127.0.0.1" || u.hostname === "localhost" || u.hostname === "[::1]") {
-    return client.redirect_uris.some((r) => { try { const ru = new URL(r); return ru.protocol === u.protocol && ru.hostname === u.hostname && ru.pathname === u.pathname; } catch { return false; } });
+  try { u = new URL(canonicalRedirectUri(uri)); } catch { return false; }
+  const registered = client.redirect_uris.map(canonicalRedirectUri);
+  if (registered.includes(u.toString()) || registered.includes(canonicalRedirectUri(uri))) return true;
+  if (u.hostname === "127.0.0.1") {
+    return registered.some((r) => { try { const ru = new URL(r); return ru.protocol === u.protocol && ru.hostname === u.hostname && ru.pathname === u.pathname; } catch { return false; } });
   }
   return false;
 }

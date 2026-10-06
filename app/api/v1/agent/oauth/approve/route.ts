@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getClient, createAuthorization, issueAuthCode, audit } from "@/lib/agent/store";
 import { mintDelegatedSession } from "@/lib/agent/delegatedSession";
-import { redirectUriAllowed, originOf } from "@/lib/agent/oauth";
+import { redirectUriAllowed, canonicalRedirectUri, originOf } from "@/lib/agent/oauth";
 import { negotiateScopes } from "@/lib/agent/scopes";
 import { AGENT_SESSION_COOKIE } from "@/lib/agent/readOnly";
 export const dynamic = "force-dynamic";
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     const delegated = await mintDelegatedSession(user.id);
     const authz = await createAuthorization({ userId: user.id, clientId: client.client_id, scopes: granted, workspaceLabel: "SFB Connect Team", delegatedRefreshEnc: delegated.refreshEnc, delegatedAccessEnc: delegated.accessEnc, delegatedAccessExpiresAt: delegated.expiresAt });
-    const code = await issueAuthCode({ authorizationId: authz.id, redirectUri, codeChallenge: g("code_challenge"), codeChallengeMethod: "S256", resource: g("resource") || null });
+    const code = await issueAuthCode({ authorizationId: authz.id, redirectUri: canonicalRedirectUri(redirectUri), codeChallenge: g("code_challenge"), codeChallengeMethod: "S256", resource: g("resource") || null });
     await audit({ authorizationId: authz.id, userId: user.id, clientId: client.client_id, accessMethod: "oauth", action: "consent_granted", result: "success", detail: { scopes: granted } });
     return back({ code, state: g("state") });
   } catch (e) {

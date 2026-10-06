@@ -50,6 +50,8 @@ test("redirect URIs must match exactly except loopback ports", () => {
   assert.equal(redirectUriAllowed(client, "https://evil.example.com/cb"), false);
   assert.equal(redirectUriAllowed(client, "http://127.0.0.1:53211/cb"), true);
   assert.equal(redirectUriAllowed(client, "http://127.0.0.1:53211/other"), false);
+  assert.equal(redirectUriAllowed(client, "http://localhost:53211/cb"), true, "loopback spellings are equivalent");
+  assert.equal(redirectUriAllowed(client, "http://localhost/cb"), true);
 });
 
 test("authorization server metadata advertises PKCE-only code flow and read scopes", () => {

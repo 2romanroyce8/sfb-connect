@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { consumeAuthCode, issueTokenPair, rotateRefreshToken, getAuthorization, rateLimit, audit } from "@/lib/agent/store";
 import { verifyPkce } from "@/lib/agent/crypto";
-import { oauthError, authenticateClient, readForm } from "@/lib/agent/oauth";
+import { oauthError, authenticateClient, readForm, canonicalRedirectUri } from "@/lib/agent/oauth";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     if (!row) return oauthError(400, "invalid_grant", "Authorization code is invalid, expired or already used.");
     const authz = await getAuthorization(row.authorization_id);
     if (!authz || authz.status !== "active" || authz.client_id !== auth.client.client_id) return oauthError(400, "invalid_grant", "Authorization code does not belong to this client.");
-    if (form.get("redirect_uri") && form.get("redirect_uri") !== row.redirect_uri) return oauthError(400, "invalid_grant", "redirect_uri mismatch.");
+    if (form.get("redirect_uri") && canonicalRedirectUri(form.get("redirect_uri")!) !== canonicalRedirectUri(row.redirect_uri)) return oauthError(400, "invalid_grant", "redirect_uri mismatch.");
     if (!verifyPkce(verifier, row.code_challenge, row.code_challenge_method)) {
       await audit({ authorizationId: authz.id, userId: authz.user_id, clientId: authz.client_id, accessMethod: "oauth", action: "token_pkce_failed", result: "denied" });
       return oauthError(400, "invalid_grant", "PKCE verification failed.");
