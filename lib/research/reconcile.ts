@@ -698,8 +698,9 @@ export function buildSourceEntities(graph: BusinessGraph, officialDomain: string
       : priority === 3 ? "rejected_unrelated"
       : "uncertain";
     const em = meta?.entityMatch ?? null;
-    const entityMatch: EntityMatchStatus = em?.status ?? (entry.discoveryMethod === "seed" ? "MATCHED" : priority === 0 ? "REJECTED" : association === "confirmed_first_party" ? "MATCHED" : association === "likely_first_party" ? "PROBABLE_MATCH" : association === "rejected_unrelated" ? "REJECTED" : entry.indexedOnly ? "MATCHED" : "UNVERIFIED");
-    const entityMatchReasons = em?.reasons ?? (entry.discoveryMethod === "seed" ? ["This is the seed URL."] : entry.indexedOnly ? ["Indexed post of the exact seed account."] : priority === 0 ? ["Platform infrastructure or navigation."] : []);
+    const isSeedVariant = !!graph.seedEntity && urlNamesSeed(entry.url, graph.seedEntity);
+    const entityMatch: EntityMatchStatus = em?.status ?? (entry.discoveryMethod === "seed" || isSeedVariant ? "MATCHED" : priority === 0 ? "REJECTED" : association === "confirmed_first_party" ? "MATCHED" : association === "likely_first_party" ? "PROBABLE_MATCH" : association === "rejected_unrelated" ? "REJECTED" : entry.indexedOnly ? "MATCHED" : "UNVERIFIED");
+    const entityMatchReasons = em?.reasons ?? (entry.discoveryMethod === "seed" ? ["This is the seed URL."] : isSeedVariant ? [entry.genericPlatformContent ? "Seed URL variant (this render was a login wall; contributes nothing)." : "Seed URL variant."] : entry.indexedOnly ? ["Indexed post of the exact seed account."] : priority === 0 ? ["Platform infrastructure or navigation."] : []);
     const sourceQuality: SourceEntity["sourceQuality"] = entry.discoveryMethod === "seed" ? "PRIMARY" : entityMatch === "MATCHED" ? "VERIFIED" : entityMatch === "PROBABLE_MATCH" ? "CORROBORATING" : entityMatch === "POSSIBLE_MATCH" || entityMatch === "UNVERIFIED" ? "WEAK" : "IRRELEVANT";
     out.push({
       ordinal: i + 1,
