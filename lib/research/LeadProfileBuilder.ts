@@ -284,9 +284,14 @@ export async function buildLeadProfile(
     const PLATFORM_CHROME_SOURCES = new Set(["linkedin", "x", "tiktok", "youtube"]);
     const platformChrome = PLATFORM_CHROME_SOURCES.has(page.sourceType);
     if (!officialWebsite && primary.officialWebsite && !platformChrome) officialWebsite = primary.officialWebsite;
+    // From platform chrome, a "social link" to the SAME platform is the
+    // platform's own navigation (LinkedIn -> /pulse articles, /company/<ad>,
+    // /games). Observed live: 14 such pages burned the crawl budget before the
+    // discovered official website could be fetched.
+    const samePlatform = (u: string) => platformChrome && classifySourceType(u) === page.sourceType;
     if (!skipExpansion && !genericContent) {
       for (const bioUrl of primary.linkInBioPages) enqueue(bioUrl, item.url, "bio_link", item.depth + 1);
-      for (const s of primary.socials) enqueue(s.url, item.url, "social_link", item.depth + 1);
+      for (const s of primary.socials) if (!samePlatform(s.url)) enqueue(s.url, item.url, "social_link", item.depth + 1);
     }
 
     // VERIFICATION EXTRACTION — independently re-scans every raw href on
@@ -298,7 +303,7 @@ export async function buildLeadProfile(
       for (const link of extractLinks(page.html, page.finalUrl)) {
         const cls = classifyLink(link);
         if (cls.kind === "linktree") enqueue(link, item.url, "bio_link", item.depth + 1);
-        if (cls.kind === "social") enqueue(link, item.url, "social_link", item.depth + 1);
+        if (cls.kind === "social" && !samePlatform(link)) enqueue(link, item.url, "social_link", item.depth + 1);
       }
     }
     logEntry.verificationPassDone = true;
@@ -399,8 +404,14 @@ export async function buildLeadProfile(
       if (ex.displayName && (ex.flags.business || ex.flags.organization || ex.urlKind === "company")) { const n = normName(ex.displayName); if (n.length >= 4) seedSelfNames.add(n); }
     }
     const selfNameMatch = (page: FetchedPage): boolean => {
-      if (seedSelfNames.size === 0 || CHROME.has(page.sourceType)) return false;
+      if (seedSelfNames.size === 0) return false;
+      const pageExtract = profileExtracts.get(urlKey(page.finalUrl)) ?? profileExtracts.get(urlKey(page.url)) ?? null;
+      // Platform chrome never matches -- except a platform COMPANY page the
+      // adapter recognises as a business/organization (e.g. the LinkedIn
+      // company page the person's Experience section links to).
+      if (CHROME.has(page.sourceType) && !(pageExtract && (pageExtract.flags.business || pageExtract.flags.organization))) return false;
       const names: string[] = [];
+      if (pageExtract?.displayName) names.push(pageExtract.displayName);
       const ld = findLocalBusiness(extractJsonLd(page.html)); if (ld?.name) names.push(String(ld.name));
       const og = extractMeta(page.html, "og:title"); if (og) names.push(decodeEntities(og.split(/[|–—-]/)[0]));
       return names.some((nm) => { const n = normName(nm); return n.length >= 4 && Array.from(seedSelfNames).some((sn) => n === sn || n.includes(sn) || sn.includes(n)); });

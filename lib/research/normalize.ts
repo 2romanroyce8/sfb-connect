@@ -225,7 +225,7 @@ export const RESERVED_SOCIAL_ROUTES: Record<string, string[]> = {
   tiktok: ["login", "discover", "music", "tag", "about", "legal", "business", "foryou", "upload", "embed"],
   youtube: ["watch", "results", "playlist", "feed", "shorts", "about", "account", "upload", "gaming", "premium", "live", "embed", "redirect"],
   x: ["home", "explore", "notifications", "messages", "settings", "search", "i", "intent", "hashtag", "login", "tos", "privacy", "about", "jobs"],
-  linkedin: ["help", "legal", "login", "signup", "about", "jobs", "learning"],
+  linkedin: ["help", "legal", "login", "signup", "about", "jobs", "learning", "pulse", "posts", "top-content", "games", "feed", "directory", "news", "events", "groups", "salary", "services", "products", "advice", "premium", "sales", "talent", "business", "marketing", "safety", "uas", "authwall", "checkpoint"],
 };
 
 export function isReservedSocialRoute(url: string, platform: string): boolean {
