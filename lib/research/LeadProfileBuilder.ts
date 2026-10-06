@@ -358,20 +358,77 @@ export async function buildLeadProfile(
       return m === "gap_analysis" || m === "search_discovery";
     };
 
+    // ---- ENTITY MATCHING: which reached pages are actually tied to the
+    // seed entity? Only those may contribute contacts, locations, socials,
+    // category and services. Observed live: a LinkedIn profile's sidebar
+    // company (Kalicube) supplied the "business" location and category.
+    //   trusted(seed)                              = yes
+    //   trusted(page on the official website)      = yes (officialWebsite is
+    //                                                 itself only ever set from
+    //                                                 non-chrome pages / the
+    //                                                 account's published link)
+    //   trusted(page linking back to the seed)     = yes
+    //   trusted(found via index/gap/QA search)     = only by the two rules above
+    //   trusted(linked from a trusted page)        = yes, unless the parent is
+    //                                                 platform chrome (LinkedIn /
+    //                                                 X / TikTok / YouTube) and
+    //                                                 not the seed itself
+    const normSeedUrl = (u: string) => u.toLowerCase().replace(/^https?:\/\/(www\.|m\.|mbasic\.)?/, "").replace(/\/+$/, "").replace(/\?.*$/, "");
+    const seedKeySet = new Set(seedSources.map(normSeedUrl));
+    const seedTypes = new Set(seedSources.map((u) => classifySourceType(u)));
+    const CHROME = new Set(["linkedin", "x", "tiktok", "youtube"]);
+    const logByKey = new Map(sourceLog.map((e) => [urlKey(e.url), e] as const));
+    const officialDomainNow = officialWebsite ? domainKey(officialWebsite) : null;
+    const linksBackCache = new Map<string, boolean>();
+    const pageLinksBack = (page: FetchedPage) => {
+      const k = urlKey(page.finalUrl);
+      if (!linksBackCache.has(k)) linksBackCache.set(k, !seedTypes.has(page.sourceType) && extractLinks(page.html, page.finalUrl).some((l) => seedKeySet.has(normSeedUrl(l))));
+      return linksBackCache.get(k)!;
+    };
+    const trustCache = new Map<string, boolean>();
+    const isTrusted = (page: FetchedPage, depth = 0): boolean => {
+      const k = urlKey(page.finalUrl);
+      if (trustCache.has(k)) return trustCache.get(k)!;
+      trustCache.set(k, false); // cycle guard
+      let t = false;
+      const isSeed = seedKeySet.has(normSeedUrl(page.url)) || seedKeySet.has(normSeedUrl(page.finalUrl));
+      if (isSeed) t = true;
+      else if (officialDomainNow && domainKey(page.finalUrl) === officialDomainNow) t = true;
+      else if (pageLinksBack(page)) t = true;
+      else if (depth < 6) {
+        const entry = logByKey.get(urlKey(page.url)) ?? logByKey.get(k);
+        const via = entry?.discoveryMethod;
+        if (entry?.discoveredFrom && via && !["search_discovery", "gap_analysis", "qa_reopen", "public_index"].includes(via)) {
+          const parent = visited.get(urlKey(entry.discoveredFrom));
+          if (parent) {
+            const parentIsSeed = seedKeySet.has(normSeedUrl(parent.url)) || seedKeySet.has(normSeedUrl(parent.finalUrl));
+            const parentIsChrome = CHROME.has(parent.sourceType);
+            // bio_link = the account's own published link: trusted even from chrome.
+            if (via === "bio_link" ? isTrusted(parent, depth + 1) : (!parentIsChrome || parentIsSeed) && isTrusted(parent, depth + 1)) t = true;
+            if (parentIsChrome && !parentIsSeed) t = false; // never inherit through platform chrome
+            if (via === "bio_link" && isTrusted(parent, depth + 1)) t = true;
+          }
+        }
+      }
+      trustCache.set(k, t);
+      return t;
+    };
+    const trustedPages = contentPages.filter((p) => isTrusted(p));
+
     await onStage?.("EXTRACTING_CONTACTS", { sourcesFound: visited.size });
     const bookingLinks: string[] = [];
-    for (const page of contentPages) {
+    for (const page of trustedPages) {
       bookingLinks.push(...discoverLinks(page).bookingLinks);
     }
-    const contacts = discoverContacts(contentPages, Array.from(new Set(bookingLinks)));
+    const contacts = discoverContacts(trustedPages, Array.from(new Set(bookingLinks)));
     for (const c of indexContacts.phone) contacts.phone.push(c);
     for (const c of indexContacts.email) contacts.email.push(c);
 
     await onStage?.("EXTRACTING_LOCATIONS", { sourcesFound: visited.size });
-    const locations = skipLocationsAndSocials ? [] : discoverLocations(contentPages);
+    const locations = skipLocationsAndSocials ? [] : discoverLocations(trustedPages);
 
     await onStage?.("EXTRACTING_SOCIALS", { sourcesFound: visited.size });
-    const socialProfiles = skipLocationsAndSocials ? [] : discoverSocialProfiles(contentPages);
+    const socialProfiles = skipLocationsAndSocials ? [] : discoverSocialProfiles(trustedPages);
 
     await onStage?.("CLASSIFYING_BUSINESS", { sourcesFound: visited.size });
     const nameCandidates: Candidate[] = [];
@@ -385,7 +442,6 @@ export async function buildLeadProfile(
 
     const normSeed = (u: string) => u.toLowerCase().replace(/^https?:\/\/(www\.|m\.|mbasic\.)?/, "").replace(/\/+$/, "").replace(/\?.*$/, "");
     const seedKeys = new Set(seedSources.map(normSeed));
-    const seedSourceTypes = new Set(seedSources.map((u) => classifySourceType(u)));
     const pageMeta: PageMeta[] = [...indexPageMeta];
     for (const page of contentPages) {
       // Cross-link verification: does this page link to the exact seed
@@ -394,7 +450,8 @@ export async function buildLeadProfile(
       // the entity itself -- the strongest association signal we have.
       // Same-platform pages (x.com/<handle>/photo linking to x.com/<handle>)
       // are the seed talking about itself -- not a cross-link.
-      const linksToSeed = !seedSourceTypes.has(page.sourceType) && extractLinks(page.html, page.finalUrl).some((l) => seedKeys.has(normSeed(l)));
+      const linksToSeed = pageLinksBack(page);
+      const trusted = isTrusted(page);
       const capStrength = (s: number) => (isWiderWebDiscovered(page) ? Math.min(s, 1) : s);
       const title = extractTitle(page.html);
       const ogTitle = extractMeta(page.html, "og:title");
@@ -405,18 +462,19 @@ export async function buildLeadProfile(
         sourceType: page.sourceType,
         isSeed: seedKeys.has(normSeed(page.url)) || seedKeys.has(normSeed(page.finalUrl)),
         linksToSeed: linksToSeed || undefined,
+        trusted,
         title: title ? decodeEntities(title) : null,
         ogTitle: ogTitle ? decodeEntities(ogTitle) : null,
         description: metaDesc ? decodeEntities(metaDesc) : null,
       });
-      if (metaDesc) {
+      if (metaDesc && trusted) {
         hasMetaDescription = true;
         if (!description) description = metaDesc;
       }
       const jsonLd = extractJsonLd(page.html);
-      const localBusiness = findLocalBusiness(jsonLd);
-      if (jsonLd.length > 0) hasJsonLd = true;
-      if (jsonLd.some((b) => !!b["aggregateRating"])) hasAggregateRating = true;
+      const localBusiness = trusted ? findLocalBusiness(jsonLd) : null;
+      if (jsonLd.length > 0 && trusted) hasJsonLd = true;
+      if (trusted && jsonLd.some((b) => !!b["aggregateRating"])) hasAggregateRating = true;
 
       const extract = profileExtracts.get(urlKey(page.finalUrl)) ?? profileExtracts.get(urlKey(page.url)) ?? null;
       if (extract) {
@@ -431,15 +489,15 @@ export async function buildLeadProfile(
         if (extract.displayName && (metaEntry.isSeed || extract.flags.business || extract.flags.organization)) {
           nameCandidates.push({ value: extract.displayName, sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(extract.flags.business || extract.flags.organization ? 3 : 2) });
         }
-        if (extract.category) categoryCandidates.push({ value: extract.category, sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
-        for (const sp of extract.companyFacts?.specialties ?? []) services.add(sp);
+        if (trusted && extract.category) categoryCandidates.push({ value: extract.category, sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
+        if (trusted) for (const sp of extract.companyFacts?.specialties ?? []) services.add(sp);
       } else {
         if (localBusiness?.name) nameCandidates.push({ value: decodeEntities(String(localBusiness.name)), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(3) });
         if (ogTitle) nameCandidates.push({ value: decodeEntities(ogTitle.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
         if (title) nameCandidates.push({ value: decodeEntities(title.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(1) });
       }
 
-      const schemaType = localBusiness?.["@type"];
+      const schemaType = trusted ? localBusiness?.["@type"] : undefined;
       if (schemaType) categoryCandidates.push({ value: String(Array.isArray(schemaType) ? schemaType[0] : schemaType), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
 
       const makesOffer = localBusiness?.makesOffer;
@@ -459,7 +517,7 @@ export async function buildLeadProfile(
     }
 
     for (const c of indexNameCandidates) nameCandidates.push(c);
-    const heuristicCategory = classifyCategoryHeuristic(contentPages);
+    const heuristicCategory = classifyCategoryHeuristic(trustedPages);
     if (heuristicCategory) categoryCandidates.push(heuristicCategory);
 
     const name = resolveField(nameCandidates);

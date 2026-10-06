@@ -156,11 +156,14 @@ test("live-observed (Kalicube): a company reached through a LinkedIn profile's s
       { value: "Brian Scudamore", sourceUrl: LI, sourceType: "linkedin", strength: 2 },
       { value: "Kalicube", sourceUrl: KAL, sourceType: "website", strength: 3 },
       { value: "1-800-GOT-JUNK?", sourceUrl: GOT, sourceType: "website", strength: 3 },
+      { value: "What THAT Viral Super Bowl Ad Can Teach Us About The Key To Business Success", sourceUrl: "https://www.linkedin.com/pulse/what-that-viral-super-bowl-ad-can-teach-us", sourceType: "linkedin", strength: 2 },
+      { value: "Top Content on LinkedIn", sourceUrl: "https://www.linkedin.com/pulse/what-that-viral-super-bowl-ad-can-teach-us", sourceType: "linkedin", strength: 2 },
     ],
     pageMeta: [
       { url: LI, requestedUrl: "https://www.linkedin.com/in/scudamore", sourceType: "linkedin", isSeed: true, title: "Brian Scudamore - 1-800-GOT-JUNK? | LinkedIn", ogTitle: "Brian Scudamore", headline: "1-800-GOT-JUNK?", description: "1-800-GOT-JUNK? | Brian Scudamore is the founder and CEO of O2E Brands, the banner company for 1-800-GOT-JUNK?" },
-      { url: KAL, requestedUrl: KAL, sourceType: "website", isSeed: false, title: "Kalicube", ogTitle: "Kalicube", description: "Services de marketing" },
-      { url: GOT, requestedUrl: GOT, sourceType: "website", isSeed: false, title: "1-800-GOT-JUNK?", ogTitle: "1-800-GOT-JUNK?", description: null },
+      { url: KAL, requestedUrl: KAL, sourceType: "website", isSeed: false, trusted: false, title: "Kalicube", ogTitle: "Kalicube", description: "Services de marketing" },
+      { url: GOT, requestedUrl: GOT, sourceType: "website", isSeed: false, trusted: false, title: "1-800-GOT-JUNK?", ogTitle: "1-800-GOT-JUNK?", description: null },
+      { url: "https://www.linkedin.com/pulse/what-that-viral-super-bowl-ad-can-teach-us", requestedUrl: "https://www.linkedin.com/pulse/x", sourceType: "linkedin", isSeed: false, trusted: false, title: null, ogTitle: null, description: null },
     ],
     category: null, description: null, services: [], ownerName: null,
     contactMethods: [{ type: "website", value: KAL, status: "uncertain", confidence: 0.4, sourceUrl: LI }],
@@ -179,7 +182,25 @@ test("live-observed (Kalicube): a company reached through a LinkedIn profile's s
   assert.equal(p.entities.person?.name, "Brian Scudamore");
   assert.equal(p.entities.entityType, "PERSON_OPERATING_BUSINESS");
   assert.ok(["FOUNDER", "CEO"].includes(p.entities.relationship?.relationshipType ?? ""));
+  assert.equal(p.locations.physical.length, 0); // Aubais/Gard came from the untrusted Kalicube page -- never attached
+  assert.ok(!p.entities.business!.candidates.some((c) => /Viral Super Bowl|Top Content/.test(c.value))); // article titles are not name possibilities
   assert.equal(saveBlockReason(p), null);
+});
+test("website deep path on the confirmed official domain collapses to the site section root", () => {
+  const X = "https://x.com/1800GOTJUNK", GOT = "https://www.1800gotjunk.com/us_en/blog/decluttering/questions-you-should-ask-before-pickup-day";
+  const g = {
+    businessName: { value: "1-800-GOT-JUNK?", sourceUrl: GOT, sourceType: "website", strength: 3 },
+    nameCandidates: [{ value: "1-800-GOT-JUNK?", sourceUrl: X, sourceType: "x", strength: 3 }, { value: "1-800-GOT-JUNK?", sourceUrl: GOT, sourceType: "website", strength: 3 }],
+    pageMeta: [{ url: X, requestedUrl: X, sourceType: "x", isSeed: true, trusted: true, title: null, ogTitle: "1-800-GOT-JUNK?", description: "We make junk disappear.", accountFlags: {} }, { url: GOT, requestedUrl: GOT, sourceType: "website", isSeed: false, trusted: true, linksToSeed: true, title: null, ogTitle: null, description: null }],
+    category: null, description: null, services: [], ownerName: null,
+    contactMethods: [{ type: "website", value: GOT, status: "verified", confidence: 0.9, sourceUrl: X }],
+    locations: [], socialProfiles: [], sourceChecks: [], qaResults: [],
+    sourceLog: [{ url: X, sourceType: "x", discoveredFrom: null, discoveryMethod: "seed", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }, { url: GOT, sourceType: "website", discoveredFrom: X, discoveryMethod: "search_discovery", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }],
+    signals: { hasJsonLd: true, hasHttps: true, hasMetaDescription: true, hasAggregateRating: false },
+  } as unknown as BusinessGraph;
+  const p = reconcileGraph(g, X);
+  assert.equal(p.website.value, "https://www.1800gotjunk.com/us_en");
+  assert.equal(p.website.status, "CONFIRMED");
 });
 
 test("live-observed: a page title like 'Manage Your Appointments' is never a business-name candidate", () => {

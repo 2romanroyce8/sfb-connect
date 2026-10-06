@@ -484,6 +484,15 @@ export function analyzeEntities(
       if (c.strength <= 1 || (sameSite && c.strength <= 2 && longPhrase)) cands.splice(i, 1);
     }
   }
+  // Ineligible candidates are shown as possibilities only if they look like a
+  // name at all -- LinkedIn article titles and video titles are not.
+  const SENTENCE_WORDS = /\b(what|why|how|here|this|that|your|you|we|our|about|can|will|should|always|ever|top|best|ways?|reasons?|tips?|questions?|learn|teach|content|games?|read|reads)\b/i;
+  for (let i = cands.length - 1; i >= 0; i--) {
+    const c = cands[i];
+    if (c.eligible) continue;
+    const words = c.value.split(/\s+/).length;
+    if (words > 4 || c.value.length > 40 || SENTENCE_WORDS.test(c.value) || PLATFORM_BRAND_HANDLES.has(c.value.toLowerCase().replace(/[^a-z0-9]/g, "")) || /\b(linkedin|instagram|tiktok|youtube|facebook|twitter)\b/i.test(c.value)) cands.splice(i, 1);
+  }
   cands.sort((a, b) => Number(b.eligible) - Number(a.eligible) || b.strength - a.strength || b.sources.length - a.sources.length);
   const top = cands.find((c) => c.eligible) ?? null;
   const ineligibleOnly = !top && cands.length > 0;
@@ -532,12 +541,12 @@ export function analyzeEntities(
   if (conflicts.length) {
     identityConfidence = "conflict"; identityStatus = "CONFLICT";
     businessStatus = "BUSINESS_IDENTITY_UNCERTAIN"; entityType = isProfileSeed ? "UNKNOWN" : "BUSINESS";
-    business = { name: null, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "CONFLICT", confidence: "LOW" };
+    business = { name: null, candidates: cands.slice(0, 5).map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "CONFLICT", confidence: "LOW" };
     notes.push("Two or more first-party sources name different businesses -- genuine identity collision.");
   } else if (top && (top.strength >= 2 || corroboration >= 2 || (top.strength >= 1 && hardSignals >= 1))) {
     const confirmed = corroboration >= 2 || (top.strength >= 2 && hardSignals >= 1);
     identityConfidence = confirmed ? "confirmed" : "uncertain"; identityStatus = confirmed ? "CONFIRMED" : "UNCERTAIN";
-    business = { name: top.value, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: identityStatus, confidence: confirmed ? (corroboration >= 3 ? "HIGH" : "HIGH") : "MEDIUM" };
+    business = { name: top.value, candidates: cands.filter((c) => c === top || c.eligible).slice(0, 4).map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: identityStatus, confidence: confirmed ? (corroboration >= 3 ? "HIGH" : "HIGH") : "MEDIUM" };
     if (isProfileSeed && person) {
       const selfDescribed = bioMentions.some((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value));
       // An employer field / representative title ties the person TO the
@@ -576,7 +585,7 @@ export function analyzeEntities(
   } else if ((isProfileSeed && (signals.length >= 2 || top)) || ineligibleOnly) {
     entityType = "UNKNOWN"; businessStatus = "BUSINESS_IDENTITY_UNCERTAIN";
     identityConfidence = "uncertain"; identityStatus = "UNCERTAIN";
-    business = { name: null, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "UNCERTAIN", confidence: "LOW" };
+    business = { name: null, candidates: cands.slice(0, 3).map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "UNCERTAIN", confidence: "LOW" };
     notes.push(`Business signals detected (${signals.map((s) => s.signal.replace(/_/g, " ")).slice(0, 5).join(", ")}) but the exact business could not be identified${top ? ` -- possibly "${top.value}"` : ""}. Add the business website or listing and Research More.`);
   } else if (isProfileSeed) {
     entityType = "PERSON"; businessStatus = "NO_BUSINESS_IDENTIFIED";
@@ -851,12 +860,17 @@ const CHECKLIST_WEIGHTS: { key: string; weight: number }[] = [
 export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchProfile {
   const websiteCandidate = graph.contactMethods.find((c) => c.type === "website" && c.value);
   const officialDomain = websiteCandidate?.value ? (canonicalDomain(websiteCandidate.value) || "").toLowerCase() || null : null;
-  const sources = buildSourceEntities(graph, officialDomain);
+  // The official domain is only TRUSTED when the engine verified the website
+  // or a page on it links back to the seed. An uncertain guess (observed
+  // live: a sidebar company's site) must not make its pages first-party.
+  const websiteLinksBackEarly = !!officialDomain && (graph.pageMeta ?? []).some((m) => m.linksToSeed && (canonicalDomain(m.url) || "").toLowerCase() === officialDomain);
+  const trustedOfficialDomain = officialDomain && (websiteCandidate?.status === "verified" || websiteLinksBackEarly) ? officialDomain : null;
+  const sources = buildSourceEntities(graph, trustedOfficialDomain);
   const firstPartyUrls = new Set(sources.filter((s) => s.isFirstParty).map((s) => s.url));
-  // The seed and the official site are first-party by definition even if
-  // the source log recorded them under a different URL form.
+  // The seed and the TRUSTED official site are first-party by definition even
+  // if the source log recorded them under a different URL form.
   firstPartyUrls.add(seedUrl);
-  if (websiteCandidate?.value) firstPartyUrls.add(websiteCandidate.value);
+  if (websiteCandidate?.value && trustedOfficialDomain) firstPartyUrls.add(websiteCandidate.value);
   // Observed live: facebook.com/profile.php?id=N redirects to
   // facebook.com/people/<Name>/N/ and the engine attributes phone/name to
   // the redirect target. Every fetched URL the engine flagged as the seed
@@ -864,19 +878,31 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   for (const m of graph.pageMeta ?? []) if (m.isSeed || m.sameAccountAsSeed || m.linksToSeed) { firstPartyUrls.add(m.url); firstPartyUrls.add(m.requestedUrl); }
   for (const s of sources) if (firstPartyUrls.has(s.url) && !s.isFirstParty) { s.isFirstParty = true; if (s.association === "uncertain") s.association = "confirmed_first_party"; }
 
-  const websiteLinksBack = !!websiteCandidate?.value && (graph.pageMeta ?? []).some((m) => m.linksToSeed && (canonicalDomain(m.url) || "").toLowerCase() === officialDomain);
+  const websiteLinksBack = websiteLinksBackEarly;
   const website: FieldValue<string> = websiteCandidate?.value
     ? { value: websiteCandidate.value, status: websiteCandidate.status === "verified" || websiteLinksBack ? "CONFIRMED" : websiteCandidate.status === "conflict" ? "CONFLICT" : "UNCERTAIN", confidence: websiteCandidate.status === "verified" || websiteLinksBack ? "HIGH" : "LOW", sources: [ref(websiteCandidate.sourceUrl), ...(websiteLinksBack ? [ref(websiteCandidate.value, "links back to the seed account")] : [])] }
     : { value: null, status: graph.websiteDiscovery?.status === "discovery_unavailable" ? "INACCESSIBLE" : "NOT_FOUND", confidence: "LOW", sources: [] };
 
+  if (website.value && website.status === "CONFIRMED") {
+    try {
+      const u = new URL(website.value);
+      const segs = u.pathname.split("/").filter(Boolean);
+      if (segs.length >= 2) website.value = `${u.origin}/${segs[0]}`; // "/us_en/blog/decluttering/..." -> "/us_en"
+    } catch { /* keep as-is */ }
+  }
   const { phones, conflicts } = reconcilePhones(graph.contactMethods, firstPartyUrls);
   const emails = reconcileEmails(graph.contactMethods, firstPartyUrls);
   const channels = graph.contactMethods
     .filter((c) => c.value && ["whatsapp", "booking", "contact_form"].includes(c.type))
     .map((c) => ({ kind: c.type, value: c.value!, sources: [ref(c.sourceUrl)] }));
 
-  const physical = graph.locations.filter((l) => l.locationType === "primary" || l.locationType === "branch");
-  const serviceArea = graph.locations.filter((l) => l.locationType === "service_area");
+  // Defense in depth with the engine's gating: a location only counts when
+  // its source page is tied to the seed entity.
+  const hasTrustFlags = (graph.pageMeta ?? []).some((m) => m.trusted !== undefined);
+  const trustedUrls = new Set([...firstPartyUrls, ...(graph.pageMeta ?? []).filter((m) => m.trusted).flatMap((m) => [m.url, m.requestedUrl])]);
+  const locationOk = (l: LocationRecord) => !hasTrustFlags || !l.sourceUrl || trustedUrls.has(l.sourceUrl) || (!!officialDomain && (canonicalDomain(l.sourceUrl) || "").toLowerCase() === officialDomain && website.status === "CONFIRMED");
+  const physical = graph.locations.filter((l) => (l.locationType === "primary" || l.locationType === "branch") && locationOk(l));
+  const serviceArea = graph.locations.filter((l) => l.locationType === "service_area" && locationOk(l));
 
   const socialProfiles = graph.socialProfiles.map((s) => {
     // Observed live: a YouTube channel page's own chrome links to

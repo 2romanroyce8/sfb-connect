@@ -155,6 +155,11 @@ export type PageMeta = {
   // Platform-published account facts read from the page itself (TikTok's
   // hydration JSON, LinkedIn company "About", X og tags). Only set when the
   // platform actually publishes the flag -- never inferred here.
+  // Entity-matched: this page is tied to the seed entity (seed itself, the
+  // trusted official website and its pages, a page linking back to the
+  // seed, or a page the account itself linked to). Only trusted pages may
+  // contribute contacts, locations, socials, category and services.
+  trusted?: boolean;
   accountFlags?: { business?: boolean; verified?: boolean; organization?: boolean; seller?: boolean; private?: boolean };
   // Structured company facts a platform publishes (LinkedIn company pages).
   companyFacts?: { industry?: string | null; size?: string | null; headquarters?: string | null; founded?: string | null; specialties?: string[]; website?: string | null };
