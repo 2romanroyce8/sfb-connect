@@ -27,8 +27,17 @@ const str = (d: string) => ({ type: "string", description: d });
 const int = (d: string, min = 1, max = 100) => ({ type: "integer", minimum: min, maximum: max, description: d });
 const obj = (props: Record<string, unknown>, required: string[] = []) => ({ type: "object", properties: props, required, additionalProperties: false });
 
-function fail(error: { message: string } | null, what: string) { if (error) throw new AgentAuthError(500, "query_failed", `${what}: ${error.message}`); }
+/** Upstream errors are logged server-side and never echoed to the agent
+ * (a database or WAF error body is not something an agent should see). */
+function fail(error: { message: string } | null, what: string) {
+  if (!error) return;
+  console.error(`[agent-tools] ${what}:`, error.message.slice(0, 300));
+  throw new AgentAuthError(502, "query_failed", `Could not ${what}. The request was logged.`);
+}
 function s(v: unknown) { return typeof v === "string" ? v.trim() : ""; }
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Agent-supplied ids are untrusted: anything that is not a UUID is simply "not found" -- it never reaches the database. */
+function uuid(v: unknown, what: string): string { const x = s(v); if (!UUID_RE.test(x)) throw new AgentAuthError(404, "not_found", `No ${what} with that id is visible to this user.`); return x; }
 function n(v: unknown, def: number, max = 100) { const x = typeof v === "number" ? v : parseInt(String(v ?? ""), 10); return Number.isFinite(x) ? Math.min(Math.max(1, x), max) : def; }
 
 export const TOOLS: ToolDef[] = [
@@ -63,7 +72,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({ member_id: str("users.id (uuid)") }, ["member_id"]),
     outputSchema: obj({ member: obj({}) }),
     async run(ctx, a) {
-      const { data, error } = await ctx.user.from("users").select("id, full_name, email, team_role, team_status, last_active_at, created_at, home_timezone").eq("id", s(a.member_id)).maybeSingle();
+      const { data, error } = await ctx.user.from("users").select("id, full_name, email, team_role, team_status, last_active_at, created_at, home_timezone").eq("id", uuid(a.member_id, "team member")).maybeSingle();
       fail(error, "load member");
       if (!data) throw new AgentAuthError(404, "not_found", "No team member with that id is visible to this user.");
       return { member: data };
@@ -93,7 +102,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({ lead_id: str("crm_leads.id (uuid)") }, ["lead_id"]),
     outputSchema: obj({ lead: obj({}), latest_audit: obj({}), pipeline_history: { type: "array" }, evidence_count: { type: "integer" } }),
     async run(ctx, a) {
-      const id = s(a.lead_id);
+      const id = uuid(a.lead_id, "lead");
       const { data: lead, error } = await ctx.user.from("crm_leads").select("*").eq("id", id).maybeSingle();
       fail(error, "load lead");
       if (!lead) throw new AgentAuthError(404, "not_found", "No lead with that id is visible to this user.");
@@ -143,7 +152,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({ research_id: str("crm_research_results.id (uuid)") }, ["research_id"]),
     outputSchema: obj({ research: obj({}), profile: obj({}) }),
     async run(ctx, a) {
-      const id = s(a.research_id);
+      const id = uuid(a.research_id, "research result");
       const { data, error } = await ctx.user.from("crm_research_results").select("id, status, business_name, person_name, website, phone, email, city, state, category, services, description, research_status, identity_confidence, research_confidence_pct, entity_type, business_status, source_type, seed_platform, seed_platform_id, seed_display_name, conflicts, limitations, reconciled_profile, converted_lead_id, created_at, updated_at").eq("id", id).maybeSingle();
       fail(error, "load research");
       if (!data) throw new AgentAuthError(404, "not_found", "No research result with that id is visible to this user.");
@@ -158,7 +167,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({ research_id: str("crm_research_results.id (uuid)") }, ["research_id"]),
     outputSchema: obj({ sources: { type: "array" } }),
     async run(ctx, a) {
-      const id = s(a.research_id);
+      const id = uuid(a.research_id, "research result");
       const { data: r } = await ctx.user.from("crm_research_results").select("id").eq("id", id).maybeSingle();
       if (!r) throw new AgentAuthError(404, "not_found", "No research result with that id is visible to this user.");
       const { data, error } = await ctx.user.from("crm_research_sources").select("ordinal, url, platform, link_type, priority, is_first_party, association, discovery_method, fetch_status, links_to_seed, entity_match_status, entity_match_reasons, source_quality, source_entity_name").eq("research_result_id", id).order("ordinal");
@@ -185,7 +194,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({ lead_id: str("crm_leads.id (uuid)") }, ["lead_id"]),
     outputSchema: obj({ audit: obj({}), categories: { type: "array" }, opportunity: obj({}) }),
     async run(ctx, a) {
-      const id = s(a.lead_id);
+      const id = uuid(a.lead_id, "lead");
       const { data: audit, error } = await ctx.user.from("crm_audits").select("*").eq("lead_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();
       fail(error, "load audit");
       if (!audit) throw new AgentAuthError(404, "not_found", "No audit exists for that lead, or the lead is not visible to this user.");
@@ -203,8 +212,8 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({ business_id: str("businesses.id (uuid)") }, ["business_id"]),
     outputSchema: obj({ business: obj({}), scores: { type: "array" }, observations: { type: "array" } }),
     async run(ctx, a) {
-      const id = s(a.business_id);
-      const { data: biz, error } = await ctx.user.from("businesses").select("id, name, website, plan_key, created_at").eq("id", id).maybeSingle();
+      const id = uuid(a.business_id, "customer business");
+      const { data: biz, error } = await ctx.user.from("businesses").select("id, legal_name, website, primary_category, plan_key, created_at").eq("id", id).maybeSingle();
       fail(error, "load business");
       if (!biz) throw new AgentAuthError(404, "not_found", "No customer business with that id is visible to this user.");
       const [{ data: scores }, { data: obs }] = await Promise.all([

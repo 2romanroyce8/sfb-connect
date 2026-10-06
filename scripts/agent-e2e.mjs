@@ -11,7 +11,7 @@ import crypto from "node:crypto";
 
 const BASE = process.env.SFB_BASE ?? "https://www.sfbconnect.com";
 const STATE_FILE = "/tmp/sfb-agent-e2e.json";
-const REDIRECT = "http://127.0.0.1:53111/callback";
+const REDIRECT = process.env.SFB_REDIRECT ?? "http://127.0.0.1:53111/callback";
 const load = () => (fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : {});
 const save = (s) => fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2));
 const log = (...a) => console.log(...a);
