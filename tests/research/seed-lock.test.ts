@@ -26,8 +26,10 @@ test("TEST 10: profile.php?id= -- the exact numeric Facebook id is the seed iden
   assert.ok(!urlNamesSeed("https://www.facebook.com/people/Other-Biz/99999999999/", SEED));
 });
 
-test("TEST 1: the seed URL itself is MATCHED; its identity is the lock", () => {
+test("TEST 1: the seed URL itself is MATCHED; its identity is the lock; its m./p/ variants are the seed too, even as login walls", () => {
   assert.equal(matchPageToSeed(facts({ url: SEED.url, isSeed: true, discoveryMethod: "seed" }), SEED).status, "MATCHED");
+  assert.equal(matchPageToSeed(facts({ url: "https://m.facebook.com/people/Supreme-Air-LLC/61574342053650/", sourceType: "facebook", isGenericPlatformContent: true, discoveryMethod: "social_link" }), SEED).status, "MATCHED");
+  assert.equal(matchPageToSeed(facts({ url: "https://www.facebook.com/p/Supreme-Air-LLC-61574342053650/", sourceType: "facebook", discoveryMethod: "social_link" }), SEED).status, "MATCHED");
 });
 
 test("TEST 5 / boilerplate: youtube navigation, manifests, feeds, CDN assets and lookup sites are REJECTED before any field can flow", () => {
@@ -35,12 +37,16 @@ test("TEST 5 / boilerplate: youtube navigation, manifests, feeds, CDN assets and
     assert.ok(isPlatformBoilerplateUrl(u), u);
     assert.equal(matchPageToSeed(facts({ url: u, sourceType: "youtube", names: ["How Youtube Works"] }), SEED).status, "REJECTED", u);
   }
+  for (const u of ["https://claritycheck.com/928-221-0373", "https://sync.me/search/?number=17372007373", "https://anylookup.example/phone/573-221-3030"]) assert.ok(isPlatformBoilerplateUrl(u), u);
   assert.ok(!isPlatformBoilerplateUrl("https://www.youtube.com/@JunkSeekers"));
   assert.ok(!isPlatformBoilerplateUrl("https://supreme-air.com/contact"));
 });
 
 test("TEST 2 / phone.gd class: a search hit that publishes a different identity and has no tie to the seed is REJECTED -- it can never become the website", () => {
-  const m = matchPageToSeed(facts({ url: "https://randomlookup.example/phone/573-221-3030", names: ["Phone Number Lookup 573-221-3030"], phones: ["573-221-3030"], emails: ["5732213030@email.swbw.com"] }), SEED);
+  // by URL shape: a path that IS a phone number is a lookup page, rejected before any content is read
+  assert.equal(matchPageToSeed(facts({ url: "https://randomlookup.example/phone/573-221-3030", names: ["Phone Number Lookup 573-221-3030"] }), SEED).status, "REJECTED");
+  // by content: a page with an innocuous URL that publishes a different identity and no tie to the seed
+  const m = matchPageToSeed(facts({ url: "https://randomlookup.example/report/x1", names: ["Phone Number Lookup 573-221-3030"], phones: ["573-221-3030"], emails: ["5732213030@email.swbw.com"] }), SEED);
   assert.equal(m.status, "REJECTED");
   assert.ok(m.reasons[0].includes("different identity"));
 });
@@ -128,6 +134,13 @@ test("END TO END: the Supreme Air graph as it was crawled -- with the lock, the 
   assert.equal(p.contacts.emails.length, 0); // swbw.com email gone
   assert.equal(p.locations.physical.length, 0); // Hannibal, MO gone
   assert.ok(p.socialProfiles.every((sp) => sp.platform !== "youtube" || sp.association === "rejected_unrelated"));
+  // the seed's own Facebook account is never rejected because a login-walled m. variant shares its path
+  const g3 = { ...(g as any), socialProfiles: [{ platform: "facebook", handle: null, url: "https://facebook.com/people/Supreme-Air-LLC/61574342053650", displayName: null, status: "uncertain", confidence: 0.5, sourceUrl: FBF }], sourceLog: [...(g as any).sourceLog, { url: "https://m.facebook.com/people/Supreme-Air-LLC/61574342053650/", sourceType: "facebook", discoveredFrom: FB, discoveryMethod: "social_link", fetchStatus: "ok", genericPlatformContent: true, primaryPassDone: true, verificationPassDone: false }] } as unknown as BusinessGraph;
+  const p3 = reconcileGraph(g3, FB);
+  assert.equal(p3.socialProfiles.find((sp) => sp.platform === "facebook")?.association, "confirmed_first_party");
+  // phone.gd's contamination is still (correctly) removed in this graph, but the seed's own account must never be in the removed list
+  const removedMsg = p3.limitations.find((l) => l.code === "FIELDS_REMOVED_UNMATCHED_SOURCE")?.message ?? "";
+  assert.ok(!/facebook/i.test(removedMsg), removedMsg);
   // and a share-link that is not a profile, plus a rejected source's own X account, never survive as the business's socials
   const gg = g as any; const g2 = { ...gg, socialProfiles: [...gg.socialProfiles, { platform: "linkedin", handle: null, url: "https://linkedin.com/sharing/share-offsite", displayName: null, status: "verified", confidence: 0.8, sourceUrl: PG }, { platform: "x", handle: "PRcom", url: "https://x.com/PRcom", displayName: null, status: "verified", confidence: 0.8, sourceUrl: PG }], sourceLog: [...gg.sourceLog, { url: "https://twitter.com/PRcom", sourceType: "x", discoveredFrom: PG, discoveryMethod: "social_link", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true }], pageMeta: [...gg.pageMeta, { url: "https://twitter.com/PRcom", requestedUrl: "https://twitter.com/PRcom", sourceType: "x", isSeed: false, trusted: false, entityMatch: { status: "REJECTED", reasons: ["different identity"] }, title: null, ogTitle: "PR.com", description: null }] } as unknown as BusinessGraph;
   const p2 = reconcileGraph(g2, FB);

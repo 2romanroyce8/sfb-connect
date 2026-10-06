@@ -1,4 +1,5 @@
 import { classifyLink, isSocialOrDirectoryHost, canonicalDomain } from "../normalize";
+import { isPlatformBoilerplateUrl } from "../entityMatch";
 import type { DiscoveryResult } from "../providers/types";
 
 // Every search result must be classified BEFORE it's treated as a website
@@ -19,6 +20,7 @@ export type DiscoveryResultClass = "official_website_candidate" | "social" | "di
 export function classifyDiscoveryResult(result: DiscoveryResult): DiscoveryResultClass {
   const cls = classifyLink(result.url);
   if (cls.kind === "infra") return "infra";
+  if (isPlatformBoilerplateUrl(result.url)) return "infra"; // phone-lookup pages, manifests, assets
   if (cls.kind === "social" || cls.kind === "linktree") return "social";
 
   const domain = canonicalDomain(result.url);

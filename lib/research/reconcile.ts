@@ -1,7 +1,7 @@
 import type { BusinessGraph, Candidate, ContactMethodRecord, LocationRecord, SocialProfileRecord, SourceLogEntry } from "./types";
 import { canonicalDomain, classifyLink, isSocialProfilePath } from "./normalize";
 import type { EntityMatchStatus } from "./entityMatch";
-import { normalizeName as normalizeSeedName } from "./entityMatch";
+import { normalizeName as normalizeSeedName, urlNamesSeed } from "./entityMatch";
 
 // ============================================================
 // ENTITY RECONCILIATION LAYER (Research Spec §2-§7, §10)
@@ -957,15 +957,18 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   // ---- PRE-SAVE FAIL-SAFE: no field may rest on a source that failed entity
   // matching. The engine already gates extraction; this is the last line.
   const statusByUrl = new Map(sources.map((src) => [src.url, src.entityMatch] as const));
-  const bad = (u: string | null | undefined) => { if (!u) return false; const st = statusByUrl.get(u); return st === "REJECTED" || st === "UNVERIFIED"; };
+  const bad = (u: string | null | undefined) => { if (!u) return false; if (graph.seedEntity && urlNamesSeed(u, graph.seedEntity)) return false; const st = statusByUrl.get(u); return st === "REJECTED" || st === "UNVERIFIED"; };
   const removed: string[] = [];
   const keepPhones = phones.filter((p) => { const allBad = p.sources.length > 0 && p.sources.every((sr) => bad(sr.url)); if (allBad) removed.push(`phone ${p.value}`); return !allBad; });
   const keepEmails = emails.filter((e) => { const allBad = e.sources.length > 0 && e.sources.every((sr) => bad(sr.url)); if (allBad) removed.push(`email ${e.value}`); return !allBad; });
   const keepPhysical = physical.filter((l) => { const b = bad(l.sourceUrl); if (b) removed.push(`location ${[l.city, l.state].filter(Boolean).join(", ")}`); return !b; });
   const keepService = serviceArea.filter((l) => !bad(l.sourceUrl));
   const handleOf = (u: string | null | undefined) => { if (!u) return ""; try { const x = new URL(/^https?:\/\//i.test(u) ? u : `https://${u}`); return `${platformOf(u)}:${x.pathname.split("/").filter(Boolean).join("/").toLowerCase().replace(/^@/, "")}`; } catch { return ""; } };
-  const rejectedHandles = new Set(sources.filter((src) => src.entityMatch === "REJECTED" || src.entityMatch === "UNVERIFIED").map((src) => handleOf(src.url)).filter(Boolean));
+  const seedForMatch = graph.seedEntity ?? null;
+  const namesSeed = (u: string | null | undefined) => !!u && !!seedForMatch && urlNamesSeed(u, seedForMatch);
+  const rejectedHandles = new Set(sources.filter((src) => (src.entityMatch === "REJECTED" || src.entityMatch === "UNVERIFIED") && !namesSeed(src.url)).map((src) => handleOf(src.url)).filter(Boolean));
   const keepSocials = socialProfiles.map((sp) => {
+    if (namesSeed(sp.url)) return { ...sp, status: "verified" as const, association: "confirmed_first_party" as Association }; // the seed account itself
     const notProfile = !!sp.url && sp.platform !== "whatsapp" && !isSocialProfilePath(sp.url, sp.platform);
     const fromBad = (sp.url && bad(sp.url)) || (sp.sourceUrl && bad(sp.sourceUrl)) || rejectedHandles.has(handleOf(sp.url));
     if (notProfile || fromBad) { removed.push(`${sp.platform} ${sp.url ?? sp.handle ?? ""}`); return { ...sp, status: "not_found" as const, association: "rejected_unrelated" as Association }; }

@@ -85,6 +85,11 @@ export function isPlatformBoilerplateUrl(url: string): boolean {
   // one-segment path that would otherwise look "profile-shaped".
   if (/\.(ico|png|jpe?g|gif|svg|webp|webmanifest|xml|json|css|js|txt)(\?|$)/i.test(url)) return true;
   if (/\/(manifest|opensearch|feeds?|sitemap|robots)\b/i.test(url)) return true;
+  // A URL whose path or query IS a phone number is a phone-lookup page
+  // (phone.gd/phone/573-221-3030, claritycheck.com/928-221-0373,
+  // sync.me/search/?number=17372007373) -- it describes a number, never a
+  // business. Generic, so new lookup sites don't need a denylist entry.
+  if (/\/(?:\+?1[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}(?:[/?#]|$)/.test(url) || /[?&](?:number|phone|tel|q)=\+?1?\d{10,11}\b/i.test(url)) return true;
   const cls = classifyLink(url);
   if (cls.kind === "infra") return true;
   if (cls.kind === "social") return !isSocialProfilePath(url, (cls as { platform: string }).platform);
@@ -122,6 +127,9 @@ export type PageFacts = {
 export function matchPageToSeed(page: PageFacts, seed: SeedEntity | null): EntityMatch {
   const reasons: string[] = [];
   if (page.isSeed) return { status: "MATCHED", reasons: ["This is the seed URL."] };
+  // The seed's own URL in another form (m./mbasic./www., /p/<Name>-<id>/):
+  // still the seed, even when that render was a login wall.
+  if (seed && urlNamesSeed(page.url, seed)) return { status: "MATCHED", reasons: [page.isGenericPlatformContent ? "Seed URL variant (this render was a login wall; contributes nothing)." : "Seed URL variant."] };
   if (page.isGenericPlatformContent) return { status: "REJECTED", reasons: ["Platform login wall / generic shell -- describes the platform, not the entity."] };
   if (isPlatformBoilerplateUrl(page.url)) return { status: "REJECTED", reasons: ["Platform infrastructure or navigation page (not a profile, page or channel)."] };
   if (page.onTrustedOfficialDomain) return { status: "MATCHED", reasons: ["Page on the verified official website."] };
