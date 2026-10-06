@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 // Nothing is granted here; the grant happens in /approve after the signed-in
 // user clicks Authorize.
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams;
+  // new URL(req.url), not req.nextUrl: NextURL normalises loopback hosts inside
+  // query values (127.0.0.1 -> localhost), which broke exact redirect_uri matching.
+  const q = new URL(req.url).searchParams;
   const clientId = q.get("client_id") ?? "";
   const redirectUri = q.get("redirect_uri") ?? "";
   const client = clientId ? await getClient(clientId) : null;
