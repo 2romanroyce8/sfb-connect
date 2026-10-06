@@ -31,7 +31,8 @@ import { classifyCategoryHeuristic } from "./CategoryClassifier";
 import { discoverOfficialWebsite, type WebsiteDiscoveryOutcome } from "./discovery/websiteDiscovery";
 import { isRejectedPath, sortByPriority, MAX_PAGES_PER_DOMAIN } from "./CrawlPriority";
 import { isGenericPlatformContent } from "./GenericPlatformContent";
-import { recoverInstagramFromPublicIndex, instagramHandleFromUrl, type InstagramRecoveryOutcome } from "./InstagramRecovery";
+import { adapterForUrl, adapterForPlatform, type ProfileExtract } from "./sources/adapters";
+import { recoverFromPublicIndex, type PublicIndexOutcome } from "./sources/publicIndex";
 import type { ResearchStage } from "./jobProgress";
 import {
   runIdentityQA,
@@ -159,6 +160,7 @@ export async function buildLeadProfile(
   const skipLocationsAndSocials = scope === "quick_contact";
 
   const visited = new Map<string, FetchedPage>();
+  const profileExtracts = new Map<string, ProfileExtract>();
   const sourceLog: SourceLogEntry[] = [];
   const queuedKeys = new Set<string>();
   const queue: QueueItem[] = [];
@@ -255,6 +257,21 @@ export async function buildLeadProfile(
     const genericContent = isGenericPlatformContent(page);
     logEntry.genericPlatformContent = genericContent || undefined;
 
+    // SOURCE ADAPTER: what does this platform's own rendered page publish?
+    // (TikTok hydration JSON, LinkedIn company About, X og tags.) Stored per
+    // page; aggregate() prefers it over generic <title>/og:title text, and
+    // the adapter-published website/links enter the graph like any link.
+    if (!genericContent) {
+      const adapter = adapterForPlatform(page.sourceType);
+      const extract = adapter?.extractProfile(page) ?? null;
+      if (extract) {
+        profileExtracts.set(urlKey(page.finalUrl), extract);
+        profileExtracts.set(urlKey(item.url), extract);
+        if (!officialWebsite && extract.website && item.discoveryMethod === "seed") officialWebsite = extract.website;
+        if (!skipExpansion) for (const l of extract.links) enqueue(l, item.url, "link_extraction", item.depth + 1);
+      }
+    }
+
     // PRIMARY EXTRACTION
     const primary = genericContent ? { officialWebsite: null, linkInBioPages: [], socials: [], bookingLinks: [] } : discoverLinks(page);
     logEntry.primaryPassDone = true;
@@ -309,7 +326,7 @@ export async function buildLeadProfile(
   const indexPageMeta: PageMeta[] = [];
   const indexContacts: { phone: Candidate[]; email: Candidate[] } = { phone: [], email: [] };
   const indexNameCandidates: Candidate[] = [];
-  let instagramRecovery: BusinessGraph["instagramRecovery"] | undefined;
+  let socialRecovery: BusinessGraph["socialRecovery"] | undefined;
 
   // ---- AGGREGATE EXTRACTION over the full discovery-graph result ----
   async function aggregate() {
@@ -390,9 +407,26 @@ export async function buildLeadProfile(
       if (jsonLd.length > 0) hasJsonLd = true;
       if (jsonLd.some((b) => !!b["aggregateRating"])) hasAggregateRating = true;
 
-      if (localBusiness?.name) nameCandidates.push({ value: decodeEntities(String(localBusiness.name)), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(3) });
-      if (ogTitle) nameCandidates.push({ value: decodeEntities(ogTitle.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
-      if (title) nameCandidates.push({ value: decodeEntities(title.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(1) });
+      const extract = profileExtracts.get(urlKey(page.finalUrl)) ?? profileExtracts.get(urlKey(page.url)) ?? null;
+      if (extract) {
+        // Platform page: the account's published display name is the name
+        // evidence; its <title> ("TikTok - Make Your Day") is platform chrome.
+        const metaEntry = pageMeta[pageMeta.length - 1];
+        metaEntry.ogTitle = extract.displayName ?? metaEntry.ogTitle;
+        metaEntry.description = [extract.headline, extract.bio].filter(Boolean).join(" | ") || metaEntry.description;
+        metaEntry.accountFlags = extract.flags;
+        metaEntry.headline = extract.headline;
+        if (extract.companyFacts) metaEntry.companyFacts = extract.companyFacts;
+        if (extract.displayName && (metaEntry.isSeed || extract.flags.business || extract.flags.organization)) {
+          nameCandidates.push({ value: extract.displayName, sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(extract.flags.business || extract.flags.organization ? 3 : 2) });
+        }
+        if (extract.category) categoryCandidates.push({ value: extract.category, sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
+        for (const sp of extract.companyFacts?.specialties ?? []) services.add(sp);
+      } else {
+        if (localBusiness?.name) nameCandidates.push({ value: decodeEntities(String(localBusiness.name)), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(3) });
+        if (ogTitle) nameCandidates.push({ value: decodeEntities(ogTitle.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
+        if (title) nameCandidates.push({ value: decodeEntities(title.split(/[|–—-]/)[0]), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(1) });
+      }
 
       const schemaType = localBusiness?.["@type"];
       if (schemaType) categoryCandidates.push({ value: String(Array.isArray(schemaType) ? schemaType[0] : schemaType), sourceUrl: page.finalUrl, sourceType: page.sourceType, strength: capStrength(2) });
@@ -452,46 +486,45 @@ export async function buildLeadProfile(
 
   let extracted = await aggregate();
 
-  // ---- INSTAGRAM: public-index recovery (first-class source) ----
-  // The profile page is login-walled to any non-browser client; the account's
-  // public posts and the pages that link to the exact handle are not. Read
-  // those, tie every result to the EXACT handle, and hand backlink pages to
-  // the SAME discovery graph for fetch + verification. Never a bypass.
-  const igSeed = seedSources.find((sUrl) => instagramHandleFromUrl(sUrl));
-  if (igSeed && scope !== "website_only") {
-    const seedPage = seedPageByUrl.get(igSeed);
+  // ---- SOCIAL SEEDS: public-index recovery when the profile page is
+  // login-walled to non-browser clients (Instagram always; LinkedIn /in/
+  // always; Facebook occasionally). The account's public posts and the
+  // pages that link to the exact handle are read from a search index and
+  // handed to the SAME discovery graph for fetch + verification. Never a
+  // bypass; never attributed to a lookalike account. ----
+  const socialSeed = seedSources.map((u) => ({ url: u, adapter: adapterForUrl(u) })).find((x) => x.adapter);
+  if (socialSeed?.adapter && scope !== "website_only") {
+    const adapter = socialSeed.adapter;
+    const seedPage = seedPageByUrl.get(socialSeed.url);
     const seedUsable = !!seedPage?.ok && !isGenericPlatformContent(seedPage);
     if (!seedUsable) {
       await onStage?.("DISCOVERING_SOURCES", { sourcesFound: visited.size });
-      const outcome: InstagramRecoveryOutcome = await recoverInstagramFromPublicIndex(igSeed);
+      const outcome: PublicIndexOutcome = await recoverFromPublicIndex(socialSeed.url, adapter);
       if (outcome.status === "found") {
-        instagramRecovery = { status: "found", handle: outcome.handle, displayName: outcome.displayName, postsFound: outcome.posts.length, backlinkCandidates: outcome.websiteCandidates.length + outcome.directoryCandidates.length, provider: outcome.provider, reason: null };
-        // The seed account, as the index knows it: display name + caption
-        // text standing in for the bio the login wall hides.
-        indexPageMeta.push({ url: igSeed, requestedUrl: igSeed, sourceType: "instagram", isSeed: true, title: outcome.displayName, ogTitle: outcome.displayName, description: outcome.captionText.slice(0, 1200) || null });
-        if (outcome.displayName) indexNameCandidates.push({ value: outcome.displayName, sourceUrl: igSeed, sourceType: "instagram", strength: 2 });
+        socialRecovery = { platform: adapter.platform, status: "found", handle: outcome.handle, displayName: outcome.displayName, postsFound: outcome.posts.length, backlinkCandidates: outcome.websiteCandidates.length + outcome.directoryCandidates.length, provider: outcome.provider, reason: null };
+        // The seed account as the index knows it: display name + the text of
+        // its own indexed posts/pages standing in for the bio we can't read.
+        indexPageMeta.push({ url: socialSeed.url, requestedUrl: socialSeed.url, sourceType: adapter.platform, isSeed: true, title: outcome.displayName, ogTitle: outcome.displayName, description: outcome.captionText.slice(0, 1500) || null });
+        if (outcome.displayName) indexNameCandidates.push({ value: outcome.displayName, sourceUrl: socialSeed.url, sourceType: adapter.platform, strength: 2 });
         for (const post of outcome.posts) {
-          indexPageMeta.push({ url: post.url, requestedUrl: post.url, sourceType: "instagram", isSeed: false, sameAccountAsSeed: true, title: post.title, ogTitle: outcome.displayName, description: post.caption });
-          sourceLog.push({ url: post.url, sourceType: "instagram", discoveredFrom: igSeed, discoveryMethod: "public_index", fetchStatus: "ok", indexedOnly: true, primaryPassDone: true, verificationPassDone: false });
+          indexPageMeta.push({ url: post.url, requestedUrl: post.url, sourceType: adapter.platform, isSeed: false, sameAccountAsSeed: true, title: post.title, ogTitle: outcome.displayName, description: post.caption });
+          sourceLog.push({ url: post.url, sourceType: adapter.platform, discoveredFrom: socialSeed.url, discoveryMethod: "public_index", fetchStatus: "ok", indexedOnly: true, primaryPassDone: true, verificationPassDone: false });
         }
-        const firstPost = outcome.posts[0]?.url ?? igSeed;
-        for (const ph of outcome.phones) indexContacts.phone.push({ value: ph, sourceUrl: firstPost, sourceType: "instagram", strength: 2 });
-        for (const em of outcome.emails) indexContacts.email.push({ value: em, sourceUrl: firstPost, sourceType: "instagram", strength: 2 });
-        // Backlink candidates enter the graph like any other source: fetched,
-        // link-extracted, and verified. aggregate() marks the ones that
-        // really link back to instagram.com/<handle> (linksToSeed).
-        for (const cand of [...outcome.websiteCandidates, ...outcome.mentionedUrls.map((u) => (/^https?:\/\//i.test(u) ? u : `https://${u}`))].slice(0, 4)) enqueue(cand, igSeed, "search_discovery", 1);
-        for (const dir of outcome.directoryCandidates) enqueue(dir, igSeed, "search_discovery", 1);
+        const firstPost = outcome.posts[0]?.url ?? socialSeed.url;
+        for (const ph of outcome.phones) indexContacts.phone.push({ value: ph, sourceUrl: firstPost, sourceType: adapter.platform, strength: 2 });
+        for (const em of outcome.emails) indexContacts.email.push({ value: em, sourceUrl: firstPost, sourceType: adapter.platform, strength: 2 });
+        for (const cand of [...outcome.websiteCandidates, ...outcome.mentionedUrls.map((u) => (/^https?:\/\//i.test(u) ? u : `https://${u}`))].slice(0, 4)) enqueue(cand, socialSeed.url, "search_discovery", 1);
+        for (const dir of outcome.directoryCandidates) enqueue(dir, socialSeed.url, "search_discovery", 1);
         await drainQueue();
         allPages = Array.from(visited.values());
         extracted = await aggregate();
       } else if (outcome.status === "not_found") {
-        instagramRecovery = { status: "not_found", handle: outcome.handle, displayName: null, postsFound: 0, backlinkCandidates: 0, provider: outcome.provider, reason: "No public posts or pages linking to this exact handle are in the search index." };
+        socialRecovery = { platform: adapter.platform, status: "not_found", handle: outcome.handle, displayName: null, postsFound: 0, backlinkCandidates: 0, provider: outcome.provider, reason: "No public posts or pages linking to this exact account are in the search index." };
       } else {
-        instagramRecovery = { status: "unavailable", handle: outcome.handle || null, displayName: null, postsFound: 0, backlinkCandidates: 0, provider: null, reason: outcome.reason };
+        socialRecovery = { platform: adapter.platform, status: "unavailable", handle: outcome.handle || null, displayName: null, postsFound: 0, backlinkCandidates: 0, provider: null, reason: outcome.reason };
       }
     } else {
-      instagramRecovery = { status: "not_applicable", handle: instagramHandleFromUrl(igSeed), displayName: null, postsFound: 0, backlinkCandidates: 0, provider: null, reason: "Profile page was readable directly." };
+      socialRecovery = { platform: adapter.platform, status: "not_applicable", handle: adapter.handleFromUrl(socialSeed.url), displayName: null, postsFound: 0, backlinkCandidates: 0, provider: null, reason: "Profile page was readable directly." };
     }
   }
 
@@ -602,7 +635,7 @@ export async function buildLeadProfile(
     sourceChecks,
     sourceLog,
     qaResults,
-    ...(instagramRecovery ? { instagramRecovery } : {}),
+    ...(socialRecovery ? { socialRecovery } : {}),
     ...(websiteDiscovery
       ? {
           websiteDiscovery: {

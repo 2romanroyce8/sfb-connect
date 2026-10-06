@@ -93,6 +93,8 @@ export default async function ResearchQueuePage() {
                   <td className="px-4 py-3 text-[12px]">
                     {r.entity_type === "PERSON_OPERATING_BUSINESS" ? (
                       <span className="text-[#F5F5F7]">{r.person_name} <span className="text-[#6E6E73]">· {r.relationship_basis === "self_described" ? "self-described " : ""}{(r.relationship_type || "operator").toLowerCase()}</span></span>
+                    ) : r.entity_type === "PERSON" && r.relationship_type ? (
+                      <span className="text-[#A1A1A6]">{r.person_name} · {r.relationship_type.toLowerCase()} (not operator)</span>
                     ) : r.entity_type === "PERSON" ? (
                       <span className="text-[#A1A1A6]">Person · no business</span>
                     ) : r.entity_type === "UNKNOWN" ? (

@@ -27,10 +27,16 @@ export type ProfileType = "BUSINESS_PAGE" | "CREATOR" | "PUBLIC_PROFILE" | "PERS
 export type SourceType =
   | "FACEBOOK_PAGE" | "FACEBOOK_PERSONAL_PROFILE" | "FACEBOOK_PROFESSIONAL_PROFILE" | "FACEBOOK_GROUP" | "FACEBOOK_EVENT" | "FACEBOOK_UNKNOWN"
   | "INSTAGRAM_BUSINESS_ACCOUNT" | "INSTAGRAM_PERSONAL_ACCOUNT" | "INSTAGRAM_CREATOR_ACCOUNT" | "INSTAGRAM_UNKNOWN"
+  | "LINKEDIN_PERSON_PROFILE" | "LINKEDIN_COMPANY_PAGE" | "LINKEDIN_ORGANIZATION_PAGE" | "LINKEDIN_UNKNOWN"
+  | "X_PROFILE" | "X_BUSINESS_PROFILE" | "X_CREATOR_PROFILE" | "X_UNKNOWN"
+  | "TIKTOK_PERSONAL_ACCOUNT" | "TIKTOK_BUSINESS_ACCOUNT" | "TIKTOK_CREATOR_ACCOUNT" | "TIKTOK_UNKNOWN"
   | "WEBSITE" | "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "LINKEDIN" | "X" | "GOOGLE_BUSINESS" | "BIO_LINK_HUB" | "OTHER";
 export type EntityType = "PERSON" | "BUSINESS" | "PERSON_OPERATING_BUSINESS" | "CREATOR" | "ORGANIZATION" | "UNKNOWN";
-export type BusinessStatus = "BUSINESS" | "PERSON_OPERATING_BUSINESS" | "BUSINESS_IDENTITY_UNCERTAIN" | "NO_BUSINESS_IDENTIFIED";
-export type RelationshipType = "OWNER" | "FOUNDER" | "OPERATOR" | "REPRESENTATIVE" | "EMPLOYEE" | "UNKNOWN";
+export type BusinessStatus = "BUSINESS" | "PERSON_OPERATING_BUSINESS" | "PERSON_ASSOCIATED_WITH_BUSINESS" | "BUSINESS_IDENTITY_UNCERTAIN" | "NO_BUSINESS_IDENTIFIED";
+export type RelationshipType = "OWNER" | "FOUNDER" | "COFOUNDER" | "CEO" | "OPERATOR" | "REPRESENTATIVE" | "EMPLOYEE" | "CONSULTANT" | "CREATOR" | "ASSOCIATED" | "UNKNOWN";
+/** Roles that mean the person RUNS the business (-> PERSON_OPERATING_BUSINESS).
+ * An employer field or a representative title never implies ownership. */
+export const OPERATING_ROLES: ReadonlySet<RelationshipType> = new Set<RelationshipType>(["OWNER", "FOUNDER", "COFOUNDER", "CEO", "OPERATOR"]);
 export type RelationshipBasis = "corroborated" | "self_described" | "inferred";
 
 export type PersonEntity = {
@@ -186,11 +192,15 @@ export function platformOf(url: string): string {
 const TRADE_TOKENS = /\b(llc|inc|co|corp|company|services?|removal|hauling|junk|roofing|hvac|plumbing|cleaning|landscap\w*|lawn|repair|construction|contract\w*|remodel\w*|auto|towing|detailing|salon|barber|studio|shop|store|boutique|cafe|restaurant|bar|grill|catering|bakery|dental|law|legal|realty|real estate|photography|fitness|gym|pressure wash\w*|window|pest|moving|movers|electric\w*|painting|flooring|tile|fence|concrete|handyman|notary|insurance|tax|accounting|consulting|marketing|design|agency|group|solutions|enterprises?|logistics|transport\w*|trucking|dumpster|disposal|recycling)\b/i;
 const ROLE_TOKENS: { re: RegExp; role: RelationshipType }[] = [
   { re: /\b(owner|proprietor|owner[- ]operator)\b/i, role: "OWNER" },
-  { re: /\b(founder|co-?founder|ceo|president)\b/i, role: "FOUNDER" },
+  { re: /\b(co-?founder|cofounder)\b/i, role: "COFOUNDER" },
+  { re: /\b(founder|founded)\b/i, role: "FOUNDER" },
+  { re: /\b(ceo|chief executive|president|managing director|principal)\b/i, role: "CEO" },
   { re: /\b(operator|operating|run(?:s|ning)? (?:my|our|a) (?:own )?business)\b/i, role: "OPERATOR" },
-  { re: /\b(manager|director|general manager|gm)\b/i, role: "REPRESENTATIVE" },
-  { re: /\b(sales|representative|rep|agent|consultant|realtor)\b/i, role: "REPRESENTATIVE" },
-  { re: /\b(works? at|employee|technician|driver|crew)\b/i, role: "EMPLOYEE" },
+  { re: /\b(consultant|advisor|freelance\w*|contractor)\b/i, role: "CONSULTANT" },
+  { re: /\b(creator|content creator|influencer|youtuber|streamer)\b/i, role: "CREATOR" },
+  { re: /\b(manager|director|general manager|gm|vp|vice president|head of|lead)\b/i, role: "REPRESENTATIVE" },
+  { re: /\b(sales|representative|rep|agent|realtor|broker|partner at)\b/i, role: "REPRESENTATIVE" },
+  { re: /\b(works? at|working at|employee|technician|driver|crew|associate|specialist|engineer|designer|analyst|coordinator)\b/i, role: "EMPLOYEE" },
 ];
 const CTA_TOKENS = /\b(call|text|book(?:ing)?|schedule|free (?:estimate|quote)s?|licensed|insured|serving|we (?:offer|provide|specialize)|dm (?:for|to)|message (?:for|to) (?:book|quote|pricing)|same[- ]day|24\/7|open (?:mon|tue|wed|thu|fri|sat|sun|daily))\b/i;
 
@@ -213,20 +223,42 @@ export function detectFacebookProfileType(seedUrl: string, businessName: string 
  * read "<Name> is on Facebook. Join Facebook to connect with <Name>..."
  * while Pages read "<Name>. 1,234 likes · 12 talking about this. <about>".
  * Vanity URLs with neither signal stay FACEBOOK_UNKNOWN -- we don't guess. */
-export function classifyFacebookSourceType(seedUrl: string, seedDescription: string | null, seedDisplayName: string | null): { sourceType: SourceType; basis: "url" | "page_text" | "inferred" } {
+export function classifyFacebookSourceType(seedUrl: string, seedDescription: string | null, seedDisplayName: string | null, seedFlags?: { business?: boolean; verified?: boolean; organization?: boolean; seller?: boolean; private?: boolean } | null): { sourceType: SourceType; basis: "url" | "page_text" | "inferred" } {
   const u = seedUrl.toLowerCase();
   const platform = platformOf(seedUrl);
+  const flags = seedFlags ?? {};
+  const text = seedDescription ?? "";
+  const businessyText = TRADE_TOKENS.test(text) || CTA_TOKENS.test(text) || (seedDisplayName ? TRADE_TOKENS.test(seedDisplayName) : false);
+  const roleyText = ROLE_TOKENS.some((r) => r.re.test(text));
+  const personName = !!seedDisplayName && looksLikePersonName(seedDisplayName);
+  if (platform === "tiktok") {
+    // TikTok publishes real flags in its hydration JSON (commerceUser / isOrganization).
+    if (flags.business || flags.organization) return { sourceType: "TIKTOK_BUSINESS_ACCOUNT", basis: "page_text" };
+    if (personName && (roleyText || businessyText)) return { sourceType: "TIKTOK_CREATOR_ACCOUNT", basis: "inferred" };
+    if (personName) return { sourceType: "TIKTOK_PERSONAL_ACCOUNT", basis: "inferred" };
+    return { sourceType: "TIKTOK_UNKNOWN", basis: "inferred" };
+  }
+  if (platform === "x") {
+    // X publishes display name, handle and bio only; no account-type flag.
+    if (personName && (roleyText || businessyText)) return { sourceType: "X_CREATOR_PROFILE", basis: "inferred" };
+    if (personName) return { sourceType: "X_PROFILE", basis: "inferred" };
+    if (businessyText || (seedDisplayName && !personName)) return { sourceType: "X_BUSINESS_PROFILE", basis: "inferred" };
+    return { sourceType: "X_UNKNOWN", basis: "inferred" };
+  }
+  if (platform === "linkedin") {
+    // URL shape is authoritative on LinkedIn.
+    if (/\/company\/|\/showcase\//.test(u)) return { sourceType: "LINKEDIN_COMPANY_PAGE", basis: "url" };
+    if (/\/school\//.test(u)) return { sourceType: "LINKEDIN_ORGANIZATION_PAGE", basis: "url" };
+    if (/\/in\//.test(u)) return { sourceType: "LINKEDIN_PERSON_PROFILE", basis: "url" };
+    return { sourceType: "LINKEDIN_UNKNOWN", basis: "url" };
+  }
   if (platform === "instagram") {
     // Instagram publishes no public account-type flag we can read without a
     // session, so this is always an inference from the account's own public
     // text: trade/role/CTA language -> business; person-shaped display name
     // with none of that -> personal. Otherwise honestly UNKNOWN.
-    const text = seedDescription ?? "";
-    const businessy = TRADE_TOKENS.test(text) || CTA_TOKENS.test(text) || (seedDisplayName ? TRADE_TOKENS.test(seedDisplayName) : false);
-    const roley = ROLE_TOKENS.some((r) => r.re.test(text));
-    if (seedDisplayName && looksLikePersonName(seedDisplayName) && (roley || businessy)) return { sourceType: "INSTAGRAM_PERSONAL_ACCOUNT", basis: "inferred" };
-    if (seedDisplayName && looksLikePersonName(seedDisplayName)) return { sourceType: "INSTAGRAM_PERSONAL_ACCOUNT", basis: "inferred" };
-    if (businessy) return { sourceType: "INSTAGRAM_BUSINESS_ACCOUNT", basis: "inferred" };
+    if (personName) return { sourceType: "INSTAGRAM_PERSONAL_ACCOUNT", basis: "inferred" };
+    if (businessyText) return { sourceType: "INSTAGRAM_BUSINESS_ACCOUNT", basis: "inferred" };
     return { sourceType: "INSTAGRAM_UNKNOWN", basis: "inferred" };
   }
   if (platform !== "facebook") {
@@ -247,6 +279,9 @@ export function classifyFacebookSourceType(seedUrl: string, seedDescription: str
   if (/\/people\//.test(u) || /profile\.php\?id=/.test(u)) return { sourceType: "FACEBOOK_PERSONAL_PROFILE", basis: "url" };
   return { sourceType: "FACEBOOK_UNKNOWN", basis: "inferred" };
 }
+
+/** Platform-agnostic alias -- the function classifies every supported platform. */
+export const classifySeedSourceType = classifyFacebookSourceType;
 
 function cleanDisplayName(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -271,11 +306,14 @@ function extractBusinessMentionsFromBio(bio: string): { name: string; role: Rela
   const out: { name: string; role: RelationshipType | null; excerpt: string }[] = [];
   const text = bio.replace(/join facebook to connect with.*$/i, "").replace(/\s+/g, " ").trim();
   // "Owner of Smith's Junk Removal", "Founder @ Acme LLC", "CEO at Jones Auto Group"
-  const roleRe = /\b(owner|proprietor|founder|co-?founder|ceo|president|operator|manager|director|general manager|sales|agent|realtor|consultant)\s*(?:of|at|@|-|–|\||for|,)\s*([A-Z][\w&'’.\-]*(?:\s+[A-Za-z&'’.\-]+){0,6})/g;
+  const roleRe = /\b(owner|proprietor|founder|co-?founder|cofounder|ceo|president|managing director|operator|manager|director|general manager|vp|sales|agent|realtor|consultant|advisor|creator)\s*(?:of|at|@|-|–|\||for|,)\s*([A-Z0-9][\w&'’.?!\-]*(?:\s+[A-Za-z0-9&'’.?!\-]+){0,6})/g;
   let m: RegExpExecArray | null;
   while ((m = roleRe.exec(text))) {
-    const name = m[2].replace(/[.,;:]+$/, "").replace(/\s+(serving|in|call|text|book|located|based|since|licensed|insured)\b.*$/i, "").trim();
-    if (name.length >= 3 && !isGenericServicePhrase(name)) out.push({ name, role: ROLE_TOKENS.find((r) => r.re.test(m![1]))?.role ?? null, excerpt: m[0] });
+    const raw = m[2].replace(/[.,;:]+$/, "").replace(/\s+(serving|in|call|text|book|located|based|since|licensed|insured)\b.*$/i, "").trim();
+    const role = ROLE_TOKENS.find((r) => r.re.test(m![1]))?.role ?? null;
+    for (const name of raw.split(/\s+(?:&|and)\s+/).map((x) => x.trim())) {
+      if (name.length >= 3 && !isGenericServicePhrase(name)) out.push({ name, role, excerpt: m[0] });
+    }
   }
   // Bare trade-token business names: "Smith's Junk Removal LLC", "Elite Pressure Washing"
   const tradeRe = /\b((?:[A-Z][\w'’&.-]*\s+){0,4}[A-Z]?[\w'’&.-]*(?:LLC|Inc\.?|Co\.?|Corp\.?|Services?|Removal|Hauling|Cleaning|Roofing|Plumbing|HVAC|Landscaping|Construction|Realty|Photography|Studio|Salon|Auto|Repair|Detailing|Towing|Movers|Moving|Dumpsters?|Disposal|Pressure Washing|Lawn Care|Electric|Painting|Flooring|Fencing|Concrete|Handyman|Catering|Bakery|Fitness|Agency|Solutions|Enterprises?|Logistics|Trucking|Transport))\b/g;
@@ -325,8 +363,12 @@ export function analyzeEntities(
   const seedMeta = graph.pageMeta?.find((p) => p.isSeed) ?? null;
   const seedDisplayName = cleanDisplayName(decodeHtmlText(seedMeta?.ogTitle ?? seedMeta?.title ?? (graph.businessName?.sourceUrl === seedUrl ? graph.businessName.value : null)));
   const seedBio = decodeHtmlText(seedMeta?.description ?? (graph.pageMeta ? null : graph.description)); // legacy graphs: description was the first page's meta
-  const { sourceType, basis } = classifyFacebookSourceType(seedUrl, seedBio, seedDisplayName);
-  const isProfileSeed = sourceType === "FACEBOOK_PERSONAL_PROFILE" || sourceType === "FACEBOOK_PROFESSIONAL_PROFILE" || sourceType === "INSTAGRAM_PERSONAL_ACCOUNT" || ((sourceType === "FACEBOOK_UNKNOWN" || sourceType === "INSTAGRAM_UNKNOWN") && looksLikePersonName(seedDisplayName));
+  const { sourceType, basis } = classifyFacebookSourceType(seedUrl, seedBio, seedDisplayName, seedMeta?.accountFlags ?? null);
+  const PROFILE_SOURCE_TYPES: ReadonlySet<SourceType> = new Set<SourceType>(["FACEBOOK_PERSONAL_PROFILE", "FACEBOOK_PROFESSIONAL_PROFILE", "INSTAGRAM_PERSONAL_ACCOUNT", "LINKEDIN_PERSON_PROFILE", "X_PROFILE", "X_CREATOR_PROFILE", "TIKTOK_PERSONAL_ACCOUNT", "TIKTOK_CREATOR_ACCOUNT"]);
+  const UNKNOWN_SOURCE_TYPES: ReadonlySet<SourceType> = new Set<SourceType>(["FACEBOOK_UNKNOWN", "INSTAGRAM_UNKNOWN", "X_UNKNOWN", "TIKTOK_UNKNOWN", "LINKEDIN_UNKNOWN"]);
+  const isProfileSeed = PROFILE_SOURCE_TYPES.has(sourceType) || (UNKNOWN_SOURCE_TYPES.has(sourceType) && looksLikePersonName(seedDisplayName));
+  const isOrgSeed = sourceType === "LINKEDIN_COMPANY_PAGE" || sourceType === "LINKEDIN_ORGANIZATION_PAGE" || sourceType === "TIKTOK_BUSINESS_ACCOUNT" || sourceType === "FACEBOOK_PAGE";
+  const platformName = sourceType.split("_")[0].toLowerCase();
   const seedHandle = (() => { try { const u = new URL(seedUrl); const seg = u.pathname.split("/").filter(Boolean)[0]; return seg ? seg.replace(/^@/, "") : null; } catch { return null; } })();
   // Pages that link back to the exact seed account are tied to the entity by
   // the entity itself -- strongest corroboration there is.
@@ -379,7 +421,7 @@ export function analyzeEntities(
     else if (platformOf(c.sourceUrl) === "google_business" || platformOf(c.sourceUrl) === "yelp" || platformOf(c.sourceUrl) === "bbb") addCand(c.value, ref(c.sourceUrl), 2, "directory");
     else if (firstPartyUrls.has(c.sourceUrl) && c.strength >= 2) addCand(c.value, ref(c.sourceUrl), 1, "social");
   }
-  const bioMentions = seedBio && (isProfileSeed || sourceType.startsWith("INSTAGRAM")) ? extractBusinessMentionsFromBio(seedBio) : [];
+  const bioMentions = seedBio && (isProfileSeed || sourceType.startsWith("INSTAGRAM") || sourceType.startsWith("X_") || sourceType.startsWith("TIKTOK") || sourceType === "LINKEDIN_PERSON_PROFILE") ? extractBusinessMentionsFromBio(seedBio) : [];
   for (const m of bioMentions) addCand(m.name, seedRef(m.excerpt), 1, "bio");
   if (!isProfileSeed && graph.businessName?.value) addCand(graph.businessName.value, ref(graph.businessName.sourceUrl), graph.businessName.strength, "engine");
   if (cands.length === 0 && officialDomain && isProfileSeed) addCand(humanizeDomain(officialDomain), ref(website.value), 0, "domain");
@@ -439,7 +481,7 @@ export function analyzeEntities(
     person = {
       name: seedDisplayName,
       facebookUrl: seedUrl,
-      facebookUsername: sourceType.startsWith("INSTAGRAM") && fbUser ? `@${fbUser}` : fbUser,
+      facebookUsername: (sourceType.startsWith("INSTAGRAM") || sourceType.startsWith("X_") || sourceType.startsWith("TIKTOK")) && fbUser ? `@${fbUser.replace(/^@/, "")}` : sourceType.startsWith("LINKEDIN") ? (() => { try { const u = new URL(seedUrl); return u.pathname.replace(/\/+$/, ""); } catch { return fbUser; } })() : fbUser,
       bio: seedBio ? seedBio.replace(/\s*join facebook to connect with.*$/i, "").trim() || null : null,
       publicLocation: graph.locations.find((l) => l.sourceUrl === seedUrl && (l.city || l.state)) ? [graph.locations.find((l) => l.sourceUrl === seedUrl)!.city, graph.locations.find((l) => l.sourceUrl === seedUrl)!.state].filter(Boolean).join(", ") : null,
       role: bioRole ?? (bioMentions.find((m) => m.role)?.role ?? null),
@@ -472,12 +514,18 @@ export function analyzeEntities(
     identityConfidence = confirmed ? "confirmed" : "uncertain"; identityStatus = confirmed ? "CONFIRMED" : "UNCERTAIN";
     business = { name: top.value, candidates: cands.map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: identityStatus, confidence: confirmed ? (corroboration >= 3 ? "HIGH" : "HIGH") : "MEDIUM" };
     if (isProfileSeed && person) {
-      entityType = "PERSON_OPERATING_BUSINESS"; businessStatus = "PERSON_OPERATING_BUSINESS";
       const selfDescribed = bioMentions.some((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value));
+      // An employer field / representative title ties the person TO the
+      // business without making them its operator. Ownership is never
+      // inferred from "works at" / "Sales Manager at".
+      const mentionRole = bioMentions.find((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value))?.role ?? person.role;
+      const operates = !mentionRole || OPERATING_ROLES.has(mentionRole) || (!!graph.ownerName && normalizeBusinessName(graph.ownerName) === normalizeBusinessName(person.name));
+      entityType = operates ? "PERSON_OPERATING_BUSINESS" : "PERSON"; businessStatus = operates ? "PERSON_OPERATING_BUSINESS" : "PERSON_ASSOCIATED_WITH_BUSINESS";
+      if (!operates) notes.push(`${person.name} is linked to ${top.value} as ${(mentionRole ?? "associated").toLowerCase()} -- not its operator. Ownership is never inferred from an employer or title field.`);
       // Corroborated = an independent source (website JSON-LD founder/employee, or the site naming the person) ties the person to the business.
       const siteNamesPerson = !!graph.ownerName && normalizeBusinessName(graph.ownerName) === normalizeBusinessName(person.name);
       const basisRel: RelationshipBasis = siteNamesPerson ? "corroborated" : selfDescribed ? "self_described" : "inferred";
-      const relType: RelationshipType = person.role ?? (siteNamesPerson ? "OWNER" : "UNKNOWN");
+      const relType: RelationshipType = mentionRole ?? person.role ?? (siteNamesPerson ? "OWNER" : "UNKNOWN");
       const explanation: string[] = [];
       if (selfDescribed) explanation.push(`Facebook bio describes ${person.name} as ${(person.role ?? "connected to").toString().toLowerCase().replace("_", " ")} of ${top.value}.`);
       if (website.status === "CONFIRMED") explanation.push(`Profile links to ${website.value} which names ${top.value}.`);
@@ -495,7 +543,7 @@ export function analyzeEntities(
       if (basisRel === "self_described") notes.push(`Relationship is self-described on the Facebook profile only -- shown as "self-described ${relType.toLowerCase()}", not confirmed owner.`);
       if (!confirmed) notes.push("Business identified from a single source; add the website or Google Business listing to confirm.");
     } else {
-      entityType = "BUSINESS"; businessStatus = "BUSINESS";
+      entityType = sourceType === "LINKEDIN_ORGANIZATION_PAGE" ? "ORGANIZATION" : "BUSINESS"; businessStatus = "BUSINESS";
       if (person) relationship = { relationshipType: person.role ?? "OWNER", basis: "corroborated", confidence: "MEDIUM", evidence: person.sources, explanation: [`Structured data on the website names ${person.name}.`] };
       if (linksBackToSeed) notes.push(`${top.value}'s website links back to this exact account -- cross-link verified.`);
       if (!confirmed) notes.push("Business name found but only weakly corroborated by a second signal (domain/phone).");
@@ -566,7 +614,7 @@ export function isSocialProfilePath(url: string, platform: string): boolean {
       return segs.length === 1;
   }
 }
-const PLATFORM_BRAND_HANDLES = new Set(["youtube", "youtubecreators", "teamyoutube", "instagram", "facebook", "facebookapp", "meta", "tiktok", "tiktok_us", "twitter", "x", "linkedin", "google", "googlemaps", "whatsapp", "pinterest", "snapchat", "threads", "yelp", "nextdoor", "linktree", "linktr_ee"]);
+const PLATFORM_BRAND_HANDLES = new Set(["tiktokcreators", "tiktokforbusiness", "linkedinnews", "linkedinhelp", "xdevelopers", "youtube", "youtubecreators", "teamyoutube", "instagram", "facebook", "facebookapp", "meta", "tiktok", "tiktok_us", "twitter", "x", "linkedin", "google", "googlemaps", "whatsapp", "pinterest", "snapchat", "threads", "yelp", "nextdoor", "linktree", "linktr_ee"]);
 const FB_RESERVED = new Set(["login", "home.php", "data", "help", "policies", "privacy", "terms", "ads", "business", "marketplace", "watch", "gaming", "groups", "events", "reel", "reels", "stories", "share", "sharer.php", "dialog", "plugins", "about", "careers", "developers", "settings", "messages", "notifications", "friends", "photo", "photo.php", "video.php", "hashtag", "search", "legal", "security", "l.php", "recover", "checkpoint", "r.php", "mobile", "lite"]);
 const GENERIC_RESERVED = new Set(["explore", "about", "legal", "privacy", "terms", "help", "accounts", "p", "reel", "reels", "stories", "tv", "direct", "login", "signup", "i", "home", "search", "hashtag", "settings", "foryou", "following", "live", "discover", "upload", "download", "business", "creators", "new", "t", "s", "feed", "trends"]);
 
@@ -826,14 +874,17 @@ export function reconcileGraph(graph: BusinessGraph, seedUrl: string): ResearchP
   else if (entities.businessStatus !== "NO_BUSINESS_IDENTIFIED" && identity.identityConfidence !== "confirmed") limitations.push({ code: "IDENTITY_NOT_CONFIRMED", message: "Business identity could not be confirmed with two independent signals." });
   if (entities.relationship?.basis === "self_described") limitations.push({ code: "RELATIONSHIP_SELF_DESCRIBED", message: "The person-to-business relationship is stated only on the Facebook profile; no independent source confirms it." });
   if (website.status === "INACCESSIBLE") limitations.push({ code: "DISCOVERY_UNAVAILABLE", message: "Wider-web website discovery did not run (no search provider configured)." });
-  if (graph.instagramRecovery && graph.instagramRecovery.status !== "not_applicable") {
-    const r = graph.instagramRecovery;
+  const recovery = graph.socialRecovery ?? graph.instagramRecovery ?? null;
+  if (recovery && recovery.status !== "not_applicable") {
+    const r = recovery;
+    const platformLabel = ({ instagram: "Instagram", linkedin: "LinkedIn", x: "X", tiktok: "TikTok", facebook: "Facebook" } as Record<string, string>)[r.platform ?? "instagram"] ?? "The platform";
+    const at = r.platform === "linkedin" ? `${r.handle}` : `@${r.handle}`;
     limitations.push({
-      code: "INSTAGRAM_PROFILE_LOGIN_WALLED",
+      code: `${(r.platform ?? "instagram").toUpperCase()}_PROFILE_LOGIN_WALLED`,
       message: r.status === "found"
-        ? `Instagram serves the profile page only to logged-in browsers; identity was recovered from ${r.postsFound} public post${r.postsFound === 1 ? "" : "s"} and ${r.backlinkCandidates} page${r.backlinkCandidates === 1 ? "" : "s"} linking to @${r.handle} in the public search index (${r.provider}). Bio, follower count and account type are not readable.`
-        : r.status === "not_found" ? `Instagram profile is login-walled and no public posts or pages linking to @${r.handle} were found in the search index.`
-        : `Instagram profile is login-walled and public-index recovery could not run: ${r.reason}`,
+        ? `${platformLabel} serves this profile page only to logged-in browsers; identity was recovered from ${r.postsFound} public post${r.postsFound === 1 ? "" : "s"}/page${r.postsFound === 1 ? "" : "s"} of the account and ${r.backlinkCandidates} page${r.backlinkCandidates === 1 ? "" : "s"} linking to ${at} in the public search index (${r.provider}). Bio, follower count and account type are not readable directly.`
+        : r.status === "not_found" ? `${platformLabel} profile is login-walled and no public posts or pages linking to ${at} were found in the search index.`
+        : `${platformLabel} profile is login-walled and public-index recovery could not run: ${r.reason}`,
     });
   }
   const blocked = sources.filter((s) => s.fetchStatus === "blocked_login_wall" || s.fetchStatus === "generic_platform_shell");

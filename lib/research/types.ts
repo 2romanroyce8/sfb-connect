@@ -152,6 +152,13 @@ export type PageMeta = {
   // strongest cross-link verification that it belongs to the same entity
   // (a website whose footer links to instagram.com/<seed handle>).
   linksToSeed?: boolean;
+  // Platform-published account facts read from the page itself (TikTok's
+  // hydration JSON, LinkedIn company "About", X og tags). Only set when the
+  // platform actually publishes the flag -- never inferred here.
+  accountFlags?: { business?: boolean; verified?: boolean; organization?: boolean; seller?: boolean; private?: boolean };
+  // Structured company facts a platform publishes (LinkedIn company pages).
+  companyFacts?: { industry?: string | null; size?: string | null; headquarters?: string | null; founded?: string | null; specialties?: string[]; website?: string | null };
+  headline?: string | null;
   title: string | null;
   ogTitle: string | null;
   description: string | null;
@@ -164,10 +171,12 @@ export type BusinessGraph = {
   // Removal") stay distinguishable downstream instead of collapsing into one.
   nameCandidates?: Candidate[];
   pageMeta?: PageMeta[];
-  // Honest record of the Instagram public-index recovery step (the profile
-  // page is login-walled to every non-browser client; public posts and
-  // pages linking to the exact handle are read from a search index).
-  instagramRecovery?: {
+  // Honest record of the public-index recovery step for a social seed whose
+  // profile page is login-walled to non-browser clients (Instagram, LinkedIn
+  // personal profiles, sometimes Facebook): public posts and pages linking to
+  // the exact handle are read from a search index, never fetched by us.
+  socialRecovery?: {
+    platform: string;
     status: "found" | "not_found" | "unavailable" | "not_applicable";
     handle: string | null;
     displayName: string | null;
@@ -176,6 +185,8 @@ export type BusinessGraph = {
     provider: string | null;
     reason: string | null;
   };
+  /** @deprecated alias kept for results written before socialRecovery existed */
+  instagramRecovery?: BusinessGraph["socialRecovery"];
   category: string | null;
   description: string | null;
   services: string[];

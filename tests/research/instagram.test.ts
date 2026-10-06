@@ -81,7 +81,7 @@ test("reconcile: instagram seed recovered from public index -> BUSINESS, website
       { url: WEB, sourceType: "website", discoveredFrom: IG, discoveryMethod: "search_discovery", fetchStatus: "ok", primaryPassDone: true, verificationPassDone: true },
     ],
     signals: { hasJsonLd: true, hasHttps: true, hasMetaDescription: true, hasAggregateRating: false },
-    instagramRecovery: { status: "found", handle: "sdjunkseekers", displayName: "junkseekers", postsFound: 1, backlinkCandidates: 2, provider: "exa", reason: null },
+    socialRecovery: { platform: "instagram", status: "found", handle: "sdjunkseekers", displayName: "junkseekers", postsFound: 1, backlinkCandidates: 2, provider: "exa", reason: null },
   } as BusinessGraph;
   const p = reconcileGraph(g, IG);
   assert.equal(p.entities.sourceType, "INSTAGRAM_BUSINESS_ACCOUNT");
@@ -161,7 +161,7 @@ test("live-observed: website sub-page titles and taglines never create a busines
       ...["contact", "about", "areas-we-serve", "appliance-removal-services"].map((p) => ({ url: WEB + p, sourceType: "website", discoveredFrom: WEB, discoveryMethod: "website_crawl" as const, fetchStatus: "ok" as const, primaryPassDone: true, verificationPassDone: true })),
     ],
     signals: { hasJsonLd: true, hasHttps: true, hasMetaDescription: true, hasAggregateRating: false },
-    instagramRecovery: { status: "found", handle: "sdjunkseekers", displayName: null, postsFound: 0, backlinkCandidates: 3, provider: "exa", reason: null },
+    socialRecovery: { platform: "instagram", status: "found", handle: "sdjunkseekers", displayName: null, postsFound: 0, backlinkCandidates: 3, provider: "exa", reason: null },
   } as BusinessGraph;
   const p = reconcileGraph(g, IG);
   assert.equal(p.conflicts.length, 0);

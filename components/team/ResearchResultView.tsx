@@ -75,6 +75,9 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
   FACEBOOK_PAGE: "Facebook Page", FACEBOOK_PERSONAL_PROFILE: "Facebook personal profile", FACEBOOK_PROFESSIONAL_PROFILE: "Facebook professional profile",
   FACEBOOK_GROUP: "Facebook group", FACEBOOK_EVENT: "Facebook event", FACEBOOK_UNKNOWN: "Facebook (page or profile)",
   INSTAGRAM_BUSINESS_ACCOUNT: "Instagram business account (inferred)", INSTAGRAM_PERSONAL_ACCOUNT: "Instagram personal account (inferred)", INSTAGRAM_CREATOR_ACCOUNT: "Instagram creator account", INSTAGRAM_UNKNOWN: "Instagram account",
+  LINKEDIN_PERSON_PROFILE: "LinkedIn personal profile", LINKEDIN_COMPANY_PAGE: "LinkedIn company page", LINKEDIN_ORGANIZATION_PAGE: "LinkedIn organization page", LINKEDIN_UNKNOWN: "LinkedIn",
+  X_PROFILE: "X profile (inferred personal)", X_BUSINESS_PROFILE: "X business profile (inferred)", X_CREATOR_PROFILE: "X creator profile (inferred)", X_UNKNOWN: "X account",
+  TIKTOK_BUSINESS_ACCOUNT: "TikTok business account", TIKTOK_PERSONAL_ACCOUNT: "TikTok personal account (inferred)", TIKTOK_CREATOR_ACCOUNT: "TikTok creator account (inferred)", TIKTOK_UNKNOWN: "TikTok account",
   WEBSITE: "Website", INSTAGRAM: "Instagram", TIKTOK: "TikTok", YOUTUBE: "YouTube", LINKEDIN: "LinkedIn", X: "X", GOOGLE_BUSINESS: "Google Business", BIO_LINK_HUB: "Bio-link hub", OTHER: "Other",
 };
 const ENTITY_TYPE_LABEL: Record<string, string> = {
@@ -341,7 +344,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
       {ent && (ent.person || ent.business || ent.businessStatus !== "BUSINESS") && (
         <div className="mb-5 rounded-[12px] p-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-3">
-            {ent.entityType === "PERSON_OPERATING_BUSINESS" ? "Business relationship detected" : ent.entityType === "PERSON" ? "Personal profile — no business identified" : ent.entityType === "UNKNOWN" ? "Business signals detected — identity uncertain" : "Entity"}
+            {ent.entityType === "PERSON_OPERATING_BUSINESS" ? "Business relationship detected" : ent.businessStatus === "PERSON_ASSOCIATED_WITH_BUSINESS" ? "Person associated with a business — not its operator" : ent.entityType === "PERSON" ? "Personal profile — no business identified" : ent.entityType === "UNKNOWN" ? "Business signals detected — identity uncertain" : ent.entityType === "ORGANIZATION" ? "Organization" : "Entity"}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[13px]">
             {ent.person && (
