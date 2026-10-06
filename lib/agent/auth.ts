@@ -16,12 +16,17 @@ export class AgentAuthError extends Error {
   constructor(public readonly status: number, public readonly code: string, message: string, public readonly extraHeaders: Record<string, string> = {}) { super(message); }
 }
 
+/** The origin the client is actually talking to. Derived from the request
+ * (so the OAuth issuer, token endpoint and handoff links stay on the exact
+ * host the agent used -- the apex redirects to www, and a redirected POST
+ * breaks token exchange); the configured app URL is only a fallback. */
 export function appOrigin(req: NextRequest): string {
-  const explicit = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
-  if (explicit) return explicit;
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "www.sfbconnect.com";
-  return `${proto}://${host}`;
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (host && /^(www\.)?sfbconnect\.com$|\.vercel\.app$|^localhost(:\d+)?$/.test(host)) {
+    const proto = host.startsWith("localhost") ? "http" : "https";
+    return `${proto}://${host}`;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ?? "https://www.sfbconnect.com";
 }
 
 export function bearerChallenge(origin: string, error?: string, description?: string): Record<string, string> {
