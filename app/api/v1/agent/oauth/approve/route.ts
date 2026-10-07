@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getClient, createAuthorization, issueAuthCode, audit } from "@/lib/agent/store";
 import { mintDelegatedSession } from "@/lib/agent/delegatedSession";
-import { redirectUriAllowed, canonicalRedirectUri, originOf } from "@/lib/agent/oauth";
+import { redirectUriAllowed, canonicalRedirectUri, isLoopbackUri, originOf } from "@/lib/agent/oauth";
 import { negotiateScopes } from "@/lib/agent/scopes";
 import { AGENT_SESSION_COOKIE } from "@/lib/agent/readOnly";
 export const dynamic = "force-dynamic";
@@ -21,7 +21,22 @@ export async function POST(req: NextRequest) {
   const client = await getClient(g("client_id"));
   const redirectUri = g("redirect_uri");
   if (!client || !redirectUri || !redirectUriAllowed(client, redirectUri)) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
-  const back = (params: Record<string, string>) => { const u = new URL(redirectUri); for (const [k, v] of Object.entries(params)) if (v) u.searchParams.set(k, v); return NextResponse.redirect(u, 303); };
+  // A loopback callback (127.0.0.1 / localhost) only works when the agent
+  // runs on the same machine as this browser. Cloud agents (Muse) that
+  // register one would strand the user on a "can't connect" page, so the
+  // result is shown on a hosted completion page instead: it offers the
+  // loopback link for local agents and a copyable callback URL for cloud ones.
+  const back = (params: Record<string, string>) => {
+    const u = new URL(redirectUri);
+    for (const [k, v] of Object.entries(params)) if (v) u.searchParams.set(k, v);
+    if (isLoopbackUri(redirectUri)) {
+      const page = new URL("/team/agent-callback", origin);
+      page.searchParams.set("u", u.toString());
+      page.searchParams.set("agent", client.client_name);
+      return NextResponse.redirect(page, 303);
+    }
+    return NextResponse.redirect(u, 303);
+  };
 
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();

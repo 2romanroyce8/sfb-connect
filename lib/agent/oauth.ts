@@ -46,6 +46,11 @@ export function canonicalRedirectUri(uri: string): string {
   try { const u = new URL(uri); if (LOOPBACK_HOSTS.has(u.hostname)) { u.hostname = "127.0.0.1"; return u.toString(); } return uri; } catch { return uri; }
 }
 
+/** True for 127.0.0.1 / localhost / [::1] redirect targets. */
+export function isLoopbackUri(uri: string): boolean {
+  try { return LOOPBACK_HOSTS.has(new URL(uri).hostname); } catch { return false; }
+}
+
 /** Exact-match redirect URI validation; loopback URIs may vary in port. */
 export function redirectUriAllowed(client: AgentClient, uri: string): boolean {
   let u: URL;

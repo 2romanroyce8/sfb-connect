@@ -8,7 +8,7 @@ export const svc = (): SupabaseClient => createSupabaseServiceClient();
 
 export const ACCESS_TOKEN_TTL_SEC = 60 * 60; // 1h
 export const REFRESH_TOKEN_TTL_SEC = 60 * 60 * 24 * 30; // 30d, rotated on every use
-export const AUTH_CODE_TTL_SEC = 5 * 60;
+export const AUTH_CODE_TTL_SEC = 10 * 60; // long enough for a user to hand a loopback code to a cloud agent
 export const HANDOFF_TTL_SEC = 2 * 60;
 
 export type AgentClient = { client_id: string; client_name: string; redirect_uris: string[]; is_public: boolean; client_secret_hash: string | null };
