@@ -78,7 +78,7 @@ export default function Hero() {
           style={{ textShadow: "0 3px 30px rgba(0,0,0,0.32)" }}
         >
           Your customers are asking AI
-          <br />
+          {" "}<br />
           who to{" "}
           <span className="font-serif-accent italic font-normal">
             choose.

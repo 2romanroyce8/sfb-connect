@@ -4,6 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { Linkedin, Twitter, Instagram, Menu, X } from "lucide-react";
 
+// Real profile URLs only. A null entry hides the icon -- a social button that
+// goes nowhere is worse than no button for a company selling discoverability.
+const SOCIAL_LINKS: { label: string; href: string | null; Icon: typeof Instagram }[] = [
+  { label: "Instagram", href: process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || null, Icon: Instagram },
+  { label: "LinkedIn", href: process.env.NEXT_PUBLIC_SOCIAL_LINKEDIN || null, Icon: Linkedin },
+  { label: "X", href: process.env.NEXT_PUBLIC_SOCIAL_X || null, Icon: Twitter },
+];
+
 const LOGO_SRC =
   "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 
@@ -36,18 +44,24 @@ export default function Navbar() {
 
       <div className="flex items-center gap-3">
         <div className="hidden sm:flex items-center gap-2">
-          {[Instagram, Linkedin, Twitter].map((Icon, i) => (
+          {SOCIAL_LINKS.filter((s) => s.href).map(({ label, href, Icon }) => (
             <a
-              key={i}
-              href="#"
+              key={label}
+              href={href!}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`SFB Connects on ${label}`}
               className="liquid-glass w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/[0.04] transition-colors"
             >
               <Icon className="w-4 h-4" strokeWidth={1.75} />
             </a>
           ))}
         </div>
+        <Link href="/login" className="hidden sm:inline-flex text-[13.5px] text-medium-gray hover:text-white transition-colors whitespace-nowrap">
+          Sign in
+        </Link>
         <Link
-          href="/#pricing"
+          href="/#score"
           className="hidden sm:inline-flex bg-white text-black px-5 py-2.5 rounded-full text-[13.5px] font-semibold hover:opacity-80 transition-opacity whitespace-nowrap"
         >
           Analyze My Business
@@ -68,8 +82,11 @@ export default function Navbar() {
                 {l.label}
               </Link>
             ))}
+            <Link href="/login" onClick={() => setMobileOpen(false)} className="py-3 text-[15px] text-white/80 hover:text-white border-b border-white/[0.06]">
+              Sign in
+            </Link>
             <Link
-              href="/#pricing"
+              href="/#score"
               onClick={() => setMobileOpen(false)}
               className="mt-5 bg-white text-black px-5 py-3 rounded-full text-[14px] font-semibold text-center"
             >

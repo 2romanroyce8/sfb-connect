@@ -75,7 +75,7 @@ export default async function ResearchQueuePage() {
           <table className="w-full text-[13px]">
             <thead>
               <tr style={{ background: "#0A0A0A" }}>
-                {["Business", "Entity", "Identity", "Confidence", "Verified", "Conflicts", "Website", "Phone", "Researched"].map((h) => (
+                {["Business", "Entity", "Identity", "Completeness", "Verified", "Conflicts", "Website", "Phone", "Researched"].map((h) => (
                   <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
                     {h}
                   </th>
@@ -108,8 +108,7 @@ export default async function ResearchQueuePage() {
                   <td className="px-4 py-3">
                     {r.identity_confidence && r.research_confidence_pct != null ? (
                       <span className="text-[12px] font-semibold" style={{ color: IDENTITY_COLOR[r.identity_confidence] ?? "#A1A1A6" }}>
-                        {r.identity_confidence.replace("_", " ")}
-
+                        <span title="Whether the researched sources are the business named by the seed — separate from how complete the profile is">Identity {r.identity_confidence.replace("_", " ")}</span>
                       </span>
                     ) : (
                       <span className="text-[#6E6E73]" title="Researched before the identity layer existed — open to see a derived profile">legacy</span>

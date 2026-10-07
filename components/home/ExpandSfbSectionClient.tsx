@@ -80,7 +80,7 @@ export default function ExpandSfbSectionClient({ products, packages }: { product
             </span>
             <h2 className="mt-[18px] text-[38px] sm:text-[50px] md:text-[58px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#f7f7f7]">
               Your business grows.
-              <br />
+              {" "}<br />
               SFB grows with it.
             </h2>
             <p className="max-w-[560px] mx-auto mt-[18px] text-[14px] leading-relaxed text-white/[0.42]">
@@ -137,7 +137,7 @@ export default function ExpandSfbSectionClient({ products, packages }: { product
               </span>
               <h3 className="mt-[16px] text-[30px] sm:text-[38px] font-semibold leading-[1.02] tracking-[-0.03em] text-[#f7f7f7]">
                 Need SFB to do more?
-                <br />
+                {" "}<br />
                 Add execution without changing your plan.
               </h3>
               <p className="max-w-[520px] mx-auto mt-[14px] text-[13.5px] leading-relaxed text-white/[0.42]">

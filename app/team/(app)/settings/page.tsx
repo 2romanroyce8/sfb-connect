@@ -13,5 +13,9 @@ export default async function TeamSettingsPage() {
     .eq("id", user!.id)
     .single();
 
-  return <SettingsPanel profile={profile as any} />;
+  // Real integration state for the defaults section -- never a stale "not
+  // connected" sentence that contradicts the Integrations page.
+  const { data: cal } = await supabase.from("crm_calendar_connections").select("google_email, refresh_failed_at").eq("rep_id", user!.id).maybeSingle();
+  const aiProviderConfigured = !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY);
+  return <SettingsPanel profile={profile as any} integrations={{ calendarEmail: cal && !cal.refresh_failed_at ? cal.google_email : null, aiProviderConfigured }} />;
 }

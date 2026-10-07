@@ -23,7 +23,9 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sfbconnect.com";
+// The canonical host is www -- the apex 308-redirects to it, so advertising
+// the apex as canonical/og:url diluted the signal search engines see.
+const siteUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://www.sfbconnect.com").replace(/^https?:\/\/sfbconnect\.com/, "https://www.sfbconnect.com");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

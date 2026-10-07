@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { describeScope } from "@/lib/agent/scopes";
 
-type Authz = { id: string; client_id: string; client_name: string; workspace_label: string; scopes: string[]; status: "active" | "revoked"; created_at: string; last_used_at: string | null; revoked_at: string | null; revoked_reason: string | null };
+type Authz = { id: string; authorized_by?: string | null; client_id: string; client_name: string; workspace_label: string; scopes: string[]; status: "active" | "revoked"; created_at: string; last_used_at: string | null; revoked_at: string | null; revoked_reason: string | null };
 type Audit = { id: number; authorization_id: string | null; client_id: string | null; access_method: string; action: string; resource: string | null; result: string; created_at: string };
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : "never");
@@ -59,7 +59,7 @@ export default function ConnectedAgentsSection() {
       {loading ? (
         <div className="text-[12px] text-[#6E6E73]">Loading…</div>
       ) : active.length === 0 ? (
-        <div className="text-[12.5px] text-[#6E6E73]">No agents are connected.</div>
+        <div className="text-[12.5px] text-[#6E6E73]">No agents are connected to your account. Owners also see agents authorized by other team members here.</div>
       ) : (
         <ul className="flex flex-col gap-2">
           {active.map((a) => (
@@ -67,7 +67,7 @@ export default function ConnectedAgentsSection() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-[13px] font-semibold text-[#F5F5F7]">{a.client_name} <span className="ml-1 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: "rgba(48,209,88,0.12)", color: "#30D158" }}>read-only</span></div>
-                  <div className="text-[11.5px] text-[#6E6E73] mt-0.5">Connected {fmt(a.created_at)} · last used {fmt(a.last_used_at)} · {a.workspace_label}</div>
+                  <div className="text-[11.5px] text-[#6E6E73] mt-0.5">{a.authorized_by ? <>Authorized by <span className="text-[#A1A1A6]">{a.authorized_by}</span> · </> : null}Connected {fmt(a.created_at)} · last used {fmt(a.last_used_at)} · {a.workspace_label}</div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {a.scopes.map((s) => (
                       <span key={s} title={s} className="text-[11px] px-2 py-0.5 rounded-full text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>{describeScope(s)}</span>

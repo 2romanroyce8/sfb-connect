@@ -25,7 +25,7 @@ function Section({ title, children, id }: { title: string; children: React.React
   );
 }
 
-export default function SettingsPanel({ profile }: { profile: Profile }) {
+export default function SettingsPanel({ profile, integrations }: { profile: Profile; integrations?: { calendarEmail: string | null; aiProviderConfigured: boolean } }) {
   const [fullName, setFullName] = useState(profile.full_name || "");
   const [savingName, setSavingName] = useState(false);
   const [nameMsg, setNameMsg] = useState<string | null>(null);
@@ -312,10 +312,17 @@ export default function SettingsPanel({ profile }: { profile: Profile }) {
       )}
 
       <Section title="Notifications, Sales Defaults, Calendar Defaults, AI Defaults">
-        <p className="text-[12.5px] text-[#6E6E73] leading-relaxed">
-          These depend on the Google Calendar and AI Provider integrations, which aren't connected yet. Once
-          they're set up on the Integrations page, their defaults will show up here.
-        </p>
+        <ul className="text-[12.5px] text-[#A1A1A6] leading-relaxed flex flex-col gap-1.5">
+          <li>
+            <span className="text-[#F5F5F7]">Google Calendar:</span>{" "}
+            {integrations?.calendarEmail ? <>connected as <span className="font-mono text-[12px]">{integrations.calendarEmail}</span>. Calendar defaults will appear here as they are introduced.</> : <>not connected for your account. Connect it on the <a href="/team/integrations" className="underline underline-offset-2 text-[#F5F5F7]">Integrations</a> page.</>}
+          </li>
+          <li>
+            <span className="text-[#F5F5F7]">AI Provider:</span>{" "}
+            {integrations?.aiProviderConfigured ? "configured for this workspace. AI defaults will appear here as they are introduced." : "not configured. The owner adds a provider key in the hosting environment; AI defaults appear here afterwards."}
+          </li>
+          <li><span className="text-[#F5F5F7]">Notifications and sales defaults:</span> not yet configurable — coming with the SOP and notifications phases.</li>
+        </ul>
       </Section>
     </div>
   );

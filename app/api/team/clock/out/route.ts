@@ -20,6 +20,6 @@ export async function POST() {
     .eq("id", active.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  await supabase.from("crm_activities").insert({ rep_id: user.id, activity_type: "clocked_out", description: "Clocked out — Personal Mode" });
+  await supabase.from("crm_activities").insert({ rep_id: user.id, activity_type: "clocked_out", description: "Clocked out — Work Mode ended (back to Personal Mode)" });
   return NextResponse.json({ ok: true, durationSeconds });
 }

@@ -139,7 +139,17 @@ export default function NotesBoard({
 
       {sorted.length === 0 ? (
         <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[14px] text-[#A1A1A6]">No notes match.</div>
+          {notes.length === 0 ? (
+            <>
+              <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No notes yet</div>
+              <p className="text-[13px] text-[#A1A1A6]">Notes you add to leads and calls show up here. Use New note to write the first one.</p>
+            </>
+          ) : (
+            <>
+              <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No notes match these filters</div>
+              <p className="text-[13px] text-[#A1A1A6]">Clear the search{authorFilter ? " or author filter" : ""} to see all {notes.length} notes.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-2 max-w-[720px]">

@@ -18,15 +18,15 @@ export default function PosterSection() {
           </span>
           <h2 className="text-[52px] sm:text-[72px] md:text-[92px] font-extrabold tracking-[-0.03em] leading-[0.94]">
             GET
-            <br />
+            {" "}<br />
             FOUND
-            <br />
+            {" "}<br />
             <span className="font-serif-accent italic font-normal">
               before
             </span>
-            <br />
+            {" "}<br />
             YOUR
-            <br />
+            {" "}<br />
             COMPETITOR
           </h2>
         </motion.div>

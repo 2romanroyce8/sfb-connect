@@ -14,6 +14,6 @@ export async function POST() {
   const { data: session, error } = await supabase.from("team_work_sessions").insert({ rep_id: user.id }).select("*").single();
   if (error || !session) return NextResponse.json({ error: error?.message || "Could not clock in." }, { status: 400 });
 
-  await supabase.from("crm_activities").insert({ rep_id: user.id, activity_type: "clocked_in", description: "Clocked in — Work Mode" });
+  await supabase.from("crm_activities").insert({ rep_id: user.id, activity_type: "clocked_in", description: "Clocked in — Work Mode started" });
   return NextResponse.json(session);
 }

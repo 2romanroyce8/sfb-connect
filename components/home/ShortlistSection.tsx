@@ -19,7 +19,7 @@ export default function ShortlistSection() {
             title={
               <>
                 Hundreds of businesses exist.
-                <br />
+                {" "}<br />
                 The customer may only see five.
               </>
             }

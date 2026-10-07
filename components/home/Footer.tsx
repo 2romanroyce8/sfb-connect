@@ -16,6 +16,12 @@ export default function Footer() {
             <Link href="/#faq" className="hover:text-white transition-colors">
               FAQ
             </Link>
+            <Link href="/login" className="hover:text-white transition-colors">
+              Customer sign in
+            </Link>
+            <Link href="/team/login" className="hover:text-white transition-colors">
+              Team
+            </Link>
           </div>
         </div>
         <div className="flex justify-between flex-wrap gap-4 text-[12.5px] text-[#5c5c60] pt-8 border-t border-white/10">

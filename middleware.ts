@@ -55,8 +55,13 @@ export async function middleware(request: NextRequest) {
   // read-only regardless of the user's own role.
   const agentAuthorizationId = request.cookies.get(AGENT_SESSION_COOKIE)?.value;
   if (agentAuthorizationId) {
-    const active = await agentAuthorizationActive(agentAuthorizationId, user?.id ?? null);
-    if (!active) {
+    const state = await agentAuthorizationState(agentAuthorizationId, user?.id ?? null);
+    if (state === "other_user") {
+      // A real person signed in on top of an old delegated-agent session (the
+      // Supabase cookies are theirs now). Drop the stale marker and treat the
+      // request as a normal login instead of bouncing them to "revoked".
+      response.cookies.set(AGENT_SESSION_COOKIE, "", { path: "/", maxAge: 0 });
+    } else if (state !== "active") {
       const url = request.nextUrl.clone();
       url.pathname = "/team/login";
       url.search = "";
@@ -65,10 +70,12 @@ export async function middleware(request: NextRequest) {
       for (const c of request.cookies.getAll()) out.cookies.set(c.name, "", { path: "/", maxAge: 0 });
       return out;
     }
-    if (isMutatingMethod(request.method)) {
-      return NextResponse.json({ error: "read_only_agent_session", message: "Delegated agent sessions are read-only. Writes require the user's own login." }, { status: 403 });
+    if (state === "active") {
+      if (isMutatingMethod(request.method)) {
+        return NextResponse.json({ error: "read_only_agent_session", message: "Delegated agent sessions are read-only. Writes require the user's own login." }, { status: 403 });
+      }
+      response.headers.set("x-sfb-agent-session", "read-only");
     }
-    response.headers.set("x-sfb-agent-session", "read-only");
   }
   if (path.startsWith("/api/")) return response;
 
@@ -117,19 +124,21 @@ export async function middleware(request: NextRequest) {
 }
 
 /** Edge-safe check (plain REST, service role) -- no node-only crypto here. */
-async function agentAuthorizationActive(id: string, userId: string | null): Promise<boolean> {
-  if (!userId || !/^[0-9a-f-]{36}$/i.test(id)) return false;
+async function agentAuthorizationState(id: string, userId: string | null): Promise<"active" | "inactive" | "other_user"> {
+  if (!userId || !/^[0-9a-f-]{36}$/i.test(id)) return "inactive";
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/agent_authorizations?id=eq.${id}&select=status,user_id,scopes`, {
       headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}` },
       cache: "no-store",
     });
-    if (!res.ok) return false;
+    if (!res.ok) return "inactive";
     const rows = (await res.json()) as { status: string; user_id: string; scopes: string[] }[];
     const row = rows[0];
-    return !!row && row.status === "active" && row.user_id === userId && row.scopes.includes("sfb:browser");
+    if (!row) return "inactive";
+    if (row.user_id !== userId) return "other_user";
+    return row.status === "active" && row.scopes.includes("sfb:browser") ? "active" : "inactive";
   } catch {
-    return false;
+    return "inactive";
   }
 }
 

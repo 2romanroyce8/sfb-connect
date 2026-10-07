@@ -6,7 +6,7 @@ export default async function ActivityPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: caller } = await supabase.from("users").select("team_role").eq("id", user!.id).single();
+  const { data: caller } = await supabase.from("users").select("team_role, home_timezone").eq("id", user!.id).single();
   const isOwner = caller?.team_role === "owner";
 
   const { data: activities } = await supabase
@@ -24,5 +24,5 @@ export default async function ActivityPage() {
   const leadMap = Object.fromEntries((leads ?? []).map((l) => [l.id, l.business_name]));
   const repMap = Object.fromEntries((reps ?? []).map((r) => [r.id, r.full_name || r.email]));
 
-  return <ActivityFeed activities={activities ?? []} leadMap={leadMap} repMap={repMap} isOwner={isOwner} />;
+  return <ActivityFeed activities={activities ?? []} leadMap={leadMap} repMap={repMap} isOwner={isOwner} timeZone={caller?.home_timezone || "America/New_York"} />;
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { formatInTimeZone } from "@/lib/crm/timezone";
 import {
   UserPlus,
   SearchCheck,
@@ -48,11 +49,13 @@ export default function ActivityFeed({
   leadMap,
   repMap,
   isOwner,
+  timeZone = "America/New_York",
 }: {
   activities: Activity[];
   leadMap: Record<string, string>;
   repMap: Record<string, string>;
   isOwner: boolean;
+  timeZone?: string;
 }) {
   const [typeFilter, setTypeFilter] = useState("");
   const [repFilter, setRepFilter] = useState("");
@@ -148,7 +151,7 @@ export default function ActivityFeed({
                 </div>
                 <div className="text-[11px] text-[#6E6E73] mt-0.5">
                   {isOwner && a.rep_id && repMap[a.rep_id] ? `${repMap[a.rep_id]} · ` : ""}
-                  {new Date(a.created_at).toLocaleString()}
+                  {formatInTimeZone(a.created_at, timeZone, { month: "numeric", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                 </div>
               </div>
             </div>
