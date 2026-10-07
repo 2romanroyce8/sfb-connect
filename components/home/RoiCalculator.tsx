@@ -70,9 +70,9 @@ export default function RoiCalculator() {
           </h3>
         </div>
         <p className="text-[13px] leading-relaxed text-white/[0.42] max-w-[560px]">
-          Enter your own numbers to see what a plan needs to deliver to pay for itself. This is
-          simple math from the figures you enter below — not a promise or a historical average,
-          since SFB doesn't have enough closed customers yet to publish real conversion data.
+          Enter your own numbers to see what a plan needs to deliver to pay for itself. The result is
+          plain arithmetic from the figures you enter — your prices, your margins, your volume — not a
+          projection or a guarantee of outcomes.
         </p>
 
         <div className="grid md:grid-cols-2 gap-8 mt-7">
