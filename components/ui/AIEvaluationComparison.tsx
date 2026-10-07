@@ -132,7 +132,7 @@ export default function AIEvaluationComparison() {
             }}
           >
             AI evaluates more than
-            <br />
+            {" "}<br />
             what{" "}
             <span className="font-serif-accent italic font-normal">
               looks impressive.
