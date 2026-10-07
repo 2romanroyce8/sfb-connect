@@ -1,9 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AgentCallbackClient({ agent, callbackUrl, code, error, errorDescription }: { agent: string; callbackUrl: string; code: string; error: string; errorDescription: string }) {
   const [copied, setCopied] = useState<"url" | "code" | null>(null);
+  // Is anything actually listening at the loopback address on THIS machine?
+  // A cloud agent (Muse) never is; a desktop agent is. An opaque no-cors
+  // response means alive; a network error means nobody is home. Browsers that
+  // block private-network requests fail the probe, which safely falls back to
+  // the copy flow.
+  const [local, setLocal] = useState<"probing" | "alive" | "dead">("probing");
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 1500);
+    fetch(new URL(callbackUrl).origin + "/", { mode: "no-cors", signal: ctrl.signal, cache: "no-store" })
+      .then(() => setLocal("alive"))
+      .catch(() => setLocal("dead"))
+      .finally(() => clearTimeout(t));
+    return () => { clearTimeout(t); ctrl.abort(); };
+  }, [callbackUrl]);
   const copy = async (what: "url" | "code") => {
     try { await navigator.clipboard.writeText(what === "url" ? callbackUrl : code); setCopied(what); setTimeout(() => setCopied(null), 2000); } catch { /* selection fallback below */ }
   };
@@ -31,9 +46,15 @@ export default function AgentCallbackClient({ agent, callbackUrl, code, error, e
                 <button onClick={() => copy("code")} className="h-[36px] px-4 rounded-[8px] text-[12.5px] text-[#F5F5F7]" style={{ border: "1px solid rgba(255,255,255,0.14)" }}>{copied === "code" ? "Copied" : "Copy code only"}</button>
               </div>
             </div>
-            <div className="mt-5 text-[12px] text-[#A1A1A6]">
-              Agent running on this computer instead? <a href={callbackUrl} className="underline underline-offset-2 text-[#F5F5F7]">Continue to {agent}</a>.
-            </div>
+            {local === "alive" ? (
+              <div className="mt-5 rounded-[10px] p-3 text-[12px]" style={{ background: "rgba(48,209,88,0.08)", border: "1px solid rgba(48,209,88,0.25)", color: "#A1A1A6" }}>
+                {agent} appears to be running on this computer. <a href={callbackUrl} className="underline underline-offset-2 text-[#F5F5F7] font-semibold">Continue to {agent}</a> to finish automatically.
+              </div>
+            ) : (
+              <div className="mt-5 text-[12px] text-[#6E6E73]">
+                {local === "probing" ? "Checking whether the agent is running on this computer…" : <>Nothing is listening at <span className="font-mono">{new URL(callbackUrl).host}</span> on this computer, so the &ldquo;continue&rdquo; link would fail — {agent} runs in the cloud. Use <span className="text-[#A1A1A6]">Copy callback URL</span> above and paste it into {agent}&apos;s chat.</>}
+              </div>
+            )}
             <div className="mt-4 rounded-[10px] p-3 text-[12px] text-[#6E6E73]" style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.06)" }}>
               This code works once and expires in 10 minutes. It is useless without the secret the agent generated when it started the connection, so sharing it with your agent is safe. The agent is read-only and listed under Settings → Connected Agents once it finishes.
             </div>
