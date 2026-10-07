@@ -95,9 +95,13 @@ export async function middleware(request: NextRequest) {
   const TEAM_PUBLIC = ["/team/login", "/team/forgot-password", "/team/reset-password"];
   if (path.startsWith("/team") && !TEAM_PUBLIC.includes(path)) {
     if (!user) {
+      // Preserve the FULL target (path + query). The OAuth consent page
+      // carries its whole request in the query string; dropping it sent
+      // agents' users to a consent page with no client after login.
       const url = request.nextUrl.clone();
       url.pathname = "/team/login";
-      url.searchParams.set("next", path);
+      url.search = "";
+      url.searchParams.set("next", path + request.nextUrl.search);
       return redirectWithCookies(url);
     }
     const { data: profile } = await supabase.from("users").select("team_role, team_status").eq("id", user.id).single();

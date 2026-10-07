@@ -25,7 +25,9 @@ export default async function AuthorizeAgentPage({ searchParams }: { searchParam
   const uriOk = client ? redirectUriAllowed(client, redirectUri) : false;
   const { granted, refused } = negotiateScopes(one(searchParams.scope));
   const isAgentSession = !!cookies().get(AGENT_SESSION_COOKIE);
-  const problem = !client ? "This authorization request names an unknown client." : !uriOk ? "The redirect address in this request is not registered for this client." : isAgentSession ? "A delegated agent session cannot authorize further agents. Sign in yourself to approve." : granted.length === 0 ? "None of the requested permissions can be granted." : null;
+  const problem = !clientId
+    ? "This page only works when opened from an agent's authorization link, and this link has no client_id -- it was probably reloaded or typed by hand. Go back to the agent and ask it to restart the connection; it will send you here again with a fresh link."
+    : !client ? `This authorization request names an unknown client (${clientId}). The agent may have registered under a different id -- ask it to restart the connection.` : !uriOk ? "The redirect address in this request is not registered for this client." : isAgentSession ? "A delegated agent session cannot authorize further agents. Sign in yourself to approve." : granted.length === 0 ? "None of the requested permissions can be granted." : null;
   let redirectHost = "";
   try { redirectHost = new URL(redirectUri).host; } catch { /* shown as-is */ }
 
