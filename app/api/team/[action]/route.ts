@@ -26,6 +26,15 @@ export async function POST(
   const body = await req.json();
   const { userId, leadIds, role } = body as { userId?: string; leadIds?: string[]; role?: string };
   const service = createSupabaseServiceClient();
+
+  // The primary owner (founder) account is untouchable by every other
+  // account, including other owners such as the Muse teammate login. The
+  // database enforces this too (protect_primary_owner triggers); this check
+  // just returns a clear message instead of a constraint error.
+  if (userId && userId !== user.id && ["change-role", "deactivate", "reset-access", "resend-invite"].includes(params.action)) {
+    const { data: target } = await service.from("users").select("is_primary_owner").eq("id", userId).maybeSingle();
+    if (target?.is_primary_owner) return NextResponse.json({ error: "The primary owner account cannot be modified by another account." }, { status: 403 });
+  }
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sfbconnect.com";
 
   switch (params.action) {
