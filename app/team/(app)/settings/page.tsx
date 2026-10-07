@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import SettingsPanel from "@/components/team/SettingsPanel";
 
 export default async function TeamSettingsPage() {
@@ -15,7 +15,10 @@ export default async function TeamSettingsPage() {
 
   // Real integration state for the defaults section -- never a stale "not
   // connected" sentence that contradicts the Integrations page.
-  const { data: cal } = await supabase.from("crm_calendar_connections").select("google_email, refresh_failed_at").eq("rep_id", user!.id).maybeSingle();
+  // crm_calendar_connections holds OAuth tokens, so it has no user-facing
+  // read policy; read ONLY the two non-secret columns for the signed-in user
+  // through the service client (same approach as the Integrations page).
+  const { data: cal } = await createSupabaseServiceClient().from("crm_calendar_connections").select("google_email, refresh_failed_at").eq("rep_id", user!.id).maybeSingle();
   const aiProviderConfigured = !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY);
   return <SettingsPanel profile={profile as any} integrations={{ calendarEmail: cal && !cal.refresh_failed_at ? cal.google_email : null, aiProviderConfigured }} />;
 }
