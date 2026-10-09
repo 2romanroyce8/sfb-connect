@@ -35,7 +35,7 @@ export default function Footer() {
             <Link href="/login" className="hover:text-white transition-colors">
               Customer sign in
             </Link>
-            {/* Legal pages: copy is being supplied separately; these stay as placeholders until it lands. */}
+            {/* Legal pages render Muse's drafts from lib/legal/documents.ts once every open item is resolved; placeholders until then. */}
             <Link href="/privacy" className="hover:text-white transition-colors">
               Privacy
             </Link>

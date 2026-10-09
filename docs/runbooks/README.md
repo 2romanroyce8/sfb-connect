@@ -38,4 +38,5 @@ Never paste a secret into chat, code, logs, or a task result.
 - [agent-program.md](./agent-program.md) — tiers, 8 capabilities, trial sandbox, dashboard
 - [credit-ledger.md](./credit-ledger.md) — ledger rules, guards, charging actions
 - [checkout.md](./checkout.md) — Stripe setup, paths, failure modes
+- [legal-pages.md](./legal-pages.md) — Privacy/Terms drafts, open items, how they publish
 - (next) research-adapters, security-watchdog, youtube-skill

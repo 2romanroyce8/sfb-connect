@@ -29,6 +29,7 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Scale,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import ClockControl from "./ClockControl";
@@ -102,6 +103,7 @@ const NAV_GROUPS: {
     collapsible: true,
     items: [
       { href: "/team/integrations", label: "Integrations", icon: Plug, ownerOnly: true },
+      { href: "/team/legal", label: "Legal Drafts", icon: Scale, ownerOnly: true },
       { href: "/team/settings", label: "Settings", icon: Settings },
     ],
   },
