@@ -327,7 +327,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
           )}
           {profile && (
             <div className="text-[12px] text-[#6E6E73] mt-2">
-              Research confidence <span className="text-[#F5F5F7] font-semibold">{result.research_confidence_pct}%</span>
+              <span title="How much of the profile checklist was filled -- not how sure we are this is the right business (that is the identity label)">Profile completeness</span> <span className="text-[#F5F5F7] font-semibold">{result.research_confidence_pct}%</span>
               <span className="mx-1.5 text-[#3A3A3C]">·</span>
               {result.fields_verified}/{result.fields_total} fields verified
               <span className="mx-1.5 text-[#3A3A3C]">·</span>

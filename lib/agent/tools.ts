@@ -242,6 +242,49 @@ export const TOOLS: ToolDef[] = [
 
 // Task-queue tools live in their own module and are appended here so one
 // registry serves MCP and REST.
+TOOLS.push(
+  {
+    name: "get_sfb_credit_ledger",
+    description: "A customer business's plan, credit balance and recent credit transactions -- exactly what the signed-in user can see (owners: every business; others: their own). Use for 'how many credits does X have', 'what did the agent charge', 'is work paused'. Read-only.",
+    scope: "sfb:billing:read",
+    inputSchema: obj({ business_id: str("Business UUID. Omit to list the businesses you can see with their balances."), limit: int("Transactions to return (default 50)", 1, 200) }),
+    outputSchema: obj({ businesses: { type: "array", items: obj({ id: str(""), legal_name: str(""), plan_key: str(""), credits_balance: { type: "number" }, monthly_credit_allotment: { type: "number" }, work_paused_reason: str(""), trial_expires_at: str(""), is_sandbox: { type: "boolean" } }) }, transactions: { type: "array", items: obj({ id: str(""), business_id: str(""), amount: { type: "number" }, balance_after: { type: "number" }, type: str(""), capability_key: str(""), action_key: str(""), description: str(""), created_at: str("") }) } }),
+    async run(ctx, args) {
+      const id = s(args.business_id) ? uuid(args.business_id, "business") : null;
+      let q = ctx.user.from("businesses").select("id, legal_name, plan_key, monthly_credit_allotment, work_paused_reason, trial_expires_at, is_sandbox").order("created_at", { ascending: false }).limit(25);
+      if (id) q = q.eq("id", id);
+      const b = await q;
+      fail(b.error, "load businesses");
+      const rows = (b.data ?? []) as { id: string }[];
+      if (id && !rows.length) throw new AgentAuthError(404, "not_found", "No business with that id is visible to this user.");
+      // Balance comes from the ledger RPC (same number the dashboard shows), under the user's own session.
+      const balances = await Promise.all(rows.map((r) => ctx.user.rpc("get_credit_balance", { p_business_id: r.id })));
+      const businesses = rows.map((r, i) => ({ ...r, credits_balance: typeof balances[i].data === "number" ? balances[i].data : null }));
+      let transactions: unknown[] = [];
+      if (id) {
+        const t = await ctx.user.from("credit_transactions").select("id, business_id, amount, balance_after, type, capability_key, action_key, description, created_at").eq("business_id", id).order("created_at", { ascending: false }).limit(n(args.limit, 50, 200));
+        fail(t.error, "load credit transactions");
+        transactions = t.data ?? [];
+      }
+      return { businesses, transactions };
+    },
+  },
+  {
+    name: "list_sfb_prospect_findings",
+    description: "Recent findings from the nightly prospect research feed (Exa + RSS, after dedup/geo/chain filters) with their honest identity labels (corroborated / name_only / unverified -- never 'confirmed') and drop reasons. Use to see what the feed found before working a 'Qualify N new prospects' task. Read-only.",
+    scope: "sfb:research:read",
+    inputSchema: obj({ accepted_only: { type: "boolean", description: "Only findings that passed every filter (default true)" }, task_id: str("Only findings attached to this task"), limit: int("Rows (default 50)", 1, 200) }),
+    outputSchema: obj({ findings: { type: "array", items: obj({ id: str(""), business_name: str(""), website: str(""), phone_e164: str(""), city: str(""), state: str(""), category: str(""), identity_label: str(""), accepted: { type: "boolean" }, quality_flags: { type: "array", items: str("") }, source_kind: str(""), source_url: str(""), task_id: str(""), created_at: str("") }) } }),
+    async run(ctx, args) {
+      let q = ctx.user.from("research_feed_findings").select("id, business_name, website, phone_e164, city, state, category, identity_label, accepted, quality_flags, source_kind, source_url, snippet, task_id, created_at").order("created_at", { ascending: false }).limit(n(args.limit, 50, 200));
+      if (args.accepted_only !== false) q = q.eq("accepted", true);
+      if (s(args.task_id)) q = q.eq("task_id", uuid(args.task_id, "task"));
+      const r = await q;
+      fail(r.error, "load prospect findings");
+      return { findings: r.data ?? [] };
+    },
+  },
+);
 import { TASK_TOOLS } from "./tasks/tools";
 for (const t of TASK_TOOLS) TOOLS.push(t);
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));

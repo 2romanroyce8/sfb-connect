@@ -562,9 +562,15 @@ export function analyzeEntities(
     business = { name: null, candidates: cands.slice(0, 5).map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: "CONFLICT", confidence: "LOW" };
     notes.push("Two or more first-party sources name different businesses -- genuine identity collision.");
   } else if (top && (top.strength >= 2 || corroboration >= 2 || (top.strength >= 1 && hardSignals >= 1))) {
-    const confirmed = corroboration >= 2 || (top.strength >= 2 && hardSignals >= 1);
+    // "confirmed" means: three independent sources agree on the name; or two
+    // agree AND a hard contact signal ties them; or the seed's own first-party
+    // page states the name itself (strength 3) AND gives a hard contact
+    // signal. A directory listing (strength 2) plus any website used to be
+    // enough -- that was the "confirmed at 44%" bug, and it is not enough now.
+    const selfStated = top.strength >= 3 && top.sources.some((sr) => firstPartyUrls.has(sr.url));
+    const confirmed = corroboration >= 3 || (corroboration >= 2 && hardSignals >= 1) || (selfStated && hardSignals >= 1);
     identityConfidence = confirmed ? "confirmed" : "uncertain"; identityStatus = confirmed ? "CONFIRMED" : "UNCERTAIN";
-    business = { name: top.value, candidates: cands.filter((c) => c === top || c.eligible).slice(0, 4).map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: identityStatus, confidence: confirmed ? (corroboration >= 3 ? "HIGH" : "HIGH") : "MEDIUM" };
+    business = { name: top.value, candidates: cands.filter((c) => c === top || c.eligible).slice(0, 4).map((c) => ({ value: c.value, sources: c.sources, strength: c.strength })), status: identityStatus, confidence: confirmed ? "HIGH" : "MEDIUM" };
     if (isProfileSeed && person) {
       const selfDescribed = bioMentions.some((m) => normalizeBusinessName(m.name) === normalizeBusinessName(top.value));
       // An employer field / representative title ties the person TO the

@@ -39,4 +39,5 @@ Never paste a secret into chat, code, logs, or a task result.
 - [credit-ledger.md](./credit-ledger.md) — ledger rules, guards, charging actions
 - [checkout.md](./checkout.md) — Stripe setup, paths, failure modes
 - [legal-pages.md](./legal-pages.md) — Privacy/Terms drafts, open items, how they publish
+- [research-adapters.md](./research-adapters.md) — nightly prospect feed (Exa + RSS → task queue), quality rules, scheduler
 - (next) research-adapters, security-watchdog, youtube-skill

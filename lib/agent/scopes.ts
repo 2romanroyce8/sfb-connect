@@ -14,6 +14,7 @@ export const READ_SCOPES = {
   "sfb:research:read": "View research results, sources and research status",
   "sfb:audit:read": "View Business Readiness Audits",
   "sfb:ai_presence:read": "View AI Presence data",
+  "sfb:billing:read": "View customer plan status and credit ledgers (what you can see in the dashboard)",
   "sfb:browser": "Open the SFB Connect dashboard as you (read-only delegated web session)",
   // The agent task queue is the agents' own workspace (no customer or CRM
   // data): creating, claiming, resulting and reviewing tasks is allowed.

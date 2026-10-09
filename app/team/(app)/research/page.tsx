@@ -2,9 +2,13 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import ActiveResearchJobs from "@/components/team/ActiveResearchJobs";
 import ResearchUsageBar from "@/components/team/ResearchUsageBar";
+import ResearchFeedPanel from "@/components/team/ResearchFeedPanel";
 
 export default async function ResearchQueuePage() {
   const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: me } = user ? await supabase.from("users").select("team_role").eq("id", user.id).single() : { data: null };
+  const isOwner = me?.team_role === "owner";
 
   // Best-first: confirmed identity and higher research confidence float to
   // the top so reps spend their time on the most saveable results.
@@ -42,6 +46,7 @@ export default async function ResearchQueuePage() {
       </div>
 
       <ResearchUsageBar />
+      <ResearchFeedPanel isOwner={isOwner} />
       <ActiveResearchJobs />
 
       {failedJobs && failedJobs.length > 0 && (
