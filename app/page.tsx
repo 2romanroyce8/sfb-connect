@@ -1,17 +1,14 @@
 import Navbar from "@/components/home/Navbar";
 import Hero from "@/components/home/Hero";
 import { BusinessLookupProvider } from "@/lib/businessLookupContext";
-import AlgorithmSection from "@/components/home/AlgorithmSection";
-import ProcessSection from "@/components/home/ProcessSection";
-import AnalyzeSection from "@/components/home/AnalyzeSection";
-import PlatformsSection from "@/components/home/PlatformsSection";
-import PricingSection from "@/components/home/PricingSection";
 import AgentSection from "@/components/home/AgentSection";
-import CreditsSection from "@/components/home/CreditsSection";
+import TiersSection from "@/components/home/TiersSection";
 import FaqSection from "@/components/home/FaqSection";
-import FinalCta from "@/components/home/FinalCta";
 import Footer from "@/components/home/Footer";
 
+// Tightened 2026-10-09 (Roman): Hero → Agent → Tiers → FAQ → Footer. The
+// stats, process, Presence plans, calculator, credits list, demo form and
+// final CTA sections were removed from the homepage.
 export default function HomePage() {
   return (
     <main>
@@ -19,15 +16,9 @@ export default function HomePage() {
       <BusinessLookupProvider>
         <Hero />
         <AgentSection />
-        <PlatformsSection />
-        <AlgorithmSection />
-        <AnalyzeSection />
-        <ProcessSection />
       </BusinessLookupProvider>
-      <PricingSection />
-      <CreditsSection />
+      <TiersSection />
       <FaqSection />
-      <FinalCta />
       <Footer />
     </main>
   );

@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { LEGAL_DOCS, PRESENCE_PLANS, isPublishable, referencedTokens, renderPublicText, splitText, unresolvedItems } from "../../lib/legal/documents";
+import { LEGAL_DOCS, isPublishable, referencedTokens, renderPublicText, splitText, unresolvedItems } from "../../lib/legal/documents";
 
 for (const doc of Object.values(LEGAL_DOCS)) {
   test(`${doc.slug}: every {{token}} in the text is a declared open item and every item is referenced`, () => {
@@ -36,12 +35,11 @@ for (const doc of Object.values(LEGAL_DOCS)) {
   });
 }
 
-test("terms: plan and pack numbers are generated from the pricing single source (incl. onboarding fees) and Presence prices match PricingSection", () => {
+test("terms: plan and pack numbers are generated from the pricing single source (incl. onboarding fees); no Presence plans are listed", () => {
   const items = LEGAL_DOCS.terms.sections.find((s) => s.heading.startsWith("2."))!.blocks.flatMap((b) => (b.kind === "ul" ? b.items : []));
   assert.ok(items.some((t) => t.startsWith("Solo: $1,497/month plus a one-time $1,497 onboarding fee. 150 credits")));
   assert.ok(items.some((t) => t.startsWith("Agency: $4,997/month plus a one-time $4,997 onboarding fee. 500 credits")));
   assert.ok(items.some((t) => t.includes("128 one-time credits")));
   assert.ok(items.some((t) => t.includes("100 credits $149 · 500 credits $599 · 1,000 credits $999")));
-  const pricing = readFileSync(new URL("../../components/home/PricingSection.tsx", import.meta.url), "utf8");
-  for (const p of PRESENCE_PLANS) assert.ok(pricing.includes(`monthlyPrice: ${p.monthly}`), `${p.name} ${p.monthly} present in PricingSection`);
+  assert.ok(items.every((t) => !/Presence \$|Dominance|Growth \$/.test(t)));
 });

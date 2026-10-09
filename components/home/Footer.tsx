@@ -23,9 +23,6 @@ export default function Footer() {
             <Link href="/agent" className="hover:text-white transition-colors">
               SFB Agent
             </Link>
-            <Link href="/#score" className="hover:text-white transition-colors">
-              AI Presence
-            </Link>
             <Link href="/#pricing" className="hover:text-white transition-colors">
               Pricing
             </Link>

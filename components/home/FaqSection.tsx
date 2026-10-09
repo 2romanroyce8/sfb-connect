@@ -19,11 +19,6 @@ const FAQS = [
     color: "#FF4D4D",
   },
   {
-    q: "How long does the audit take?",
-    a: "14 days. The service includes analysis, competitive research, business information review, optimization work and final quality control rather than an automated instant report.",
-    color: "#FFD84D",
-  },
-  {
     q: "What platforms do you analyze?",
     a: "ChatGPT, Claude, Perplexity, Grok, Gemini, AI-powered search, and the AI assistants customers increasingly use to find and choose local businesses.",
     color: "#4D8DFF",
@@ -31,7 +26,7 @@ const FAQS = [
   },
   {
     q: "Is pricing monthly or annual?",
-    a: "Both. Plans start at an introductory $19.99/month with Revenue Presence, or save with annual billing. Revenue Growth and Revenue Dominance are for businesses that want SFB Connect to actively do the work or fully manage it for them. Book a demo and we'll help you pick the right one.",
+    a: "Monthly. Solo is $1,497/month and Agency is $4,997/month, each with a one-time onboarding fee and a monthly credit allotment. The Trial is free. No contracts — cancel anytime and your plan runs to the end of the paid period.",
     color: "#FF8A3D",
   },
   {
@@ -43,36 +38,6 @@ const FAQS = [
     q: "Is this the same as SEO?",
     a: "It overlaps with certain technical SEO concepts but focuses specifically on how business information is structured, understood and represented for AI-assisted discovery.",
     color: "#FFFFFF",
-  },
-  {
-    q: "Do I need add-ons?",
-    a: "No. Your SFB plan works on its own. Add-ons expand coverage, capacity, execution, or human support when your business needs more.",
-    color: "#4DD9A0",
-  },
-  {
-    q: "Can I add another location?",
-    a: "Yes. Eligible additional locations can be added separately without requiring a completely different base plan.",
-    color: "#4D8DFF",
-  },
-  {
-    q: "What are Action Credits?",
-    a: "Action Credits are additional execution capacity for eligible SFB actions beyond what's included with your plan.",
-    color: "#FFD84D",
-  },
-  {
-    q: "Do credits guarantee results?",
-    a: "No. Credits pay for the specified SFB work or analysis. They do not guarantee AI rankings, leads, or revenue.",
-    color: "#FF4D4D",
-  },
-  {
-    q: "Can I cancel recurring add-ons?",
-    a: "Yes. Recurring add-ons can be canceled at any time from your account, and stay active through the end of the period you've already paid for rather than ending immediately.",
-    color: "#A96CFF",
-  },
-  {
-    q: "Does Dominance still need add-ons?",
-    a: "Dominance includes SFB's highest level of core management. Add-ons are primarily useful when a business needs additional scale, locations, markets, capacity, or specialized services.",
-    color: "#FF8A3D",
   },
 ];
 

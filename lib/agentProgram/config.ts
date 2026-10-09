@@ -103,7 +103,7 @@ export const STOCK_PROFILES = [
 export type StockProfile = (typeof STOCK_PROFILES)[number];
 export const stockProfile = (key: string | null | undefined) => STOCK_PROFILES.find((p) => p.key === key) ?? null;
 
-export const DEMO_HREF = "/#book-a-demo";
+export const DEMO_HREF = "/start"; // the demo form left the homepage 2026-10-09; the trial is the demo
 export const PRICING_NOTE = "Pricing shown is for roofing. Clinics and private equity are priced by consultation.";
 export const fmtUsd = (n: number) => `$${n.toLocaleString("en-US")}`;
 

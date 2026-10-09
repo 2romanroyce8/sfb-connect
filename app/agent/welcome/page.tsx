@@ -30,7 +30,7 @@ export default async function AgentWelcomePage({ searchParams }: { searchParams:
             <>
               <h1 className="text-[32px] md:text-[40px] font-bold tracking-[-0.03em] leading-[1.05]">Your agent is being assigned.</h1>
               <p className="mt-5 text-[15px] leading-[1.6] text-white/[0.6]">Payment received{planName ? ` for the ${planName} plan` : ""}. Within a few minutes you&apos;ll get an email{email ? <> at <span className="text-white">{email}</span></> : null} with a link to set your password and open your SFB dashboard — your agent, its modules, your credits and your human overseer all live there.</p>
-              <p className="mt-4 text-[13px] text-white/[0.45]">Didn&apos;t get it within 10 minutes? Check spam, then <Link href="/#book-a-demo" className="underline underline-offset-2 text-white/[0.8]">contact us</Link> and we&apos;ll sort it out.</p>
+              <p className="mt-4 text-[13px] text-white/[0.45]">Didn&apos;t get it within 10 minutes? Check spam, then request a new link from the <Link href="/login" className="underline underline-offset-2 text-white/[0.8]">sign-in page</Link>.</p>
               <Link href="/login" className="mt-8 inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-[14px] font-semibold hover:opacity-85">Go to sign in →</Link>
             </>
           ) : state === "open" ? (

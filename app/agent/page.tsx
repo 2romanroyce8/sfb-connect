@@ -6,7 +6,7 @@ import StatusBadge from "@/components/agent/StatusBadge";
 import AgentFaq from "@/components/agent/AgentFaq";
 import AgentCheckout from "@/components/agent/AgentCheckout";
 import { fetchAgentModules, roadmapPosition } from "@/lib/agentProgram/modules";
-import { TIERS, CAPABILITIES, CREDIT_PRICES, TOP_UP_PACKS, FREE_ACTIONS, CREDITS_PER_BOOKED_CALL, CREDITS_PAY_FOR_WORK, DEMO_HREF, PRICING_NOTE, bookedCallsFor, fmtUsd } from "@/lib/agentProgram/config";
+import { TIERS, CAPABILITIES, CREDIT_PRICES, TOP_UP_PACKS, FREE_ACTIONS, CREDITS_PER_BOOKED_CALL, CREDITS_PAY_FOR_WORK, PRICING_NOTE, bookedCallsFor, fmtUsd } from "@/lib/agentProgram/config";
 
 export const revalidate = 300;
 export const metadata: Metadata = {
@@ -110,7 +110,7 @@ export default async function AgentPage() {
             </div>); })}
         </div>
         <div className="mt-8 rounded-[12px] px-5 py-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[12.5px] text-white/[0.6]" style={card}><span>Cancel anytime</span><span>·</span><span>Month-to-month</span><span>·</span><span>No contracts</span><span>·</span><span>{CREDITS_PAY_FOR_WORK}</span></div>
-        <p className="mt-4 text-[12px] text-white/[0.4]">{PRICING_NOTE} Prefer to talk first? <Link href={DEMO_HREF} className="underline underline-offset-2 text-white/[0.7]">Book a demo.</Link> Looking for AI Presence only? <Link href="/#pricing" className="underline underline-offset-2 text-white/[0.7]">Presence plans start at $19.99/month.</Link></p>
+        <p className="mt-4 text-[12px] text-white/[0.4]">{PRICING_NOTE}</p>
       </div></section>
 
       <section className="py-20 md:py-24 px-6"><div className="max-w-[1100px] mx-auto grid md:grid-cols-[0.8fr_1.2fr] gap-10"><h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.03em]">Questions</h2><AgentFaq /></div></section>

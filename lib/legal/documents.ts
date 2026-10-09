@@ -48,8 +48,6 @@ export type LegalDoc = {
   openItems: OpenItem[];
 };
 
-// AI Presence plan prices are hard-coded in components/home/PricingSection.tsx; mirrored here (tested against that file).
-export const PRESENCE_PLANS = [{ name: "Presence", monthly: 19.99 }, { name: "Growth", monthly: 197 }, { name: "Dominance", monthly: 359 }] as const;
 const solo = TIERS.find((t) => t.key === "solo")!;
 const agency = TIERS.find((t) => t.key === "agency")!;
 const trial = TIERS.find((t) => t.key === "trial")!;
@@ -200,7 +198,6 @@ export const TERMS: LegalDoc = {
           `Trial: Free. ${trial.credits} one-time credits on demo business data. No payment details required; no charge at the end of the trial. No real integrations or outbound sends.`,
           `Solo: ${fmtUsd(solo.monthlyUsd)}/month${solo.onboardingUsd ? ` plus a one-time ${fmtUsd(solo.onboardingUsd)} onboarding fee` : ""}. ${solo.credits} credits per month. One real business, all eight capabilities.`,
           `Agency: ${fmtUsd(agency.monthlyUsd)}/month${agency.onboardingUsd ? ` plus a one-time ${fmtUsd(agency.onboardingUsd)} onboarding fee` : ""}. ${agency.credits} credits per month, pooled across five white-labeled client spaces.`,
-          `AI Presence plans: ${PRESENCE_PLANS.map((p) => `${p.name} $${p.monthly}/month`).join(", ")}. Yearly billing = 2 months free.`,
         ] },
         { kind: "p", text: "Credits. Metered work consumes SFB Action Credits at the public per-action price list shown on our site. Key rules:" },
         { kind: "ul", items: [

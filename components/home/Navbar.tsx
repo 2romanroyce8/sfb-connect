@@ -26,8 +26,6 @@ const LOGO_SRC =
 
 const PRIMARY_LINKS = [
   { label: "Agent", href: "/#agent" },
-  { label: "AI Presence", href: "/#score" },
-  { label: "How It Works", href: "/#process" },
   { label: "Pricing", href: "/#pricing" },
   { label: "FAQ", href: "/#faq" },
 ];

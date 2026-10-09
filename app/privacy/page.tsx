@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import LegalDocument from "@/components/legal/LegalDocument";
@@ -20,7 +19,7 @@ export default function Page() {
         ) : (
           <div className="max-w-[640px] mx-auto">
             <h1 className="text-[32px] font-bold tracking-[-0.03em]">Privacy Policy</h1>
-            <p className="mt-4 text-[15px] text-white/[0.6]">This page is being finalized. Until it is published, questions about how SFB Connect handles your information can be sent through the <Link href="/#book-a-demo" className="underline underline-offset-2 text-white">contact form</Link>.</p>
+            <p className="mt-4 text-[15px] text-white/[0.6]">This page is being finalized and will be published here.</p>
           </div>
         )}
       </section>

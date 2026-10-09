@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SFB Connect — Be The Business AI Finds.",
     description:
-      "AI Presence Optimization for local and service businesses. Plans start at $19.99/month.",
+      "One AI agent, eight jobs, a human overseer. Free on a sample business; live on yours from $1,497/month.",
   },
   alternates: { canonical: "/" },
 };
