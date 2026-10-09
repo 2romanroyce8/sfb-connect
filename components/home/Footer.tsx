@@ -58,7 +58,7 @@ export default function Footer() {
           <div className="max-w-[640px] leading-relaxed">
             AI recommendations are dynamic and can vary based on platform,
             query, user, location, available sources and other factors. SFB
-            Connects improves AI discoverability and business information
+            Connect improves AI discoverability and business information
             quality but does not guarantee a specific ranking or
             recommendation.
           </div>
