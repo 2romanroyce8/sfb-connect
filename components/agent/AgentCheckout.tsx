@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { AgentPlan } from "@/lib/agentProgram/config";
+import type { Tier } from "@/lib/agentProgram/config";
 import { fmtUsd } from "@/lib/agentProgram/config";
 
 // "Get your agent" -> a two-field sheet (email + business name) -> Stripe
 // Checkout. Amounts are display-only here; the server resolves them.
-export default function AgentCheckout({ plan }: { plan: AgentPlan }) {
+export default function AgentCheckout({ plan }: { plan: Tier }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");

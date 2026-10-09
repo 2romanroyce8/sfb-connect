@@ -2,7 +2,7 @@ import Link from "next/link";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import { getStripeClient, isStripeConfigured } from "@/lib/billing/stripe";
-import { agentPlan } from "@/lib/agentProgram/config";
+import { tier } from "@/lib/agentProgram/config";
 export const dynamic = "force-dynamic";
 
 // Post-checkout landing. Reads the session from Stripe (server-side,
@@ -17,7 +17,7 @@ export default async function AgentWelcomePage({ searchParams }: { searchParams:
       const s = await getStripeClient().checkout.sessions.retrieve(searchParams.session_id);
       state = s.payment_status === "paid" ? "paid" : "open";
       email = s.customer_details?.email ?? "";
-      planName = agentPlan(s.metadata?.plan_key ?? "")?.name ?? "";
+      planName = tier(s.metadata?.plan_key ?? "")?.name ?? "";
     } catch { state = "unknown"; }
   }
   return (

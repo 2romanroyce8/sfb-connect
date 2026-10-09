@@ -17,6 +17,8 @@ import {
   Menu,
   X,
   type LucideIcon,
+  Bot,
+  Coins,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -29,6 +31,8 @@ type NavItem = {
 
 const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutGrid, ready: true },
+  { href: "/dashboard/agent", label: "Agent", icon: Bot, ready: true },
+  { href: "/dashboard/credits", label: "Credits", icon: Coins, ready: true },
   { href: "/dashboard/presence", label: "AI Presence", icon: Sparkles, ready: true },
   { href: "/dashboard/progress", label: "Progress", icon: TrendingUp, ready: true },
   { href: "/dashboard/actions", label: "Actions", icon: Zap, ready: true },

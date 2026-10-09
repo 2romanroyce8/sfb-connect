@@ -35,4 +35,7 @@ Never paste a secret into chat, code, logs, or a task result.
 
 ## Runbooks
 - [agent-task-queue.md](./agent-task-queue.md) — Atlas ↔ HyperAgent task queue
-- (added with each build) agent-program, checkout, credit-ledger, research-adapters, security-watchdog, youtube-skill
+- [agent-program.md](./agent-program.md) — tiers, 8 capabilities, trial sandbox, dashboard
+- [credit-ledger.md](./credit-ledger.md) — ledger rules, guards, charging actions
+- [checkout.md](./checkout.md) — Stripe setup, paths, failure modes
+- (next) research-adapters, security-watchdog, youtube-skill

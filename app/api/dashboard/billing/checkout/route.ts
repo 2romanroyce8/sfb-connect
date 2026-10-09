@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { getStripeClient, StripeNotConfiguredError } from "@/lib/billing/stripe";
+import { ensureTopUpPrice } from "@/lib/agentProgram/stripe";
 
 // Creates a real Stripe Checkout Session for an add-on or credit package.
 // The customer's browser sends only an id + quantity -- the actual price
@@ -40,9 +41,15 @@ export async function POST(req: NextRequest) {
 
     if (kind === "credits") {
       if (!creditPackageId) return NextResponse.json({ error: "Missing creditPackageId." }, { status: 400 });
-      const { data: pkg } = await supabase.from("credit_packages").select("id, name, price_cents, stripe_price_id, active").eq("id", creditPackageId).single();
+      const { data: pkg } = await supabase.from("credit_packages").select("id, name, credits, price_cents, stripe_price_id, active").eq("id", creditPackageId).single();
       if (!pkg || !pkg.active) return NextResponse.json({ error: "This credit package isn't available." }, { status: 404 });
-      if (!pkg.stripe_price_id) return NextResponse.json({ error: "This credit package hasn't been synced to Stripe yet. An owner needs to sync the catalog first." }, { status: 409 });
+      // Top-up packs are created in Stripe on first purchase by lookup key
+      // (prices come from lib/agentProgram/config), so no manual sync step.
+      if (!pkg.stripe_price_id) {
+        const priceId = await ensureTopUpPrice(stripe, pkg.credits);
+        await service.from("credit_packages").update({ stripe_price_id: priceId }).eq("id", pkg.id);
+        pkg.stripe_price_id = priceId;
+      }
 
       const { data: purchase, error: purchaseError } = await service
         .from("addon_purchases")

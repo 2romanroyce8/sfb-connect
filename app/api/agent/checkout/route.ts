@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { getStripeClient, StripeNotConfiguredError } from "@/lib/billing/stripe";
-import { ensureAgentPrices } from "@/lib/agentProgram/stripe";
-import { agentPlan } from "@/lib/agentProgram/config";
+import { ensureTierPrices } from "@/lib/agentProgram/stripe";
+import { tier } from "@/lib/agentProgram/config";
 import { rateLimit } from "@/lib/agent/store";
 import { appOrigin } from "@/lib/agent/auth";
 export const dynamic = "force-dynamic";
@@ -18,17 +18,18 @@ export async function POST(req: NextRequest) {
   if (!rl.allowed) return NextResponse.json({ error: "Too many checkout attempts. Try again in a bit." }, { status: 429 });
 
   const body = (await req.json().catch(() => ({}))) as { plan?: string; email?: string; businessName?: string };
-  const plan = body.plan ? agentPlan(body.plan) : null;
+  const plan = body.plan ? tier(body.plan) : null;
   const email = (body.email ?? "").trim().toLowerCase();
   const businessName = (body.businessName ?? "").trim().slice(0, 120);
   if (!plan) return NextResponse.json({ error: "Choose a plan." }, { status: 400 });
+  if (plan.monthlyUsd === 0) return NextResponse.json({ error: "The trial is free — start it at /start.", startUrl: "/start" }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid email." }, { status: 400 });
   if (businessName.length < 2) return NextResponse.json({ error: "Enter your business name." }, { status: 400 });
 
   try {
     const stripe = getStripeClient();
     const service = createSupabaseServiceClient();
-    const { monthlyPriceId, onboardingPriceId } = await ensureAgentPrices(stripe, plan);
+    const { monthlyPriceId, onboardingPriceId } = await ensureTierPrices(stripe, plan);
 
     const { data: order, error: orderErr } = await service.from("agent_plan_orders").insert({ plan_key: plan.key, email, business_name: businessName, amount_total_cents: (plan.monthlyUsd + plan.onboardingUsd) * 100 }).select("id").single();
     if (orderErr || !order) throw new Error(orderErr?.message || "Could not start the order.");

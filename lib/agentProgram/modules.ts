@@ -6,12 +6,14 @@ export type AgentModule = { key: string; position: number; name: string; status:
 // Shipped defaults: used only if the table cannot be read, so the public
 // page never renders empty. The database is the source of truth.
 export const DEFAULT_MODULES: AgentModule[] = [
-  { key: "ai_presence", position: 1, name: "AI Presence", status: "live", tagline: "Found first, chosen first.", description: "Gets your business recommended by AI assistants — presence score, verified sources, review signals." },
-  { key: "chat_agent", position: 2, name: "Chat Agent", status: "unlocking_next", tagline: "Answers, qualifies, books.", description: "AI texting and website chat that answers customers, qualifies leads and books appointments." },
-  { key: "crm_automations", position: 3, name: "Backend: CRM + Automations", status: "roadmap", tagline: "Never forget a lead.", description: "Every lead captured, followed up and never forgotten — pipeline, reminders, review requests." },
-  { key: "website", position: 4, name: "Website", status: "roadmap", tagline: "Convert the traffic you earn.", description: "Homepage, speed, payments, backlinks — a site that converts the traffic the agent earns." },
-  { key: "meta_ads", position: 5, name: "Meta Ads (ROAS)", status: "roadmap", tagline: "Paid reach, measured by return.", description: "Paid ads managed for return, with creative testing and retargeting." },
-  { key: "sops", position: 6, name: "SOPs", status: "roadmap", tagline: "Your operations, documented.", description: "The playbook your business runs on — written down, kept current." },
+  { key: "ai_presence", position: 1, name: "AI Presence", status: "live", tagline: "Found first, chosen first.", description: "Your business recommended by ChatGPT, Perplexity, Gemini and Claude — presence score, verified sources, review signals." },
+  { key: "outbound_gtm", position: 2, name: "Outbound / GTM", status: "unlocking_next", tagline: "Finds buyers, books calls.", description: "Finds buyers, enriches them, writes and follows up, and books calls — email and LinkedIn." },
+  { key: "meta_ads", position: 3, name: "Meta Ads", status: "roadmap", tagline: "Managed for return.", description: "Paid ads managed for ROAS: creative testing, retargeting, full-funnel." },
+  { key: "website", position: 4, name: "Website", status: "roadmap", tagline: "Convert the traffic you earn.", description: "Homepage, speed, payments, backlinks, SEO." },
+  { key: "crm_automations", position: 5, name: "CRM + Automations", status: "roadmap", tagline: "Never forget a lead.", description: "Pipeline, follow-up, reminders, missed-call textback — GoHighLevel-friendly." },
+  { key: "chat_texting", position: 6, name: "Chat & Texting", status: "roadmap", tagline: "Answers, qualifies, books.", description: "Website chat and SMS agent that qualifies and books." },
+  { key: "reviews_reputation", position: 7, name: "Reviews & Reputation", status: "roadmap", tagline: "Earn it, watch it, answer it.", description: "Review generation, monitoring and responses." },
+  { key: "sops", position: 8, name: "SOPs", status: "roadmap", tagline: "Your operations, documented.", description: "Operations documentation — the playbook your business runs on." },
 ];
 
 /** Sorted by position; the roadmap position shown to customers is derived

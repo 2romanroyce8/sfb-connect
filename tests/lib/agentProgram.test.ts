@@ -1,45 +1,51 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_MODULES, roadmapPosition, sortModules } from "../../lib/agentProgram/modules";
-import { AGENT_PLANS, CREDIT_TIERS } from "../../lib/agentProgram/config";
+import { CAPABILITIES, CAPABILITY_KEYS, TIERS, CREDIT_PRICES, TOP_UP_PACKS, bookedCallsFor, tier, creditPrice, STOCK_PROFILES } from "../../lib/agentProgram/config";
+import { AGENT_PLAN_KEYS, SFB_PLAN_PRICES, isAgentPlanKey } from "../../lib/team/plans";
+import { monthlyLookupKey, onboardingLookupKey, topUpLookupKey } from "../../lib/agentProgram/stripe";
+import { creditState } from "../../lib/billing/guards";
 
-test("six modules, AI Presence is the only live one by default, chat is next", () => {
-  assert.equal(DEFAULT_MODULES.length, 6);
-  assert.deepEqual(DEFAULT_MODULES.filter((m) => m.status === "live").map((m) => m.key), ["ai_presence"]);
-  assert.equal(roadmapPosition(DEFAULT_MODULES, "chat_agent"), 1);
-  assert.equal(roadmapPosition(DEFAULT_MODULES, "sops"), 5);
-  assert.equal(roadmapPosition(DEFAULT_MODULES, "ai_presence"), null, "live modules have no roadmap position");
+test("eight capabilities, unique keys, all priced", () => {
+  assert.equal(CAPABILITIES.length, 8);
+  assert.equal(new Set(CAPABILITY_KEYS).size, 8);
+  for (const k of CAPABILITY_KEYS) assert.ok(CREDIT_PRICES.some((p) => p.capability === k), `${k} has no priced actions`);
+  assert.equal(new Set(CREDIT_PRICES.map((p) => p.key)).size, CREDIT_PRICES.length);
 });
 
-test("roadmap position follows database order and skips live modules", () => {
-  const mods = sortModules(DEFAULT_MODULES.map((m) => (m.key === "chat_agent" ? { ...m, status: "live" as const } : m)));
-  assert.equal(roadmapPosition(mods, "crm_automations"), 1);
-  assert.equal(roadmapPosition(mods, "website"), 2);
+test("tiers match the published table", () => {
+  assert.deepEqual(TIERS.map((t) => [t.key, t.monthlyUsd, t.credits, t.onboardingUsd, t.capabilityLimit, t.businesses]), [["trial", 0, 128, 0, 3, 1], ["solo", 1497, 150, 1497, 8, 1], ["agency", 4997, 500, 4997, 8, 5]]);
+  assert.equal(tier("trial")!.priceListVisible, false);
+  assert.deepEqual(AGENT_PLAN_KEYS, ["trial", "solo", "agency"]);
+  for (const t of TIERS) { assert.equal(SFB_PLAN_PRICES[t.key], t.monthlyUsd); assert.ok(isAgentPlanKey(t.key)); }
 });
 
-test("pricing and credit tiers match the published offer", () => {
-  assert.deepEqual(AGENT_PLANS.map((p) => p.monthlyUsd), [1497, 2997, 4997]);
-  assert.deepEqual(AGENT_PLANS.map((p) => p.creditsPerMonth), [50, 150, 400]);
-  assert.deepEqual(CREDIT_TIERS.map((t) => t.credits), [1, 5, 25]);
+test("planning math: 15 credits per booked call -> trial 8, solo 10, agency 33", () => {
+  assert.deepEqual(TIERS.map((t) => bookedCallsFor(t.credits)), [8, 10, 33]);
 });
 
-import { AGENT_PLAN_KEYS, SFB_PLAN_PRICES, SFB_PLAN_LABELS, isAgentPlanKey } from "../../lib/team/plans";
-import { agentPlan } from "../../lib/agentProgram/config";
-import { monthlyLookupKey, onboardingLookupKey } from "../../lib/agentProgram/stripe";
-
-test("agent plan keys are first-class plans with matching prices and labels", () => {
-  for (const k of AGENT_PLAN_KEYS) {
-    const p = agentPlan(k)!;
-    assert.ok(p, k);
-    assert.equal(SFB_PLAN_PRICES[k], p.monthlyUsd, `${k} monthly price must match config`);
-    assert.match(SFB_PLAN_LABELS[k], /^SFB Agent — /);
-    assert.equal(isAgentPlanKey(k), true);
-  }
-  assert.equal(isAgentPlanKey("revenue_growth"), false);
+test("spot-check published prices and top-ups", () => {
+  assert.equal(creditPrice("outbound.meeting_booked")!.credits, 5);
+  assert.equal(creditPrice("website.full_build")!.credits, 100);
+  assert.equal(creditPrice("human.review_pass")!.credits, 5);
+  assert.deepEqual(TOP_UP_PACKS.map((p) => [p.credits, p.usd]), [[100, 149], [500, 599], [1000, 999]]);
 });
 
-test("stripe lookup keys are stable and distinct per tier and kind", () => {
-  const keys = AGENT_PLAN_KEYS.flatMap((k) => { const p = agentPlan(k)!; return [monthlyLookupKey(p), onboardingLookupKey(p)]; });
-  assert.equal(new Set(keys).size, 6);
-  assert.equal(monthlyLookupKey(agentPlan("agent_growth")!), "sfb_agent_growth_monthly");
+test("stripe lookup keys are stable and distinct", () => {
+  const keys = [...TIERS.filter((t) => t.monthlyUsd > 0).flatMap((t) => [monthlyLookupKey(t), onboardingLookupKey(t)]), ...TOP_UP_PACKS.map((p) => topUpLookupKey(p.credits))];
+  assert.equal(new Set(keys).size, keys.length);
+  assert.equal(monthlyLookupKey(tier("solo")!), "sfb_agent_solo_monthly");
+});
+
+test("credit guards: 80% warn, 95% critical, zero empty, never negative", () => {
+  assert.equal(creditState(150, 150).level, "ok");
+  assert.equal(creditState(30, 150).level, "warn");
+  assert.equal(creditState(7, 150).level, "critical");
+  assert.equal(creditState(0, 150).level, "empty");
+  assert.equal(creditState(-5, 150).level, "empty");
+});
+
+test("stock profiles have city and state; roadmap position skips live", () => {
+  for (const p of STOCK_PROFILES) { assert.ok(p.city && p.state); }
+  assert.equal(roadmapPosition(sortModules(DEFAULT_MODULES), "ai_presence"), null);
 });
