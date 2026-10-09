@@ -88,6 +88,9 @@ test("quality flags: missing city/state, out-of-target state, chains, directorie
   assert.equal(good.city, "Tampa");
   assert.equal(isAccepted(good), true);
   assert.equal(isChainOrFranchise("Home Depot Roofing Services", "homedepot.com", ""), true);
+  // Live-observed on the first real run (2026-10-09): franchise location pages slipped through.
+  assert.ok(c({ title: "Honest Abe Roofing Orlando", url: "https://www.honestaberoofing.com/orlando-fl", snippet: "Orlando, FL" }).flags.includes("chain_or_franchise"));
+  assert.ok(c({ title: "Gale Force Roofing & Restoration", url: "https://www.lifetimequalityroofing.com/locations/tampa-florida/", snippet: "Tampa, FL" }).flags.includes("chain_or_franchise"));
   assert.equal(isChainOrFranchise("Suncoast Roofing", "suncoastroofing.com", "We are a locally owned business"), false);
 });
 

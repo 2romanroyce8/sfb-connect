@@ -18,6 +18,7 @@ import { isGenericServicePhrase, looksLikePersonName, normalizeBusinessName, nor
 // none of them is a locally-owned prospect. Matched on normalized name AND domain.
 export const CHAIN_BRANDS = [
   "home depot", "lowes", "lowe's", "menards", "sears", "angi", "angie's list", "homeadvisor", "thumbtack", "porch", "houzz", "networx", "modernize", "nextdoor", "yelp",
+  "honest abe roofing", "honest abe", "roof maxx", "roofmaxx", "storm guard", "stormguard", "mighty dog roofing", "the roof resource", "roofing.co", "red dog roofing", "gutter helmet", "lifetime quality roofing",
   "mr roof", "mr. roof", "erie home", "erie construction", "power home remodeling", "long roofing", "long home products", "tecta america", "centimark", "nations roof", "baker roofing", "roofing corp of america", "rca",
   "gaf", "owens corning", "certainteed", "iko", "tamko", "atlas roofing", "malarkey", "firestone building products", "carlisle syntec", "johns manville", "polyglass", "boral", "eagle roofing products", "westlake royal",
   "abc supply", "beacon", "beacon building products", "srs distribution", "allied building products", "roofing supply group", "lansing building products", "us lbm", "builders firstsource", "84 lumber",
@@ -26,6 +27,8 @@ export const CHAIN_BRANDS = [
 ];
 const CHAIN_DOMAINS = ["homedepot.com", "lowes.com", "angi.com", "homeadvisor.com", "thumbtack.com", "porch.com", "houzz.com", "networx.com", "modernize.com", "gaf.com", "owenscorning.com", "certainteed.com", "iko.com", "tamko.com", "abcsupply.com", "becn.com", "srsdistribution.com", "tectaamerica.com", "centimark.com", "nationsroof.com", "eriehome.com", "powerhrg.com", "longhomeproducts.com", "windowworld.com", "renewalbyandersen.com", "leaffilter.com", "servpro.com", "belfor.com", "pauldavis.com", "neighborly.com", "bbb.org", "roofing.com", "roofer.com", "fixr.com", "mrhandyman.com", "bathfitter.com"];
 const FRANCHISE_WORDS = /\b(franchise|franchisee|franchising|nationwide|national brand|locations nationwide|corporate headquarters)\b/i;
+// A "/locations/<city>" page is a multi-site brand's local landing page, not a locally-owned business.
+const MULTI_LOCATION_PATH = /\/(locations?|branches|service-areas?|areas-we-serve|our-locations)\/[a-z0-9-]+/i;
 const NEWS_HOSTS = /(\.|^)(roofingcontractor\.com|roofingmagazine\.com|constructiondive\.com|bizjournals\.com|prnewswire\.com|businesswire\.com|globenewswire\.com|patch\.com|news\.google\.com|yahoo\.com|msn\.com)$/i;
 const GENERIC_TITLE_SEGMENTS = /^(home|homepage|welcome|official site|official website|index|main|untitled|about( us)?|contact( us)?|services|roofing services|roof repair|roofing contractor|roofing company|best roofers?( in [a-z ,]+)?|top \d+.*)$/i;
 
@@ -35,6 +38,7 @@ export const isChainOrFranchise = (name: string, domain: string | null, text: st
   if (domain && CHAIN_DOMAINS.some((d) => domain === d || domain.endsWith("." + d))) return true;
   return FRANCHISE_WORDS.test(text) && /\b(franchise|franchisee)\b/i.test(text);
 };
+export const isMultiLocationPage = (url: string | null) => !!url && MULTI_LOCATION_PATH.test(new URL(url).pathname);
 
 export const isDirectoryOrAggregatorUrl = (url: string | null): boolean => {
   if (!url) return false;
@@ -127,7 +131,7 @@ export function toCandidates(raw: RawFinding, target: FeedTarget): Candidate[] {
     if (!geo.city || !geo.state) flags.push("missing_city_state");
     else if (!US_STATE_CODES.includes(geo.state)) flags.push("non_us");
     else if (geo.state !== target.state.toUpperCase()) flags.push("state_mismatch");
-    if (isChainOrFranchise(name, domain, text)) flags.push("chain_or_franchise");
+    if (isChainOrFranchise(name, domain, text) || isMultiLocationPage(website)) flags.push("chain_or_franchise");
     if (website && isDirectoryOrAggregatorUrl(website)) flags.push("directory_or_aggregator");
     if (isJunkName(name)) flags.push("junk_name");
     const c = { name, website, canonicalDomain: domain, phoneE164: phone, city: geo.city, state: geo.state, ...base };
