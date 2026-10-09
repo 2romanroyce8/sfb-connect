@@ -7,7 +7,7 @@ import Reveal from "@/components/ui/Reveal";
 const FAQS = [
   {
     q: "Can you guarantee AI rankings?",
-    a: "No. AI recommendations vary by platform, query, context, location and available information. SFB Connects optimizes the signals that can improve your discoverability and relevance — no platform can be guaranteed.",
+    a: "No. AI recommendations vary by platform, query, context, location and available information. SFB Connect optimizes the signals that can improve your discoverability and relevance — no platform can be guaranteed.",
     color: "#FF4D4D",
   },
   {
@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: "Is pricing monthly or annual?",
-    a: "Both. Plans start at an introductory $19.99/month with Revenue Presence, or save with annual billing. Revenue Growth and Revenue Dominance are for businesses that want SFB Connects to actively do the work or fully manage it for them. Book a demo and we'll help you pick the right one.",
+    a: "Both. Plans start at an introductory $19.99/month with Revenue Presence, or save with annual billing. Revenue Growth and Revenue Dominance are for businesses that want SFB Connect to actively do the work or fully manage it for them. Book a demo and we'll help you pick the right one.",
     color: "#FF8A3D",
   },
   {

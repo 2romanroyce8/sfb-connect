@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "SFB Connects — Be The Business AI Finds.";
+export const alt = "SFB Connect — Be The Business AI Finds.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -12,7 +12,7 @@ export default function OpenGraphImage() {
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#000000", color: "#F5F5F7", padding: 72, fontFamily: "Inter, Helvetica, Arial, sans-serif" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>
-          SFB <span style={{ color: "#8E8E93", fontWeight: 600 }}>CONNECTS</span>
+          SFB <span style={{ color: "#8E8E93", fontWeight: 600 }}>CONNECT</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div style={{ fontSize: 86, fontWeight: 800, letterSpacing: -4, lineHeight: 0.95 }}>Be the business AI finds.</div>

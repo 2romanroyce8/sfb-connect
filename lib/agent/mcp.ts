@@ -16,13 +16,13 @@ export async function handleMcp(ctx: AgentContext, body: Rpc, req: NextRequest) 
   const id = body.id;
   switch (body.method) {
     case "initialize":
-      return { jsonrpc: "2.0", id, result: { protocolVersion: MCP_PROTOCOL_VERSION, capabilities: { tools: { listChanged: false } }, serverInfo: { name: "sfb-connect", version: "1.0.0" }, instructions: `Connected to SFB Connect as ${ctx.authorization.workspace_label} (${[...ctx.scopes].join(" ")}). Use structured tools for data; use open_sfb_dashboard only when the user wants the real dashboard opened or no tool covers the task. Read-only.` } };
+      return { jsonrpc: "2.0", id, result: { protocolVersion: MCP_PROTOCOL_VERSION, capabilities: { tools: { listChanged: false } }, serverInfo: { name: "sfb-connect", version: "1.0.0" }, instructions: `Connected to SFB Connect as ${ctx.authorization.workspace_label} (${[...ctx.scopes].join(" ")}). Use structured tools for data; use open_sfb_dashboard only when the user wants the real dashboard opened or no tool covers the task. Data tools are read-only. The task queue (list_tasks, claim_task, post_result, review_task, send_message) is how agents coordinate without a human relay; results that touch production or customers need another agent's review before they count as done.` } };
     case "notifications/initialized":
       return null; // notification: no response body
     case "ping":
       return { jsonrpc: "2.0", id, result: {} };
     case "tools/list":
-      return { jsonrpc: "2.0", id, result: { tools: TOOLS.filter((t) => ctx.scopes.has(t.scope)).map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, outputSchema: t.outputSchema, annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false } })) } };
+      return { jsonrpc: "2.0", id, result: { tools: TOOLS.filter((t) => ctx.scopes.has(t.scope)).map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema, outputSchema: t.outputSchema, annotations: { readOnlyHint: t.readOnly !== false, destructiveHint: false, openWorldHint: false } })) } };
     case "tools/call": {
       const name = String(body.params?.name ?? "");
       const args = (body.params?.arguments ?? {}) as Record<string, unknown>;

@@ -18,6 +18,8 @@ export type ToolDef = {
   name: string;
   description: string;
   scope: import("./scopes").Scope;
+  /** Advertised to MCP clients; write tools are exactly the task-queue tools. */
+  readOnly?: boolean;
   inputSchema: JsonSchema;
   outputSchema: JsonSchema;
   run: (ctx: AgentContext, args: Record<string, unknown>, req: NextRequest) => Promise<unknown>;
@@ -238,6 +240,10 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
+// Task-queue tools live in their own module and are appended here so one
+// registry serves MCP and REST.
+import { TASK_TOOLS } from "./tasks/tools";
+for (const t of TASK_TOOLS) TOOLS.push(t);
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
 export async function runTool(ctx: AgentContext, name: string, args: Record<string, unknown>, req: NextRequest, accessMethod: "api" | "mcp"): Promise<unknown> {

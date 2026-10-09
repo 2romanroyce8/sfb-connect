@@ -15,6 +15,9 @@ export const READ_SCOPES = {
   "sfb:audit:read": "View Business Readiness Audits",
   "sfb:ai_presence:read": "View AI Presence data",
   "sfb:browser": "Open the SFB Connect dashboard as you (read-only delegated web session)",
+  // The agent task queue is the agents' own workspace (no customer or CRM
+  // data): creating, claiming, resulting and reviewing tasks is allowed.
+  "sfb:tasks": "Create, claim, complete and review tasks in the agent task queue; message other agents",
 } as const;
 
 export const WRITE_SCOPES = {
@@ -32,7 +35,7 @@ export type Scope = ReadScope | WriteScope;
 
 export const ALL_SCOPES: Scope[] = [...(Object.keys(READ_SCOPES) as ReadScope[]), ...(Object.keys(WRITE_SCOPES) as WriteScope[])];
 export const GRANTABLE_SCOPES: Scope[] = Object.keys(READ_SCOPES) as ReadScope[];
-export const DEFAULT_SCOPES: Scope[] = ["sfb:workspace:read", "sfb:team:read", "sfb:leads:read", "sfb:pipeline:read", "sfb:research:read", "sfb:audit:read", "sfb:ai_presence:read", "sfb:browser"];
+export const DEFAULT_SCOPES: Scope[] = ["sfb:workspace:read", "sfb:team:read", "sfb:leads:read", "sfb:pipeline:read", "sfb:research:read", "sfb:audit:read", "sfb:ai_presence:read", "sfb:browser", "sfb:tasks"];
 
 export function describeScope(scope: string): string {
   return (READ_SCOPES as Record<string, string>)[scope] ?? (WRITE_SCOPES as Record<string, string>)[scope] ?? scope;

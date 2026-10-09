@@ -18,6 +18,7 @@ import {
   Calendar,
   StickyNote,
   Activity,
+  ListTodo,
   LineChart,
   GanttChartSquare,
   UserCog,
@@ -82,6 +83,7 @@ const NAV_GROUPS: {
       { href: "/team/calendar", label: "Calendar", icon: Calendar },
       { href: "/team/notes", label: "Notes", icon: StickyNote },
       { href: "/team/activity", label: "Activity", icon: Activity },
+      { href: "/team/tasks", label: "Agent Tasks", icon: ListTodo },
       { href: "/team/charts", label: "Analytics", icon: LineChart },
     ],
   },
@@ -133,9 +135,9 @@ export default function TeamSidebar({
     >
       <div className="px-[18px] pt-[18px] pb-1 flex items-center gap-2" style={{ height: 44 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_SRC} alt="SFB Connects" className="w-5 h-auto shrink-0" />
+        <img src={LOGO_SRC} alt="SFB Connect" className="w-5 h-auto shrink-0" />
         <span className="text-[16px] font-semibold tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-          SFB CONNECTS
+          SFB CONNECT
         </span>
       </div>
       <div className="px-[18px] pb-1 text-[10px] text-[#6E6E73] tracking-wide uppercase">Sales OS</div>

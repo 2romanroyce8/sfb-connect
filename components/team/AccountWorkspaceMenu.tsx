@@ -17,7 +17,7 @@ type Props = {
 
 // The "workspace switcher" here isn't decorative -- it's the same
 // clock-in/Work-Mode system built earlier, just given the reference's
-// Personal/Company framing. Switching to "SFB Connects" clocks you in;
+// Personal/Company framing. Switching to "SFB Connect" clocks you in;
 // switching to "Personal" clocks you out. One real system, two surfaces.
 export default function AccountWorkspaceMenu({ name, email, role, avatarUrl, activeSession }: Props) {
   const router = useRouter();
@@ -140,7 +140,7 @@ export default function AccountWorkspaceMenu({ name, email, role, avatarUrl, act
                 </div>
                 <div className="text-left min-w-0">
                   <div className="truncate" style={{ fontSize: 15, fontWeight: 600, color: "#F5F5F7" }}>
-                    SFB Connects
+                    SFB Connect
                   </div>
                   <div style={{ fontSize: 12, color: "#A3A3A9" }}>Work Mode</div>
                 </div>

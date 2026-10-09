@@ -38,9 +38,9 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-14 py-5" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(14px)" }}>
       <Link href="/" className="flex items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_SRC} alt="SFB Connects" className="w-7 h-auto shrink-0" />
+        <img src={LOGO_SRC} alt="SFB Connect" className="w-7 h-auto shrink-0" />
         <span className="font-extrabold tracking-tight text-[15px]">
-          SFB <span className="text-medium-gray font-semibold">CONNECTS</span>
+          SFB <span className="text-medium-gray font-semibold">CONNECT</span>
         </span>
       </Link>
 
@@ -60,7 +60,7 @@ export default function Navbar() {
               href={href!}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`SFB Connects on ${label}`}
+              aria-label={`SFB Connect on ${label}`}
               className="liquid-glass w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/[0.04] transition-colors"
             >
               <Icon className="w-4 h-4" strokeWidth={1.75} />

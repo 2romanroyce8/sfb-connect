@@ -72,7 +72,8 @@ test("MCP tools/list only lists tools whose scope was granted; every tool is rea
   const names = r.result.tools.map((t) => t.name).sort();
   assert.deepEqual(names, ["get_sfb_lead", "search_sfb_leads"]);
   assert.ok(r.result.tools.every((t) => t.annotations.readOnlyHint === true));
-  assert.equal(TOOLS.some((t) => isWriteScope(t.scope)), false, "no tool requires a write scope");
+  assert.equal(TOOLS.some((t) => isWriteScope(t.scope)), false, "no tool requires a customer-data write scope");
+  assert.ok(TOOLS.filter((t) => t.readOnly === false).every((t) => t.scope === "sfb:tasks"), "the only writing tools are task-queue tools");
 });
 
 test("MCP tools/call without the tool's scope is refused as a tool error, not executed", async () => {
