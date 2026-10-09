@@ -22,3 +22,24 @@ test("pricing and credit tiers match the published offer", () => {
   assert.deepEqual(AGENT_PLANS.map((p) => p.creditsPerMonth), [50, 150, 400]);
   assert.deepEqual(CREDIT_TIERS.map((t) => t.credits), [1, 5, 25]);
 });
+
+import { AGENT_PLAN_KEYS, SFB_PLAN_PRICES, SFB_PLAN_LABELS, isAgentPlanKey } from "../../lib/team/plans";
+import { agentPlan } from "../../lib/agentProgram/config";
+import { monthlyLookupKey, onboardingLookupKey } from "../../lib/agentProgram/stripe";
+
+test("agent plan keys are first-class plans with matching prices and labels", () => {
+  for (const k of AGENT_PLAN_KEYS) {
+    const p = agentPlan(k)!;
+    assert.ok(p, k);
+    assert.equal(SFB_PLAN_PRICES[k], p.monthlyUsd, `${k} monthly price must match config`);
+    assert.match(SFB_PLAN_LABELS[k], /^SFB Agent — /);
+    assert.equal(isAgentPlanKey(k), true);
+  }
+  assert.equal(isAgentPlanKey("revenue_growth"), false);
+});
+
+test("stripe lookup keys are stable and distinct per tier and kind", () => {
+  const keys = AGENT_PLAN_KEYS.flatMap((k) => { const p = agentPlan(k)!; return [monthlyLookupKey(p), onboardingLookupKey(p)]; });
+  assert.equal(new Set(keys).size, 6);
+  assert.equal(monthlyLookupKey(agentPlan("agent_growth")!), "sfb_agent_growth_monthly");
+});

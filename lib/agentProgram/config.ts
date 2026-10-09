@@ -20,10 +20,12 @@ export const CREDIT_TIERS = [
 export const TOP_UP_FROM_USD = 149;
 
 export const AGENT_PLANS = [
-  { key: "starter", name: "Starter", monthlyUsd: 1497, creditsPerMonth: 50, overseer: "Shared", onboardingUsd: 1497 },
-  { key: "growth", name: "Growth", monthlyUsd: 2997, creditsPerMonth: 150, overseer: "Priority", onboardingUsd: 4497, featured: true },
-  { key: "scale", name: "Scale", monthlyUsd: 4997, creditsPerMonth: 400, overseer: "Dedicated", onboardingUsd: 8997 },
+  { key: "agent_starter", name: "Starter", monthlyUsd: 1497, creditsPerMonth: 50, overseer: "Shared", onboardingUsd: 1497 },
+  { key: "agent_growth", name: "Growth", monthlyUsd: 2997, creditsPerMonth: 150, overseer: "Priority", onboardingUsd: 4497, featured: true },
+  { key: "agent_scale", name: "Scale", monthlyUsd: 4997, creditsPerMonth: 400, overseer: "Dedicated", onboardingUsd: 8997 },
 ] as const;
+export type AgentPlan = (typeof AGENT_PLANS)[number];
+export function agentPlan(key: string): AgentPlan | null { return AGENT_PLANS.find((p) => p.key === key) ?? null; }
 
 export const PRICING_NOTE = "Pricing shown for roofing. Clinics and private equity priced on consultation.";
 export const DEMO_HREF = "/#book-a-demo";

@@ -6,8 +6,17 @@ import { Linkedin, Twitter, Instagram, Menu, X } from "lucide-react";
 
 // Real profile URLs only. A null entry hides the icon -- a social button that
 // goes nowhere is worse than no button for a company selling discoverability.
-const SOCIAL_LINKS: { label: string; href: string | null; Icon: typeof Instagram }[] = [
-  { label: "Instagram", href: process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || null, Icon: Instagram },
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M16.5 3c.3 2.4 1.9 4.1 4.3 4.3v3.2c-1.6 0-3.1-.5-4.3-1.4v6.4a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v3.3a2.4 2.4 0 1 0 1.5 2.2V3h3.2Z" />
+    </svg>
+  );
+}
+type SocialIcon = React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
+const SOCIAL_LINKS: { label: string; href: string | null; Icon: SocialIcon }[] = [
+  { label: "Instagram", href: process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || "https://www.instagram.com/roman.aeo", Icon: Instagram },
+  { label: "TikTok", href: process.env.NEXT_PUBLIC_SOCIAL_TIKTOK || "https://www.tiktok.com/@roman.aeo", Icon: TikTokIcon },
   { label: "LinkedIn", href: process.env.NEXT_PUBLIC_SOCIAL_LINKEDIN || null, Icon: Linkedin },
   { label: "X", href: process.env.NEXT_PUBLIC_SOCIAL_X || null, Icon: Twitter },
 ];

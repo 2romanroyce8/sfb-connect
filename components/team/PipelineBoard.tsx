@@ -37,6 +37,9 @@ const WON_PLANS: { key: string; label: string; price: string }[] = [
   { key: "revenue_presence", label: "Revenue Presence", price: "$19.99/mo" },
   { key: "revenue_growth", label: "Revenue Growth", price: "$197/mo" },
   { key: "revenue_dominance", label: "Revenue Dominance", price: "$359/mo" },
+  { key: "agent_starter", label: "SFB Agent — Starter", price: "$1,497/mo + $1,497 onboarding" },
+  { key: "agent_growth", label: "SFB Agent — Growth", price: "$2,997/mo + $4,497 onboarding" },
+  { key: "agent_scale", label: "SFB Agent — Scale", price: "$4,997/mo + $8,997 onboarding" },
 ];
 
 const OFFER_LABEL: Record<string, string> = {

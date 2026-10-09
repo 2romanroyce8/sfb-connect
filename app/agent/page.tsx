@@ -4,6 +4,7 @@ import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import StatusBadge from "@/components/agent/StatusBadge";
 import AgentFaq from "@/components/agent/AgentFaq";
+import AgentCheckout from "@/components/agent/AgentCheckout";
 import { fetchAgentModules, roadmapPosition } from "@/lib/agentProgram/modules";
 import { AGENT_PLANS, CREDIT_TIERS, DEMO_HREF, PRICING_NOTE, TOP_UP_FROM_USD, fmtUsd } from "@/lib/agentProgram/config";
 
@@ -149,11 +150,11 @@ export default async function AgentPage() {
                   <div className="flex justify-between gap-4"><dt className="text-white/[0.5]">Human overseer</dt><dd className="font-semibold">{p.overseer}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-white/[0.5]">Onboarding (one-time)</dt><dd className="font-semibold">{fmtUsd(p.onboardingUsd)}</dd></div>
                 </dl>
-                <Link href={DEMO_HREF} className="mt-8 inline-flex justify-center items-center bg-white text-black px-5 py-3 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity">Get your agent →</Link>
+                <AgentCheckout plan={p} />
               </div>
             ))}
           </div>
-          <p className="mt-6 text-[12px] text-white/[0.4]">{PRICING_NOTE} Looking for AI Presence only? <Link href="/#pricing" className="underline underline-offset-2 text-white/[0.7]">Presence plans start at $19.99/month.</Link></p>
+          <p className="mt-6 text-[12px] text-white/[0.4]">{PRICING_NOTE} Prefer to talk first? <Link href={DEMO_HREF} className="underline underline-offset-2 text-white/[0.7]">Book a demo.</Link> Looking for AI Presence only? <Link href="/#pricing" className="underline underline-offset-2 text-white/[0.7]">Presence plans start at $19.99/month.</Link></p>
         </div>
       </section>
 

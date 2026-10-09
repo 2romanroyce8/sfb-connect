@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import TeamRoster from "@/components/team/TeamRoster";
+import OverseerAssignments from "@/components/team/OverseerAssignments";
 
 export default async function TeamManagementPage() {
   const supabase = createSupabaseServerClient();
@@ -52,5 +53,10 @@ export default async function TeamManagementPage() {
     })
   );
 
-  return <TeamRoster members={members ?? []} performance={performance} />;
+  return (
+    <>
+      <TeamRoster members={members ?? []} performance={performance} />
+      <OverseerAssignments />
+    </>
+  );
 }

@@ -3,6 +3,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
 import { appendCreditTransaction, getCreditBalance } from "@/lib/billing/credits";
 import type Stripe from "stripe";
+import { provisionAgentCustomer, grantAgentRenewalCredits, endAgentPlan } from "@/lib/agentProgram/provision";
 
 // ============================================================
 // Stripe is the payment/subscription AUTHORITY. This webhook is the ONLY
@@ -60,6 +61,10 @@ export async function POST(req: NextRequest) {
         break;
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(service, event.data.object as Stripe.Subscription);
+        await endAgentPlan(service, event.data.object as Stripe.Subscription, event.id);
+        break;
+      case "invoice.paid":
+        await grantAgentRenewalCredits(service, event.data.object as Stripe.Invoice, event.id);
         break;
       case "charge.refunded":
         await handleChargeRefunded(service, event.data.object as Stripe.Charge, event.id);
@@ -83,6 +88,13 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleCheckoutCompleted(service: ReturnType<typeof createSupabaseServiceClient>, session: Stripe.Checkout.Session, eventId: string) {
+  // Self-serve SFB Agent subscription from the public page: provisions the
+  // customer (account, business, plan, first credits). Add-on/credit
+  // purchases from the dashboard continue below.
+  if (session.metadata?.kind === "agent_plan") {
+    await provisionAgentCustomer(service, session, eventId);
+    return;
+  }
   const businessId = session.metadata?.business_id;
   const purchaseId = session.metadata?.purchase_id;
   if (!businessId || !purchaseId) {
