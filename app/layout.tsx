@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     template: "%s | SFB Connect",
   },
   description:
-    "SFB Connect analyzes and optimizes how your business is represented across the digital signals AI systems use when answering local and commercial recommendations. Plans start at $19.99/month.",
+    "One AI agent, eight jobs, a human overseer. SFB Connect gets your business found by AI search and automates growth work. Free on a sample business; live on yours from $1,497/month.",
   openGraph: {
     title: "SFB Connect — One Agent. Eight Jobs.",
     description:
