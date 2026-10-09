@@ -7,6 +7,9 @@ export default function Footer() {
         <div className="flex justify-between flex-wrap gap-8 mb-12">
           <div className="font-extrabold text-lg">SFB CONNECTS</div>
           <div className="flex gap-8 flex-wrap text-sm text-medium-gray">
+            <Link href="/agent" className="hover:text-white transition-colors">
+              SFB Agent
+            </Link>
             <Link href="/#score" className="hover:text-white transition-colors">
               AI Presence
             </Link>

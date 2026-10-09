@@ -16,6 +16,7 @@ const LOGO_SRC =
   "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 
 const PRIMARY_LINKS = [
+  { label: "SFB Agent", href: "/agent" },
   { label: "AI Presence", href: "/#score" },
   { label: "How It Works", href: "/#process" },
   { label: "Pricing", href: "/#pricing" },

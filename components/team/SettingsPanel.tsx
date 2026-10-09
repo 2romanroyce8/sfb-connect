@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { COMMON_TIMEZONES } from "@/lib/crm/commonTimezones";
 import ConnectedAgentsSection from "./ConnectedAgentsSection";
 import DangerZoneSection from "./DangerZoneSection";
+import AgentProgramSection from "./AgentProgramSection";
 
 type Profile = {
   full_name: string | null;
@@ -304,6 +305,12 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
       <Section title="Connected Agents" id="agents">
         <ConnectedAgentsSection />
       </Section>
+
+      {profile.team_role === "owner" && (
+        <Section title="SFB Agent program — module statuses (owner only)" id="agent-program">
+          <AgentProgramSection />
+        </Section>
+      )}
 
       {profile.team_role === "owner" && (
         <Section title="Danger Zone — Data Control (owner only)" id="danger">

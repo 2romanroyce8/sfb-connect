@@ -7,6 +7,9 @@ import OverviewOnboarding from "@/components/customerPortal/OverviewOnboarding";
 import OverviewPresence from "@/components/customerPortal/OverviewPresence";
 import OverviewActivity from "@/components/customerPortal/OverviewActivity";
 import OverviewPlanSummary from "@/components/customerPortal/OverviewPlanSummary";
+import AgentPanel from "@/components/customerPortal/AgentPanel";
+import { fetchAgentModules } from "@/lib/agentProgram/modules";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -22,7 +25,24 @@ export default async function OverviewPage() {
 
   const supabase = createSupabaseServerClient();
 
-  const [presence, findings, activity, stages, { data: opportunity }] = await Promise.all([
+  // Agent panel inputs: module statuses (public), the business's own credit
+  // receipts (RLS), and the assigned overseer's name/role (read through the
+  // service client because customers cannot read the team users table).
+  const agentData = (async () => {
+    const [modules, { data: receipts }, { data: biz }] = await Promise.all([
+      fetchAgentModules(),
+      supabase.from("credit_transactions").select("id, type, amount, balance_after, description, created_at").eq("business_id", context.business.id).order("created_at", { ascending: false }).limit(6),
+      createSupabaseServiceClient().from("businesses").select("agent_overseer_id").eq("id", context.business.id).maybeSingle(),
+    ]);
+    let overseer: { name: string; role: string } | null = null;
+    if (biz?.agent_overseer_id) {
+      const { data: u } = await createSupabaseServiceClient().from("users").select("full_name, team_role").eq("id", biz.agent_overseer_id).maybeSingle();
+      if (u?.full_name) overseer = { name: u.full_name, role: u.team_role === "owner" ? "SFB Connect — Founder & overseer" : "SFB Connect — Agent overseer" };
+    }
+    return { modules, receipts: receipts ?? [], overseer };
+  })();
+
+  const [presence, findings, activity, stages, { data: opportunity }, agent] = await Promise.all([
     getPresenceSummary(context.business.id),
     getRecentFindings(context.business.id, 5),
     getRecentActivity(context.business.id, 8),
@@ -35,6 +55,7 @@ export default async function OverviewPage() {
       .order("detected_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    agentData,
   ]);
 
   // "Established" vs "new customer" transition happens automatically based
@@ -111,6 +132,8 @@ export default async function OverviewPage() {
           </div>
         </section>
       )}
+
+      <AgentPanel modules={agent.modules} creditBalance={context.entitlements.creditBalance} receipts={agent.receipts} overseer={agent.overseer} />
 
       <OverviewActivity activity={activity} />
 
