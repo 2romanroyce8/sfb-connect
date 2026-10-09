@@ -10,6 +10,8 @@ import Reveal from "@/components/ui/Reveal";
 // billing computation; the one place that actually charges anyone is the
 // server-side SFB_PLAN_PRICES map used by the Sales OS revenue pipeline.
 const CALC_PLANS = [
+  { id: "solo", name: "SFB Agent — Solo", price: 1497 },
+  { id: "agency", name: "SFB Agent — Agency", price: 4997 },
   { id: "presence", name: "Revenue Presence", price: 19.99 },
   { id: "growth", name: "Revenue Growth", price: 197 },
   { id: "dominance", name: "Revenue Dominance", price: 359 },
@@ -27,13 +29,15 @@ function formatMoney(n: number) {
 // performance claim -- there's no historical data yet to back a specific
 // multiplier, so we don't imply Growth "gets you 2x Presence" as fact.
 const DEFAULT_EXPECTED_CUSTOMERS: Record<(typeof CALC_PLANS)[number]["id"], number> = {
+  solo: 4,
+  agency: 12,
   presence: 1,
   growth: 2,
   dominance: 4,
 };
 
 export default function RoiCalculator() {
-  const [planId, setPlanId] = useState<(typeof CALC_PLANS)[number]["id"]>("growth");
+  const [planId, setPlanId] = useState<(typeof CALC_PLANS)[number]["id"]>("solo");
   const [customerValue, setCustomerValue] = useState<number>(150);
   const [expectedByPlan, setExpectedByPlan] = useState(DEFAULT_EXPECTED_CUSTOMERS);
 

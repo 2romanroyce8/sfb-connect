@@ -8,7 +8,7 @@ export default function ScoreSection() {
       <div className="max-w-[1200px] mx-auto px-8">
         <Reveal>
           <SectionHead
-            label="The Diagnostic"
+            label="Capability 01 — where your agent starts"
             title={
               <>
                 Your AI{" "}
@@ -17,6 +17,7 @@ export default function ScoreSection() {
                 </span>
               </>
             }
+            subtitle={<>This is the first job your agent does. <a href="#agent" className="underline underline-offset-2 text-white/[0.85]">Seven more when you&apos;re ready →</a></>}
           />
         </Reveal>
         <Reveal>

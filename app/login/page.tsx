@@ -54,6 +54,7 @@ function LoginForm() {
               className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-white/40"
             />
             {error && <p className="text-sm text-red-400">{error}</p>}
+            <div className="-mt-1 text-right"><Link href="/forgot-password" className="text-[12.5px] text-medium-gray hover:text-white underline underline-offset-2">Forgot password?</Link></div>
             <button
               type="submit"
               disabled={loading}
@@ -64,8 +65,8 @@ function LoginForm() {
           </form>
           <p className="text-sm text-medium-gray mt-6 text-center">
             New to SFB Connect?{" "}
-            <Link href="/#pricing" className="text-white underline">
-              Start your AI Presence
+            <Link href="/start" className="text-white underline">
+              Try the agent free
             </Link>
           </p>
         </div>

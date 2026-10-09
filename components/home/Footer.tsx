@@ -35,9 +35,6 @@ export default function Footer() {
             <Link href="/login" className="hover:text-white transition-colors">
               Customer sign in
             </Link>
-            <Link href="/team/login" className="hover:text-white transition-colors">
-              Team
-            </Link>
             {/* Legal pages: copy is being supplied separately; these stay as placeholders until it lands. */}
             <Link href="/privacy" className="hover:text-white transition-colors">
               Privacy

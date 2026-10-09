@@ -5,6 +5,13 @@ import { Plus } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 
 const FAQS = [
+  { q: "What am I buying?", a: "One AI agent assigned to your business, plus the human who oversees it. It has eight capabilities you switch on and off; it starts with AI presence. You watch every action and its credit receipt from your SFB login.", color: "#42E36D" },
+  { q: "Which capabilities should I turn on?", a: "Start with AI Presence — it is live and it is where every agent begins. Add Outbound when you want booked calls, Reviews when reputation matters most, and the rest as they ship. Toggles are free, so changing your mind costs nothing.", color: "#42E36D" },
+  { q: "How do credits work?", a: "One credit type. Each completed action costs a published number of credits (a sourced prospect is 1, a booked meeting is 5, a full website build is 100). Your monthly allotment spends first and never rolls over; top-up packs never expire while you are a member.", color: "#42E36D" },
+  { q: "What happens at zero credits?", a: "Work pauses and your overseer is notified. Reports and everything already done stay available. On the trial, zero credits (or day 14) ends the trial and shows the Solo and Agency plans.", color: "#42E36D" },
+  { q: "Do I pay for failed work?", a: "No. Failed work costs 0 credits and shows as such in your activity feed. Credits pay for work done, not outcomes.", color: "#42E36D" },
+  { q: "Who is the human overseer?", a: "A named SFB Connect team member assigned to your account. Nothing customer-facing goes out without their approval, and they sign every report. Solo shares an overseer; Agency gets a dedicated one.", color: "#42E36D" },
+  { q: "Can I cancel?", a: "Yes — month-to-month, no contracts. Your data and reports stay exportable.", color: "#42E36D" },
   {
     q: "Can you guarantee AI rankings?",
     a: "No. AI recommendations vary by platform, query, context, location and available information. SFB Connect optimizes the signals that can improve your discoverability and relevance — no platform can be guaranteed.",

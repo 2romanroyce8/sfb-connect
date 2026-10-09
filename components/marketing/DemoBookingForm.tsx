@@ -1,4 +1,5 @@
 "use client";
+import { trackMarketingEvent } from "@/lib/marketingEvents";
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Check, Loader2 } from "lucide-react";
@@ -53,6 +54,11 @@ export default function DemoBookingForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong.");
+      trackMarketingEvent("trial_signup_start", { from: "demo_form" });
+      // The form is now the front door to the trial: carry the details into
+      // onboarding step 1 (pick a sample business) instead of waiting for a call.
+      const q = new URLSearchParams({ name: fullName, email, company: companyName });
+      window.location.href = `/start?${q.toString()}`;
       setStatus("done");
     } catch (err) {
       setStatus("error");
@@ -119,11 +125,11 @@ export default function DemoBookingForm() {
           <form onSubmit={submit} className="flex flex-col gap-[22px]">
             <div>
               <div className="text-[30px] sm:text-[38px] font-semibold tracking-[-0.04em] text-[#F5F5F7]">
-                Book Your Demo
+                Try it free. Pick a demo business, watch your agent work.
               </div>
               <p className="mt-3.5 text-[15px] sm:text-[17px] leading-relaxed text-[#A1A1A6]">
-                Tell us about your business and we&apos;ll prepare a free AI
-                Presence progress report before your demo.
+                Tell us about your business, then choose a sample business and watch
+                your agent do its first jobs — 128 credits, no card, no setup.
               </p>
             </div>
 
@@ -193,8 +199,8 @@ export default function DemoBookingForm() {
                 {consent && <Check size={12} className="text-white" strokeWidth={3} />}
               </span>
               <span className="text-[13px] leading-[1.45] text-[#A1A1A6]">
-                I agree to be contacted by SFB Connect about my demo request
-                and progress report.
+                I agree to be contacted by SFB Connect about my trial and progress
+                report. See our <a href="/privacy" className="underline underline-offset-2 text-white/[0.8]">Privacy Policy</a> and <a href="/terms" className="underline underline-offset-2 text-white/[0.8]">Terms</a>.
               </span>
             </label>
 

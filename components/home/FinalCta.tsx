@@ -22,22 +22,22 @@ export default function FinalCta() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={LOGO_SRC} alt="SFB Connect" className="w-10 h-auto mx-auto mb-8" />
 
-          <h2 className="text-[36px] sm:text-[48px] md:text-[68px] font-serif-accent italic font-normal tracking-[-0.01em] max-w-[800px] mx-auto leading-[1.08]">
-            Make sure AI knows who you are.
+          <div className="inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-1 mb-10 px-5 py-2.5 rounded-full text-[12.5px] text-white/[0.7]" style={{ border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.03)" }}>
+            <span>Cancel anytime</span><span className="text-white/[0.3]">·</span><span>Month-to-month</span><span className="text-white/[0.3]">·</span><span>No contracts</span>
+          </div>
+          <h2 className="text-[36px] sm:text-[48px] md:text-[68px] font-serif-accent italic font-normal tracking-[-0.01em] max-w-[900px] mx-auto leading-[1.08]">
+            Your competitors&apos; agents are already working. Get yours.
           </h2>
           <p className="text-medium-gray text-lg mt-6 max-w-[560px] mx-auto">
-            Your customers are already asking AI who to choose. Every day you
-            wait is another day the algorithm answers without you.
+            Free on a sample business today. Live on yours when you&apos;re ready.
           </p>
           <div className="font-mono text-2xl text-medium-gray my-9">
             Plans from $19.99 / month <span className="text-base align-middle text-medium-gray/70">(introductory)</span>
           </div>
-          <Link
-            href="#book-a-demo"
-            className="bg-white text-black px-8 py-4 rounded-full text-base font-semibold inline-flex items-center gap-2 hover:scale-[1.03] transition-transform"
-          >
-            Book a Demo →
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link href="/start" className="bg-white text-black px-8 py-4 rounded-full text-base font-semibold inline-flex items-center gap-2 hover:scale-[1.03] transition-transform">Try it free →</Link>
+            <Link href="#pricing" className="px-8 py-4 rounded-full text-base font-medium inline-flex items-center gap-2 text-white hover:bg-white/[0.05] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.2)" }}>See plans →</Link>
+          </div>
         </Reveal>
       </div>
     </section>

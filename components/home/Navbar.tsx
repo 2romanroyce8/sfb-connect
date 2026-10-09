@@ -25,10 +25,11 @@ const LOGO_SRC =
   "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 
 const PRIMARY_LINKS = [
-  { label: "SFB Agent", href: "/agent" },
+  { label: "Agent", href: "/#agent" },
   { label: "AI Presence", href: "/#score" },
   { label: "How It Works", href: "/#process" },
   { label: "Pricing", href: "/#pricing" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export default function Navbar() {
@@ -71,10 +72,10 @@ export default function Navbar() {
           Sign in
         </Link>
         <Link
-          href="/#score"
+          href="/start"
           className="hidden sm:inline-flex bg-white text-black px-5 py-2.5 rounded-full text-[13.5px] font-semibold hover:opacity-80 transition-opacity whitespace-nowrap"
         >
-          Analyze My Business
+          Try it free
         </Link>
         <button className="lg:hidden text-white p-1.5" onClick={() => setMobileOpen((v) => !v)} aria-label="Menu">
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -96,11 +97,11 @@ export default function Navbar() {
               Sign in
             </Link>
             <Link
-              href="/#score"
+              href="/start"
               onClick={() => setMobileOpen(false)}
               className="mt-5 bg-white text-black px-5 py-3 rounded-full text-[14px] font-semibold text-center"
             >
-              Analyze My Business
+              Try it free
             </Link>
           </div>
         </div>

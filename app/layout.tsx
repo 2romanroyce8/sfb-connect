@@ -30,15 +30,15 @@ const siteUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://www.sfbconnect.com"
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "SFB Connect — Be The Business AI Finds.",
+    default: "SFB Connect — One Agent. Eight Jobs.",
     template: "%s | SFB Connect",
   },
   description:
     "SFB Connect analyzes and optimizes how your business is represented across the digital signals AI systems use when answering local and commercial recommendations. Plans start at $19.99/month.",
   openGraph: {
-    title: "SFB Connect — Be The Business AI Finds.",
+    title: "SFB Connect — One Agent. Eight Jobs.",
     description:
-      "Your customers are asking AI who to choose. Make sure it can find you. Plans start at $19.99/month.",
+      "An AI agent assigned to your business — outbound, ads, website, follow-up, chat, reviews, operations. A human expert checks everything it does. Try it free on a sample business.",
     url: siteUrl,
     siteName: "SFB Connect",
     type: "website",

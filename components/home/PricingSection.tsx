@@ -6,6 +6,8 @@ import { Check } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import DemoBookingForm from "@/components/marketing/DemoBookingForm";
 import RoiCalculator from "@/components/home/RoiCalculator";
+import AgentTiersRow from "@/components/home/AgentTiersRow";
+import AgentFaq from "@/components/agent/AgentFaq";
 import { trackMarketingEvent } from "@/lib/marketingEvents";
 
 type Plan = {
@@ -266,8 +268,8 @@ export default function PricingSection() {
               Plans and Pricing
             </h2>
             <p className="max-w-[560px] mx-auto mt-[18px] text-[14px] leading-relaxed text-white/[0.42]">
-              Choose the plan that fits where your business is today and how
-              far you want to take your AI presence.
+              Get your agent free on a sample business, go live from $1,497/month —
+              or start with AI Presence alone from $19.99.
             </p>
 
             <div className="inline-flex items-center gap-1 mt-7 p-[4px] rounded-full bg-[#121212] border border-white/[0.08]">
@@ -309,7 +311,16 @@ export default function PricingSection() {
           </div>
         </Reveal>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[18px] mt-12 items-stretch">
+        <div className="mt-12">
+          <AgentTiersRow />
+        </div>
+
+        <div className="mt-24 max-w-[780px] mx-auto text-center">
+          <span className="inline-flex items-center h-[26px] px-[10px] rounded-full bg-[#151515] border border-white/[0.08] text-[9px] font-semibold tracking-[0.08em] text-white/[0.78]">THE ENTRY WEDGE</span>
+          <h3 className="mt-[14px] text-[30px] sm:text-[40px] font-semibold leading-[1.02] tracking-[-0.04em] text-[#f7f7f7]">Start with AI Presence</h3>
+          <p className="max-w-[560px] mx-auto mt-[12px] text-[14px] leading-relaxed text-white/[0.42]">Capability 01 on its own — the same presence work your agent starts with, as a standalone plan.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[18px] mt-10 items-stretch">
           {PLANS.map((plan, i) => (
             <PlanCard key={plan.id} plan={plan} index={i} billing={billing} />
           ))}
@@ -318,6 +329,15 @@ export default function PricingSection() {
         <div className="mt-16 max-w-[900px] mx-auto">
           <RoiCalculator />
         </div>
+
+        <div className="mt-20 max-w-[900px] mx-auto grid md:grid-cols-[0.7fr_1.3fr] gap-8">
+          <div>
+            <h3 className="text-[26px] sm:text-[32px] font-semibold tracking-[-0.03em] text-[#f7f7f7]">Pricing questions</h3>
+            <p className="mt-3 text-[13.5px] text-white/[0.42]">Credits pay for work done, not outcomes. Failed work costs 0.</p>
+          </div>
+          <AgentFaq />
+        </div>
+        <div className="mt-10 rounded-[12px] px-5 py-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[12.5px] text-white/[0.62] max-w-[900px] mx-auto" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}><span>Cancel anytime</span><span className="text-white/[0.3]">·</span><span>Month-to-month</span><span className="text-white/[0.3]">·</span><span>No contracts</span></div>
 
         <div id="book-a-demo" className="mt-32 scroll-mt-24">
           <Reveal>

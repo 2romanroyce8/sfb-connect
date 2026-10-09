@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { trackMarketingEvent } from "@/lib/marketingEvents";
 import { useBusinessLookup } from "@/lib/businessLookupContext";
 import { runBusinessLookup } from "@/lib/runBusinessLookup";
 
@@ -70,18 +72,17 @@ export default function Hero() {
           className="mb-5 text-[11px] font-semibold tracking-[0.24em] uppercase text-white/[0.62]"
           style={{ textShadow: "0 1px 14px rgba(0,0,0,0.55)" }}
         >
-          AI Presence for Business
+          SFB Agent
         </span>
 
         <h1
           className="text-[56px] sm:text-[72px] md:text-[92px] font-bold leading-[0.9] tracking-[-0.055em] max-w-[1050px]"
           style={{ textShadow: "0 3px 30px rgba(0,0,0,0.32)" }}
         >
-          Your customers are asking AI
+          One agent. Eight jobs.
           {" "}<br />
-          who to{" "}
           <span className="font-serif-accent italic font-normal">
-            choose.
+            You decide what it does.
           </span>
         </h1>
 
@@ -89,20 +90,25 @@ export default function Hero() {
           className="mt-[22px] text-[28px] sm:text-[32px] md:text-[38px] font-medium tracking-[-0.035em] text-white"
           style={{ textShadow: "0 2px 20px rgba(0,0,0,0.45)" }}
         >
-          Make sure it can find you.
+          An AI agent assigned to your business.
         </div>
 
         <p
           className="max-w-[690px] mt-[22px] text-[17px] leading-relaxed text-white/[0.86]"
           style={{ textShadow: "0 2px 18px rgba(0,0,0,0.55)" }}
         >
-          See how clearly AI can understand your business, what it can
-          verify, and what may be keeping you from being recommended.
+          Outbound, ads, website, follow-up, chat, reviews, operations. A human
+          expert checks everything it does.
         </p>
+
+        <div className="mt-[26px] flex flex-wrap items-center justify-center gap-3">
+          <Link href="/start" onClick={() => trackMarketingEvent("trial_signup_start", { from: "hero" })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Try it free →</Link>
+          <Link href="#agent" className="inline-flex items-center px-6 py-3.5 rounded-full text-[14px] font-medium text-white hover:bg-white/[0.08] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.28)", background: "rgba(7,7,7,0.4)" }}>See the 8 capabilities →</Link>
+        </div>
 
         <div className="w-full max-w-[650px] mt-[34px]">
           <div className="mb-[9px] text-[9px] font-semibold tracking-[0.16em] text-white/[0.48] text-left pl-1">
-            LIVE BUSINESS LOOKUP
+            SEE WHAT YOUR AGENT WOULD DO FIRST
           </div>
           <form
             onSubmit={handleSubmit}

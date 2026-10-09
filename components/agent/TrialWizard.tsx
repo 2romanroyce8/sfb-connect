@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { trackMarketingEvent } from "@/lib/marketingEvents";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { CAPABILITIES, STOCK_PROFILES, TIERS, bookedCallsFor } from "@/lib/agentProgram/config";
 
@@ -13,6 +14,15 @@ const field: React.CSSProperties = { background: "#0F0F0F", border: "1px solid r
 export default function TrialWizard() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState("");
+  const [prefilled, setPrefilled] = useState(false);
+  // Arriving from the homepage form: name/email are known, so start at
+  // "pick a sample business" and collect the password on the last step.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const n = q.get("name") ?? ""; const e = q.get("email") ?? "";
+    if (n && e) { setName(n); setEmail(e); setPrefilled(true); setStep(2); }
+    trackMarketingEvent("trial_signup_start", { from: n && e ? "demo_form_prefill" : "start_page" });
+  }, []);
   const [profile, setProfile] = useState<string>(STOCK_PROFILES[0].key);
   const [caps, setCaps] = useState<string[]>(["ai_presence", "outbound_gtm", "reviews_reputation"]);
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
@@ -24,6 +34,7 @@ export default function TrialWizard() {
       const r = await fetch("/api/trial/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, email, password, stockProfile: profile, capabilities: caps }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Could not start the trial.");
+      trackMarketingEvent("trial_signup_complete", { stockProfile: profile, capabilities: caps });
       const { error } = await createSupabaseBrowserClient().auth.signInWithPassword({ email, password });
       if (error) throw new Error("Account created, but sign-in failed. Use the sign-in page.");
       window.location.href = "/dashboard/agent?welcome=trial";
@@ -69,8 +80,14 @@ export default function TrialWizard() {
                 <div className="text-[12px] text-white/[0.5] mt-0.5">{c.short}</div>
               </button>); })}
           </div>
+          {prefilled && (
+            <div className="flex flex-col gap-2 mt-1">
+              <div className="text-[12.5px] text-white/[0.55]">Signing up as <span className="text-white">{name}</span> · {email}</div>
+              <input required type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Choose a password (8+ characters)" className="h-[44px] rounded-[9px] px-3 text-[14px] outline-none" style={field} />
+            </div>
+          )}
           {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}</div>}
-          <div className="flex gap-2 mt-2"><button type="button" onClick={() => setStep(2)} className="h-[44px] px-5 rounded-full text-[14px]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Back</button><button type="button" disabled={busy || caps.length !== trial.capabilityLimit} onClick={submit} className="flex-1 h-[44px] rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-50">{busy ? "Creating your agent…" : "Start the agent →"}</button></div>
+          <div className="flex gap-2 mt-2"><button type="button" onClick={() => setStep(2)} className="h-[44px] px-5 rounded-full text-[14px]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Back</button><button type="button" disabled={busy || caps.length !== trial.capabilityLimit || (prefilled && password.length < 8)} onClick={submit} className="flex-1 h-[44px] rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-50">{busy ? "Creating your agent…" : "Start the agent →"}</button></div>
           <div className="text-[11px] text-white/[0.4]">Sandboxed: nothing is sent to real customers. Spend is shown per action; the price list unlocks on a paid plan.</div>
         </div>
       )}

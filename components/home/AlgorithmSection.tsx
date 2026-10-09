@@ -15,7 +15,7 @@ export default function AlgorithmSection() {
         <div id="score" className="mt-8 md:mt-4">
           <Reveal>
             <SectionHead
-              label="The Diagnostic"
+              label="Capability 01 — where your agent starts"
               title={
                 <>
                   Your AI{" "}

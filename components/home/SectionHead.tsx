@@ -2,11 +2,13 @@ export default function SectionHead({
   label,
   title,
   description,
+  subtitle,
   center,
 }: {
   label: string;
   title: React.ReactNode;
   description?: string;
+  subtitle?: React.ReactNode;
   center?: boolean;
 }) {
   return (
@@ -19,6 +21,9 @@ export default function SectionHead({
       <h2 className="text-[32px] sm:text-[40px] md:text-[56px] font-extrabold tracking-[-0.025em] leading-[1.06]">
         {title}
       </h2>
+      {subtitle && (
+        <p className={`mt-4 text-[15px] leading-relaxed text-[#a3a3a8] ${center ? "mx-auto" : ""}`}>{subtitle}</p>
+      )}
       {description && (
         <p
           className={`mt-5 text-[17px] leading-relaxed text-[#a3a3a8] max-w-[640px] ${

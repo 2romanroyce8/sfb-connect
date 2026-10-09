@@ -46,6 +46,7 @@ export const CREDIT_PRICES: CreditAction[] = [
   { key: "presence.content_brief", label: "Content brief", credits: 5, capability: "ai_presence" },
   { key: "presence.competitor_analysis", label: "Competitor analysis", credits: 10, capability: "ai_presence" },
   { key: "presence.market_analysis", label: "Market analysis", credits: 15, capability: "ai_presence" },
+  { key: "presence.location_optimization", label: "Location optimization", credits: 15, capability: "ai_presence" },
   { key: "outbound.prospect_sourced", label: "Prospect sourced", credits: 1, capability: "outbound_gtm" },
   { key: "outbound.prospect_enriched", label: "Prospect enriched", credits: 2, capability: "outbound_gtm" },
   { key: "outbound.message_written", label: "Message written", credits: 2, capability: "outbound_gtm" },
@@ -71,6 +72,7 @@ export const CREDIT_PRICES: CreditAction[] = [
   { key: "sops.update", label: "SOP update", credits: 5, capability: "sops" },
   { key: "sops.library_doc", label: "SOP library document", credits: 25, capability: "sops" },
   { key: "human.review_pass", label: "Human review pass", credits: 5, capability: "human" },
+  { key: "human.verification", label: "Human verification", credits: 15, capability: "human" },
 ];
 export const creditPrice = (actionKey: string) => CREDIT_PRICES.find((p) => p.key === actionKey) ?? null;
 export const FREE_ACTIONS = ["Sends", "Report views", "Logins", "Capability toggles"] as const;
