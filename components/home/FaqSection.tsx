@@ -5,13 +5,14 @@ import { Plus } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 
 const FAQS = [
-  { q: "What am I buying?", a: "One AI agent assigned to your business, plus the human who oversees it. It has eight capabilities you switch on and off; it starts with AI presence. You watch every action and its credit receipt from your SFB login.", color: "#42E36D" },
-  { q: "Which capabilities should I turn on?", a: "Start with AI Presence — it is live and it is where every agent begins. Add Outbound when you want booked calls, Reviews when reputation matters most, and the rest as they ship. Toggles are free, so changing your mind costs nothing.", color: "#42E36D" },
-  { q: "How do credits work?", a: "One credit type. Each completed action costs a published number of credits (a sourced prospect is 1, a booked meeting is 5, a full website build is 100). Your monthly allotment spends first and never rolls over; top-up packs never expire while you are a member.", color: "#42E36D" },
-  { q: "What happens at zero credits?", a: "Work pauses and your overseer is notified. Reports and everything already done stay available. On the trial, zero credits (or day 14) ends the trial and shows the Solo and Agency plans.", color: "#42E36D" },
-  { q: "Do I pay for failed work?", a: "No. Failed work costs 0 credits and shows as such in your activity feed. Credits pay for work done, not outcomes.", color: "#42E36D" },
-  { q: "Who is the human overseer?", a: "A named SFB Connect team member assigned to your account. Nothing customer-facing goes out without their approval, and they sign every report. Solo shares an overseer; Agency gets a dedicated one.", color: "#42E36D" },
-  { q: "Can I cancel?", a: "Yes — month-to-month, no contracts. Your data and reports stay exportable.", color: "#42E36D" },
+  // Final copy — Atlas copy pack 2026-10-09.
+  { q: "What exactly am I buying?", a: "An AI agent assigned to your business, plus the human expert who oversees it. Eight capabilities you toggle on or off — outbound, Meta ads, website, CRM and automations, chat and texting, reviews, AI presence, and SOPs. You watch everything it does from your SFB login.", color: "#42E36D" },
+  { q: "Which capabilities should I turn on?", a: "Start with the pain. No pipeline? Outbound. Losing leads after the click? Chat and CRM. Invisible when customers ask AI? AI Presence. Your human overseer recommends the right mix on onboarding — you make the final call, and you can change it anytime.", color: "#42E36D" },
+  { q: "How do credits work?", a: "Your agent runs on credits. Every task has a public per-action price — simple tasks cost little, big builds cost more, and you always see the receipt. As a rough guide: one listing fix is 1 credit, one ad creative is 5, and one fully worked booked-call motion is about 15. Monthly credits don't roll over; top-up packs never expire while your membership is active. Sending messages, viewing reports, and toggling capabilities cost nothing.", color: "#42E36D" },
+  { q: "What happens at zero credits?", a: "The agent pauses — you're never charged beyond what you bought. You get a warning email at 80% usage. When credits hit zero, top up or wait for your monthly refill. The ledger never goes negative; there are no surprise charges.", color: "#42E36D" },
+  { q: "Do I pay for work that fails?", a: "No. If the agent errors, bounces, or produces no result, you pay zero credits. Completed work consumes credits even if you don't love the output — that's what the human overseer and the approval step are for.", color: "#42E36D" },
+  { q: "Who is the human overseer?", a: "A named expert assigned to your account. They review your agent's work, approve anything customer-facing before it goes out, and sign every report. The agent does the work; the human makes sure it's right.", color: "#42E36D" },
+  { q: "Can I cancel?", a: "Monthly plans cancel anytime — no contracts, no sales call required. Your plan stays active through the end of the paid period, and your data and reports stay exportable.", color: "#42E36D" },
   {
     q: "Can you guarantee AI rankings?",
     a: "No. AI recommendations vary by platform, query, context, location and available information. SFB Connect optimizes the signals that can improve your discoverability and relevance — no platform can be guaranteed.",

@@ -104,19 +104,19 @@ export type StockProfile = (typeof STOCK_PROFILES)[number];
 export const stockProfile = (key: string | null | undefined) => STOCK_PROFILES.find((p) => p.key === key) ?? null;
 
 export const DEMO_HREF = "/#book-a-demo";
-export const PRICING_NOTE = "Month-to-month · cancel anytime · no contracts. Pricing shown for roofing; clinics and private equity priced on consultation.";
+export const PRICING_NOTE = "Pricing shown is for roofing. Clinics and private equity are priced by consultation.";
 export const fmtUsd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
-// Pricing-page FAQ (10). Placeholder answers written by engineering; marketing copy replaces them.
+// Pricing-page FAQ (10). Final copy — Atlas copy pack 2026-10-09.
 export const AGENT_FAQ = [
-  { q: "What's included?", a: "One agent assigned to your business, all eight capabilities as they ship (you choose which run), a human overseer who approves anything customer-facing, your monthly credits, and a dashboard where you watch every action and its receipt." },
-  { q: "Do unused credits roll over?", a: "Monthly credits reset each billing cycle and spend first. Top-up packs never expire while your membership is active." },
-  { q: "What happens on the trial when credits hit zero?", a: "Work pauses and the dashboard shows the Solo and Agency plans. Reports and everything already done stay visible. The trial also ends 14 days after it starts." },
-  { q: "What if the agent's work fails?", a: "Failed work costs 0 credits. You only pay for completed work." },
-  { q: "Refunds?", a: "Credits pay for work done, not outcomes, so completed work isn't refunded. Monthly plans cancel anytime and you keep access through the paid period." },
-  { q: "Will prices change?", a: "The credit price list is published on this page and in your dashboard. If it changes, you see the new list before any new work is charged." },
-  { q: "Do you guarantee results?", a: "No. AI recommendations, ad performance and booking rates depend on your market and offer. We publish the planning math so you can see what your credits buy; we don't promise outcomes." },
-  { q: "Can I switch capabilities on and off?", a: "Yes, any time, free. Toggles never cost credits. On the trial you watch 3 capabilities; paid tiers run all 8." },
-  { q: "Who is the human overseer?", a: "A named SFB Connect team member assigned to your account. They approve anything customer-facing before it goes out and sign every report. Solo accounts share an overseer; Agency accounts get a dedicated one." },
-  { q: "Can I cancel?", a: "Yes, month-to-month, no contracts. Your data and reports stay exportable." },
+  { q: "What's included in the monthly price?", a: "Your SFB Agent, all eight capabilities, your monthly credit allotment, your named human overseer, integrations with your tools, daily/weekly/monthly reports, and your dashboard. No seat fees, no contracts." },
+  { q: "Do unused credits roll over?", a: "Monthly plan credits reset each billing cycle — they don't roll over. Top-up packs are different: purchased credits never expire while your membership is active." },
+  { q: "Is there really a free trial?", a: "Yes. The Trial is free: 128 credits on a demo business with stock data — no card required, no charge at the end. You pick a demo business, choose three capabilities to watch, and see credits being spent as the agent works. No real integrations, no real sends. Upgrade whenever you're ready." },
+  { q: "What happens when I run out of credits?", a: "You get a warning email at 80% usage. At zero, the agent pauses — never overcharges. Top up (100/$149, 500/$599, 1,000/$999) or wait for your monthly refill." },
+  { q: "Do I pay for work that fails?", a: "No. Failed work — errors, bounces, no result — costs zero credits, always." },
+  { q: "Can I get a refund?", a: "Months and credit packs are non-refundable — the work happened. Cancel anytime; your plan runs to the end of the paid period." },
+  { q: "Will prices change?", a: "Possible, as the product grows. Any change is posted here before it takes effect." },
+  { q: "What if the agent doesn't get results?", a: "Credits pay for work performed — not guaranteed calls, rankings, leads, or revenue. Your reports show exactly what the agent did and what it cost. If it's not working for you, cancel anytime." },
+  { q: "Can I change capabilities mid-month?", a: "Yes. Toggles are instant, anytime, at no cost. Turn a capability off and the agent stops spending on it immediately." },
+  { q: "Who is the human overseer?", a: "A named expert on our team assigned to your account. They approve anything customer-facing before it runs and sign every report. You set who it is in Settings → Team." },
 ] as const;

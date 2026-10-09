@@ -17,9 +17,9 @@ export default async function AgentSection() {
     <section id="agent" className="py-20 md:py-28 px-6 scroll-mt-24" style={{ background: "#000" }}>
       <div className="max-w-[1180px] mx-auto">
         <div className="max-w-[760px] mb-12">
-          <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-5 block">Your SFB Agent</span>
-          <h2 className="text-[32px] sm:text-[40px] md:text-[56px] font-extrabold tracking-[-0.025em] leading-[1.06]">Eight jobs. One agent. <span className="font-serif-accent italic font-normal">Your toggles.</span></h2>
-          <p className="mt-5 text-[17px] leading-relaxed text-[#a3a3a8] max-w-[640px]">Switch each capability on or off from your dashboard. Every tier gets all eight as they ship — tiers differ in credits and human support, not access.</p>
+          <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-5 block">Meet your SFB Agent</span>
+          <h2 className="text-[32px] sm:text-[40px] md:text-[56px] font-extrabold tracking-[-0.025em] leading-[1.06]">One agent. Eight jobs. <span className="font-serif-accent italic font-normal">You decide what it does.</span></h2>
+          <p className="mt-5 text-[17px] leading-relaxed text-[#a3a3a8] max-w-[640px]">Your SFB Agent is assigned to your business on day one and plugs into the tools you already use — GoHighLevel, Zapier, Google Calendar, Gmail, Meta. Flip any capability on or off in one click: your plan sets your credits and human support, never which jobs your agent can do.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {CAPABILITIES.map((c, i) => { const m = statusOf(c.key); const pos = m ? roadmapPosition(modules, c.key) : null; return (

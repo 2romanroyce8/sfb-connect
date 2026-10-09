@@ -19,6 +19,7 @@ Partial publishing is impossible by construction: `renderPublicText` throws on a
 ## Changing the text later
 Edit `documents.ts`, bump `lastUpdated` (and `effectiveDate` when the Terms change materially — §13 promises a notice period before material changes take effect). The pricing sentence in Terms §2 quotes numbers: when prices change, update the `price_table` resolution the same day.
 
-## Known decisions pending (as of 2026-10-09)
-Privacy: entity, retention window, support email, privacy email, address, contact email.
-Terms: entity, price table sentence, credit expiry wording (Muse said "never expire", pricing page says "never expire while membership is active" — pick one, align the FAQ), refund policy, export window, governing law, venue, notice period, address, contact email.
+## Known decisions pending (as of 2026-10-09, after Atlas's final copy pack)
+Atlas settled: retention (delete on request, billing records 7 yrs), refunds (non-refundable, cancel anytime), export window 30 days, notice period 14 days, venue (arbitration in Florida), credit expiry ("while membership remains active"), price table (now generated from config).
+Still open — Roman's [FILL]s: Privacy: entity, support email, privacy email, address, contact email. Terms: entity, governing law, address, contact email.
+Engineering flags for Atlas/Roman: (1) Terms §2 states the Solo/Agency one-time onboarding fees because config + checkout charge them — Atlas's draft omitted them; (2) pricing FAQ "no setup fees" removed for the same reason.

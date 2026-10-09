@@ -1,8 +1,11 @@
 /**
  * Legal documents — single source of truth for /privacy and /terms.
  *
- * The text below is Muse's (Atlas's) draft of 2026-10-09, transcribed
- * faithfully. Engineering does not write legal copy; it only wires it.
+ * The text below is Atlas's FINAL copy pack of 2026-10-09 ("SFB Copy Pack
+ * for HyperAgent"), transcribed faithfully. Engineering does not write legal
+ * copy; it only wires it. Plan/credit numbers inside the Terms are generated
+ * from lib/agentProgram/config.ts so the Terms always state what checkout
+ * actually charges.
  *
  * Publishing rule (Muse's own, enforced in code): a document is NOT shown on
  * the public site while any open item is unresolved. Until then the public
@@ -45,17 +48,18 @@ export type LegalDoc = {
   openItems: OpenItem[];
 };
 
+// AI Presence plan prices are hard-coded in components/home/PricingSection.tsx; mirrored here (tested against that file).
+export const PRESENCE_PLANS = [{ name: "Presence", monthly: 19.99 }, { name: "Growth", monthly: 197 }, { name: "Dominance", monthly: 359 }] as const;
 const solo = TIERS.find((t) => t.key === "solo")!;
 const agency = TIERS.find((t) => t.key === "agency")!;
 const trial = TIERS.find((t) => t.key === "trial")!;
-const agentTierSentence = `SFB Agent tiers: Trial (${fmtUsd(trial.monthlyUsd)}, ${trial.credits} one-time credits), Solo (${fmtUsd(solo.monthlyUsd)}/mo plus a ${fmtUsd(solo.onboardingUsd ?? 0)} onboarding fee, ${solo.credits} credits/mo), Agency (${fmtUsd(agency.monthlyUsd)}/mo plus a ${fmtUsd(agency.onboardingUsd ?? 0)} onboarding fee, ${agency.credits} pooled credits/mo). Top-up packs: ${TOP_UP_PACKS.map((p) => `${p.credits} credits for ${fmtUsd(p.usd)}`).join(", ")}.`;
 
 export const PRIVACY: LegalDoc = {
   slug: "privacy",
   title: "Privacy Policy",
   effectiveDate: "2026-10-09",
   lastUpdated: "2026-10-09",
-  draftedBy: "Atlas (Muse), for Roman Royce, October 9, 2026",
+  draftedBy: "Atlas (Muse), final copy pack, October 9, 2026",
   intro: [
     { kind: "p", text: "SFB Connect (\"we,\" \"us,\" \"our\") is a brand of {{entity}}, operating at https://sfbconnect.com. This policy explains what information we collect, how we use it, and the choices you have." },
   ],
@@ -117,7 +121,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       heading: "6. Data retention",
-      blocks: [{ kind: "p", text: "We keep your account and business data while your account is active. {{retention}} You can request deletion of your data at any time (see \"Your rights\" below), except for records we are legally required to keep." }],
+      blocks: [{ kind: "p", text: "We keep your account and business data while your account is active. You can request deletion of your data at any time (see \"Your rights\" below); we delete on request, except for records we are legally required to keep (billing records are retained for 7 years for tax purposes)." }],
     },
     {
       heading: "7. Security",
@@ -160,10 +164,9 @@ export const PRIVACY: LegalDoc = {
     },
   ],
   openItems: [
-    { id: "entity", kind: "confirm", prompt: "Exact legal entity name and state of registration (e.g. \"Six Figure Blueprints LLC, a Florida limited liability company, d/b/a SFB Connect\").", workingDefault: "Six Figure Blueprints LLC, d/b/a SFB Connect", resolution: null },
-    { id: "retention", kind: "confirm", prompt: "Retention window after cancellation.", workingDefault: "After cancellation we delete account data on request and retain billing records for 7 years for tax purposes.", resolution: null },
-    { id: "support_email", kind: "confirm", prompt: "Support / security-incident email address.", resolution: null },
-    { id: "privacy_email", kind: "confirm", prompt: "Privacy-request contact email (may equal the support address).", resolution: null },
+    { id: "entity", kind: "confirm", prompt: "Confirm exact registered entity name and state of registration (Atlas: Six Figure Blueprints LLC, a Florida limited liability company, per your 10-08 confirmation).", workingDefault: "Six Figure Blueprints LLC, a Florida limited liability company, d/b/a SFB Connect", resolution: null },
+    { id: "support_email", kind: "confirm", prompt: "Support email (Privacy §7, security incidents).", resolution: null },
+    { id: "privacy_email", kind: "confirm", prompt: "Privacy-request contact email (Privacy §8; may equal the contact email).", resolution: null },
     { id: "address", kind: "confirm", prompt: "Registered business address.", resolution: null },
     { id: "contact_email", kind: "confirm", prompt: "General contact email for the Contact section.", resolution: null },
   ],
@@ -174,7 +177,7 @@ export const TERMS: LegalDoc = {
   title: "Terms of Service",
   effectiveDate: "2026-10-09",
   lastUpdated: "2026-10-09",
-  draftedBy: "Atlas (Muse), for Roman Royce, October 9, 2026",
+  draftedBy: "Atlas (Muse), final copy pack, October 9, 2026",
   intro: [
     { kind: "p", text: "These Terms form a contract between you and {{entity}} (\"we,\" \"us,\" \"our\"), operator of https://sfbconnect.com. By creating an account, starting a trial, or paying for the service, you agree to these Terms and to our Privacy Policy." },
   ],
@@ -192,16 +195,24 @@ export const TERMS: LegalDoc = {
     {
       heading: "2. Plans, credits, and billing",
       blocks: [
-        { kind: "p", text: "Plans. Subscription plans are billed in advance at the rates shown on our pricing page (monthly or yearly). Yearly plans reflect the discount advertised on the pricing page at the time of purchase. {{price_table}}" },
-        { kind: "p", text: "Credits. Metered work consumes SFB Action Credits at the public per-action price list. Key rules:" },
+        { kind: "p", text: "Plans. Subscription plans are billed in advance at the rates shown on our pricing page (monthly or yearly)." },
+        { kind: "ul", items: [
+          `Trial: Free. ${trial.credits} one-time credits on demo business data. No payment details required; no charge at the end of the trial. No real integrations or outbound sends.`,
+          `Solo: ${fmtUsd(solo.monthlyUsd)}/month${solo.onboardingUsd ? ` plus a one-time ${fmtUsd(solo.onboardingUsd)} onboarding fee` : ""}. ${solo.credits} credits per month. One real business, all eight capabilities.`,
+          `Agency: ${fmtUsd(agency.monthlyUsd)}/month${agency.onboardingUsd ? ` plus a one-time ${fmtUsd(agency.onboardingUsd)} onboarding fee` : ""}. ${agency.credits} credits per month, pooled across five white-labeled client spaces.`,
+          `AI Presence plans: ${PRESENCE_PLANS.map((p) => `${p.name} $${p.monthly}/month`).join(", ")}. Yearly billing = 2 months free.`,
+        ] },
+        { kind: "p", text: "Credits. Metered work consumes SFB Action Credits at the public per-action price list shown on our site. Key rules:" },
         { kind: "ul", items: [
           "Failed work costs nothing. If the agent errors, bounces, or produces no result, no credits are charged.",
           "Work pauses at zero. You are never charged beyond what you've purchased. The agent pauses when credits run out; you top up or wait for your refill.",
-          "{{credit_expiry}}",
+          "Monthly credits do not roll over. Unused monthly credits reset at the start of each billing cycle.",
+          `Purchased credit packs never expire while your membership remains active (${TOP_UP_PACKS.map((p) => `${p.credits.toLocaleString("en-US")} credits ${fmtUsd(p.usd)}`).join(" · ")}).`,
+          "The ledger never goes negative. No overage charges, ever.",
           "Sending emails/messages, viewing reports, and toggling capabilities cost no credits — only the AI work behind them is metered.",
+          "Credits pay for work performed, not guaranteed calls, rankings, leads, or revenue.",
         ] },
-        { kind: "p", text: `Free trial. The free trial includes ${trial.credits} credits and runs on stock business information. No payment details required; no charge at the end of the trial.` },
-        { kind: "p", text: "Billing and refunds. {{refunds}} Chargebacks without first contacting us are a violation of these Terms and may result in account termination." },
+        { kind: "p", text: "Billing and refunds. Subscriptions and credit packs are non-refundable — the work happened. You may cancel at any time; your plan stays active through the end of the paid period. Chargebacks filed without first contacting us are a violation of these Terms and may result in account termination." },
         { kind: "p", text: "Payments are processed by Stripe; you agree to Stripe's terms as our payment processor." },
       ],
     },
@@ -234,7 +245,7 @@ export const TERMS: LegalDoc = {
     },
     {
       heading: "6. Third-party services",
-      blocks: [{ kind: "p", text: "The service integrates with third-party platforms (Stripe, Google, Meta, Exa/research providers, GoHighLevel, Zapier). Those providers' terms apply to their services; we are not responsible for their outages, policy changes, or data practices." }],
+      blocks: [{ kind: "p", text: "The service integrates with third-party platforms (Stripe, Google, Meta, research providers, GoHighLevel, Zapier). Those providers' terms apply to their services; we are not responsible for their outages, policy changes, or data practices." }],
     },
     {
       heading: "7. Service availability and changes",
@@ -242,7 +253,7 @@ export const TERMS: LegalDoc = {
     },
     {
       heading: "8. Termination",
-      blocks: [{ kind: "p", text: "You may cancel at any time (see §2). We may suspend or terminate accounts for Terms violations, nonpayment, or abuse, with notice where practical. On termination, your access ends; you may export your data within {{export_window}}." }],
+      blocks: [{ kind: "p", text: "You may cancel at any time (see §2). We may suspend or terminate accounts for Terms violations, nonpayment, or abuse, with notice where practical. On termination, your access ends; you may export your data within 30 days." }],
     },
     {
       heading: "9. Disclaimers",
@@ -258,11 +269,11 @@ export const TERMS: LegalDoc = {
     },
     {
       heading: "12. Dispute resolution and governing law",
-      blocks: [{ kind: "p", text: "These Terms are governed by the laws of {{governing_law}}, without regard to conflict-of-law rules. Disputes will first go through good-faith negotiation for 30 days, then binding arbitration in {{venue}} under AAA rules, with each party bearing its own costs unless the arbitrator decides otherwise. You waive class-action participation." }],
+      blocks: [{ kind: "p", text: "These Terms are governed by the laws of {{governing_law}}, without regard to conflict-of-law rules. Disputes will first go through good-faith negotiation for 30 days, then binding arbitration in Florida under AAA rules, with each party bearing its own costs unless the arbitrator decides otherwise. You waive class-action participation." }],
     },
     {
       heading: "13. Changes to these Terms",
-      blocks: [{ kind: "p", text: "We will post updates here with a new \"Last updated\" date. Material changes take effect {{notice_period}} after notice by email or in-app notice; continued use after that date constitutes acceptance." }],
+      blocks: [{ kind: "p", text: "We will post updates here with a new \"Last updated\" date. Material changes take effect 14 days after notice by email or in-app notice; continued use after that date constitutes acceptance." }],
     },
     {
       heading: "14. Contact",
@@ -275,14 +286,8 @@ export const TERMS: LegalDoc = {
     },
   ],
   openItems: [
-    { id: "entity", kind: "decision", prompt: "Confirm legal entity name and registration state.", workingDefault: "Six Figure Blueprints LLC, d/b/a SFB Connect", resolution: null },
-    { id: "price_table", kind: "decision", prompt: "Confirm the price table sentence to publish in the Terms (or leave empty to rely on the pricing page alone).", workingDefault: `Current AI Presence plans: Presence $19.99/mo · Growth $197/mo · Dominance $359/mo (yearly = 2 months free). ${agentTierSentence}`, resolution: null, note: "Muse's draft hard-codes the Presence/Growth/Dominance numbers. The SFB Agent tier numbers above are generated from lib/agentProgram/config.ts so they cannot drift; the Presence plan numbers are hard-coded in components/home/PricingSection.tsx — verify both before publishing. Terms copy that quotes prices must be re-published whenever prices change." },
-    { id: "credit_expiry", kind: "decision", prompt: "Credit expiry rule, exactly as published on the pricing page.", workingDefault: "Monthly plan credits reset each billing cycle and spend first. Top-up credit packs bought outright never expire while your membership is active.", resolution: null, note: "Muse's draft said \"Purchased credits never expire\" unconditionally; the pricing page (AGENT_FAQ) says \"never expire while your membership is active\". Pick one and the FAQ will be aligned to match." },
-    { id: "refunds", kind: "decision", prompt: "Refund policy.", workingDefault: "Subscriptions may be cancelled at any time and remain active through the end of the paid period; we do not offer refunds on subscription fees. Credit packs are refundable within 7 days of purchase if no credits have been consumed.", resolution: null },
-    { id: "export_window", kind: "decision", prompt: "Data export window after termination.", workingDefault: "30 days", resolution: null },
-    { id: "governing_law", kind: "decision", prompt: "Governing law.", workingDefault: "the State of Florida", resolution: null },
-    { id: "venue", kind: "decision", prompt: "Arbitration venue.", workingDefault: "Florida", resolution: null },
-    { id: "notice_period", kind: "decision", prompt: "Notice period before material changes take effect.", workingDefault: "14 days", resolution: null },
+    { id: "entity", kind: "decision", prompt: "Confirm exact registered entity name and state of registration.", workingDefault: "Six Figure Blueprints LLC, a Florida limited liability company, d/b/a SFB Connect", resolution: null },
+    { id: "governing_law", kind: "decision", prompt: "Confirm governing law (venue is written as binding arbitration in Florida under AAA rules).", workingDefault: "the State of Florida", resolution: null },
     { id: "address", kind: "decision", prompt: "Registered business address.", resolution: null },
     { id: "contact_email", kind: "decision", prompt: "Contact email.", resolution: null },
   ],
