@@ -4,7 +4,7 @@ import {
   TIERS, TOP_UP_PACKS, ANNUAL_MONTHS_CHARGED, ANCHOR_WAS_USD, REPLACED_VENDORS, VENDORS_TOTAL_MONTHLY_USD, NICHES,
   annualUsd, annualPerMonthUsd, nicheUsd, bookedCallsFor, CREDITS_PER_BOOKED_CALL,
 } from "../../lib/agentProgram/config";
-import { priceDisplay, creditsMath, OFFERS, roiEstimate, fmtCustomers, vendorsTotalLine, HOW_IT_WORKS, PRICING_FAQ } from "../../lib/agentProgram/pricing";
+import { priceDisplay, creditsMath, OFFERS, roiEstimate, fmtCustomers, vendorsTotalLine, HOW_IT_WORKS, HOW_IT_WORKS_SUBLINE, PRICING_FAQ } from "../../lib/agentProgram/pricing";
 
 const t = (k: string) => TIERS.find((x) => x.key === k)!;
 
@@ -52,6 +52,7 @@ test("offer copy carries config numbers (no drift)", () => {
   assert.equal(HOW_IT_WORKS[0].price, "Solo $1,497 / Agency $4,997, paid once.");
   assert.equal(HOW_IT_WORKS[2].price, "Top-ups anytime: 100/$149, 500/$599, 1,000/$999.");
   assert.equal(PRICING_FAQ.length, 5);
+  assert.equal(HOW_IT_WORKS_SUBLINE, "You're not buying software. You're renting an AI employee — $1,497/mo, works 24/7, never quits.");
 });
 
 test("ROI calculator: empty or invalid inputs → nothing; valid → live math", () => {

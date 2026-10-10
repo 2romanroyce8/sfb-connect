@@ -14,6 +14,8 @@ const trial = T("trial"); const solo = T("solo"); const agency = T("agency");
 
 // ---- §1 How it works ----
 export const HOW_IT_WORKS_HEADLINE = "One build. One monthly. That's it.";
+// Hero subline (Roman, 2026-10-10). The price is config, not typed.
+export const HOW_IT_WORKS_SUBLINE = `You're not buying software. You're renting an AI employee — ${fmtUsd(solo.monthlyUsd)}/mo, works 24/7, never quits.`;
 export const HOW_IT_WORKS = [
   {
     n: 1, title: "One-time setup", price: `Solo ${fmtUsd(solo.onboardingUsd)} / Agency ${fmtUsd(agency.onboardingUsd)}, paid once.`,
