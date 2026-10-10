@@ -7,11 +7,18 @@ export default function CreditPriceList() {
     { key: "human", name: "Human overseer", prices: CREDIT_PRICES.filter((p) => p.capability === "human") },
   ];
   return (
-    <section className="px-6 py-16 md:py-20 scroll-mt-24" id="credits">
-      <div className="max-w-[1100px] mx-auto">
-        <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-4">Every price, published</div>
-        <h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.035em] leading-[1.05]">What each action costs in credits</h2>
-        <p className="mt-3 text-[14px] text-white/[0.55] max-w-[680px]">One credit type. The same list the agent is charged against — if a number changes here, it changed in the ledger too. 1 booked call ≈ {CREDITS_PER_BOOKED_CALL} credits.</p>
+    <section className="px-6 pt-4 pb-16 md:pb-20 scroll-mt-24" id="credits">
+      {/* Visible expandable right after the ROI calculator (Roman, 2026-10-10): impossible to miss, closed by default so the calculator stays the hero. */}
+      <details className="max-w-[1100px] mx-auto group rounded-[22px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <summary className="list-none cursor-pointer select-none p-6 md:p-7 flex items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+          <div>
+            <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-2">Every price, published</div>
+            <div className="text-[22px] md:text-[28px] font-bold tracking-[-0.03em] leading-[1.1]">See the full per-action credit breakdown</div>
+            <p className="mt-2 text-[13.5px] text-white/[0.55] max-w-[680px]">One credit type. The same list the agent is charged against — if a number changes here, it changed in the ledger too. 1 booked call ≈ {CREDITS_PER_BOOKED_CALL} credits.</p>
+          </div>
+          <span className="shrink-0 inline-flex items-center justify-center h-[40px] px-5 rounded-full text-[13px] font-semibold text-black bg-white group-open:bg-white/[0.1] group-open:text-white transition-colors"><span className="group-open:hidden">Show all {CREDIT_PRICES.length} prices</span><span className="hidden group-open:inline">Hide</span></span>
+        </summary>
+      <div className="px-6 md:px-7 pb-7">
 
         <div className="mt-9 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {groups.map((g) => (
@@ -57,6 +64,7 @@ export default function CreditPriceList() {
           </div>
         </div>
       </div>
+      </details>
     </section>
   );
 }

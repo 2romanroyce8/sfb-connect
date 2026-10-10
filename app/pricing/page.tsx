@@ -21,8 +21,9 @@ export const metadata: Metadata = {
 
 /**
  * /pricing — the overhaul (Roman spec 2026-10-10). Sections in order:
- * how it works → tier cards (monthly|annual) with the offer → ROI
- * calculator → credit price list + guards → six vendors vs one agent → FAQ.
+ * how it works → glass tier cards (monthly|annual) with the offer → ROI
+ * calculator (directly below the cards — primary conversion driver) →
+ * credit price list as a visible expandable → six vendors vs one agent → FAQ.
  * Every figure comes from lib/agentProgram/config.ts.
  */
 export default function PricingPage({ searchParams }: { searchParams?: { checkout?: string } }) {

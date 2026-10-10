@@ -27,7 +27,7 @@ export default function RoiCalculator() {
   const fieldStyle = { background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.14)" };
 
   return (
-    <section className="px-6 py-16 md:py-20 scroll-mt-24" id="roi">
+    <section className="px-6 pt-6 pb-10 md:pt-8 md:pb-12 scroll-mt-24" id="roi">
       <div className="max-w-[1100px] mx-auto rounded-[22px] p-7 md:p-10" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-4">Do the math</div>
         <h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.035em] leading-[1.05]">What is one customer worth to you?</h2>

@@ -22,9 +22,9 @@ Every figure on `/pricing`, the homepage `#pricing` section, `/agent`, checkout 
 
 ## Page structure (`app/pricing/page.tsx`)
 1. `HowItWorks` — "One build. One monthly. That's it." (3 steps)
-2. `PricingTiers` — Monthly | Annual toggle; Trial/Solo/Agency cards; includes list; THE OFFER block (Problem / Saves TIME / Saves MONEY / Makes MONEY); CTA (trial → `/start`, paid → `AgentCheckout` with `interval`)
-3. `RoiCalculator` — customer value + close % + plan → `roiEstimate()`; inputs start empty; nothing renders until both are valid
-4. `CreditPriceList` — all `CREDIT_PRICES` grouped by capability + human overseer, free actions, guards, top-ups
+2. `PricingTiers` — homepage glass look (giant "Pricing" backdrop, Solo elevated with green glow halo, bright/dim ladder rows) + Monthly | Annual toggle (moves Solo AND Agency; Trial unaffected); Trial/Solo/Agency cards; includes list; THE OFFER block (Problem / Saves TIME / Saves MONEY / Makes MONEY); CTA (trial → `/start`, paid → `AgentCheckout` with `interval`)
+3. `RoiCalculator` — directly below the cards (conversion-critical) — customer value + close % + plan → `roiEstimate()`; inputs start empty; nothing renders until both are valid
+4. `CreditPriceList` — visible `<details>` expandable right after the calculator ("See the full per-action credit breakdown") — all `CREDIT_PRICES` grouped by capability + human overseer, free actions, guards, top-ups
 5. `VendorGrid` — "Fire six vendors. Keep one agent." vs Solo
 6. `PricingFaq` — 5 point-of-doubt questions (copy reused from Atlas's AGENT_FAQ, the §1 setup step, and Terms "export your data within 30 days")
 
