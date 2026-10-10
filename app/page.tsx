@@ -8,6 +8,9 @@ import TiersSection from "@/components/home/TiersSection";
 import FaqSection from "@/components/home/FaqSection";
 import Footer from "@/components/home/Footer";
 
+// The integrations strip reads live registry state; re-render at most every 5 minutes so a new connection shows without a deploy.
+export const revalidate = 300;
+
 // 2026-10-09 (Roman): the stats, process, Presence plans, calculator, credits
 // list, demo form and final CTA sections were removed. Platforms (AI logos)
 // and What We Analyze stay — they were never asked to go.
