@@ -78,3 +78,8 @@ test("fallbacks read the page, never guess: City, ST from footer; category from 
   assert.equal(categoryHint(null, "Limitless Roofing OKC LLC | Oklahoma City's Trusted Roofer"), "Limitless Roofing OKC LLC | Oklahoma City's Trusted Roofer");
   assert.equal(categoryHint("Acme Holdings", "Welcome"), null);
 });
+
+test("market regex on the exact text a production scan saw", () => {
+  assert.equal(marketFromHtml(`<div class="weather-kicker">Oklahoma City, OK · Right Now</div>`), "Oklahoma City, OK");
+  assert.equal(marketFromHtml(`<p>Call (405) 223-7699</p><div>Oklahoma City, OK \u00b7 Right Now \u2600\ufe0f --\u00b0F</div>`), "Oklahoma City, OK");
+});

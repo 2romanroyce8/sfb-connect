@@ -49,10 +49,13 @@ export async function checkPresence(url: string): Promise<{ finding: Finding; bu
 // Real fallbacks when the structured lookup leaves category/market empty:
 // the business name and <title> often say what it does ("Limitless Roofing OKC"),
 // and the page footer usually carries a "City, ST" address. Both are read, not guessed.
-const STATE = "A[LKZR]|C[AOT]|D[EC]|FL|GA|HI|I[DLNA]|K[SY]|LA|M[EDAINSOT]|N[EVHJMYCD]|O[HKR]|PA|RI|S[CD]|T[NX]|UT|V[TA]|W[AVIY]";
+// Literal regex on purpose (no template/string construction) so the bundler can't alter it.
+const CITY_STATE_RE = /\b([A-Z][a-zA-Z.]+(?: [A-Z][a-zA-Z.]+){0,2}),\s*(A[LKZR]|C[AOT]|D[EC]|FL|GA|HI|I[DLNA]|K[SY]|LA|M[EDAINSOT]|N[EVHJMYCD]|O[HKR]|PA|RI|S[CD]|T[NX]|UT|V[TA]|W[AVIY])\b(?:\s+\d{5})?/;
+export function htmlToText(html: string): string {
+  return html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/g, " ").replace(/\s+/g, " ");
+}
 export function marketFromHtml(html: string): string | null {
-  const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/g, " ").replace(/\s+/g, " ");
-  const m = text.match(new RegExp(`\\b([A-Z][a-zA-Z.]+(?: [A-Z][a-zA-Z.]+){0,2}),\\s*(${STATE})\\b(?:\\s+\\d{5})?`));
+  const m = htmlToText(html).match(CITY_STATE_RE);
   return m ? `${m[1]}, ${m[2]}` : null;
 }
 export function categoryHint(...texts: (string | null | undefined)[]): string | null {
