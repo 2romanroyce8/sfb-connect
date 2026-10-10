@@ -16,4 +16,11 @@ export const LOGOS: Record<string, string | null> = {
   notion: "https://pub.hyperagent.com/api/published/pbf01M4J448TD_2Z2S67V3FKVB9WT5/logo-notion.png",
   linkedin: "https://pub.hyperagent.com/api/published/pbf01M4J442ZN_6QEKDZRPFCYK8ED5/logo-linkedin.png",
   resend: "https://pub.hyperagent.com/api/published/pbf01M4KGEB7Y_DGBRN8WSDSKGENBH/logo-resend.png",
+  // Six added 2026-10-10 — Simple Icons official brand paths (v11), brand colours; TikTok rendered white for the dark site.
+  outlook: "/logos/outlook.svg",
+  google_business_profile: "/logos/google_business_profile.svg",
+  quickbooks: "/logos/quickbooks.svg",
+  hubspot: "/logos/hubspot.svg",
+  whatsapp: "/logos/whatsapp.svg",
+  tiktok: "/logos/tiktok.svg",
 };

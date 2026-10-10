@@ -25,10 +25,12 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
 
   try {
     const token = await exchangeCode(p, code);
+    // Some vendors return identity on the callback URL, not in the token (QuickBooks realmId).
+    for (const k of p.callbackMetaParams ?? []) { const v = q.get(k); if (v) token.raw[k] = v; }
     const label = await p.accountLabel(token.raw).catch(() => null);
     // Provider-specific metadata worth keeping (never secrets): GHL location, Slack team/channel, Notion workspace.
     const meta: Record<string, unknown> = {};
-    for (const k of ["locationId", "companyId", "team", "incoming_webhook", "workspace_id", "workspace_name", "bot_id", "scope"]) if (k in token.raw) meta[k] = token.raw[k];
+    for (const k of ["locationId", "companyId", "team", "incoming_webhook", "workspace_id", "workspace_name", "bot_id", "scope", "realmId", "hub_id", "open_id"]) if (k in token.raw) meta[k] = token.raw[k];
     if (meta.incoming_webhook && typeof meta.incoming_webhook === "object") { const iw = meta.incoming_webhook as Record<string, unknown>; delete iw.url; } // the Slack webhook URL is a secret
     await saveConnection(p.key, user.id, token, label, meta);
     back.searchParams.set("connected", `${p.name}${label ? ` (${label})` : ""}`);

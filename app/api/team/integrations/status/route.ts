@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { loadIntegrationRegistry } from "@/lib/integrations/registry";
 import { listConnectionSummaries } from "@/lib/integrations/connections";
+import { whatsappVerifyToken, whatsappConfigured } from "@/lib/integrations/whatsapp";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,5 +27,5 @@ export async function GET() {
         createSupabaseServiceClient().from("inbound_webhook_tokens").select("id, label, received_count, last_received_at, created_at, file_task"),
       ])
     : [{ data: [] }, { data: [] }, { data: [] }];
-  return NextResponse.json({ isOwner, registry, mine, team: all.map((c) => ({ ...c, owner_name: names[c.owner_id] ?? "—" })), zapierKeys: zk ?? [], webhookEndpoints: wh ?? [], inboundTokens: inb ?? [] });
+  return NextResponse.json({ isOwner, registry, mine, whatsapp: isOwner ? { configured: whatsappConfigured(), verifyToken: whatsappVerifyToken(), webhookUrl: "https://www.sfbconnect.com/api/team/integrations/whatsapp/callback" } : null, team: all.map((c) => ({ ...c, owner_name: names[c.owner_id] ?? "—" })), zapierKeys: zk ?? [], webhookEndpoints: wh ?? [], inboundTokens: inb ?? [] });
 }

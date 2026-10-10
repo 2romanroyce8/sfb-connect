@@ -6,6 +6,7 @@ import type { Integration } from "@/lib/integrations/registry";
 type Conn = { provider: string; owner_id: string; account_label: string | null; connected_at: string; status: "active" | "error"; last_error: string | null; owner_name?: string };
 type Status = {
   isOwner: boolean; registry: Integration[]; mine: Conn[]; team: Conn[];
+  whatsapp?: { configured: boolean; verifyToken: string | null; webhookUrl: string } | null;
   zapierKeys: { id: string; label: string; created_at: string; last_used_at: string | null }[];
   webhookEndpoints: { id: string; url: string; events: string[]; active: boolean; failure_count: number; last_delivery_at: string | null; created_at: string; description: string | null }[];
   inboundTokens: { id: string; label: string; received_count: number; last_received_at: string | null; created_at: string; file_task: boolean }[];
@@ -74,6 +75,14 @@ export default function IntegrationsManager({ only }: { only?: string | string[]
               </div>
               {i.key === "zapier" && s.isOwner && <ZapierPanel keys={s.zapierKeys} reload={load} />}
               {i.key === "webhooks" && s.isOwner && <WebhooksPanel endpoints={s.webhookEndpoints} inbound={s.inboundTokens} reload={load} onReveal={setReveal} />}
+              {i.key === "whatsapp" && s.isOwner && s.whatsapp && (
+                <div className="mt-3 rounded-[10px] p-3 text-[12px]" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="text-[#A1A1A6]">Meta app → WhatsApp → Configuration → Webhook. Callback URL and verify token (owner-only):</div>
+                  <code className="block mt-1.5 text-[#F5F5F7] break-all select-all">{s.whatsapp.webhookUrl}</code>
+                  {s.whatsapp.verifyToken ? <code className="block mt-1 text-[#F5F5F7] break-all select-all">{s.whatsapp.verifyToken}</code> : <div className="mt-1 text-[#FFD60A]">Verify token appears once WHATSAPP_ACCESS_TOKEN is set in Vercel.</div>}
+                  <div className="mt-1.5 text-[#6E6E73]">Subscribe to the <span className="font-mono">messages</span> field. Meta&apos;s verification handshake is what flips this to Live. Needs a dedicated business number, not a personal one.</div>
+                </div>
+              )}
             </li>
           );
         })}

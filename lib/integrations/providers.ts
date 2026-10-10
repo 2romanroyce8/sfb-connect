@@ -6,7 +6,7 @@
  * exactly that URL in the vendor's app settings.
  */
 export type EnvLike = Record<string, string | undefined>;
-export type OAuthProviderKey = "gohighlevel" | "gmail" | "meta" | "slack" | "notion" | "linkedin";
+export type OAuthProviderKey = "gohighlevel" | "gmail" | "meta" | "slack" | "notion" | "linkedin" | "google_business_profile" | "outlook" | "hubspot" | "quickbooks" | "tiktok";
 
 export type OAuthProvider = {
   key: OAuthProviderKey;
@@ -24,6 +24,12 @@ export type OAuthProvider = {
   tokenMethod?: "POST" | "GET";
   /** Extra fields for the token request body. */
   tokenParams?: Record<string, string>;
+  /** Body encoding when tokenAuth is "basic": Notion wants JSON, Intuit wants a form. Default json. */
+  basicBodyFormat?: "json" | "form";
+  /** Vendors that don't call it client_id (TikTok: client_key). Applies to authorize + token requests. */
+  clientIdParam?: string;
+  /** Query params on the callback URL worth keeping as connection metadata (QuickBooks realmId). Never secrets. */
+  callbackMetaParams?: string[];
   /** Pull a human label (email / workspace / location) after exchange. */
   accountLabel: (token: Record<string, unknown>) => Promise<string | null>;
   /** Vendor console where the app is created (for the runbook / team page). */
@@ -109,16 +115,73 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderKey, OAuthProvider> = {
     accountLabel: async (t) => { const u = await bearerJson("https://api.linkedin.com/v2/userinfo", String(t.access_token)); return (u?.email as string) ?? (u?.name as string) ?? null; },
     consoleUrl: "https://www.linkedin.com/developers/apps",
   },
+  // Spec'd 2026-10-10 (Roman). Redirect URIs follow the canonical pattern — never invented; register exactly those with each vendor.
+    google_business_profile: {
+    key: "google_business_profile", name: "Google Business Profile",
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: "https://oauth2.googleapis.com/token",
+    scopes: ["https://www.googleapis.com/auth/business.manage", "https://www.googleapis.com/auth/userinfo.email"],
+    env: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" }, // same Google Cloud project as Calendar/Gmail
+    authParams: { access_type: "offline", prompt: "consent", include_granted_scopes: "true" },
+    tokenAuth: "body",
+    accountLabel: async (t) => { const u = await bearerJson("https://www.googleapis.com/oauth2/v2/userinfo", String(t.access_token)); return (u?.email as string) ?? null; },
+    consoleUrl: "https://console.cloud.google.com/apis/credentials",
+  },
+    outlook: {
+    key: "outlook", name: "Microsoft Outlook / 365",
+    authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    scopes: ["offline_access", "User.Read", "Calendars.ReadWrite", "Mail.Send"],
+    env: { clientId: "MICROSOFT_CLIENT_ID", clientSecret: "MICROSOFT_CLIENT_SECRET" },
+    authParams: { response_mode: "query", prompt: "select_account" },
+    tokenAuth: "body",
+    accountLabel: async (t) => { const u = await bearerJson("https://graph.microsoft.com/v1.0/me", String(t.access_token)); return (u?.mail as string) ?? (u?.userPrincipalName as string) ?? null; },
+    consoleUrl: "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
+  },
+    hubspot: {
+    key: "hubspot", name: "HubSpot",
+    authorizeUrl: "https://app.hubspot.com/oauth/authorize",
+    tokenUrl: "https://api.hubapi.com/oauth/v1/token",
+    scopes: ["crm.objects.contacts.read", "crm.objects.contacts.write"],
+    env: { clientId: "HUBSPOT_CLIENT_ID", clientSecret: "HUBSPOT_CLIENT_SECRET" },
+    tokenAuth: "body",
+    accountLabel: async (t) => { const r = await fetch(`https://api.hubapi.com/oauth/v1/access-tokens/${encodeURIComponent(String(t.access_token))}`); const j = r.ok ? ((await r.json()) as Record<string, unknown>) : null; return (j?.hub_domain as string) ?? null; },
+    consoleUrl: "https://developers.hubspot.com/",
+  },
+    quickbooks: {
+    key: "quickbooks", name: "QuickBooks",
+    authorizeUrl: "https://appcenter.intuit.com/connect/oauth2",
+    tokenUrl: "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
+    scopes: ["com.intuit.quickbooks.accounting"],
+    env: { clientId: "QUICKBOOKS_CLIENT_ID", clientSecret: "QUICKBOOKS_CLIENT_SECRET" },
+    tokenAuth: "basic", basicBodyFormat: "form",
+    callbackMetaParams: ["realmId"],
+    accountLabel: async (t) => (typeof t.realmId === "string" ? `Company ${t.realmId}` : null),
+    consoleUrl: "https://developer.intuit.com/app/developer/myapps",
+  },
+    tiktok: {
+    key: "tiktok", name: "TikTok",
+    authorizeUrl: "https://www.tiktok.com/v2/auth/authorize/",
+    tokenUrl: "https://open.tiktokapis.com/v2/oauth/token/",
+    scopes: ["user.info.basic"], // minimum viable; video.publish etc. need TikTok app review
+    scopeSeparator: ",",
+    env: { clientId: "TIKTOK_CLIENT_KEY", clientSecret: "TIKTOK_CLIENT_SECRET" },
+    clientIdParam: "client_key",
+    tokenAuth: "body",
+    accountLabel: async (t) => { const u = await bearerJson("https://open.tiktokapis.com/v2/user/info/?fields=display_name", String(t.access_token)); const d = (u?.data as { user?: { display_name?: string } } | undefined)?.user; return d?.display_name ?? null; },
+    consoleUrl: "https://developers.tiktok.com/apps",
+  },
 };
 
 export const isOAuthProviderKey = (k: string): k is OAuthProviderKey => k in OAUTH_PROVIDERS;
+
 /** Env values are trimmed everywhere: a pasted trailing space/newline in Vercel is the #1 cause of "client authentication failed". */
 const cred = (env: EnvLike, name: string) => (env[name] ?? "").trim();
 export const oauthConfigured = (p: OAuthProvider, env: EnvLike = process.env) => !!cred(env, p.env.clientId) && !!cred(env, p.env.clientSecret);
 
 export function buildAuthorizeUrl(p: OAuthProvider, state: string, env: EnvLike = process.env): string {
   const u = new URL(p.authorizeUrl);
-  u.searchParams.set("client_id", cred(env, p.env.clientId));
+  u.searchParams.set(p.clientIdParam ?? "client_id", cred(env, p.env.clientId));
   u.searchParams.set("redirect_uri", redirectUriFor(p.key, env));
   u.searchParams.set("response_type", "code");
   u.searchParams.set("state", state);
@@ -134,12 +197,12 @@ export async function exchangeCode(p: OAuthProvider, code: string, env: EnvLike 
   const params: Record<string, string> = { grant_type: "authorization_code", code, redirect_uri: redirectUriFor(p.key, env), ...(p.tokenParams ?? {}) };
   const headers: Record<string, string> = { Accept: "application/json" };
   if (p.tokenAuth === "basic") headers.Authorization = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`;
-  else { params.client_id = clientId; params.client_secret = clientSecret; }
+  else { params[p.clientIdParam ?? "client_id"] = clientId; params.client_secret = clientSecret; }
   let res: Response;
   if (p.tokenMethod === "GET") {
     const u = new URL(p.tokenUrl); for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
     res = await f(u.toString(), { headers });
-  } else if (p.tokenAuth === "basic") {
+  } else if (p.tokenAuth === "basic" && (p.basicBodyFormat ?? "json") === "json") {
     res = await f(p.tokenUrl, { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(params) });
   } else {
     res = await f(p.tokenUrl, { method: "POST", headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(params) });
@@ -161,7 +224,7 @@ export async function refreshToken(p: OAuthProvider, refresh: string, env: EnvLi
   const params: Record<string, string> = { grant_type: "refresh_token", refresh_token: refresh, ...(p.tokenParams ?? {}) };
   const headers: Record<string, string> = { Accept: "application/json" };
   if (p.tokenAuth === "basic") headers.Authorization = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`;
-  else { params.client_id = clientId; params.client_secret = clientSecret; }
+  else { params[p.clientIdParam ?? "client_id"] = clientId; params.client_secret = clientSecret; }
   const res = await f(p.tokenUrl, { method: "POST", headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(params) });
   const raw = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok || !raw.access_token) throw new Error((raw.error_description as string) || (raw.error as string) || `${p.name} token refresh failed (${res.status}).`);

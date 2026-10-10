@@ -23,9 +23,10 @@ import type { EnvLike } from "./providers";
 import { OAUTH_PROVIDERS, oauthConfigured, type OAuthProviderKey } from "./providers";
 import { verifiedProviders } from "./connections";
 import { LOGOS } from "./logos";
+import { whatsappConfigured } from "./whatsapp";
 
 export type IntegrationStatus = "live" | "needs_setup" | "planned";
-export type IntegrationCategory = "calendar" | "email" | "crm" | "automation" | "ads" | "payments" | "messaging" | "docs" | "social";
+export type IntegrationCategory = "calendar" | "email" | "crm" | "automation" | "ads" | "payments" | "messaging" | "docs" | "social" | "accounting" | "listings";
 export type ConnectKind = "oauth" | "google_calendar" | "zapier_key" | "webhooks" | "env" | "system";
 
 export type Integration = {
@@ -45,16 +46,17 @@ export type Integration = {
 
 export type RegistryContext = { env?: EnvLike; verified?: Set<string> };
 
-const oauthEntry = (key: OAuthProviderKey, category: IntegrationCategory, description: string, ctx: RegistryContext): Integration => {
+const oauthEntry = (key: OAuthProviderKey, category: IntegrationCategory, description: string, ctx: RegistryContext, note?: string): Integration => {
   const p = OAUTH_PROVIDERS[key];
   const env = ctx.env ?? process.env;
   const configured = oauthConfigured(p, env);
   const verified = ctx.verified?.has(key) ?? false;
   const status: IntegrationStatus = configured && verified ? "live" : "needs_setup";
+  const base = status === "live" ? undefined : !configured ? `Register the ${p.name} app at ${p.consoleUrl} and add ${p.env.clientId} + ${p.env.clientSecret} to Vercel (redirect URI: /api/team/integrations/${key}/callback).` : `Credentials are in. Goes live on the first successful connection by anyone — you, a teammate (SYSTEM › Integrations), or a client (their dashboard › Integrations).`;
   return {
     key, name: p.name, category, description, logo: LOGOS[key] ?? null, status, connectKind: "oauth",
     envVars: [p.env.clientId, p.env.clientSecret], consoleUrl: p.consoleUrl,
-    blocker: status === "live" ? undefined : !configured ? `Register the ${p.name} app at ${p.consoleUrl} and add ${p.env.clientId} + ${p.env.clientSecret} to Vercel (redirect URI: /api/team/integrations/${key}/callback).` : `Credentials are in. Goes live on the first successful connection by anyone — you, a teammate (SYSTEM › Integrations), or a client (their dashboard › Integrations).`,
+    blocker: base ? (note ? `${base} ${note}` : base) : undefined,
   };
 };
 
@@ -78,6 +80,13 @@ export function integrationRegistry(ctx: RegistryContext = {}): Integration[] {
     oauthEntry("slack", "messaging", "Approvals and reports posted to a Slack channel.", ctx),
     oauthEntry("notion", "docs", "SOPs and playbooks published to a Notion workspace.", ctx),
     oauthEntry("linkedin", "social", "Post approved content from the owner's LinkedIn profile.", ctx),
+    // Six added 2026-10-10 (Roman). Build order: GBP → Outlook → HubSpot → QuickBooks → WhatsApp → TikTok.
+    oauthEntry("google_business_profile", "listings", "Keeps the Google Business Profile accurate and answers reviews from the owner's listing.", ctx, "Note: Google's Business Profile API needs per-location business verification before it returns data."),
+    oauthEntry("outlook", "email", "Sends approved outreach from the owner's Outlook / Microsoft 365 mailbox and books on their calendar.", ctx),
+    oauthEntry("hubspot", "crm", "Contacts, pipelines and follow-up in the owner's HubSpot CRM.", ctx),
+    oauthEntry("quickbooks", "accounting", "Reads invoices and customers from QuickBooks so the agent knows who paid and who owes.", ctx),
+    { key: "whatsapp", name: "WhatsApp Business", category: "messaging", description: "Answers and books over WhatsApp from the business's own number.", logo: LOGOS.whatsapp, status: whatsappConfigured(env) && verified.has("whatsapp") ? "live" : "needs_setup", connectKind: "env", envVars: ["WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_ACCESS_TOKEN"], consoleUrl: "https://developers.facebook.com/apps/", blocker: whatsappConfigured(env) && verified.has("whatsapp") ? undefined : !whatsappConfigured(env) ? "Add the WhatsApp product to the Meta app, then WHATSAPP_PHONE_NUMBER_ID + WHATSAPP_ACCESS_TOKEN in Vercel. Needs a dedicated business number, not a personal one." : "Credentials are in. Goes live once Meta verifies the webhook at /api/team/integrations/whatsapp/callback (paste the verify token from the card into the Meta app)." },
+    oauthEntry("tiktok", "social", "Posts approved short-form content to the business's TikTok.", ctx, "Note: TikTok requires app review for most scopes — start the review early."),
   ];
 }
 

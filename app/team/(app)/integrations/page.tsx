@@ -57,7 +57,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
     }));
   }
 
-  const GRID_KEYS = ["gmail", "google_calendar", "linkedin", "slack", "stripe", "gohighlevel", "meta", "notion", "resend", "webhooks", "zapier"];
+  const GRID_KEYS = ["gmail", "google_calendar", "linkedin", "slack", "stripe", "gohighlevel", "meta", "notion", "resend", "webhooks", "zapier", "google_business_profile", "outlook", "hubspot", "quickbooks", "whatsapp", "tiktok"];
   const [registry, mine] = await Promise.all([loadIntegrationRegistry(), listConnectionSummaries(user!.id)]);
   const cards: GridCard[] = registry.filter((i) => GRID_KEYS.includes(i.key)).map((i) => {
     const conn = i.key === "google_calendar" ? (myConnection ? { account_label: myConnection.email } : null) : (mine.find((m) => m.provider === i.key) ?? null);

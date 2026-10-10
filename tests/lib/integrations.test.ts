@@ -71,3 +71,40 @@ test("client credentials are trimmed (pasted whitespace in Vercel must not break
   await exchangeCode(OAUTH_PROVIDERS.linkedin, "c", env, f);
   assert.match(body, /client_secret=sec(&|$)/); assert.match(body, /client_id=abc(&|$)/);
 });
+
+import { redirectUriFor as rfor } from "../../lib/integrations/providers";
+test("new providers: exact redirect URIs; TikTok uses client_key; QuickBooks posts a form with Basic auth", async () => {
+  for (const k of ["outlook", "google_business_profile", "quickbooks", "hubspot", "tiktok"]) assert.equal(rfor(k, {}), `https://www.sfbconnect.com/api/team/integrations/${k}/callback`);
+  const env = { TIKTOK_CLIENT_KEY: "tk", TIKTOK_CLIENT_SECRET: "ts", QUICKBOOKS_CLIENT_ID: "qid", QUICKBOOKS_CLIENT_SECRET: "qs", MICROSOFT_CLIENT_ID: "mid", MICROSOFT_CLIENT_SECRET: "ms" };
+  const tt = new URL(buildAuthorizeUrl(OAUTH_PROVIDERS.tiktok, "st", env));
+  assert.equal(tt.searchParams.get("client_key"), "tk"); assert.equal(tt.searchParams.has("client_id"), false); assert.equal(tt.searchParams.get("scope"), "user.info.basic");
+  const ms = new URL(buildAuthorizeUrl(OAUTH_PROVIDERS.outlook, "st", env));
+  assert.equal(ms.origin + ms.pathname, "https://login.microsoftonline.com/common/oauth2/v2.0/authorize");
+  assert.match(ms.searchParams.get("scope")!, /offline_access .*Calendars\.ReadWrite .*Mail\.Send/);
+  const seen: { url: string; init: RequestInit }[] = [];
+  const f = (async (url: string, init: RequestInit) => { seen.push({ url, init }); return new Response(JSON.stringify({ access_token: "a", refresh_token: "r", expires_in: 3600 }), { status: 200, headers: { "content-type": "application/json" } }); }) as unknown as typeof fetch;
+  await exchangeCode(OAUTH_PROVIDERS.quickbooks, "c", env, f);
+  const h = seen[0].init.headers as Record<string, string>;
+  assert.equal(h.Authorization, `Basic ${Buffer.from("qid:qs").toString("base64")}`);
+  assert.equal(h["Content-Type"], "application/x-www-form-urlencoded");
+  assert.match(String(seen[0].init.body), /grant_type=authorization_code/); assert.ok(!String(seen[0].init.body).includes("client_secret"));
+  await exchangeCode(OAUTH_PROVIDERS.tiktok, "c", env, f);
+  assert.match(String(seen[1].init.body), /client_key=tk/); assert.ok(!String(seen[1].init.body).includes("client_id="));
+});
+
+import { handleVerification, whatsappVerifyToken, verifyMetaSignature } from "../../lib/integrations/whatsapp";
+import crypto from "node:crypto";
+test("WhatsApp: verify token derived or explicit; handshake echoes challenge only on a match; signature check", () => {
+  const env = { WHATSAPP_PHONE_NUMBER_ID: "1", WHATSAPP_ACCESS_TOKEN: "tok" };
+  const tok = whatsappVerifyToken(env)!;
+  assert.match(tok, /^sfbwa_[a-f0-9]{32}$/);
+  assert.equal(whatsappVerifyToken({ ...env, WHATSAPP_VERIFY_TOKEN: "mine" }), "mine");
+  assert.equal(whatsappVerifyToken({}), null);
+  assert.deepEqual(handleVerification(new URLSearchParams({ "hub.mode": "subscribe", "hub.verify_token": tok, "hub.challenge": "123" }), env), { ok: true, challenge: "123" });
+  assert.equal(handleVerification(new URLSearchParams({ "hub.mode": "subscribe", "hub.verify_token": "wrong", "hub.challenge": "123" }), env).ok, false);
+  assert.equal(handleVerification(new URLSearchParams({ "hub.mode": "subscribe", "hub.verify_token": tok, "hub.challenge": "1" }), {}).ok, false);
+  const body = '{"entry":[]}'; const mac = crypto.createHmac("sha256", "appsecret").update(body).digest("hex");
+  assert.equal(verifyMetaSignature(body, `sha256=${mac}`, { META_APP_SECRET: "appsecret" }), true);
+  assert.equal(verifyMetaSignature(body, "sha256=00", { META_APP_SECRET: "appsecret" }), false);
+  assert.equal(verifyMetaSignature(body, null, {}), null);
+});
