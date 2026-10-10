@@ -159,6 +159,24 @@ body {
   color: rgba(255, 255, 255, 0.72);
 }
 
+/* Five-card scope: a little taller so the agent action line fits (same width/glow). */
+.neon-card--tall {
+  width: 196px;
+  height: 232px;
+}
+.neon-card--tall .neon-card__description {
+  max-width: 160px;
+}
+.neon-card__action {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10.5px;
+  line-height: 1.35;
+  font-weight: 500;
+  max-width: 160px;
+}
+
 .neon-card::before {
   content: "";
   position: absolute;

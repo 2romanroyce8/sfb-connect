@@ -83,3 +83,11 @@ test("market regex on the exact text a production scan saw", () => {
   assert.equal(marketFromHtml(`<div class="weather-kicker">Oklahoma City, OK · Right Now</div>`), "Oklahoma City, OK");
   assert.equal(marketFromHtml(`<p>Call (405) 223-7699</p><div>Oklahoma City, OK \u00b7 Right Now \u2600\ufe0f --\u00b0F</div>`), "Oklahoma City, OK");
 });
+
+import { SCOPE, scopeAction } from "../../lib/analyzer/scope";
+test("scope cards: five dimensions; action lines follow the registry", () => {
+  assert.deepEqual(SCOPE.map((s) => s.title), ["AI Presence", "Outbound", "Reviews", "Website", "Chat"]);
+  assert.deepEqual(scopeAction("presence", DEFAULT_MODULES), { live: true, line: "Your agent fixes every error it finds." });
+  const r = scopeAction("reviews", DEFAULT_MODULES);
+  assert.equal(r.live, false); assert.match(r.line, /when Reviews & Reputation ships — you're first in line/);
+});
