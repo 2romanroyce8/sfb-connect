@@ -147,7 +147,12 @@ export async function exchangeCode(p: OAuthProvider, code: string, env: EnvLike 
   const raw = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   // Slack nests the bot token; everyone else is flat.
   const access = (raw.access_token as string) ?? ((raw as { authed_user?: { access_token?: string } }).authed_user?.access_token);
-  if (!res.ok || !access || raw.ok === false) throw new Error((raw.error_description as string) || (raw.error as string) || (raw.message as string) || `${p.name} token exchange failed (${res.status}).`);
+  if (!res.ok || !access || raw.ok === false) {
+    const msg = (raw.error_description as string) || (raw.error as string) || (raw.message as string) || `${p.name} token exchange failed (${res.status}).`;
+    // Diagnostic that never reveals the secret: which client id was used and how long the secret we sent is.
+    const diag = ` [${p.name} answered ${res.status}${raw.error ? ` ${raw.error}` : ""}; client_id ${clientId.slice(0, 6)}…${clientId.slice(-3)} (${clientId.length} chars), secret ${clientSecret.length} chars, redirect ${redirectUriFor(p.key, env)}]`;
+    throw new Error(msg + diag);
+  }
   return { access_token: access, refresh_token: raw.refresh_token as string | undefined, expires_in: typeof raw.expires_in === "number" ? raw.expires_in : undefined, scope: raw.scope as string | undefined, raw };
 }
 
