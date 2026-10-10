@@ -46,6 +46,20 @@ export async function checkPresence(url: string): Promise<{ finding: Finding; bu
   };
 }
 
+// Real fallbacks when the structured lookup leaves category/market empty:
+// the business name and <title> often say what it does ("Limitless Roofing OKC"),
+// and the page footer usually carries a "City, ST" address. Both are read, not guessed.
+const STATE = "A[LKZR]|C[AOT]|D[EC]|FL|GA|HI|I[DLNA]|K[SY]|LA|M[EDAINSOT]|N[EVHJMYCD]|O[HKR]|PA|RI|S[CD]|T[NX]|UT|V[TA]|W[AVIY]";
+export function marketFromHtml(html: string): string | null {
+  const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/g, " ").replace(/\s+/g, " ");
+  const m = text.match(new RegExp(`\\b([A-Z][a-zA-Z.]+(?: [A-Z][a-zA-Z.]+){0,2}),\\s*(${STATE})\\b(?:\\s+\\d{5})?`));
+  return m ? `${m[1]}, ${m[2]}` : null;
+}
+export function categoryHint(...texts: (string | null | undefined)[]): string | null {
+  for (const t of texts) if (t && icpFor(t)) return t;
+  return null;
+}
+
 // ---------- 2. Outbound: first-pass prospect count in their market (Exa, real results, distinct domains) ----------
 export async function checkOutbound(category: string | null, market: string | null): Promise<Finding> {
   const icp = icpFor(category);

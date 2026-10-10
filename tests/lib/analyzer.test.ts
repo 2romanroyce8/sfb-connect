@@ -70,3 +70,11 @@ test("ICP presets: known category → preset; unknown → null (no invented ICP)
   assert.equal(icpFor("Quantum Widget Foundry"), null);
   assert.equal(icpFor(null), null);
 });
+
+import { marketFromHtml, categoryHint } from "../../lib/analyzer/checks";
+test("fallbacks read the page, never guess: City, ST from footer; category from name/title", () => {
+  assert.equal(marketFromHtml(`<footer><p>123 Main St, Oklahoma City, OK 73102</p></footer>`), "Oklahoma City, OK");
+  assert.equal(marketFromHtml(`<p>Serving the whole state since 1990</p>`), null);
+  assert.equal(categoryHint(null, "Limitless Roofing OKC LLC | Oklahoma City's Trusted Roofer"), "Limitless Roofing OKC LLC | Oklahoma City's Trusted Roofer");
+  assert.equal(categoryHint("Acme Holdings", "Welcome"), null);
+});

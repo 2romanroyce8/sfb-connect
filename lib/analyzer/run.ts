@@ -2,7 +2,8 @@
 // name/category/market) → the other four checks in parallel → stream each
 // finding as it lands → cache the whole scan by domain for 24h.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { checkChat, checkOutbound, checkPresence, checkReviews, checkWebsite, fetchSite } from "./checks";
+import { categoryHint, checkChat, checkOutbound, checkPresence, checkReviews, checkWebsite, fetchSite, marketFromHtml } from "./checks";
+import { extractTitle } from "@/lib/research/htmlExtract";
 import type { Finding, ScanEvent, ScanMeta, StoredScan } from "./types";
 
 export const CACHE_HOURS = 24;
@@ -40,14 +41,16 @@ export async function runScan(input: { url: string; domain: string }, emit: (e: 
   const presenceP = checkPresence(input.url);
 
   const siteChecks = siteP.then((site) => { push(checkWebsite(site)); push(checkChat(site)); return site; });
-  const presence = await presenceP;
-  const meta: ScanMeta = { domain: input.domain, url: input.url, businessName: presence.businessName, category: presence.category, market: presence.market, cached: false, startedAt };
+  const [presence, site] = await Promise.all([presenceP, siteChecks]);
+  // Structured data first; the page itself as a real fallback (name/title for category, "City, ST" for market).
+  const category = presence.category ?? categoryHint(presence.businessName, site.ok ? extractTitle(site.html) : null, input.domain.replace(/[-.]/g, " "));
+  const market = presence.market ?? (site.ok ? marketFromHtml(site.html) : null);
+  const meta: ScanMeta = { domain: input.domain, url: input.url, businessName: presence.businessName, category, market, cached: false, startedAt };
   emit({ type: "meta", meta });
   push(presence.finding);
   await Promise.all([
-    siteChecks,
-    checkOutbound(presence.category, presence.market).then(push),
-    checkReviews(presence.businessName, presence.market, presence.category).then(push),
+    checkOutbound(category, market).then(push),
+    checkReviews(presence.businessName, market, category).then(push),
   ]);
   emit({ type: "done", durationMs: Date.now() - t0 });
   return { meta, findings };
