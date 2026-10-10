@@ -15,6 +15,7 @@ const VALID_EVENTS = [
   "trial_signup_complete",
   "capability_card_click",
   "faq_question_asked",
+  "integration_tile_click",
   "pricing_card_click",
   "topup_click",
   "demo_video_play",

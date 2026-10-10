@@ -1,5 +1,7 @@
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import IntegrationControlDeck from "@/components/team/IntegrationControlDeck";
+import IntegrationRegistryList from "@/components/team/IntegrationRegistryList";
+import { integrationRegistry } from "@/lib/integrations/registry";
 
 // Every value fed into IntegrationControlDeck below is real: Google
 // Calendar's connection/refresh state comes straight from
@@ -99,6 +101,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
           },
         ]}
       />
+      <IntegrationRegistryList items={integrationRegistry()} />
     </div>
   );
 }

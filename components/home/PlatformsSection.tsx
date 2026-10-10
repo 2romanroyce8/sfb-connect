@@ -1,5 +1,6 @@
 import Reveal from "@/components/ui/Reveal";
 import { Search, Bot } from "lucide-react";
+import IntegrationsStrip from "@/components/home/IntegrationsStrip";
 
 const PLATFORMS: { name: string; logo?: string }[] = [
   { name: "ChatGPT", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETQF1_GKWEVZM81T4F7F3S/logo-chatgpt.png" },
@@ -54,6 +55,7 @@ export default function PlatformsSection() {
             ))}
           </div>
         </Reveal>
+        <IntegrationsStrip />
       </div>
     </section>
   );
