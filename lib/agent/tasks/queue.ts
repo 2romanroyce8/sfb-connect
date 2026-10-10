@@ -1,3 +1,4 @@
+import { emitIntegrationEvent } from "@/lib/integrations/events";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -43,6 +44,7 @@ export async function createTask(by: AgentHandle, input: { title: string; owner_
   const reviewer = requires_review ? (input.reviewer_agent && input.reviewer_agent !== input.owner_agent ? input.reviewer_agent : input.owner_agent === "atlas" ? "hyperagent" : "atlas") : null;
   const { data, error } = await db().from("agent_tasks").insert({ title, owner_agent: input.owner_agent, context: input.context?.slice(0, 20000) ?? null, priority: input.priority ?? "normal", due: input.due ?? null, requires_review, reviewer_agent: reviewer, created_by: by }).select(COLS).single();
   if (error || !data) throw new TaskError(500, "create_failed", error?.message ?? "Could not create task.");
+  emitIntegrationEvent("task.created", { task_id: (data as AgentTask).id, title: (data as AgentTask).title, owner_agent: (data as AgentTask).owner_agent, priority: (data as AgentTask).priority, created_by: by });
   return data as AgentTask;
 }
 
@@ -96,6 +98,7 @@ export async function postResult(by: AgentHandle, id: string, input: { result: s
   const status: TaskStatus = input.blocked ? "blocked" : t.requires_review ? "in_review" : "done";
   const { data, error } = await db().from("agent_tasks").update({ status, result: result.slice(0, 20000), evidence_links: links, result_posted_at: new Date().toISOString(), claimed_by: t.claimed_by ?? by }).eq("id", id).select(COLS).single();
   if (error || !data) throw new TaskError(500, "post_failed", error?.message ?? "Could not post result.");
+  emitIntegrationEvent("task.result_posted", { task_id: id, status: (data as AgentTask).status, posted_by: by });
   return data as AgentTask;
 }
 
@@ -108,6 +111,7 @@ export async function reviewTask(by: AgentHandle, id: string, verdict: "approved
   const status: TaskStatus = verdict === "approved" ? "done" : verdict === "rejected" ? "rejected" : "in_progress";
   const { data, error } = await db().from("agent_tasks").update({ status, review_verdict: verdict, review_note: note?.slice(0, 5000) ?? null, reviewed_by: by, reviewed_at: new Date().toISOString() }).eq("id", id).select(COLS).single();
   if (error || !data) throw new TaskError(error?.code === "42501" ? 403 : 500, "review_failed", error?.message ?? "Could not review.");
+  emitIntegrationEvent("task.reviewed", { task_id: id, verdict, reviewed_by: by });
   return data as AgentTask;
 }
 

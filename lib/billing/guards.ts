@@ -1,3 +1,4 @@
+import { emitIntegrationEvent } from "@/lib/integrations/events";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { appendCreditTransaction, getCreditBalance } from "./credits";
 import { creditPrice, WARN_AT, CRITICAL_AT, type CapabilityKey } from "@/lib/agentProgram/config";
@@ -35,6 +36,7 @@ export async function chargeAction(service: SupabaseClient, input: { businessId:
   }
   const row = await appendCreditTransaction(service, { businessId: input.businessId, type: "USAGE", amount: -cost, source: "agent_action", description: input.description ?? `${price.label}${input.outcome === "failed" ? " — failed (0 credits)" : ""}`, idempotencyKey: input.idempotencyKey, actorId: input.actorId ?? null } as Parameters<typeof appendCreditTransaction>[1]);
   await service.from("credit_transactions").update({ capability_key: price.capability === "human" ? null : (price.capability as CapabilityKey), action_key: price.key }).eq("idempotency_key", input.idempotencyKey);
+  emitIntegrationEvent("credits.charged", { business_id: input.businessId, action_key: input.actionKey, credits: cost, outcome: input.outcome, balance_after: (row as { balance_after?: number }).balance_after ?? null });
   return row;
 }
 

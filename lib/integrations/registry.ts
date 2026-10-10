@@ -1,65 +1,90 @@
 /**
  * Integrations registry — the ONE list of what the SFB Agent plugs into.
  *
- * Consumers: the homepage "Plugs into your stack" strip, the #agent section
- * row, the team Integrations page, and anything else that talks about
- * integrations. Marketing surfaces render ONLY `live` entries, so nothing can
- * be advertised before it exists. "live" means a real connect flow exists in
- * the product and works right now; `needs_setup` means code exists but a
- * prerequisite (keys, OAuth app) is missing; `planned` means not built.
+ * Consumers: the homepage "Plugs into your stack" strip, the #agent row, the
+ * team Integrations page. Marketing surfaces render ONLY `live` entries.
  *
- * Status is computed, not typed in: Stripe flips to live by itself when the
- * keys land in the environment (isStripeConfigured), nothing else to touch.
+ * Status is computed, never typed in:
+ *  - live:        the connect flow exists AND is proven — either self-tested
+ *                 by engineering (webhooks, zapier) or verified by at least one
+ *                 successful real connection (integration_provider_verifications).
+ *  - needs_setup: code is deployed but a prerequisite is missing (vendor app
+ *                 credentials in Vercel, or no verified connection yet).
+ *  - planned:     not built.
+ * `integrationRegistry(ctx)` is pure (testable); `loadIntegrationRegistry()`
+ * reads the verification table and the environment.
  */
 import { isStripeConfigured } from "@/lib/billing/stripe";
+import type { EnvLike } from "./providers";
+import { OAUTH_PROVIDERS, oauthConfigured, type OAuthProviderKey } from "./providers";
+import { verifiedProviders } from "./connections";
+import { LOGOS } from "./logos";
 
 export type IntegrationStatus = "live" | "needs_setup" | "planned";
-export type IntegrationCategory = "calendar" | "email" | "crm" | "automation" | "ads" | "payments" | "messaging" | "docs";
+export type IntegrationCategory = "calendar" | "email" | "crm" | "automation" | "ads" | "payments" | "messaging" | "docs" | "social";
+export type ConnectKind = "oauth" | "google_calendar" | "apple_caldav" | "zapier_key" | "webhooks" | "env";
 
 export type Integration = {
   key: string;
   name: string;
   category: IntegrationCategory;
-  /** What the agent does with it, in one line. */
   description: string;
   logo: string | null;
-  /** Where in the product it connects (for the team page). */
-  connectsAt?: string;
   status: IntegrationStatus;
-  /** Why it is not live yet (shown only on the team page). */
+  connectKind: ConnectKind;
+  /** Why it is not live yet (team page only). */
   blocker?: string;
+  /** Env var names the owner must set (team page / runbook). */
+  envVars?: string[];
+  consoleUrl?: string;
 };
 
-const stripeLive = () => isStripeConfigured();
+export type RegistryContext = { env?: EnvLike; verified?: Set<string> };
 
-export function integrationRegistry(): Integration[] {
+const oauthEntry = (key: OAuthProviderKey, category: IntegrationCategory, description: string, ctx: RegistryContext): Integration => {
+  const p = OAUTH_PROVIDERS[key];
+  const env = ctx.env ?? process.env;
+  const configured = oauthConfigured(p, env);
+  const verified = ctx.verified?.has(key) ?? false;
+  const status: IntegrationStatus = configured && verified ? "live" : "needs_setup";
+  return {
+    key, name: p.name, category, description, logo: LOGOS[key] ?? null, status, connectKind: "oauth",
+    envVars: [p.env.clientId, p.env.clientSecret], consoleUrl: p.consoleUrl,
+    blocker: status === "live" ? undefined : !configured ? `Register the ${p.name} app at ${p.consoleUrl} and add ${p.env.clientId} + ${p.env.clientSecret} to Vercel (redirect URI: /api/team/integrations/${key}/callback).` : `Connect ${p.name} once in SYSTEM › Integrations to verify the flow; it goes live automatically.`,
+  };
+};
+
+export function integrationRegistry(ctx: RegistryContext = {}): Integration[] {
+  const env = ctx.env ?? process.env;
+  const verified = ctx.verified ?? new Set<string>();
+  const stripeLive = ctx.env ? !!env.STRIPE_SECRET_KEY : isStripeConfigured();
+  const appleVerified = verified.has("apple_calendar");
   return [
-    {
-      key: "google_calendar", name: "Google Calendar", category: "calendar",
-      description: "Books meetings on the rep's or owner's calendar and shows availability.",
-      logo: "https://pub.hyperagent.com/api/published/pbf01M4HZ3HDR_PYQGRHH5WSG6P9A3/logo-google-calendar.png",
-      connectsAt: "/team/integrations", status: "live",
-    },
-    {
-      key: "stripe", name: "Stripe", category: "payments",
-      description: "Checkout for Solo/Agency plans and credit top-ups; the ledger credits on webhook.",
-      logo: "https://pub.hyperagent.com/api/published/pbf01M4HZ3HNZ_NXYGP0C5QEDXBWYY/logo-stripe.png",
-      connectsAt: "Vercel env (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET)",
-      status: stripeLive() ? "live" : "needs_setup",
-      blocker: stripeLive() ? undefined : "STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET not set in Vercel.",
-    },
-    { key: "apple_calendar", name: "Apple Calendar", category: "calendar", description: "ICS download per meeting works today; no account-level connection yet.", logo: null, status: "needs_setup", blocker: "No account-level connect flow; ICS export only." },
-    { key: "gohighlevel", name: "GoHighLevel", category: "crm", description: "Push leads, pipelines and automations into GHL.", logo: null, status: "planned", blocker: "Not built." },
-    { key: "zapier", name: "Zapier", category: "automation", description: "Trigger zaps from agent actions.", logo: null, status: "planned", blocker: "Not built." },
-    { key: "webhooks", name: "Webhooks", category: "automation", description: "Outbound webhooks on agent events.", logo: null, status: "planned", blocker: "Not built (inbound Stripe webhook only)." },
-    { key: "gmail", name: "Gmail", category: "email", description: "Send approved outreach from the owner's mailbox.", logo: null, status: "planned", blocker: "Not built; transactional email runs on Resend." },
-    { key: "meta", name: "Meta", category: "ads", description: "Audiences, creatives and campaigns in the owner's ad account.", logo: null, status: "planned", blocker: "Not built." },
-    { key: "slack", name: "Slack", category: "messaging", description: "Approvals and reports in a channel.", logo: null, status: "planned", blocker: "Not built." },
-    { key: "notion", name: "Notion", category: "docs", description: "SOPs and playbooks published to Notion.", logo: null, status: "planned", blocker: "Not built." },
+    { key: "google_calendar", name: "Google Calendar", category: "calendar", description: "Books meetings on the rep's or owner's calendar and shows availability.", logo: LOGOS.google_calendar, status: "live", connectKind: "google_calendar" },
+    { key: "webhooks", name: "Webhooks", category: "automation", description: "Outbound signed webhooks on agent events; inbound endpoints that file tasks for the agent.", logo: LOGOS.webhooks, status: "live", connectKind: "webhooks" },
+    { key: "zapier", name: "Zapier", category: "automation", description: "API key + REST hooks: trigger Zaps from agent events (tasks, prospects, credits).", logo: LOGOS.zapier, status: "live", connectKind: "zapier_key" },
+    { key: "apple_calendar", name: "Apple Calendar", category: "calendar", description: "iCloud calendar via CalDAV with an app-specific password; availability and bookings.", logo: LOGOS.apple_calendar, status: appleVerified ? "live" : "needs_setup", connectKind: "apple_caldav", blocker: appleVerified ? undefined : "Connect one iCloud account in SYSTEM › Integrations (Apple ID + app-specific password) to verify; goes live automatically." },
+    { key: "stripe", name: "Stripe", category: "payments", description: "Checkout for Solo/Agency plans and credit top-ups; the ledger credits on webhook.", logo: LOGOS.stripe, status: stripeLive ? "live" : "needs_setup", connectKind: "env", envVars: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"], blocker: stripeLive ? undefined : "STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET not set in Vercel." },
+    oauthEntry("gohighlevel", "crm", "Push leads, pipelines and automations into GoHighLevel.", ctx),
+    oauthEntry("gmail", "email", "Send approved outreach from the owner's mailbox and read replies.", ctx),
+    oauthEntry("meta", "ads", "Audiences, creatives and campaigns in the owner's Meta ad account.", ctx),
+    oauthEntry("slack", "messaging", "Approvals and reports posted to a Slack channel.", ctx),
+    oauthEntry("notion", "docs", "SOPs and playbooks published to a Notion workspace.", ctx),
+    oauthEntry("linkedin", "social", "Post approved content from the owner's LinkedIn profile.", ctx),
   ];
 }
 
-/** What marketing may show. Nothing else, ever. */
-export const liveIntegrations = () => integrationRegistry().filter((i) => i.status === "live");
+/** Registry with real verification state (server only). */
+export async function loadIntegrationRegistry(): Promise<Integration[]> {
+  let verified = new Set<string>();
+  try { verified = await verifiedProviders(); } catch { /* table missing or unreachable → nothing verified */ }
+  return integrationRegistry({ verified });
+}
 
-export const INTEGRATIONS_STRIP_LINE = "If it's in your stack, your agent works with it — no rip-and-replace.";
+export const liveOf = (items: Integration[]) => items.filter((i) => i.status === "live");
+
+/** Full promise once 3+ integrations are live; a tempered line before that. */
+export const stripTagline = (liveCount: number) =>
+  liveCount >= 3
+    ? "If it's in your stack, your agent works with it — no rip-and-replace."
+    : "Integrations appear here only once they're live. More are being verified.";

@@ -1,7 +1,8 @@
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import IntegrationControlDeck from "@/components/team/IntegrationControlDeck";
 import IntegrationRegistryList from "@/components/team/IntegrationRegistryList";
-import { integrationRegistry } from "@/lib/integrations/registry";
+import IntegrationsManager from "@/components/team/IntegrationsManager";
+import { loadIntegrationRegistry } from "@/lib/integrations/registry";
 
 // Every value fed into IntegrationControlDeck below is real: Google
 // Calendar's connection/refresh state comes straight from
@@ -56,7 +57,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
     <div className="px-8 py-8">
       <div className="mb-6">
         <div className="text-[20px] font-semibold text-[#F5F5F7]">Integrations</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">Connect external services to the Sales OS.</div>
+        <div className="text-[13px] text-[#6E6E73] mt-1">Connect external services to the Sales OS. What goes live here is what the public site shows.</div>
       </div>
 
       {searchParams.error && (
@@ -101,7 +102,8 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
           },
         ]}
       />
-      <IntegrationRegistryList items={integrationRegistry()} />
+      <IntegrationsManager />
+      <IntegrationRegistryList items={await loadIntegrationRegistry()} />
     </div>
   );
 }

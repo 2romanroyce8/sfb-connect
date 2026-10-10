@@ -16,7 +16,7 @@ export default function IntegrationRegistryList({ items }: { items: Integration[
               <div className="text-[13px] text-[#F5F5F7] font-medium">{i.name} <span className="text-[11px] text-[#6E6E73] font-normal">· {i.category}</span></div>
               <div className="text-[12px] text-[#A1A1A6] mt-0.5">{i.description}</div>
               {i.blocker && <div className="text-[11.5px] text-[#FFD60A]/80 mt-0.5">Blocker: {i.blocker}</div>}
-              {i.connectsAt && <div className="text-[11px] text-[#6E6E73] mt-0.5">Connects at: {i.connectsAt}</div>}
+              {i.envVars && <div className="text-[11px] text-[#6E6E73] mt-0.5 font-mono">{i.envVars.join(" · ")}</div>}
             </div>
             <span className="shrink-0 inline-flex items-center gap-1.5 text-[11.5px]" style={{ color: COLOR[i.status] }}><span className="w-[6px] h-[6px] rounded-full" style={{ background: COLOR[i.status] }} />{LABEL[i.status]}</span>
           </li>

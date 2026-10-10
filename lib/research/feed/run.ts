@@ -5,6 +5,7 @@ import { dedupeBatch, flagKnown, loadKnownKeys } from "./dedupe";
 import { exaFeedSource } from "./sources/exa";
 import { rssFeedSource } from "./sources/rss";
 import { createTask } from "@/lib/agent/tasks/queue";
+import { emitIntegrationEvent } from "@/lib/integrations/events";
 
 /**
  * One feed run. Bounded by a wall-clock deadline (serverless-safe): targets
@@ -114,6 +115,7 @@ export async function runFeed(o: RunOptions): Promise<RunSummary> {
   if (!o.dryRun && runId) {
     await o.service.from("research_feed_runs").update({ finished_at: summary.finishedAt, status: summary.errors.length ? "completed_with_errors" : "completed", targets_run: summary.targetsRun, targets_skipped: summary.targetsSkipped, pulled: summary.pulled, accepted: summary.accepted, dropped: summary.dropped, tasks_created: summary.tasksCreated.length, errors: summary.errors }).eq("id", runId);
   }
+  if (!o.dryRun) emitIntegrationEvent("prospect_feed.run_completed", { run_id: runId, accepted: summary.accepted, pulled: summary.pulled, tasks_created: summary.tasksCreated.length, errors: summary.errors.length });
   return summary;
 }
 

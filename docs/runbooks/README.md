@@ -40,5 +40,6 @@ Never paste a secret into chat, code, logs, or a task result.
 - [checkout.md](./checkout.md) — Stripe setup, paths, failure modes
 - [legal-pages.md](./legal-pages.md) — Privacy/Terms drafts, open items, how they publish
 - Integrations registry: `lib/integrations/registry.ts` is the single source for the homepage "Plugs into your stack" strip, the #agent row and the team Integrations page audit list. Marketing shows only `live` entries; Stripe flips to live automatically when its keys are set. Add an integration there with status `planned` first; flip to `live` only when its connect flow works.
+- [integrations.md](./integrations.md) — registry, OAuth connect flows, Apple CalDAV, webhooks in/out, Zapier, Gmail
 - [research-adapters.md](./research-adapters.md) — nightly prospect feed (Exa + RSS → task queue), quality rules, scheduler
 - (next) research-adapters, security-watchdog, youtube-skill

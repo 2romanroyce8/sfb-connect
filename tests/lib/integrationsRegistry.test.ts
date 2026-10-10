@@ -1,25 +1,43 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { integrationRegistry, liveIntegrations } from "../../lib/integrations/registry";
+import { integrationRegistry, liveOf, stripTagline } from "../../lib/integrations/registry";
+import { OAUTH_PROVIDERS } from "../../lib/integrations/providers";
 
-test("registry keys are unique and every entry has a status and description", () => {
-  const all = integrationRegistry();
+const bare = { env: {}, verified: new Set<string>() };
+
+test("registry keys are unique and every entry has a status, description and connect kind", () => {
+  const all = integrationRegistry(bare);
   assert.equal(new Set(all.map((i) => i.key)).size, all.length);
-  for (const i of all) { assert.ok(["live", "needs_setup", "planned"].includes(i.status), i.key); assert.ok(i.description.length > 10, i.key); }
+  for (const i of all) { assert.ok(["live", "needs_setup", "planned"].includes(i.status), i.key); assert.ok(i.description.length > 10, i.key); assert.ok(i.connectKind, i.key); }
+  assert.ok(all.some((i) => i.key === "linkedin"), "LinkedIn is registered");
 });
 
-test("marketing only ever sees live integrations; planned/needs_setup never leak", () => {
-  const live = liveIntegrations();
-  assert.ok(live.every((i) => i.status === "live"));
-  assert.ok(live.some((i) => i.key === "google_calendar"), "Google Calendar is live");
-  for (const k of ["gohighlevel", "zapier", "webhooks", "gmail", "meta", "slack", "notion", "apple_calendar"]) assert.ok(!live.some((i) => i.key === k), `${k} must not be shown`);
+test("with nothing configured or verified, only the self-contained integrations are live", () => {
+  const live = liveOf(integrationRegistry(bare)).map((i) => i.key).sort();
+  assert.deepEqual(live, ["google_calendar", "webhooks", "zapier"]);
+});
+
+test("every live integration has an official logo (marketing never shows a generic icon)", () => {
+  const env = { STRIPE_SECRET_KEY: "sk_test_x", GHL_CLIENT_ID: "a", GHL_CLIENT_SECRET: "b", GOOGLE_CLIENT_ID: "a", GOOGLE_CLIENT_SECRET: "b", META_APP_ID: "a", META_APP_SECRET: "b", SLACK_CLIENT_ID: "a", SLACK_CLIENT_SECRET: "b", NOTION_CLIENT_ID: "a", NOTION_CLIENT_SECRET: "b", LINKEDIN_CLIENT_ID: "a", LINKEDIN_CLIENT_SECRET: "b" };
+  const all = integrationRegistry({ env, verified: new Set(["gohighlevel", "gmail", "meta", "slack", "notion", "linkedin", "apple_calendar"]) });
+  assert.equal(liveOf(all).length, all.length, "everything live when configured + verified");
+  for (const i of liveOf(all)) assert.ok(i.logo, `${i.key} needs a logo`);
+});
+
+test("OAuth providers: configured but unverified stays needs_setup; verified without credentials stays needs_setup", () => {
+  const env = { GHL_CLIENT_ID: "a", GHL_CLIENT_SECRET: "b" };
+  assert.equal(integrationRegistry({ env, verified: new Set() }).find((i) => i.key === "gohighlevel")!.status, "needs_setup");
+  assert.equal(integrationRegistry({ env, verified: new Set(["gohighlevel"]) }).find((i) => i.key === "gohighlevel")!.status, "live");
+  assert.equal(integrationRegistry({ env: {}, verified: new Set(["gohighlevel"]) }).find((i) => i.key === "gohighlevel")!.status, "needs_setup");
+  for (const p of Object.values(OAUTH_PROVIDERS)) assert.ok(p.env.clientId.endsWith("_ID") && p.env.clientSecret.endsWith("_SECRET"), p.key);
 });
 
 test("Stripe flips to live only when the secret key is configured", () => {
-  const prev = process.env.STRIPE_SECRET_KEY;
-  delete process.env.STRIPE_SECRET_KEY;
-  assert.equal(integrationRegistry().find((i) => i.key === "stripe")!.status, "needs_setup");
-  process.env.STRIPE_SECRET_KEY = "sk_test_x";
-  assert.equal(integrationRegistry().find((i) => i.key === "stripe")!.status, "live");
-  if (prev === undefined) delete process.env.STRIPE_SECRET_KEY; else process.env.STRIPE_SECRET_KEY = prev;
+  assert.equal(integrationRegistry(bare).find((i) => i.key === "stripe")!.status, "needs_setup");
+  assert.equal(integrationRegistry({ ...bare, env: { STRIPE_SECRET_KEY: "sk_test_x" } }).find((i) => i.key === "stripe")!.status, "live");
+});
+
+test("strip tagline is tempered under three live integrations", () => {
+  assert.match(stripTagline(2), /only once they're live/);
+  assert.match(stripTagline(3), /no rip-and-replace/);
 });

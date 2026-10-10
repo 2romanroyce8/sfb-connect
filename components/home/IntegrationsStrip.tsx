@@ -1,15 +1,16 @@
 import Reveal from "@/components/ui/Reveal";
 import IntegrationTile from "@/components/home/IntegrationTile";
-import { INTEGRATIONS_STRIP_LINE, liveIntegrations } from "@/lib/integrations/registry";
+import { loadIntegrationRegistry, liveOf, stripTagline } from "@/lib/integrations/registry";
 
 /**
  * "Plugs into your stack" — renders ONLY integrations that are live in the
- * product (lib/integrations/registry.ts). Same tile style as the AI-platform
- * row above it. If nothing is live the strip renders nothing at all rather
- * than a promise.
+ * product (lib/integrations/registry.ts, status computed from env +
+ * verified connections). Same tile style as the AI-platform row. Live tiles
+ * always carry an official brand mark (enforced by test). The tagline is
+ * tempered until at least three integrations are live.
  */
-export default function IntegrationsStrip({ compact = false }: { compact?: boolean }) {
-  const items = liveIntegrations();
+export default async function IntegrationsStrip({ compact = false }: { compact?: boolean }) {
+  const items = liveOf(await loadIntegrationRegistry()).filter((i) => !!i.logo);
   if (!items.length) return null;
   if (compact) {
     return (
@@ -30,7 +31,7 @@ export default function IntegrationsStrip({ compact = false }: { compact?: boole
             <IntegrationTile key={i.key} integration={i} />
           ))}
         </div>
-        <p className="mt-10 text-[14px] text-white/[0.5]">{INTEGRATIONS_STRIP_LINE}</p>
+        <p className="mt-10 text-[14px] text-white/[0.5]">{stripTagline(items.length)}</p>
       </div>
     </Reveal>
   );
