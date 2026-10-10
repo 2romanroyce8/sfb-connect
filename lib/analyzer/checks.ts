@@ -15,7 +15,7 @@ export async function fetchSite(url: string): Promise<SiteFetch> {
   const t = setTimeout(() => controller.abort(), 12000);
   const started = Date.now();
   try {
-    const res = await fetch(url, { signal: controller.signal, redirect: "follow", headers: { "user-agent": "Mozilla/5.0 (compatible; SFBConnectPreview/1.0; +https://www.sfbconnect.com)", accept: "text/html,*/*" } });
+    const res = await fetch(url, { signal: controller.signal, redirect: "follow", headers: { "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36", accept: "text/html,application/xhtml+xml,*/*;q=0.8", "accept-language": "en-US,en;q=0.9" } });
     const ttfbMs = Date.now() - started;
     const html = (await res.text()).slice(0, 1_500_000);
     clearTimeout(t);
