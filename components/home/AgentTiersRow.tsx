@@ -16,7 +16,7 @@ import { trackMarketingEvent } from "@/lib/marketingEvents";
 const LADDER: { label: string; in: Record<TierKey, boolean | string> }[] = [
   { label: "Public per-action price list", in: { trial: true, solo: true, agency: true } },
   { label: "Receipt for every action", in: { trial: true, solo: true, agency: true } },
-  { label: "Human approval before anything customer-facing", in: { trial: true, solo: true, agency: true } },
+  { label: "Human approval on customer-facing work", in: { trial: true, solo: true, agency: true } },
   { label: "Dashboard & reports", in: { trial: true, solo: true, agency: true } },
   { label: "All 8 capabilities", in: { trial: "3 to watch", solo: true, agency: true } },
   { label: "Your real business, real sends", in: { trial: false, solo: true, agency: true } },
