@@ -7,7 +7,7 @@ import { CAPABILITY_KEYS, TIERS, stockProfile, type CapabilityKey } from "@/lib/
 export const dynamic = "force-dynamic";
 
 // Trial signup: account + sandboxed business on a stock profile + 128 credits
-// + 3 capabilities to watch + 3-day expiry (TIERS.trialDays). No Stripe, no real integrations,
+// + 3 capabilities to watch + 14-day expiry (TIERS.trialDays). No Stripe, no real integrations,
 // no real sends -- everything the trial agent does is on stock data.
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";

@@ -27,7 +27,7 @@ Action keys and prices: `CREDIT_PRICES` in `lib/agentProgram/config.ts` (pinned 
 `get_credit_breakdown(business_id)` (security invoker — customer RLS) derives from the ledger: `monthly_spent` = usage since `credits_cycle_started_at` capped at the allotment; `monthly_remaining` = allotment − spent; `topup_balance` = balance − monthly_remaining. Nothing is stored. `getCreditBreakdown()` / pure `splitBalance()` in `lib/billing/guards.ts`; the dashboard strip, capability meters and Credits tab all read it via `loadAgentState`.
 
 ## Cycle
-- Trial: 128 PROMOTIONAL credits once; ends at 0 or 3 days (TIERS.trialDays).
+- Trial: 128 PROMOTIONAL credits once; ends at 0 or 14 days (TIERS.trialDays; Roman confirmed 14 on 2026-10-10).
 - Paid: `provisionAgentCustomer` grants the tier's credits on checkout; `invoice.paid` (billing_reason=subscription_cycle) runs `expireUnspentAllotment` (EXPIRATION row for unspent allotment: allotment − usage since `credits_cycle_started_at`, floored at 0; top-ups untouched) then grants the new month.
 - Top-ups: `credit_packages` rows (100/$149, 500/$599, 1,000/$999); Stripe price created by lookup key `sfb_topup_<credits>` on first purchase; webhook `checkout.session.completed` → PURCHASE row (existing path).
 

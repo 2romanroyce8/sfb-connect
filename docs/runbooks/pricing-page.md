@@ -18,7 +18,7 @@ Every figure on `/pricing`, the homepage `#pricing` section, `/agent`, checkout 
 ### Filling Rome's blanks
 - **Anchor "was" prices:** set `ANCHOR_WAS_USD.solo` / `.agency` (monthly USD). Until set: no strikethrough, no "Launch pricing" tag. The test refuses a "was" price lower than the live price.
 - **Six-vendor total:** set `VENDORS_TOTAL_MONTHLY_USD` (and optionally each vendor's `monthlyUsd`). Until set the page says "Typically thousands a month" — the wording Rome offered as the fallback.
-- **Trial length:** `TIERS.trial.trialDays` (+ `expiry` label). Currently **3** per Roman (2026-10-10 morning); the spec text says 14 — change only on his word.
+- **Trial length:** `TIERS.trial.trialDays` (+ `expiry` label). Set to **14** (Roman confirmed 2026-10-10 afternoon).
 
 ## Page structure (`app/pricing/page.tsx`)
 1. `HowItWorks` — "One build. One monthly. That's it." (3 steps)
