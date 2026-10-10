@@ -5,6 +5,7 @@ import { Loader2, Zap, Sparkles, CheckCircle2 } from "lucide-react";
 
 type Entitlements = { planKey: string | null; locationAllowance: number; marketAllowance: number; competitorAllowance: number; queryAllowance: number; creditBalance: number; activeAddonKeys: string[] };
 type ActiveAddon = { id: string; quantity: number; status: string; current_period_end: string | null; addon_products: { key: string; name: string; base_price_cents: number; unit: string } | null; stripe_subscription_id?: string | null };
+type Invoice = { id: string; number: string | null; createdAt: string; amountPaidCents: number; status: string; hostedUrl: string | null; pdfUrl: string | null; description: string | null };
 type Purchase = { id: string; purchase_type: string; quantity: number; amount_cents: number; status: string; created_at: string; addon_products: { name: string } | null; credit_packages: { name: string } | null };
 type Product = { id: string; key: string; name: string; category: string; description: string; best_for: string | null; billing_type: string; unit: string; base_price_cents: number; featured: boolean };
 type CreditPackage = { id: string; name: string; credits: number; price_cents: number };
@@ -43,6 +44,7 @@ export default function BillingDashboard({
   allProducts,
   creditPackages,
   opportunities,
+  invoices = [],
 }: {
   businessName: string | null;
   planLabel: string;
@@ -55,6 +57,7 @@ export default function BillingDashboard({
   allProducts: Product[];
   creditPackages: CreditPackage[];
   opportunities: Opportunity[];
+  invoices?: Invoice[];
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -316,7 +319,31 @@ export default function BillingDashboard({
         </div>
       </section>
 
-      {/* PURCHASE HISTORY */}
+      {/* INVOICES (real Stripe invoices; empty on trial / before Stripe is configured) */}
+      <section>
+        <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Invoices</div>
+        <div className="rounded-[14px] overflow-hidden" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+          {invoices.length === 0 ? (
+            <div className="p-5 text-[13.5px] text-white/50">No invoices yet.</div>
+          ) : (
+            invoices.map((inv, i) => (
+              <div key={inv.id} className="flex items-center justify-between px-4 py-3 gap-3" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+                <div className="min-w-0">
+                  <div className="text-[13px] truncate">{inv.number ? `Invoice ${inv.number}` : "Invoice"}{inv.description ? <span className="text-white/40"> · {inv.description}</span> : null}</div>
+                  <div className="text-[11.5px] text-white/40 mt-0.5">{new Date(inv.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[13px]">{money(inv.amountPaidCents)}</span>
+                  <span className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-[5px]" style={{ color: inv.status === "paid" ? "#30D158" : inv.status === "open" ? "#FFD60A" : "#8E8E93", border: "1px solid currentColor" }}>{inv.status}</span>
+                  {inv.hostedUrl && <a href={inv.hostedUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] underline text-white/70">View</a>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* PURCHASE HISTORY (top-ups and add-ons) */}
       <section>
         <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Purchase History</div>
         <div className="rounded-[14px] overflow-hidden" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>

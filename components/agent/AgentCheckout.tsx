@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Tier, BillingInterval } from "@/lib/agentProgram/config";
-import { fmtUsd, annualUsd } from "@/lib/agentProgram/config";
+import { fmtUsd, annualUsd, CREDITS_PAY_FOR_WORK } from "@/lib/agentProgram/config";
 
 // "Get your agent" -> a two-field sheet (email + business name) -> Stripe
 // Checkout. Amounts are display-only here; the server resolves them.
@@ -31,7 +31,7 @@ export default function AgentCheckout({ plan, interval = "month" }: { plan: Tier
       <input type="text" required minLength={2} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Business name" className="h-[42px] rounded-[9px] px-3 text-[13.5px] outline-none text-white placeholder:text-white/[0.35]" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)" }} />
       <button type="submit" disabled={busy} className="h-[44px] inline-flex justify-center items-center bg-white text-black rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity disabled:opacity-60">{busy ? "Opening secure checkout…" : (interval === "year" ? `Continue to checkout — ${fmtUsd(annualUsd(plan.monthlyUsd))}/yr + ${fmtUsd(plan.onboardingUsd)} one-time setup` : `Continue to checkout — ${fmtUsd(plan.monthlyUsd)}/mo + ${fmtUsd(plan.onboardingUsd)} one-time setup`)}</button>
       {error && <div className="text-[12px] text-[#FF9F9A]">{error}</div>}
-      <div className="text-[11px] text-white/[0.4]">Secure payment by Stripe. {interval === "year" ? "Annual plan billed yearly, cancels anytime" : "Monthly plan cancels anytime"}; setup is a one-time charge. You&apos;ll receive a sign-in email for your SFB dashboard after payment.</div>
+      <div className="text-[11px] text-white/[0.4]">Secure payment by Stripe. {interval === "year" ? "Annual plan billed yearly, cancels anytime" : "Monthly plan cancels anytime"}; setup is a one-time charge. {CREDITS_PAY_FOR_WORK} You&apos;ll receive a sign-in email for your SFB dashboard after payment.</div>
     </form>
   );
 }
