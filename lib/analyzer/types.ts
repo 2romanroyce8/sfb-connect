@@ -22,7 +22,7 @@ export type Finding = {
   sources: string[];
 };
 
-export type ScanMeta = { domain: string; url: string; businessName: string | null; category: string | null; market: string | null; cached: boolean; startedAt: string };
+export type ScanMeta = { domain: string; url: string; businessName: string | null; category: string | null; market: string | null; cached: boolean; startedAt: string; /** Operator diagnostics (not rendered): where category/market came from, fetch facts. */ debug?: Record<string, string | number | boolean | null> };
 
 export type ScanEvent =
   | { type: "meta"; meta: ScanMeta }

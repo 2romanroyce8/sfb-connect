@@ -45,7 +45,10 @@ export async function runScan(input: { url: string; domain: string }, emit: (e: 
   // Structured data first; the page itself as a real fallback (name/title for category, "City, ST" for market).
   const category = presence.category ?? categoryHint(presence.businessName, site.ok ? extractTitle(site.html) : null, input.domain.replace(/[-.]/g, " "));
   const market = presence.market ?? (site.ok ? marketFromHtml(site.html) : null);
-  const meta: ScanMeta = { domain: input.domain, url: input.url, businessName: presence.businessName, category, market, cached: false, startedAt };
+  const meta: ScanMeta = {
+    domain: input.domain, url: input.url, businessName: presence.businessName, category, market, cached: false, startedAt,
+    debug: { categorySource: presence.category ? "lookup" : category ? "page" : "none", marketSource: presence.market ? "lookup" : market ? "page" : "none", siteOk: site.ok, siteBytes: site.bytes, siteStatus: site.status, siteFinalUrl: site.finalUrl, siteReason: site.reason, hasCommaState: site.ok ? /, (OK|TX|CA|FL|NY)\b/.test(site.html) : null },
+  };
   emit({ type: "meta", meta });
   push(presence.finding);
   await Promise.all([
