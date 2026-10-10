@@ -18,6 +18,7 @@
  * reads the verification table and the environment.
  */
 import { isStripeConfigured } from "@/lib/billing/stripe";
+import { resendConfigured } from "@/lib/email/resend";
 import type { EnvLike } from "./providers";
 import { OAUTH_PROVIDERS, oauthConfigured, type OAuthProviderKey } from "./providers";
 import { verifiedProviders } from "./connections";
@@ -61,13 +62,13 @@ export function integrationRegistry(ctx: RegistryContext = {}): Integration[] {
   const env = ctx.env ?? process.env;
   const verified = ctx.verified ?? new Set<string>();
   const stripeLive = ctx.env ? !!env.STRIPE_SECRET_KEY : isStripeConfigured();
-  const resendLive = !!(env.RESEND_API_KEY ?? "").trim();
+  const resendLive = resendConfigured(env);
   return [
     { key: "google_calendar", name: "Google Calendar", category: "calendar", description: "Books meetings on the rep's or owner's calendar and shows availability.", logo: LOGOS.google_calendar, status: "live", connectKind: "google_calendar" },
     { key: "webhooks", name: "Webhooks", category: "automation", description: "Outbound signed webhooks on agent events; inbound endpoints that file tasks for the agent.", logo: LOGOS.webhooks, status: "live", connectKind: "webhooks" },
     { key: "zapier", name: "Zapier", category: "automation", description: "API key + REST hooks: trigger Zaps from agent events (tasks, prospects, credits).", logo: LOGOS.zapier, status: "live", connectKind: "zapier_key" },
     // System service: SFB's own transactional email sender. Customers never connect their own Resend.
-    { key: "resend", name: "Resend", category: "email", description: "SFB Connect's backend email sender: trial welcome, credit warnings, overseer notices and reports.", logo: LOGOS.resend, status: resendLive ? "live" : "needs_setup", connectKind: "system", envVars: ["RESEND_API_KEY", "RESEND_FROM_EMAIL"], blocker: resendLive ? undefined : "RESEND_API_KEY not set in Vercel." },
+    { key: "resend", name: "Resend", category: "email", description: "SFB Connect's backend email sender: trial welcome, 80% credit warning and out-of-credits notices.", logo: LOGOS.resend, status: resendLive ? "live" : "needs_setup", connectKind: "system", envVars: ["RESEND_API_KEY", "RESEND_FROM_EMAIL"], blocker: resendLive ? undefined : "RESEND_API_KEY not set in Vercel." },
     { key: "stripe", name: "Stripe", category: "payments", description: "Checkout for Solo/Agency plans and credit top-ups; the ledger credits on webhook.", logo: LOGOS.stripe, status: stripeLive ? "live" : "needs_setup", connectKind: "env", envVars: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"], blocker: stripeLive ? undefined : "STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET not set in Vercel." },
     // Parked (Roman, 2026-10-10): no GoHighLevel account on our side yet. The OAuth flow is fully built;
     // flip this back to oauthEntry(...) when a client needs it and the marketplace app exists.

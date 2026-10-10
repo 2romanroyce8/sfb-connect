@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof StripeNotConfiguredError) return NextResponse.json({ error: "Checkout isn't available right now. Book a demo and we'll set you up directly." }, { status: 409 });
     console.error("[agent-checkout]", err instanceof Error ? err.message : err);
-    return NextResponse.json({ error: "Could not start checkout. Please try again or book a demo." }, { status: 500 });
+    // Stripe errors carry a type/code that is safe to show (no key material); it turns a blind 500 into a one-look diagnosis.
+    const se = err as { type?: string; code?: string; statusCode?: number; rawType?: string };
+    const stripeHint = se && (se.type || se.code) ? ` [stripe ${se.type ?? se.rawType ?? ""}${se.code ? ` ${se.code}` : ""}${se.statusCode ? ` ${se.statusCode}` : ""}]` : "";
+    return NextResponse.json({ error: `Could not start checkout. Please try again or book a demo.${stripeHint}` }, { status: 500 });
   }
 }

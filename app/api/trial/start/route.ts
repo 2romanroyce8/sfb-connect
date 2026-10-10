@@ -1,3 +1,4 @@
+import { sendEmail, trialWelcomeEmail } from "@/lib/email/resend";
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { appendCreditTransaction } from "@/lib/billing/credits";
@@ -40,5 +41,7 @@ export async function POST(req: NextRequest) {
   await service.from("business_capabilities").insert(CAPABILITY_KEYS.map((k) => ({ business_id: biz.id, capability_key: k, enabled: caps.includes(k) })));
   await appendCreditTransaction(service, { businessId: biz.id, type: "PROMOTIONAL", amount: trial.credits, source: "trial_grant", description: `Trial credits (${trial.credits}) — expire ${new Date(expires).toLocaleDateString("en-US")}`, idempotencyKey: `trial:${biz.id}` });
   await service.from("billing_audit_log").insert({ business_id: biz.id, action: "trial_started", detail: { stock_profile: profile.key, capabilities: caps, expires_at: expires } });
+  // Welcome email is best-effort and never blocks the signup.
+  void sendEmail({ to: email, ...trialWelcomeEmail({ name: profile.name, credits: trial.credits, days: trial.trialDays!, businessName: `${profile.name} (demo)` }) });
   return NextResponse.json({ ok: true, businessId: biz.id, expiresAt: expires });
 }
