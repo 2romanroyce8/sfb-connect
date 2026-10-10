@@ -56,3 +56,9 @@ test("Gmail reuses the Google Calendar redirect URI when one is registered; othe
   const u = new URL(buildAuthorizeUrl(OAUTH_PROVIDERS.gmail, "s", { GOOGLE_CLIENT_ID: "g", GOOGLE_CLIENT_SECRET: "s", GOOGLE_OAUTH_REDIRECT_URI: "https://www.sfbconnect.com/api/team/integrations/google/callback" }));
   assert.equal(u.searchParams.get("redirect_uri"), "https://www.sfbconnect.com/api/team/integrations/google/callback");
 });
+
+test("OAuth redirect URIs always use the www host, whatever NEXT_PUBLIC_APP_URL says", () => {
+  for (const v of ["https://sfbconnect.com", "https://sfbconnect.com/", "https://www.sfbconnect.com", undefined]) {
+    assert.equal(redirectUriFor("linkedin", { NEXT_PUBLIC_APP_URL: v }), "https://www.sfbconnect.com/api/team/integrations/linkedin/callback", String(v));
+  }
+});

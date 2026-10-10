@@ -30,11 +30,13 @@ export type OAuthProvider = {
   consoleUrl: string;
 };
 
-export const appOrigin = () => (process.env.NEXT_PUBLIC_APP_URL || "https://www.sfbconnect.com").replace(/\/$/, "");
+/** Canonical origin for OAuth redirects: always the www host, so every vendor registers exactly one URL. */
+export const appOrigin = (env: EnvLike = process.env) =>
+  (env.NEXT_PUBLIC_APP_URL || "https://www.sfbconnect.com").replace(/\/+$/, "").replace(/^https?:\/\/sfbconnect\.com$/i, "https://www.sfbconnect.com");
 /** Gmail shares the Google Cloud app with Calendar, so it reuses the ONE redirect URI already registered there
  *  (GOOGLE_OAUTH_REDIRECT_URI → /api/team/integrations/google/callback). Every other provider has its own. */
 export const redirectUriFor = (key: string, env: EnvLike = process.env) =>
-  key === "gmail" && env.GOOGLE_OAUTH_REDIRECT_URI ? env.GOOGLE_OAUTH_REDIRECT_URI : `${appOrigin()}/api/team/integrations/${key}/callback`;
+  key === "gmail" && env.GOOGLE_OAUTH_REDIRECT_URI ? env.GOOGLE_OAUTH_REDIRECT_URI : `${appOrigin(env)}/api/team/integrations/${key}/callback`;
 
 const bearerJson = async (url: string, token: string, headers: Record<string, string> = {}) => {
   const r = await fetch(url, { headers: { Authorization: `Bearer ${token}`, ...headers } });
