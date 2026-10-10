@@ -6,6 +6,7 @@ import StatusBadge from "@/components/agent/StatusBadge";
 import AgentFaq from "@/components/agent/AgentFaq";
 import AgentCheckout from "@/components/agent/AgentCheckout";
 import { fetchAgentModules, roadmapPosition } from "@/lib/agentProgram/modules";
+import IntegrationsStrip from "@/components/home/IntegrationsStrip";
 import { TIERS, CAPABILITIES, CREDIT_PRICES, TOP_UP_PACKS, FREE_ACTIONS, CREDITS_PER_BOOKED_CALL, CREDITS_PAY_FOR_WORK, PRICING_NOTE, bookedCallsFor, fmtUsd } from "@/lib/agentProgram/config";
 
 export const revalidate = 300;
@@ -16,7 +17,6 @@ export const metadata: Metadata = {
   openGraph: { title: "Meet your SFB Agent", description: "One agent. Eight jobs. You decide what it does.", url: "/agent" },
 };
 const card: React.CSSProperties = { background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" };
-const INTEGRATIONS = ["GoHighLevel", "Zapier", "Webhooks", "Google Calendar", "Gmail", "Meta", "Stripe"];
 
 export default async function AgentPage() {
   const modules = await fetchAgentModules();
@@ -59,7 +59,7 @@ export default async function AgentPage() {
               {m && m.status !== "live" && pos && <div className="text-[11px] text-white/[0.35] mt-auto pt-1">{pos === 1 ? "Next to unlock" : `#${pos} on the roadmap`}</div>}
             </div>); })}
         </div>
-        <div className="mt-8 flex flex-wrap items-center gap-2 text-[12.5px] text-white/[0.5]"><span className="mr-1">Works with</span>{INTEGRATIONS.map((n) => <span key={n} className="px-3 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>{n}</span>)}</div>
+        <IntegrationsStrip compact />
       </div></section>
 
       <section id="credits" className="py-20 md:py-24 px-6 section-band scroll-mt-24"><div className="max-w-[1100px] mx-auto">

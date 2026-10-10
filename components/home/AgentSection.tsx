@@ -5,7 +5,6 @@ import StatusBadge from "@/components/agent/StatusBadge";
 import IntegrationsStrip from "@/components/home/IntegrationsStrip";
 import CapabilityCardLink from "@/components/home/CapabilityCardLink";
 
-const INTEGRATIONS = ["GoHighLevel", "Zapier", "Webhooks", "Google Calendar", "Gmail"];
 
 // #agent -- the 8 capability cards, the integrations row, the human band and
 // the demo-video slot. Statuses come from agent_program_modules (same rows
@@ -40,7 +39,6 @@ export default async function AgentSection() {
                 <div><div className="text-[15px] font-semibold text-white/[0.85]">Demo recording coming</div><div className="text-[12.5px] text-white/[0.45] mt-1.5 max-w-[380px]">A real screen recording of the agent enriching a prospect, writing the message and booking the call — not a mockup. Until it exists, there&apos;s nothing to show you here.</div></div>
               </div>
             </div>
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-[12.5px] text-white/[0.5]"><span className="mr-1">Plugs into your stack, no rip-and-replace:</span>{INTEGRATIONS.map((n) => <span key={n} className="px-3 py-1 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>{n}</span>)}</div>
           </div>
           <div className="rounded-[16px] p-6 md:p-8 flex flex-col justify-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}>
             <h3 className="text-[26px] md:text-[32px] font-bold tracking-[-0.03em] leading-[1.05]">Every agent has a human.</h3>
