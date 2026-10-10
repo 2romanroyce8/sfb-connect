@@ -47,7 +47,9 @@ export async function runScan(input: { url: string; domain: string }, emit: (e: 
   const market = presence.market ?? (site.ok ? marketFromHtml(site.html) : null);
   const meta: ScanMeta = {
     domain: input.domain, url: input.url, businessName: presence.businessName, category, market, cached: false, startedAt,
-    debug: { categorySource: presence.category ? "lookup" : category ? "page" : "none", marketSource: presence.market ? "lookup" : market ? "page" : "none", siteOk: site.ok, siteBytes: site.bytes, siteStatus: site.status, siteFinalUrl: site.finalUrl, siteReason: site.reason, hasCommaState: site.ok ? /, (OK|TX|CA|FL|NY)\b/.test(site.html) : null },
+    debug: { categorySource: presence.category ? "lookup" : category ? "page" : "none", marketSource: presence.market ? "lookup" : market ? "page" : "none", siteOk: site.ok, siteBytes: site.bytes, siteStatus: site.status, siteFinalUrl: site.finalUrl, siteReason: site.reason, hasCommaState: site.ok ? /, (OK|TX|CA|FL|NY)\b/.test(site.html) : null,
+      rawSample: site.ok ? (site.html.match(/.{0,40}, (?:OK|TX|CA|FL|NY)\b.{0,20}/g) ?? []).slice(0, 3).join(" || ") : null,
+      textSample: site.ok ? (site.html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").match(/.{0,40}, (?:OK|TX|CA|FL|NY)\b.{0,20}/g) ?? []).slice(0, 3).join(" || ") : null },
   };
   emit({ type: "meta", meta });
   push(presence.finding);
