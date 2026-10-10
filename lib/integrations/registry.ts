@@ -7,7 +7,9 @@
  * Status is computed, never typed in:
  *  - live:        the connect flow exists AND is proven — either self-tested
  *                 by engineering (webhooks, zapier) or verified by at least one
- *                 successful real connection (integration_provider_verifications).
+ *                 successful real connection by ANYONE: owner, teammate or
+ *                 client (integration_provider_verifications). The owner does
+ *                 not have to personally use GHL/Meta/etc. for them to go live.
  * Google Calendar is THE calendar integration (Roman, 2026-10-10).
  *  - needs_setup: code is deployed but a prerequisite is missing (vendor app
  *                 credentials in Vercel, or no verified connection yet).
@@ -51,7 +53,7 @@ const oauthEntry = (key: OAuthProviderKey, category: IntegrationCategory, descri
   return {
     key, name: p.name, category, description, logo: LOGOS[key] ?? null, status, connectKind: "oauth",
     envVars: [p.env.clientId, p.env.clientSecret], consoleUrl: p.consoleUrl,
-    blocker: status === "live" ? undefined : !configured ? `Register the ${p.name} app at ${p.consoleUrl} and add ${p.env.clientId} + ${p.env.clientSecret} to Vercel (redirect URI: /api/team/integrations/${key}/callback).` : `Connect ${p.name} once in SYSTEM › Integrations to verify the flow; it goes live automatically.`,
+    blocker: status === "live" ? undefined : !configured ? `Register the ${p.name} app at ${p.consoleUrl} and add ${p.env.clientId} + ${p.env.clientSecret} to Vercel (redirect URI: /api/team/integrations/${key}/callback).` : `Credentials are in. Goes live on the first successful connection by anyone — you, a teammate (SYSTEM › Integrations), or a client (their dashboard › Integrations).`,
   };
 };
 

@@ -10,12 +10,12 @@
 | Stripe | `STRIPE_SECRET_KEY` set in Vercel |
 | OAuth (GoHighLevel, Gmail, Meta, Slack, Notion, LinkedIn) | vendor app credentials in Vercel **and** one successful connection recorded |
 
-"Verified" = `integration_provider_verifications` has a row for the provider; written by `saveConnection()` (any provider), the first successful webhook delivery/receipt, and the first Zapier key. Delete the row to demote a provider.
+"Verified" = `integration_provider_verifications` has a row for the provider; written by `saveConnection()` on ANY successful connection — owner, teammate (SYSTEM › Integrations) or **client** (`/dashboard/integrations`, paid tiers only; trial businesses are refused) — plus the first successful webhook delivery/receipt and the first Zapier key. The owner never has to personally connect GHL/Meta/etc.; the first client who does flips it live. Delete the row to demote a provider.
 
 ## Making an OAuth provider live (Roman, ~10 min each)
 1. Create the app in the vendor console (link shown on the team page and below). Set the redirect URI to **exactly** `https://www.sfbconnect.com/api/team/integrations/<key>/callback`.
 2. Add the two env vars to Vercel (Production) and redeploy.
-3. Open `/team/integrations` → **Connect <Name>** → approve. The tile appears on the site on the next page load.
+3. Anyone connects once — you at `/team/integrations`, or a paying client at `/dashboard/integrations` → **Connect <Name>** → approve. The tile appears on the site within 5 minutes.
 
 | Key | Console | Env vars | Scopes requested |
 |---|---|---|---|

@@ -7,12 +7,13 @@ export const runtime = "nodejs";
 
 /** OAuth return leg: verifies state, exchanges the code, stores tokens encrypted, marks the provider verified. */
 export async function GET(req: NextRequest, { params }: { params: { provider: string } }) {
-  const back = new URL("/team/integrations", req.url);
+  const returnTo = req.cookies.get(`oauth_return_${params.provider}`)?.value === "dashboard" ? "/dashboard/integrations" : "/team/integrations";
+  const back = new URL(returnTo, req.url);
   if (!isOAuthProviderKey(params.provider)) { back.searchParams.set("error", "Unknown integration."); return NextResponse.redirect(back); }
   const p = OAUTH_PROVIDERS[params.provider];
   const q = req.nextUrl.searchParams;
   const cookieName = `oauth_state_${p.key}`;
-  const clear = (res: NextResponse) => { res.cookies.set(cookieName, "", { maxAge: 0, path: "/" }); return res; };
+  const clear = (res: NextResponse) => { res.cookies.set(cookieName, "", { maxAge: 0, path: "/" }); res.cookies.set(`oauth_return_${p.key}`, "", { maxAge: 0, path: "/" }); return res; };
 
   if (q.get("error")) { back.searchParams.set("error", q.get("error") === "access_denied" ? `${p.name} connection was cancelled.` : `${p.name}: ${q.get("error_description") || q.get("error")}`); return clear(NextResponse.redirect(back)); }
   const code = q.get("code"), state = q.get("state"), cookieState = req.cookies.get(cookieName)?.value;
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
 
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/team/login", req.url));
+  if (!user) return NextResponse.redirect(new URL(returnTo.startsWith("/dashboard") ? "/login" : "/team/login", req.url));
 
   try {
     const token = await exchangeCode(p, code);

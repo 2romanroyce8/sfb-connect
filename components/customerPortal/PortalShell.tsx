@@ -19,6 +19,7 @@ import {
   type LucideIcon,
   Bot,
   Coins,
+  Plug,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -38,6 +39,7 @@ const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard/actions", label: "Actions", icon: Zap, ready: true },
   { href: "/dashboard/competitors", label: "Competitors", icon: Users, ready: true },
   { href: "/dashboard/reports", label: "Reports", icon: FileText, ready: true },
+  { href: "/dashboard/integrations", label: "Integrations", icon: Plug, ready: true },
 ];
 
 const SECONDARY_NAV: NavItem[] = [
