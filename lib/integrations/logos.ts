@@ -8,7 +8,6 @@ export const LOGOS: Record<string, string | null> = {
   stripe: "https://pub.hyperagent.com/api/published/pbf01M4HZ3HNZ_NXYGP0C5QEDXBWYY/logo-stripe.png",
   webhooks: "https://pub.hyperagent.com/api/published/pbf01M4J44420_AF3PC0JY9PVE9THG/logo-webhooks.png",
   zapier: "https://pub.hyperagent.com/api/published/pbf01M4J4420T_ZRK7TGG6K3QCAFJ8/logo-zapier.png",
-  apple_calendar: "https://pub.hyperagent.com/api/published/pbf01M4J443N1_H5H52N010ZGHVA1G/logo-apple-calendar.png",
   gohighlevel: "https://pub.hyperagent.com/api/published/pbf01M4J441TH_DJPTB55M9R4APA65/logo-gohighlevel.png",
   gmail: "https://pub.hyperagent.com/api/published/pbf01M4J44279_81JY12HRE0SWDPBJ/logo-gmail.png",
   meta: "https://pub.hyperagent.com/api/published/pbf01M4J442EM_FNAZMADRW7BV1X3W/logo-meta.png",

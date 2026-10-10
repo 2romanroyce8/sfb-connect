@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { connectGoogleCalendar } from "@/lib/crm/googleCalendar";
+import { GET as genericCallback } from "@/app/api/team/integrations/[provider]/callback/route";
 
 export async function GET(req: NextRequest) {
+  // Gmail shares this registered redirect URI with Calendar. Its handshake is
+  // identified by its own state cookie; hand it to the generic OAuth handler.
+  const st = req.nextUrl.searchParams.get("state");
+  if (st && req.cookies.get("oauth_state_gmail")?.value === st) return genericCallback(req, { params: { provider: "gmail" } });
   const url = new URL("/team/integrations", req.url);
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");

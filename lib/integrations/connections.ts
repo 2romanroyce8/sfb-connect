@@ -72,7 +72,7 @@ export async function getAccessToken(provider: string, ownerId: string): Promise
   return { token: decryptToken(data.access_token_enc), metadata: (data.metadata ?? {}) as Record<string, unknown> };
 }
 
-/** For non-OAuth providers that store a secret (Apple app-specific password). */
+/** For non-OAuth providers that store a single secret. */
 export async function getStoredSecret(provider: string, ownerId: string): Promise<{ secret: string; metadata: Record<string, unknown> }> {
   const { token, metadata } = await getAccessToken(provider, ownerId);
   return { secret: token, metadata };

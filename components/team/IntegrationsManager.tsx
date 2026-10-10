@@ -73,7 +73,6 @@ export default function IntegrationsManager() {
               </div>
               {i.key === "zapier" && s.isOwner && <ZapierPanel keys={s.zapierKeys} reload={load} />}
               {i.key === "webhooks" && s.isOwner && <WebhooksPanel endpoints={s.webhookEndpoints} inbound={s.inboundTokens} reload={load} onReveal={setReveal} />}
-              {i.key === "apple_calendar" && !c && <ApplePanel reload={load} />}
             </li>
           );
         })}
@@ -95,20 +94,7 @@ function Actions({ i, connected, isOwner, onDisconnect, onReveal, reload }: { i:
   if (i.connectKind === "zapier_key") return isOwner ? (
     <button disabled={busy} onClick={async () => { setBusy(true); const r = await fetch("/api/team/integrations/zapier/keys", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: "Zapier" }) }); const j = await r.json(); setBusy(false); if (r.ok) { onReveal({ title: "Zapier API key (shown once)", value: j.key, note: "Paste it into the SFB Connect app in Zapier (API Key auth). Only its hash is stored here." }); await reload(); } }} className={`${btn} bg-white text-black`}>{busy ? "Creating…" : "New API key"}</button>
   ) : <span className="text-[11.5px] text-[#6E6E73]">Owner manages</span>;
-  if (i.connectKind === "apple_caldav") return connected ? <button onClick={onDisconnect} className={btn} style={{ background: "rgba(255,69,58,0.12)", color: "#FF6961", border: "1px solid rgba(255,69,58,0.3)" }}>Disconnect</button> : <span className="text-[11.5px] text-[#6E6E73]">Form below</span>;
   return null;
-}
-
-function ApplePanel({ reload }: { reload: () => Promise<void> }) {
-  const [appleId, setAppleId] = useState(""); const [pw, setPw] = useState(""); const [busy, setBusy] = useState(false); const [msg, setMsg] = useState<string | null>(null);
-  return (
-    <form onSubmit={async (e) => { e.preventDefault(); setBusy(true); setMsg(null); const r = await fetch("/api/team/integrations/apple_calendar/connect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ appleId, appPassword: pw }) }); const j = await r.json(); setBusy(false); setPw(""); if (r.ok) { setMsg(`Connected. Calendars: ${(j.calendars as string[]).join(", ") || "found"}`); await reload(); } else setMsg(j.error || "Could not connect."); }} className="mt-3 grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-center">
-      <input className={input} style={inputStyle} type="email" required placeholder="Apple ID email" value={appleId} onChange={(e) => setAppleId(e.target.value)} autoComplete="off" />
-      <input className={input} style={inputStyle} type="password" required placeholder="App-specific password (xxxx-xxxx-xxxx-xxxx)" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
-      <button disabled={busy} className={`${btn} bg-white text-black h-[36px]`}>{busy ? "Verifying…" : "Connect"}</button>
-      <div className="sm:col-span-3 text-[11px] text-[#6E6E73]">Create the password at appleid.apple.com → Sign-In and Security → App-Specific Passwords. It is verified against iCloud CalDAV and stored encrypted. {msg && <span className="text-[#F5F5F7]"> {msg}</span>}</div>
-    </form>
-  );
 }
 
 function ZapierPanel({ keys, reload }: { keys: Status["zapierKeys"]; reload: () => Promise<void> }) {

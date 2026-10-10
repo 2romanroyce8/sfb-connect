@@ -19,7 +19,7 @@ test("with nothing configured or verified, only the self-contained integrations 
 
 test("every live integration has an official logo (marketing never shows a generic icon)", () => {
   const env = { STRIPE_SECRET_KEY: "sk_test_x", GHL_CLIENT_ID: "a", GHL_CLIENT_SECRET: "b", GOOGLE_CLIENT_ID: "a", GOOGLE_CLIENT_SECRET: "b", META_APP_ID: "a", META_APP_SECRET: "b", SLACK_CLIENT_ID: "a", SLACK_CLIENT_SECRET: "b", NOTION_CLIENT_ID: "a", NOTION_CLIENT_SECRET: "b", LINKEDIN_CLIENT_ID: "a", LINKEDIN_CLIENT_SECRET: "b" };
-  const all = integrationRegistry({ env, verified: new Set(["gohighlevel", "gmail", "meta", "slack", "notion", "linkedin", "apple_calendar"]) });
+  const all = integrationRegistry({ env, verified: new Set(["gohighlevel", "gmail", "meta", "slack", "notion", "linkedin"]) });
   assert.equal(liveOf(all).length, all.length, "everything live when configured + verified");
   for (const i of liveOf(all)) assert.ok(i.logo, `${i.key} needs a logo`);
 });

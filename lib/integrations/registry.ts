@@ -8,6 +8,7 @@
  *  - live:        the connect flow exists AND is proven — either self-tested
  *                 by engineering (webhooks, zapier) or verified by at least one
  *                 successful real connection (integration_provider_verifications).
+ * Google Calendar is THE calendar integration (Roman, 2026-10-10).
  *  - needs_setup: code is deployed but a prerequisite is missing (vendor app
  *                 credentials in Vercel, or no verified connection yet).
  *  - planned:     not built.
@@ -22,7 +23,7 @@ import { LOGOS } from "./logos";
 
 export type IntegrationStatus = "live" | "needs_setup" | "planned";
 export type IntegrationCategory = "calendar" | "email" | "crm" | "automation" | "ads" | "payments" | "messaging" | "docs" | "social";
-export type ConnectKind = "oauth" | "google_calendar" | "apple_caldav" | "zapier_key" | "webhooks" | "env";
+export type ConnectKind = "oauth" | "google_calendar" | "zapier_key" | "webhooks" | "env";
 
 export type Integration = {
   key: string;
@@ -58,12 +59,10 @@ export function integrationRegistry(ctx: RegistryContext = {}): Integration[] {
   const env = ctx.env ?? process.env;
   const verified = ctx.verified ?? new Set<string>();
   const stripeLive = ctx.env ? !!env.STRIPE_SECRET_KEY : isStripeConfigured();
-  const appleVerified = verified.has("apple_calendar");
   return [
     { key: "google_calendar", name: "Google Calendar", category: "calendar", description: "Books meetings on the rep's or owner's calendar and shows availability.", logo: LOGOS.google_calendar, status: "live", connectKind: "google_calendar" },
     { key: "webhooks", name: "Webhooks", category: "automation", description: "Outbound signed webhooks on agent events; inbound endpoints that file tasks for the agent.", logo: LOGOS.webhooks, status: "live", connectKind: "webhooks" },
     { key: "zapier", name: "Zapier", category: "automation", description: "API key + REST hooks: trigger Zaps from agent events (tasks, prospects, credits).", logo: LOGOS.zapier, status: "live", connectKind: "zapier_key" },
-    { key: "apple_calendar", name: "Apple Calendar", category: "calendar", description: "iCloud calendar via CalDAV with an app-specific password; availability and bookings.", logo: LOGOS.apple_calendar, status: appleVerified ? "live" : "needs_setup", connectKind: "apple_caldav", blocker: appleVerified ? undefined : "Connect one iCloud account in SYSTEM › Integrations (Apple ID + app-specific password) to verify; goes live automatically." },
     { key: "stripe", name: "Stripe", category: "payments", description: "Checkout for Solo/Agency plans and credit top-ups; the ledger credits on webhook.", logo: LOGOS.stripe, status: stripeLive ? "live" : "needs_setup", connectKind: "env", envVars: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"], blocker: stripeLive ? undefined : "STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET not set in Vercel." },
     oauthEntry("gohighlevel", "crm", "Push leads, pipelines and automations into GoHighLevel.", ctx),
     oauthEntry("gmail", "email", "Send approved outreach from the owner's mailbox and read replies.", ctx),

@@ -2,7 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { signPayload, verifySignature } from "../../lib/integrations/webhooks";
 import { OAUTH_PROVIDERS, buildAuthorizeUrl, exchangeCode, redirectUriFor } from "../../lib/integrations/providers";
-import { verifyAppleCalendar } from "../../lib/integrations/appleCalendar";
 
 test("webhook signatures: valid for the exact body, rejected when tampered, replayed late, or malformed", () => {
   const sig = signPayload("whsec_abc", '{"a":1}', 1_700_000_000);
@@ -51,13 +50,9 @@ test("token exchange: body-auth providers post form data; basic-auth providers s
   await assert.rejects(exchangeCode(OAUTH_PROVIDERS.gohighlevel, "x", env, bad), /Code expired/);
 });
 
-test("Apple Calendar verification: rejects bad inputs locally, surfaces iCloud 401, parses principal + calendar home", async () => {
-  await assert.rejects(verifyAppleCalendar("not-an-email", "abcd-abcd-abcd-abcd"), /Apple ID email/);
-  await assert.rejects(verifyAppleCalendar("a@b.com", "password123"), /app-specific password/);
-  const unauthorized = (async () => new Response("", { status: 401 })) as unknown as typeof fetch;
-  await assert.rejects(verifyAppleCalendar("a@b.com", "abcd-abcd-abcd-abcd", unauthorized), /rejected/);
-  const good = (async (url: string) => new Response(!url.includes("/principal/") ? `<d:multistatus xmlns:d="DAV:"><d:response><d:propstat><d:prop><d:current-user-principal><d:href>/123/principal/</d:href></d:current-user-principal></d:prop></d:propstat></d:response></d:multistatus>` : `<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:response><d:propstat><d:prop><c:calendar-home-set><d:href>https://p01-caldav.icloud.com/123/calendars/</d:href></c:calendar-home-set></d:prop></d:propstat></d:response></d:multistatus>`, { status: 207 })) as unknown as typeof fetch;
-  const r = await verifyAppleCalendar("a@b.com", "abcd-abcd-abcd-abcd", good);
-  assert.equal(r.principal, "https://caldav.icloud.com/123/principal/");
-  assert.equal(r.calendarHome, "https://p01-caldav.icloud.com/123/calendars/");
+test("Gmail reuses the Google Calendar redirect URI when one is registered; other providers get their own", () => {
+  assert.equal(redirectUriFor("gmail", { GOOGLE_OAUTH_REDIRECT_URI: "https://www.sfbconnect.com/api/team/integrations/google/callback" }), "https://www.sfbconnect.com/api/team/integrations/google/callback");
+  assert.ok(redirectUriFor("slack", { GOOGLE_OAUTH_REDIRECT_URI: "https://x/y" }).endsWith("/api/team/integrations/slack/callback"));
+  const u = new URL(buildAuthorizeUrl(OAUTH_PROVIDERS.gmail, "s", { GOOGLE_CLIENT_ID: "g", GOOGLE_CLIENT_SECRET: "s", GOOGLE_OAUTH_REDIRECT_URI: "https://www.sfbconnect.com/api/team/integrations/google/callback" }));
+  assert.equal(u.searchParams.get("redirect_uri"), "https://www.sfbconnect.com/api/team/integrations/google/callback");
 });

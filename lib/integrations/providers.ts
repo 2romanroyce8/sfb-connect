@@ -31,7 +31,10 @@ export type OAuthProvider = {
 };
 
 export const appOrigin = () => (process.env.NEXT_PUBLIC_APP_URL || "https://www.sfbconnect.com").replace(/\/$/, "");
-export const redirectUriFor = (key: string) => `${appOrigin()}/api/team/integrations/${key}/callback`;
+/** Gmail shares the Google Cloud app with Calendar, so it reuses the ONE redirect URI already registered there
+ *  (GOOGLE_OAUTH_REDIRECT_URI → /api/team/integrations/google/callback). Every other provider has its own. */
+export const redirectUriFor = (key: string, env: EnvLike = process.env) =>
+  key === "gmail" && env.GOOGLE_OAUTH_REDIRECT_URI ? env.GOOGLE_OAUTH_REDIRECT_URI : `${appOrigin()}/api/team/integrations/${key}/callback`;
 
 const bearerJson = async (url: string, token: string, headers: Record<string, string> = {}) => {
   const r = await fetch(url, { headers: { Authorization: `Bearer ${token}`, ...headers } });
@@ -112,7 +115,7 @@ export const oauthConfigured = (p: OAuthProvider, env: EnvLike = process.env) =>
 export function buildAuthorizeUrl(p: OAuthProvider, state: string, env: EnvLike = process.env): string {
   const u = new URL(p.authorizeUrl);
   u.searchParams.set("client_id", env[p.env.clientId]!);
-  u.searchParams.set("redirect_uri", redirectUriFor(p.key));
+  u.searchParams.set("redirect_uri", redirectUriFor(p.key, env));
   u.searchParams.set("response_type", "code");
   u.searchParams.set("state", state);
   if (p.scopes.length) u.searchParams.set("scope", p.scopes.join(p.scopeSeparator ?? " "));
@@ -124,7 +127,7 @@ export type TokenResult = { access_token: string; refresh_token?: string; expire
 
 export async function exchangeCode(p: OAuthProvider, code: string, env: EnvLike = process.env, f: typeof fetch = fetch): Promise<TokenResult> {
   const clientId = env[p.env.clientId]!, clientSecret = env[p.env.clientSecret]!;
-  const params: Record<string, string> = { grant_type: "authorization_code", code, redirect_uri: redirectUriFor(p.key), ...(p.tokenParams ?? {}) };
+  const params: Record<string, string> = { grant_type: "authorization_code", code, redirect_uri: redirectUriFor(p.key, env), ...(p.tokenParams ?? {}) };
   const headers: Record<string, string> = { Accept: "application/json" };
   if (p.tokenAuth === "basic") headers.Authorization = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`;
   else { params.client_id = clientId; params.client_secret = clientSecret; }
