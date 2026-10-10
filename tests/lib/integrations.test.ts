@@ -62,3 +62,12 @@ test("OAuth redirect URIs always use the www host, whatever NEXT_PUBLIC_APP_URL 
     assert.equal(redirectUriFor("linkedin", { NEXT_PUBLIC_APP_URL: v }), "https://www.sfbconnect.com/api/team/integrations/linkedin/callback", String(v));
   }
 });
+
+test("client credentials are trimmed (pasted whitespace in Vercel must not break auth)", async () => {
+  const env = { LINKEDIN_CLIENT_ID: " abc \n", LINKEDIN_CLIENT_SECRET: "sec \n" };
+  assert.equal(new URL(buildAuthorizeUrl(OAUTH_PROVIDERS.linkedin, "s", env)).searchParams.get("client_id"), "abc");
+  let body = "";
+  const f = (async (_u: string, init: RequestInit) => { body = String(init.body); return new Response(JSON.stringify({ access_token: "t" }), { status: 200 }); }) as unknown as typeof fetch;
+  await exchangeCode(OAUTH_PROVIDERS.linkedin, "c", env, f);
+  assert.match(body, /client_secret=sec(&|$)/); assert.match(body, /client_id=abc(&|$)/);
+});

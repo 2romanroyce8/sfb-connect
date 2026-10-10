@@ -112,11 +112,13 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderKey, OAuthProvider> = {
 };
 
 export const isOAuthProviderKey = (k: string): k is OAuthProviderKey => k in OAUTH_PROVIDERS;
-export const oauthConfigured = (p: OAuthProvider, env: EnvLike = process.env) => !!env[p.env.clientId] && !!env[p.env.clientSecret];
+/** Env values are trimmed everywhere: a pasted trailing space/newline in Vercel is the #1 cause of "client authentication failed". */
+const cred = (env: EnvLike, name: string) => (env[name] ?? "").trim();
+export const oauthConfigured = (p: OAuthProvider, env: EnvLike = process.env) => !!cred(env, p.env.clientId) && !!cred(env, p.env.clientSecret);
 
 export function buildAuthorizeUrl(p: OAuthProvider, state: string, env: EnvLike = process.env): string {
   const u = new URL(p.authorizeUrl);
-  u.searchParams.set("client_id", env[p.env.clientId]!);
+  u.searchParams.set("client_id", cred(env, p.env.clientId));
   u.searchParams.set("redirect_uri", redirectUriFor(p.key, env));
   u.searchParams.set("response_type", "code");
   u.searchParams.set("state", state);
@@ -128,7 +130,7 @@ export function buildAuthorizeUrl(p: OAuthProvider, state: string, env: EnvLike 
 export type TokenResult = { access_token: string; refresh_token?: string; expires_in?: number; scope?: string; raw: Record<string, unknown> };
 
 export async function exchangeCode(p: OAuthProvider, code: string, env: EnvLike = process.env, f: typeof fetch = fetch): Promise<TokenResult> {
-  const clientId = env[p.env.clientId]!, clientSecret = env[p.env.clientSecret]!;
+  const clientId = cred(env, p.env.clientId), clientSecret = cred(env, p.env.clientSecret);
   const params: Record<string, string> = { grant_type: "authorization_code", code, redirect_uri: redirectUriFor(p.key, env), ...(p.tokenParams ?? {}) };
   const headers: Record<string, string> = { Accept: "application/json" };
   if (p.tokenAuth === "basic") headers.Authorization = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`;
@@ -150,7 +152,7 @@ export async function exchangeCode(p: OAuthProvider, code: string, env: EnvLike 
 }
 
 export async function refreshToken(p: OAuthProvider, refresh: string, env: EnvLike = process.env, f: typeof fetch = fetch): Promise<TokenResult> {
-  const clientId = env[p.env.clientId]!, clientSecret = env[p.env.clientSecret]!;
+  const clientId = cred(env, p.env.clientId), clientSecret = cred(env, p.env.clientSecret);
   const params: Record<string, string> = { grant_type: "refresh_token", refresh_token: refresh, ...(p.tokenParams ?? {}) };
   const headers: Record<string, string> = { Accept: "application/json" };
   if (p.tokenAuth === "basic") headers.Authorization = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`;
