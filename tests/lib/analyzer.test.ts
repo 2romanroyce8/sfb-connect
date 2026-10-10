@@ -91,3 +91,20 @@ test("scope cards: five dimensions; action lines follow the registry", () => {
   const r = scopeAction("reviews", DEFAULT_MODULES);
   assert.equal(r.live, false); assert.match(r.line, /when Reviews & Reputation ships — you're first in line/);
 });
+
+import { nameFromTitle, resolveBusinessName, logoCandidates, initialOf } from "../../lib/analyzer/identity";
+test("personalization: name from title → JSON-LD → lookup; generic or messy titles yield null", () => {
+  assert.equal(nameFromTitle("Limitless Roofing OKC LLC | Oklahoma City's Trusted Roofer"), "Limitless Roofing OKC LLC");
+  assert.equal(nameFromTitle("Home"), null);
+  assert.equal(nameFromTitle("Welcome | Home"), null);
+  assert.equal(nameFromTitle("Bright Smile Dental – Austin TX Dentist"), "Bright Smile Dental");
+  const html = `<html><head><title>Home</title><script type="application/ld+json">{"@type":"LocalBusiness","name":"Peak Comfort HVAC"}</script></head></html>`;
+  assert.deepEqual(resolveBusinessName(html, "Lookup Name"), { name: "Peak Comfort HVAC", source: "jsonld" });
+  assert.deepEqual(resolveBusinessName("<title>Welcome</title>", "Lookup Name"), { name: "Lookup Name", source: "lookup" });
+  assert.deepEqual(resolveBusinessName(null, null), { name: null, source: null });
+  assert.equal(initialOf(null, "limitlessroofingokc.com"), "L");
+});
+test("logo candidates: header logo → og:image → icons → /favicon.ico, absolute URLs", () => {
+  const html = `<html><head><meta property="og:image" content="/og.jpg"><link rel="icon" href="/fav.png"><link rel="apple-touch-icon" href="/apple.png"></head><body><header><img class="site-logo" src="/img/logo.svg"></header></body></html>`;
+  assert.deepEqual(logoCandidates(html, "https://x.com/"), ["https://x.com/img/logo.svg", "https://x.com/og.jpg", "https://x.com/apple.png", "https://x.com/fav.png", "https://x.com/favicon.ico"]);
+});

@@ -6,6 +6,8 @@ import type { AgentModule } from "@/lib/agentProgram/modules";
 import { buildRows } from "@/lib/analyzer/narrate";
 import { useScan } from "@/lib/analyzer/client";
 import { trackMarketingEvent } from "@/lib/marketingEvents";
+import { initialOf } from "@/lib/analyzer/identity";
+import { useState } from "react";
 
 /**
  * The day-grouped punch list. Every row is a real finding (or an honest
@@ -13,36 +15,69 @@ import { trackMarketingEvent } from "@/lib/marketingEvents";
  * capability registry passed in from the server. Rows fill in as the stream
  * lands. The preview promises; the trial shows.
  */
+/** Their logo (or a clean initial tile — never a broken image) + their name + "Analyzed: exactly what they typed". */
+function ReportHeader({ name, logoUrl, enteredQuery, domain, market, cached, status }: { name: string | null; logoUrl: string | null; enteredQuery: string; domain: string; market: string | null; cached: boolean; status: string }) {
+  const [broken, setBroken] = useState(false);
+  const showLogo = !!logoUrl && !broken;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] p-4 md:p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex items-center gap-4 min-w-0">
+        <div className="shrink-0 w-[56px] h-[56px] rounded-[14px] flex items-center justify-center overflow-hidden" style={{ background: "#141416", border: "1px solid rgba(255,255,255,0.1)" }}>
+          {showLogo ? <img src={logoUrl!} alt={name ? `${name} logo` : "Logo"} className="w-full h-full object-contain p-1.5" onError={() => setBroken(true)} /> : <span className="text-[22px] font-semibold text-white/[0.85]">{initialOf(name, domain)}</span>}
+        </div>
+        <div className="min-w-0">
+          <div className="text-[16px] md:text-[18px] font-semibold text-white truncate">{name ?? domain}</div>
+          <div className="text-[12.5px] text-white/[0.55] truncate">Analyzed: <span className="text-white/[0.8]">{enteredQuery}</span>{market ? <span> · {market}</span> : null}</div>
+        </div>
+      </div>
+      <div className="text-[12px] text-white/[0.4]">{status}{cached ? " · scanned in the last 24h" : ""}</div>
+    </div>
+  );
+}
+
+function Heading({ name }: { name: string | null }) {
+  return (
+    <div className="max-w-[860px] mb-10">
+      <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-5 block">What your agent would do first</span>
+      <h2 className="text-[32px] sm:text-[40px] md:text-[56px] font-extrabold tracking-[-0.025em] leading-[1.06]">
+        Your agent&apos;s first 7 days{name ? <> at <span className="font-serif-accent italic font-normal">{name}.</span></> : <span className="font-serif-accent italic font-normal">.</span>}
+      </h2>
+      <p className="mt-4 text-[15px] leading-relaxed text-[#a3a3a8]">Real findings from public data, grouped by day. Live capabilities act in the trial; the rest tell you when they ship. <a href="#agent" className="underline underline-offset-2 text-white/[0.85]">See all 8 →</a></p>
+    </div>
+  );
+}
+
 export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) {
   const s = useScan();
   if (s.phase === "idle") {
     return (
-      <div className="rounded-[18px] p-8 text-center" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="text-[15px] text-white/[0.6]">Enter your website above. In about 30 seconds you&apos;ll see exactly what your agent would do in its first 7 days — from public data, nothing invented.</div>
-      </div>
+      <>
+        <Heading name={null} />
+        <div className="rounded-[18px] p-8 text-center" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="text-[15px] text-white/[0.6]">Enter your website above. In about 30 seconds you&apos;ll see exactly what your agent would do in its first 7 days — from public data, nothing invented.</div>
+        </div>
+      </>
     );
   }
   if (s.phase === "error" && s.error) {
     return (
-      <div className="rounded-[18px] p-6 flex items-start gap-3" style={{ background: "rgba(255,69,58,0.06)", border: "1px solid rgba(255,69,58,0.25)" }}>
-        <AlertCircle size={18} className="shrink-0 mt-0.5 text-[#FF6B6B]" />
-        <div><div className="text-[14px] font-medium text-white">We couldn&apos;t run the scan.</div><div className="text-[13px] text-white/[0.6] mt-1">{s.error.message}</div></div>
-      </div>
+      <>
+        <Heading name={null} />
+        <div className="rounded-[18px] p-6 flex items-start gap-3" style={{ background: "rgba(255,69,58,0.06)", border: "1px solid rgba(255,69,58,0.25)" }}>
+          <AlertCircle size={18} className="shrink-0 mt-0.5 text-[#FF6B6B]" />
+          <div><div className="text-[14px] font-medium text-white">We couldn&apos;t run the scan.</div><div className="text-[13px] text-white/[0.6] mt-1">{s.error.message}</div></div>
+        </div>
+      </>
     );
   }
   const rows = buildRows(s.findings, modules);
   const liveFound = s.findings.filter((f) => f.status === "found" && modules.find((m) => m.key === f.capability)?.status === "live").length;
   const scanParam = s.meta?.domain ? `?scan=${encodeURIComponent(s.meta.domain)}` : "";
+  const name = s.meta?.businessName ?? null;
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="text-[13px] text-white/[0.55]">
-          {s.meta?.businessName ? <span className="text-white font-medium">{s.meta.businessName}</span> : <span className="text-white font-medium">{s.meta?.domain ?? s.query}</span>}
-          {s.meta?.market ? <span> · {s.meta.market}</span> : null}
-          {s.meta?.cached ? <span className="text-white/[0.35]"> · scanned in the last 24h</span> : null}
-        </div>
-        <div className="text-[12px] text-white/[0.4]">{s.phase === "running" ? "Scanning public data…" : `Public data only · ${s.findings.length} checks`}</div>
-      </div>
+      <Heading name={name} />
+      <ReportHeader name={name} logoUrl={s.meta?.logoUrl ?? null} enteredQuery={s.meta?.enteredQuery ?? s.query} domain={s.meta?.domain ?? s.query} market={s.meta?.market ?? null} cached={!!s.meta?.cached} status={s.phase === "running" ? "Scanning public data…" : `Public data only · ${s.findings.length} checks`} />
 
       <ol className="rounded-[18px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
         {rows.map((r, i) => (

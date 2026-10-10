@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       try {
         const cached = await readCache(service, norm.domain).catch(() => null);
         if (cached) { replayScan(cached, emit); controller.close(); return; }
-        const scan = await runScan(norm, emit);
+        const scan = await runScan({ ...norm, enteredQuery: (body.query ?? "").trim().slice(0, 200) }, emit);
         if (scan) await writeCache(service, norm.domain, scan).catch((e) => console.error("[analyzer] cache write failed:", e instanceof Error ? e.message : e));
       } catch (e) {
         console.error("[analyzer] scan failed:", e instanceof Error ? e.message : e);

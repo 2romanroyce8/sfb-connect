@@ -4,6 +4,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { categoryHint, checkChat, checkOutbound, checkPresence, checkReviews, checkWebsite, fetchSite, marketFromHtml } from "./checks";
 import { extractTitle } from "@/lib/research/htmlExtract";
+import { resolveBusinessName, resolveLogo } from "./identity";
 import type { Finding, ScanEvent, ScanMeta, StoredScan } from "./types";
 
 export const CACHE_HOURS = 24;
@@ -30,7 +31,7 @@ export async function writeCache(service: SupabaseClient, domain: string, scan: 
 }
 
 /** Runs the scan, calling `emit` for every event. Resolves with the stored scan (or null on hard failure). */
-export async function runScan(input: { url: string; domain: string }, emit: (e: ScanEvent) => void): Promise<StoredScan | null> {
+export async function runScan(input: { url: string; domain: string; enteredQuery?: string }, emit: (e: ScanEvent) => void): Promise<StoredScan | null> {
   const startedAt = new Date().toISOString(); const t0 = Date.now();
   const findings: Finding[] = [];
   const push = (f: Finding) => { findings.push(f); emit({ type: "finding", finding: f }); };
@@ -45,17 +46,25 @@ export async function runScan(input: { url: string; domain: string }, emit: (e: 
   // Structured data first; the page itself as a real fallback (name/title for category, "City, ST" for market).
   const category = presence.category ?? categoryHint(presence.businessName, site.ok ? extractTitle(site.html) : null, input.domain.replace(/[-.]/g, " "));
   const market = presence.market ?? (site.ok ? marketFromHtml(site.html) : null);
+  // Identity for the header: title → JSON-LD → lookup; logo only if it really serves an image.
+  const ident = resolveBusinessName(site.ok ? site.html : null, presence.businessName);
+  const logo = site.ok ? await resolveLogo(site.html, site.finalUrl) : { url: null, source: null };
+  const name = ident.name;
+  if (name && presence.finding.status === "found") {
+    const n = Number(presence.finding.metrics.issues ?? 0);
+    presence.finding.headline = `Your visibility score is ${presence.finding.metrics.score}/100. Found ${n} listing ${n === 1 ? "error" : "errors"} for ${name}.`;
+  }
   const meta: ScanMeta = {
-    domain: input.domain, url: input.url, businessName: presence.businessName, category, market, cached: false, startedAt,
-    debug: { categorySource: presence.category ? "lookup" : category ? "page" : "none", marketSource: presence.market ? "lookup" : market ? "page" : "none", siteOk: site.ok, siteBytes: site.bytes, siteStatus: site.status, siteFinalUrl: site.finalUrl, siteReason: site.reason, hasCommaState: site.ok ? /, (OK|TX|CA|FL|NY)\b/.test(site.html) : null,
+    domain: input.domain, url: input.url, enteredQuery: input.enteredQuery ?? input.domain, businessName: name, nameSource: ident.source, logoUrl: logo.url, category, market, cached: false, startedAt,
+    debug: { logoSource: logo.source, categorySource: presence.category ? "lookup" : category ? "page" : "none", marketSource: presence.market ? "lookup" : market ? "page" : "none", siteOk: site.ok, siteBytes: site.bytes, siteStatus: site.status, siteFinalUrl: site.finalUrl, siteReason: site.reason, hasCommaState: site.ok ? /, (OK|TX|CA|FL|NY)\b/.test(site.html) : null,
       rawSample: site.ok ? (site.html.match(/.{0,40}, (?:OK|TX|CA|FL|NY)\b.{0,20}/g) ?? []).slice(0, 3).join(" || ") : null,
       textSample: site.ok ? (site.html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").match(/.{0,40}, (?:OK|TX|CA|FL|NY)\b.{0,20}/g) ?? []).slice(0, 3).join(" || ") : null },
   };
   emit({ type: "meta", meta });
   push(presence.finding);
   await Promise.all([
-    checkOutbound(category, market).then(push),
-    checkReviews(presence.businessName, market, category).then(push),
+    checkOutbound(category, market, name).then(push),
+    checkReviews(name ?? presence.businessName, market, category).then(push),
   ]);
   emit({ type: "done", durationMs: Date.now() - t0 });
   return { meta, findings };

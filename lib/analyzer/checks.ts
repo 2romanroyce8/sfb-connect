@@ -38,7 +38,7 @@ export async function checkPresence(url: string): Promise<{ finding: Finding; bu
   return {
     finding: {
       check: "presence", capability: "ai_presence", status: "found",
-      headline: `Your visibility score is ${r.scores.overall}/100. Found ${issues.length} listing ${issues.length === 1 ? "error" : "errors"}.`,
+      headline: `Your visibility score is ${r.scores.overall}/100. Found ${issues.length} listing ${issues.length === 1 ? "error" : "errors"}.`, // personalized in run.ts once the name is resolved
       items: issues, reason: issues.length === 0 ? "No listing errors in the public signals we checked." : null,
       metrics: { score: r.scores.overall, issues: issues.length }, sources: r.sources,
     },
@@ -64,7 +64,7 @@ export function categoryHint(...texts: (string | null | undefined)[]): string | 
 }
 
 // ---------- 2. Outbound: first-pass prospect count in their market (Exa, real results, distinct domains) ----------
-export async function checkOutbound(category: string | null, market: string | null): Promise<Finding> {
+export async function checkOutbound(category: string | null, market: string | null, name: string | null = null): Promise<Finding> {
   const icp = icpFor(category);
   const base: Omit<Finding, "status" | "headline" | "reason" | "metrics" | "items" | "sources"> = { check: "outbound", capability: "outbound_gtm" };
   if (!icp) return { ...base, status: "missing", headline: "Couldn't determine your ideal customer from public data.", items: [], reason: category ? `We saw "${category}" but don't have an ideal-customer profile for it yet.` : "Your site doesn't state what the business does in a way we could classify.", metrics: {}, sources: [] };
@@ -75,7 +75,7 @@ export async function checkOutbound(category: string | null, market: string | nu
   for (const r of results.flat()) { try { domains.add(new URL(r.url).hostname.replace(/^www\./, "")); } catch { /* skip */ } }
   const n = domains.size;
   if (n === 0) return { ...base, status: "missing", headline: `No ${icp.label} surfaced in ${market} on a first pass.`, items: [], reason: "Three search passes returned nothing usable — the agent would widen the radius with you.", metrics: { prospects: 0 }, sources: ["exa"] };
-  return { ...base, status: "found", headline: `Found ${n} ${icp.label} in ${market} on a first pass.`, items: [...domains].slice(0, 5), reason: `First pass only: ${icp.queries.length} searches, up to 10 results each, distinct domains counted. The full build goes much deeper.`, metrics: { prospects: n, market, icp: icp.label }, sources: ["exa"] };
+  return { ...base, status: "found", headline: name ? `Found ${n} ${icp.label} near ${name}'s market (${market}) on a first pass.` : `Found ${n} ${icp.label} in ${market} on a first pass.`, items: [...domains].slice(0, 5), reason: `First pass only: ${icp.queries.length} searches, up to 10 results each, distinct domains counted. The full build goes much deeper.`, metrics: { prospects: n, market, icp: icp.label }, sources: ["exa"] };
 }
 
 // ---------- 3. Reviews: Google Places if a key exists; otherwise an honest missing row ----------
