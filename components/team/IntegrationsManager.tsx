@@ -20,7 +20,8 @@ const input = "h-[36px] rounded-[8px] px-3 text-[12.5px] outline-none text-white
 const inputStyle: React.CSSProperties = { background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)" };
 
 /** Every integration in the registry with its real status and a working connect/disconnect for the signed-in member. */
-export default function IntegrationsManager() {
+export default function IntegrationsManager({ only }: { only?: string | string[] } = {}) {
+  const onlyKeys = only ? (Array.isArray(only) ? only : [only]) : null;
   const [s, setS] = useState<Status | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [reveal, setReveal] = useState<{ title: string; value: string; note: string } | null>(null);
@@ -42,7 +43,7 @@ export default function IntegrationsManager() {
 
   return (
     <div className="mt-8 max-w-[960px]">
-      <div className="text-[14px] font-semibold text-[#F5F5F7]">All integrations</div>
+      {!onlyKeys && <div className="text-[14px] font-semibold text-[#F5F5F7]">All integrations</div>}
       <div className="text-[12px] text-[#6E6E73] mt-1 mb-3">Status is computed from the environment and real connections — the same registry the public site reads. Only <span className="text-[#30D158]">Live</span> entries appear on sfbconnect.com. Credentials are stored encrypted server-side and never shown again.</div>
       {err && <div className="mb-3 text-[12px] text-[#FF6961]">{err}</div>}
       {reveal && (
@@ -54,7 +55,7 @@ export default function IntegrationsManager() {
         </div>
       )}
       <ul className="flex flex-col gap-2.5">
-        {s.registry.map((i) => {
+        {s.registry.filter((i) => !onlyKeys || onlyKeys.includes(i.key)).map((i) => {
           const c = mine(i.key);
           return (
             <li key={i.key} className="rounded-[12px] p-4" style={card}>

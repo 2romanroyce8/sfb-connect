@@ -3,6 +3,10 @@ import IntegrationControlDeck from "@/components/team/IntegrationControlDeck";
 import IntegrationRegistryList from "@/components/team/IntegrationRegistryList";
 import IntegrationsManager from "@/components/team/IntegrationsManager";
 import { loadIntegrationRegistry } from "@/lib/integrations/registry";
+import { listConnectionSummaries } from "@/lib/integrations/connections";
+import { OAUTH_PROVIDERS, isOAuthProviderKey, oauthConfigured } from "@/lib/integrations/providers";
+import IntegrationsGrid, { type GridCard } from "@/components/team/IntegrationsGrid";
+import Link from "next/link";
 
 // Every value fed into IntegrationControlDeck below is real: Google
 // Calendar's connection/refresh state comes straight from
@@ -11,7 +15,7 @@ import { loadIntegrationRegistry } from "@/lib/integrations/registry";
 // "Disconnected" and their CTA is disabled rather than pretending a
 // connect flow exists.
 
-export default async function IntegrationsPage({ searchParams }: { searchParams: { connected?: string; error?: string } }) {
+export default async function IntegrationsPage({ searchParams }: { searchParams: { connected?: string; error?: string; manage?: string } }) {
   const supabase = createSupabaseServerClient();
   const {
     data: { user },
@@ -53,6 +57,14 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
     }));
   }
 
+  const GRID_KEYS = ["gmail", "google_calendar", "linkedin", "slack", "stripe", "gohighlevel", "meta", "notion", "resend"];
+  const [registry, mine] = await Promise.all([loadIntegrationRegistry(), listConnectionSummaries(user!.id)]);
+  const cards: GridCard[] = registry.filter((i) => GRID_KEYS.includes(i.key)).map((i) => {
+    const conn = i.key === "google_calendar" ? (myConnection ? { account_label: myConnection.email } : null) : (mine.find((m) => m.provider === i.key) ?? null);
+    return { key: i.key, name: i.name, logo: i.logo, status: i.status, connectKind: i.connectKind, connected: !!conn, configured: isOAuthProviderKey(i.key) ? oauthConfigured(OAUTH_PROVIDERS[i.key]) : i.status === "live", accountLabel: conn?.account_label ?? null };
+  });
+  const manage = searchParams.manage && GRID_KEYS.includes(searchParams.manage) ? searchParams.manage : null;
+
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
@@ -71,39 +83,38 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
         </div>
       )}
 
-      <IntegrationControlDeck
-        google={myConnection}
-        teamConnections={teamConnections}
-        isOwner={isOwner}
-        appleCalendar={{
-          status: "Needs Setup",
-          description:
-            "Every meeting page includes an ICS download so reps can add events to Apple Calendar (or any calendar app) manually. There's no account-level Apple Calendar connection yet.",
-        }}
-        aiProvider={{
-          status: "Needs Setup",
-          description: "Powers the global Sales Assistant. Not required for audits or scripts, which are deterministic.",
-        }}
-        messaging={[
-          {
-            name: "Telephony",
-            status: "Disconnected",
-            description: "Calls currently run as Device Calls — the CRM tracks them, but dialing happens on the rep's own phone.",
-          },
-          {
-            name: "SMS",
-            status: "Disconnected",
-            description: "Send text reminders and confirmations to leads.",
-          },
-          {
-            name: "Email",
-            status: "Needs Setup",
-            description: "Send meeting confirmations and follow-up emails from the CRM.",
-          },
-        ]}
-      />
-      <IntegrationsManager />
-      <IntegrationRegistryList items={await loadIntegrationRegistry()} />
+      <IntegrationsGrid cards={cards} selected={manage} />
+
+      {manage && (
+        <div id="manage" className="mt-8">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[14px] font-semibold text-[#F5F5F7]">{registry.find((i) => i.key === manage)?.name} — details</div>
+            <Link href="/team/integrations" className="text-[12px] text-[#A1A1A6] underline underline-offset-2">Close</Link>
+          </div>
+          {manage === "google_calendar" ? (
+            <IntegrationControlDeck
+              google={myConnection}
+              teamConnections={teamConnections}
+              isOwner={isOwner}
+              appleCalendar={{ status: "Needs Setup", description: "Every meeting page includes an ICS download so reps can add events to any calendar app manually." }}
+              aiProvider={{ status: "Needs Setup", description: "Powers the global Sales Assistant. Not required for audits or scripts, which are deterministic." }}
+              messaging={[
+                { name: "Telephony", status: "Disconnected", description: "Calls currently run as Device Calls — the CRM tracks them, but dialing happens on the rep's own phone." },
+                { name: "SMS", status: "Disconnected", description: "Send text reminders and confirmations to leads." },
+                { name: "Email", status: "Needs Setup", description: "Send meeting confirmations and follow-up emails from the CRM." },
+              ]}
+            />
+          ) : (
+            <IntegrationsManager only={manage} />
+          )}
+        </div>
+      )}
+
+      <details className="mt-10 max-w-[960px]">
+        <summary className="cursor-pointer text-[12.5px] text-[#A1A1A6]">Developer connections (Zapier, Webhooks) and registry audit</summary>
+        <IntegrationsManager only={["zapier", "webhooks"]} />
+        <IntegrationRegistryList items={registry} />
+      </details>
     </div>
   );
 }
