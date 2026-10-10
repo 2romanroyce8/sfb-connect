@@ -19,7 +19,7 @@
 
 | Key | Console | Env vars | Scopes requested |
 |---|---|---|---|
-| gohighlevel | https://marketplace.gohighlevel.com/ | `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET` | contacts, opportunities, calendars (read/write), locations.readonly |
+| gohighlevel (PARKED 2026-10-10 — status forced to planned in registry.ts; re-enable by swapping back to oauthEntry) | https://marketplace.gohighlevel.com/ | `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET` | contacts, opportunities, calendars (read/write), locations.readonly |
 | gmail | https://console.cloud.google.com/apis/credentials (same project as Calendar; enable the Gmail API — no new redirect URI needed, Gmail reuses the Calendar callback) | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (shared with Calendar) | gmail.send, gmail.modify, userinfo.email |
 | meta | https://developers.facebook.com/apps/ | `META_APP_ID`, `META_APP_SECRET` | ads_management, ads_read, business_management, pages_show_list, pages_read_engagement (App Review needed for ads scopes) |
 | slack | https://api.slack.com/apps | `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET` | chat:write, channels:read, channels:join, incoming-webhook |

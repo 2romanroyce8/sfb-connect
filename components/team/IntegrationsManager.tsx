@@ -86,6 +86,7 @@ function Actions({ i, connected, isOwner, onDisconnect, onReveal, reload }: { i:
   if (i.connectKind === "google_calendar") return <a href="#google" className={btn} style={{ border: "1px solid rgba(255,255,255,0.14)", color: "#F5F5F7" }}>Manage above</a>;
   if (i.connectKind === "env") return <span className="text-[11.5px] text-[#6E6E73] font-mono text-right">{i.envVars?.join("\n")}</span>;
   if (i.connectKind === "oauth") {
+    if (i.status === "planned") return <span className="text-[11.5px] text-[#6E6E73]">Parked</span>;
     const configured = !i.blocker?.startsWith("Register");
     return connected
       ? <button onClick={onDisconnect} className={btn} style={{ background: "rgba(255,69,58,0.12)", color: "#FF6961", border: "1px solid rgba(255,69,58,0.3)" }}>Disconnect</button>

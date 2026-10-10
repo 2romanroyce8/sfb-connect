@@ -19,16 +19,17 @@ test("with nothing configured or verified, only the self-contained integrations 
 
 test("every live integration has an official logo (marketing never shows a generic icon)", () => {
   const env = { STRIPE_SECRET_KEY: "sk_test_x", GHL_CLIENT_ID: "a", GHL_CLIENT_SECRET: "b", GOOGLE_CLIENT_ID: "a", GOOGLE_CLIENT_SECRET: "b", META_APP_ID: "a", META_APP_SECRET: "b", SLACK_CLIENT_ID: "a", SLACK_CLIENT_SECRET: "b", NOTION_CLIENT_ID: "a", NOTION_CLIENT_SECRET: "b", LINKEDIN_CLIENT_ID: "a", LINKEDIN_CLIENT_SECRET: "b" };
-  const all = integrationRegistry({ env, verified: new Set(["gohighlevel", "gmail", "meta", "slack", "notion", "linkedin"]) });
-  assert.equal(liveOf(all).length, all.length, "everything live when configured + verified");
+  const all = integrationRegistry({ env, verified: new Set(["gmail", "meta", "slack", "notion", "linkedin"]) });
+  assert.equal(liveOf(all).length, all.length - 1, "everything live when configured + verified, except parked GoHighLevel");
+  assert.equal(all.find((i) => i.key === "gohighlevel")!.status, "planned", "GHL is parked");
   for (const i of liveOf(all)) assert.ok(i.logo, `${i.key} needs a logo`);
 });
 
 test("OAuth providers: configured but unverified stays needs_setup; verified without credentials stays needs_setup", () => {
-  const env = { GHL_CLIENT_ID: "a", GHL_CLIENT_SECRET: "b" };
-  assert.equal(integrationRegistry({ env, verified: new Set() }).find((i) => i.key === "gohighlevel")!.status, "needs_setup");
-  assert.equal(integrationRegistry({ env, verified: new Set(["gohighlevel"]) }).find((i) => i.key === "gohighlevel")!.status, "live");
-  assert.equal(integrationRegistry({ env: {}, verified: new Set(["gohighlevel"]) }).find((i) => i.key === "gohighlevel")!.status, "needs_setup");
+  const env = { SLACK_CLIENT_ID: "a", SLACK_CLIENT_SECRET: "b" };
+  assert.equal(integrationRegistry({ env, verified: new Set() }).find((i) => i.key === "slack")!.status, "needs_setup");
+  assert.equal(integrationRegistry({ env, verified: new Set(["slack"]) }).find((i) => i.key === "slack")!.status, "live");
+  assert.equal(integrationRegistry({ env: {}, verified: new Set(["slack"]) }).find((i) => i.key === "slack")!.status, "needs_setup");
   for (const p of Object.values(OAUTH_PROVIDERS)) assert.ok(p.env.clientId.endsWith("_ID") && p.env.clientSecret.endsWith("_SECRET"), p.key);
 });
 

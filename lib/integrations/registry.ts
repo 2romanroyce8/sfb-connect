@@ -66,7 +66,9 @@ export function integrationRegistry(ctx: RegistryContext = {}): Integration[] {
     { key: "webhooks", name: "Webhooks", category: "automation", description: "Outbound signed webhooks on agent events; inbound endpoints that file tasks for the agent.", logo: LOGOS.webhooks, status: "live", connectKind: "webhooks" },
     { key: "zapier", name: "Zapier", category: "automation", description: "API key + REST hooks: trigger Zaps from agent events (tasks, prospects, credits).", logo: LOGOS.zapier, status: "live", connectKind: "zapier_key" },
     { key: "stripe", name: "Stripe", category: "payments", description: "Checkout for Solo/Agency plans and credit top-ups; the ledger credits on webhook.", logo: LOGOS.stripe, status: stripeLive ? "live" : "needs_setup", connectKind: "env", envVars: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"], blocker: stripeLive ? undefined : "STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET not set in Vercel." },
-    oauthEntry("gohighlevel", "crm", "Push leads, pipelines and automations into GoHighLevel.", ctx),
+    // Parked (Roman, 2026-10-10): no GoHighLevel account on our side yet. The OAuth flow is fully built;
+    // flip this back to oauthEntry(...) when a client needs it and the marketplace app exists.
+    { key: "gohighlevel", name: "GoHighLevel", category: "crm", description: "Push leads, pipelines and automations into GoHighLevel.", logo: LOGOS.gohighlevel ?? null, status: "planned", connectKind: "oauth", envVars: [OAUTH_PROVIDERS.gohighlevel.env.clientId, OAUTH_PROVIDERS.gohighlevel.env.clientSecret], consoleUrl: OAUTH_PROVIDERS.gohighlevel.consoleUrl, blocker: "Parked — offered when a client needs it. Flow is built; needs a GHL marketplace app (nothing for the owner to do now)." },
     oauthEntry("gmail", "email", "Send approved outreach from the owner's mailbox and read replies.", ctx),
     oauthEntry("meta", "ads", "Audiences, creatives and campaigns in the owner's Meta ad account.", ctx),
     oauthEntry("slack", "messaging", "Approvals and reports posted to a Slack channel.", ctx),
