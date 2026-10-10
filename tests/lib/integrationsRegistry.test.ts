@@ -49,3 +49,13 @@ test("Resend is a system service: live iff RESEND_API_KEY is set, never customer
   const on = integrationRegistry({ ...bare, env: { RESEND_API_KEY: "re_x" } }).find((i) => i.key === "resend")!;
   assert.equal(on.status, "live"); assert.ok(on.logo, "official Resend mark present");
 });
+
+import { AI_DISCOVERY_PLATFORMS } from "../../components/home/PlatformsSection";
+test("WORKS WITH and AI DISCOVERY never mix: no AI assistant is a registry entry, and the discovery list has no connectable integration", () => {
+  const reg = integrationRegistry({ env: {} as never, verified: new Set() });
+  const regNames = new Set(reg.map((i) => i.name.toLowerCase()));
+  for (const p of AI_DISCOVERY_PLATFORMS) assert.ok(!regNames.has(p.name.toLowerCase()), `${p.name} must not be in the integrations registry`);
+  const ai = new Set(AI_DISCOVERY_PLATFORMS.map((p) => p.name.toLowerCase()));
+  for (const i of reg) assert.ok(!ai.has(i.name.toLowerCase()), `${i.name} must not be in AI Discovery`);
+  assert.deepEqual(AI_DISCOVERY_PLATFORMS.map((p) => p.name), ["ChatGPT", "Claude", "Perplexity", "Grok", "Gemini", "AI Search", "AI Assistants"]);
+});

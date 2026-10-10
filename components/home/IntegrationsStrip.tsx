@@ -3,11 +3,12 @@ import IntegrationTile from "@/components/home/IntegrationTile";
 import { loadIntegrationRegistry, liveOf, stripTagline } from "@/lib/integrations/registry";
 
 /**
- * "Plugs into your stack" — renders ONLY integrations that are live in the
- * product (lib/integrations/registry.ts, status computed from env +
- * verified connections). Same tile style as the AI-platform row. Live tiles
+ * WORKS WITH — renders ONLY integrations that are live in the product
+ * (lib/integrations/registry.ts, status computed from env + verified
+ * connections). New Live entries appear with zero manual edits. Live tiles
  * always carry an official brand mark (enforced by test). The tagline is
  * tempered until at least three integrations are live.
+ * Never put AI assistants here: they are not connectable (see PlatformsSection).
  */
 export default async function IntegrationsStrip({ compact = false }: { compact?: boolean }) {
   const items = liveOf(await loadIntegrationRegistry()).filter((i) => !!i.logo);
@@ -25,7 +26,7 @@ export default async function IntegrationsStrip({ compact = false }: { compact?:
   return (
     <Reveal>
       <div className="mt-20">
-        <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-5 block">Plugs into your stack</span>
+        <span className="font-mono text-xs tracking-[0.18em] uppercase text-medium-gray mb-5 block">Works with</span>
         <div className="flex flex-wrap gap-10 md:gap-14 justify-center items-start mt-10">
           {items.map((i) => (
             <IntegrationTile key={i.key} integration={i} />

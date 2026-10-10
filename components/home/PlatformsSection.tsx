@@ -1,8 +1,13 @@
 import Reveal from "@/components/ui/Reveal";
 import { Search, Bot } from "lucide-react";
-import IntegrationsStrip from "@/components/home/IntegrationsStrip";
 
-const PLATFORMS: { name: string; logo?: string }[] = [
+// AI DISCOVERY — where the agent gets the business SEEN. These are NOT
+// integrations: nothing here can be connected (no AI assistant has a login
+// flow), so they never appear in the WORKS WITH strip and the strip's
+// registry never lists them (tests/lib/integrationsRegistry.test.ts).
+// Rule (Roman, 2026-10-10): WORKS WITH = things the customer can connect
+// (registry Live). AI DISCOVERY = where the agent gets them seen. Never mixed.
+export const AI_DISCOVERY_PLATFORMS: { name: string; logo?: string }[] = [
   { name: "ChatGPT", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETQF1_GKWEVZM81T4F7F3S/logo-chatgpt.png" },
   { name: "Claude", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETRF8_1VFNQ24D15D436CX/logo-claude.png" },
   { name: "Perplexity", logo: "https://pub.hyperagent.com/api/published/pbf01M1PETS6Q_3S0CNHDN0W2C8QKA/logo-perplexity.png" },
@@ -23,10 +28,13 @@ export default function PlatformsSection() {
           <h2 className="text-[28px] sm:text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em]">
             Built for the new discovery layer.
           </h2>
+          <p className="mt-5 text-[15px] leading-relaxed text-[#a3a3a8] max-w-[680px] mx-auto">
+            When your customers ask an AI who to hire, your agent&apos;s job is to make sure you&apos;re the answer. Nothing to connect here — this is where you get found.
+          </p>
         </Reveal>
         <Reveal>
           <div className="flex flex-wrap gap-10 md:gap-14 justify-center items-start mt-14">
-            {PLATFORMS.map((p) => (
+            {AI_DISCOVERY_PLATFORMS.map((p) => (
               <div
                 key={p.name}
                 className="flex flex-col items-center gap-3 w-[92px]"
@@ -55,7 +63,6 @@ export default function PlatformsSection() {
             ))}
           </div>
         </Reveal>
-        <IntegrationsStrip />
       </div>
     </section>
   );
