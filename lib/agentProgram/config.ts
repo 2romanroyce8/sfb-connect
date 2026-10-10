@@ -29,7 +29,7 @@ export const capability = (key: string) => CAPABILITIES.find((c) => c.key === ke
 
 // ---- Tiers ----
 export const TIERS = [
-  { key: "trial", name: "Trial", monthlyUsd: 0, onboardingUsd: 0, credits: 128, creditsLabel: "128 one-time", businesses: 1, businessesLabel: "1 demo on stock data", capabilityLimit: 3, capabilitiesLabel: "Pick 3 to watch", integrations: "None (sandbox)", overseer: "—", priceListVisible: false, expiry: "0 credits or 14 days", trialDays: 14 },
+  { key: "trial", name: "Trial", monthlyUsd: 0, onboardingUsd: 0, credits: 128, creditsLabel: "128 one-time", businesses: 1, businessesLabel: "1 demo on stock data", capabilityLimit: 3, capabilitiesLabel: "Pick 3 to watch", integrations: "None (sandbox)", overseer: "—", priceListVisible: false, expiry: "0 credits or 3 days", trialDays: 3 },
   { key: "solo", name: "Solo", monthlyUsd: 1497, onboardingUsd: 1497, credits: 150, creditsLabel: "150 / month", businesses: 1, businessesLabel: "1 real business", capabilityLimit: 8, capabilitiesLabel: "All 8", integrations: "GHL, Zapier, Calendar, Gmail, Meta, Stripe", overseer: "Shared", priceListVisible: true, expiry: "Monthly", featured: true },
   { key: "agency", name: "Agency", monthlyUsd: 4997, onboardingUsd: 4997, credits: 500, creditsLabel: "500 / month pooled", businesses: 5, businessesLabel: "5 white-labeled client spaces", capabilityLimit: 8, capabilitiesLabel: "All 8 per space", integrations: "Same per space", overseer: "Dedicated", priceListVisible: true, expiry: "Monthly" },
 ] as const;
