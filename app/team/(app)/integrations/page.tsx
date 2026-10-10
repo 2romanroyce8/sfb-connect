@@ -1,6 +1,5 @@
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import IntegrationControlDeck from "@/components/team/IntegrationControlDeck";
-import IntegrationRegistryList from "@/components/team/IntegrationRegistryList";
 import IntegrationsManager from "@/components/team/IntegrationsManager";
 import { loadIntegrationRegistry } from "@/lib/integrations/registry";
 import { listConnectionSummaries } from "@/lib/integrations/connections";
@@ -8,12 +7,13 @@ import { OAUTH_PROVIDERS, isOAuthProviderKey, oauthConfigured } from "@/lib/inte
 import IntegrationsGrid, { type GridCard } from "@/components/team/IntegrationsGrid";
 import Link from "next/link";
 
-// Every value fed into IntegrationControlDeck below is real: Google
-// Calendar's connection/refresh state comes straight from
-// crm_calendar_connections, and Apple Calendar / AI Provider / Messaging
-// are all still genuinely unbuilt, so their statuses stay "Needs Setup" /
-// "Disconnected" and their CTA is disabled rather than pretending a
-// connect flow exists.
+// The page IS the icon grid (Roman, 2026-10-10): one card per integration,
+// state + single action at a glance. Blocker/setup details live only inside
+// a card's ?manage= detail view. The registry audit (blockers, env var names)
+// is NOT on this page — it lives at the unlinked owner route
+// /team/integrations/registry. Every value fed into IntegrationControlDeck is
+// real: Google Calendar's connection/refresh state comes from
+// crm_calendar_connections.
 
 export default async function IntegrationsPage({ searchParams }: { searchParams: { connected?: string; error?: string; manage?: string } }) {
   const supabase = createSupabaseServerClient();
@@ -57,7 +57,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
     }));
   }
 
-  const GRID_KEYS = ["gmail", "google_calendar", "linkedin", "slack", "stripe", "gohighlevel", "meta", "notion", "resend"];
+  const GRID_KEYS = ["gmail", "google_calendar", "linkedin", "slack", "stripe", "gohighlevel", "meta", "notion", "resend", "webhooks", "zapier"];
   const [registry, mine] = await Promise.all([loadIntegrationRegistry(), listConnectionSummaries(user!.id)]);
   const cards: GridCard[] = registry.filter((i) => GRID_KEYS.includes(i.key)).map((i) => {
     const conn = i.key === "google_calendar" ? (myConnection ? { account_label: myConnection.email } : null) : (mine.find((m) => m.provider === i.key) ?? null);
@@ -69,7 +69,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
     <div className="px-8 py-8">
       <div className="mb-6">
         <div className="text-[20px] font-semibold text-[#F5F5F7]">Integrations</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">Connect external services to the Sales OS. What goes live here is what the public site shows.</div>
+        <div className="text-[13px] text-[#6E6E73] mt-1">What goes live here is what the public site shows.</div>
       </div>
 
       {searchParams.error && (
@@ -109,12 +109,6 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
           )}
         </div>
       )}
-
-      <details className="mt-10 max-w-[960px]">
-        <summary className="cursor-pointer text-[12.5px] text-[#A1A1A6]">Developer connections (Zapier, Webhooks) and registry audit</summary>
-        <IntegrationsManager only={["zapier", "webhooks"]} />
-        <IntegrationRegistryList items={registry} />
-      </details>
     </div>
   );
 }

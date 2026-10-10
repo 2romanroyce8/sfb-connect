@@ -6,7 +6,8 @@
 export const LOGOS: Record<string, string | null> = {
   google_calendar: "https://pub.hyperagent.com/api/published/pbf01M4HZ3HDR_PYQGRHH5WSG6P9A3/logo-google-calendar.png",
   stripe: "https://pub.hyperagent.com/api/published/pbf01M4HZ3HNZ_NXYGP0C5QEDXBWYY/logo-stripe.png",
-  webhooks: "https://pub.hyperagent.com/api/published/pbf01M4J44420_AF3PC0JY9PVE9THG/logo-webhooks.png",
+  // Webhooks has no brand: SFB's own glyph (nodes + arrow), same tile style as the brand marks.
+  webhooks: "/logos/webhooks.svg",
   zapier: "https://pub.hyperagent.com/api/published/pbf01M4J4420T_ZRK7TGG6K3QCAFJ8/logo-zapier.png",
   gohighlevel: "https://pub.hyperagent.com/api/published/pbf01M4J441TH_DJPTB55M9R4APA65/logo-gohighlevel.png",
   gmail: "https://pub.hyperagent.com/api/published/pbf01M4J44279_81JY12HRE0SWDPBJ/logo-gmail.png",

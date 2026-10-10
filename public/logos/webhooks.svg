@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- SFB custom Webhooks glyph: three nodes, one arrow — "an event goes out, lands somewhere" -->
+  <defs><linearGradient id="g" x1="0" y1="0" x2="64" y2="64"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C7C7CC"/></linearGradient></defs>
+  <circle cx="14" cy="18" r="6" stroke="url(#g)" stroke-width="3.5"/>
+  <circle cx="14" cy="46" r="6" stroke="url(#g)" stroke-width="3.5"/>
+  <path d="M20 18h8a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8h-8" stroke="url(#g)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M36 32h18" stroke="url(#g)" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M48 25l7 7-7 7" stroke="url(#g)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

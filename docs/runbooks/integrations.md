@@ -53,3 +53,8 @@ Auth = API key (`X-API-Key`, minted on the team page, SHA-256 stored). Endpoints
 | Connected but tile not on site | status needs BOTH configured + verified; check `integration_provider_verifications` |
 | Connection shows "needs reconnect" | refresh token rejected → Disconnect, Connect again |
 | Webhook failures climbing | receiver down or signature rejected; see `webhook_deliveries.error` |
+
+## SYSTEM › Integrations page (2026-10-10)
+The page is ONLY the icon grid (`components/team/IntegrationsGrid.tsx`): 11 cards (Gmail, Google Calendar, LinkedIn, Slack, Stripe, GoHighLevel, Meta, Notion, Resend, Webhooks, Zapier), sorted connected → live → needs setup → parked. One action per card (`cardAction()`): Connect / Manage / Configured (Resend, system) / none (GHL, parked). `?manage=<key>` opens the detail view under the grid (Google deck, or `IntegrationsManager only=key` — Zapier API keys and webhook URLs live there). Blocker text and env var names never appear on the overview.
+- Registry audit (blockers, env vars, hidden-from-site reasons): unlinked owner-only route **/team/integrations/registry**. Not in the sidebar on purpose.
+- Webhooks glyph: `public/logos/webhooks.svg` (SFB's own mark — no brand exists); `LOGOS.webhooks` points at it, so the public strip uses the same tile.
