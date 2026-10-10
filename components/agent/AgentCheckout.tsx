@@ -23,10 +23,10 @@ export default function AgentCheckout({ plan }: { plan: Tier }) {
     } catch (err) { setError(err instanceof Error ? err.message : "Could not start checkout."); setBusy(false); }
   };
 
-  if (!open) return <button onClick={() => setOpen(true)} className="mt-8 inline-flex justify-center items-center bg-white text-black px-5 py-3 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity">Get your agent →</button>;
+  if (!open) return <button onClick={() => setOpen(true)} className="w-full inline-flex justify-center items-center bg-white text-black h-[44px] px-5 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity">Get your agent →</button>;
 
   return (
-    <form onSubmit={start} className="mt-6 flex flex-col gap-2.5">
+    <form onSubmit={start} className="flex flex-col gap-2.5">
       <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Work email" className="h-[42px] rounded-[9px] px-3 text-[13.5px] outline-none text-white placeholder:text-white/[0.35]" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)" }} />
       <input type="text" required minLength={2} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Business name" className="h-[42px] rounded-[9px] px-3 text-[13.5px] outline-none text-white placeholder:text-white/[0.35]" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)" }} />
       <button type="submit" disabled={busy} className="h-[44px] inline-flex justify-center items-center bg-white text-black rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity disabled:opacity-60">{busy ? "Opening secure checkout…" : `Continue to checkout — ${fmtUsd(plan.monthlyUsd)}/mo + ${fmtUsd(plan.onboardingUsd)} onboarding`}</button>
