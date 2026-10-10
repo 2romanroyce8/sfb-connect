@@ -15,11 +15,13 @@ export default function TrialWizard() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState("");
   const [prefilled, setPrefilled] = useState(false);
+  const [scanDomain, setScanDomain] = useState<string | null>(null);
   // Arriving from the homepage form: name/email are known, so start at
   // "pick a sample business" and collect the password on the last step.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const n = q.get("name") ?? ""; const e = q.get("email") ?? "";
+    const sc = q.get("scan"); if (sc) setScanDomain(sc.slice(0, 200));
     if (n && e) { setName(n); setEmail(e); setPrefilled(true); setStep(2); }
     trackMarketingEvent("trial_signup_start", { from: n && e ? "demo_form_prefill" : "start_page" });
   }, []);
@@ -31,7 +33,7 @@ export default function TrialWizard() {
   const submit = async () => {
     setBusy(true); setError(null);
     try {
-      const r = await fetch("/api/trial/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, email, password, stockProfile: profile, capabilities: caps }) });
+      const r = await fetch("/api/trial/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, email, password, stockProfile: profile, capabilities: caps, scanDomain }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Could not start the trial.");
       trackMarketingEvent("trial_signup_complete", { stockProfile: profile, capabilities: caps });
@@ -48,6 +50,7 @@ export default function TrialWizard() {
         <form onSubmit={(e) => { e.preventDefault(); setStep(2); }} className="flex flex-col gap-3">
           <h1 className="text-[28px] md:text-[34px] font-bold tracking-[-0.03em] leading-[1.05]">Get your agent. Watch it work on a sample business.</h1>
           <p className="text-[14px] text-white/[0.55] mb-2">{trial.credits} credits ≈ {bookedCallsFor(trial.credits)} booked calls of agent work. No card. No integrations. {trial.trialDays} days.</p>
+          {scanDomain && <p className="text-[12.5px] text-[#30D158] -mt-1 mb-1">Your first tasks will mirror the live findings from your {scanDomain} preview.</p>}
           <input required minLength={2} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="h-[44px] rounded-[9px] px-3 text-[14px] outline-none" style={field} />
           <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="h-[44px] rounded-[9px] px-3 text-[14px] outline-none" style={field} />
           <input required type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (8+ characters)" className="h-[44px] rounded-[9px] px-3 text-[14px] outline-none" style={field} />

@@ -4,33 +4,21 @@ import { useState } from "react";
 import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { trackMarketingEvent } from "@/lib/marketingEvents";
-import { useBusinessLookup } from "@/lib/businessLookupContext";
-import { runBusinessLookup } from "@/lib/runBusinessLookup";
+import { startScan, useScan } from "@/lib/analyzer/client";
 
 export default function Hero() {
-  const { setLookupResult } = useBusinessLookup();
+  const scan = useScan();
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const loading = scan.phase === "running";
+  // "needs_link" is shown here at the form; everything else renders in the 7-day list below.
+  const error = scan.phase === "error" && scan.error?.code === "needs_link" ? scan.error.message : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim() || loading) return;
-    setLoading(true);
-    setError(null);
-    const outcome = await runBusinessLookup(query);
-    setLoading(false);
-
-    if (outcome.status === "completed") {
-      setLookupResult(outcome.result, outcome.summary);
-      setTimeout(() => {
-        document.getElementById("score")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 50);
-    } else if (outcome.status === "needs_link") {
-      setError(outcome.message);
-    } else {
-      setError(outcome.message);
-    }
+    trackMarketingEvent("analyzer_scan_started", { query: query.trim().slice(0, 120) });
+    setTimeout(() => { document.getElementById("score")?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 150);
+    await startScan(query.trim());
   }
 
   return (
@@ -126,7 +114,7 @@ export default function Hero() {
               required
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Business name, website, or social profile"
+              placeholder="Your website (e.g. yourbusiness.com)"
               className="h-[52px] bg-transparent border-none outline-none px-[18px] text-[14px] text-white placeholder:text-white/[0.48]"
             />
             <button

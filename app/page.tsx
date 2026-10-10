@@ -1,6 +1,7 @@
 import Navbar from "@/components/home/Navbar";
 import Hero from "@/components/home/Hero";
 import { BusinessLookupProvider } from "@/lib/businessLookupContext";
+import ScoreSection from "@/components/home/ScoreSection";
 import AgentSection from "@/components/home/AgentSection";
 import PlatformsSection from "@/components/home/PlatformsSection";
 import AnalyzeSection from "@/components/home/AnalyzeSection";
@@ -20,6 +21,8 @@ export default function HomePage() {
       <Navbar />
       <BusinessLookupProvider>
         <Hero />
+        {/* 2026-10-10 (Roman): "Your Agent's First 7 Days" — the analyzer's output lives here, right under the form. */}
+        <ScoreSection />
         <AgentSection />
         <PlatformsSection />
         <AnalyzeSection />

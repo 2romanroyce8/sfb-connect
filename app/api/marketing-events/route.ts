@@ -23,6 +23,8 @@ const VALID_EVENTS = [
   "pricing_billing_toggle",
   "roi_calculated",
   "pricing_faq_open",
+  // 7-day analyzer (2026-10-10)
+  "analyzer_scan_started",
 ];
 
 // A real, minimal event log -- no analytics provider is connected in this

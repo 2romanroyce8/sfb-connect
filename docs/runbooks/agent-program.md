@@ -23,3 +23,11 @@
 
 ## Not built yet (disclosed)
 Steps 4–5 of both onboarding flows (live "watch the agent work" feed and "approve first 3 tasks") depend on the agent runner producing real tasks — see the task queue + research adapters. Reports/Integrations tabs for the agent product, Agency's 5 client spaces, 80% warning **email** (banner is live; email needs a provider), overseer-signed PDF reports.
+
+## "Your Agent's First 7 Days" analyzer (2026-10-10)
+Homepage form (Hero, unchanged copy) → `POST /api/analyze/first-7-days {query}` → NDJSON stream → `components/home/FirstSevenDays.tsx` inside `ScoreSection` (right under the hero).
+- **Checks** (`lib/analyzer/checks.ts`, all public data, all in parallel, none throw): presence (existing `business-lookup` edge function: score + gaps/missing = "listing errors"), outbound (Exa, ICP preset per category in `lib/analyzer/icp.ts`, distinct domains across 3 searches = first-pass prospect count), reviews (Google Places only if `GOOGLE_PLACES_API_KEY` is set — otherwise an honest "couldn't read" row; unanswered count is never claimable from the public API), website (our own fetch: first-byte time, HTML weight, title/meta/H1/viewport/schema/tel/booking → top 3 fixes), chat (widget vendor detection; after-hours behaviour is stated as not observable).
+- **Honesty rules in code**: `lib/analyzer/narrate.ts` — the "your agent…" line reads `agent_program_modules` (same registry as /agent and integrations). Live → acts; not live → "takes this over when X ships — you're first in line". `status: "missing"` rows carry a `reason`. Tests: `tests/lib/analyzer.test.ts`.
+- **Cache**: `analyzer_scans` (domain PK, 24h) — service-role only. Rate limit 12 scans / IP / hour.
+- **Trial tie-in**: CTA → `/start?scan=<domain>`; `/api/trial/start` stores `businesses.analyzer_scan_domain` and seeds up to 3 `agent_tasks` (owner atlas, reviewer hyperagent) from `firstThreeTasks()` — LIVE capabilities only. The trial still runs on the stock demo business; the tasks say so in their context.
+- Optional env: `GOOGLE_PLACES_API_KEY` (turns the reviews row from "couldn't read" into rating + nearby competitor average). PageSpeed is not used: keyless quota is 0.
