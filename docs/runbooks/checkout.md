@@ -1,7 +1,7 @@
 # Runbook — Checkout (Stripe)
 
 ## Paths
-- **Agent tiers:** `/agent#pricing` → `POST /api/agent/checkout {plan: solo|agency, email, businessName}` → Stripe Checkout (mode=subscription; line items = monthly price + one-time onboarding price, both found/created by lookup key `sfb_agent_<tier>_monthly` / `_onboarding`) → `agent_plan_orders` pending → webhook `checkout.session.completed` (metadata.kind=agent_plan) → `provisionAgentCustomer`: invite/reuse account, business with `plan_key`, all 8 capabilities on, first month credits, audit → `/agent/welcome` tells the customer to watch for the sign-in email.
+- **Agent tiers:** `/pricing` (also `/agent#pricing`, homepage `#pricing`) → `POST /api/agent/checkout {plan: solo|agency, email, businessName, interval: month|year}` → Stripe Checkout (mode=subscription; line items = recurring price + one-time onboarding price, found/created by lookup key `sfb_agent_<tier>_monthly` / `_annual` (10× monthly, yearly) / `_onboarding`; see pricing-page.md for the annual monthly-refill cron) → `agent_plan_orders` pending → webhook `checkout.session.completed` (metadata.kind=agent_plan) → `provisionAgentCustomer`: invite/reuse account, business with `plan_key`, all 8 capabilities on, first month credits, audit → `/agent/welcome` tells the customer to watch for the sign-in email.
 - **Trial:** no Stripe. `/start`.
 - **Top-ups:** `/dashboard/credits` → `POST /api/dashboard/billing/checkout {kind:"credits", creditPackageId}` (existing route; now creates the Stripe price by lookup key `sfb_topup_<credits>` if missing) → webhook grants PURCHASE credits.
 - **Presence add-ons:** unchanged (`addon_products`).

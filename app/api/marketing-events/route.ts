@@ -19,6 +19,10 @@ const VALID_EVENTS = [
   "pricing_card_click",
   "topup_click",
   "demo_video_play",
+  // Pricing page overhaul (2026-10-10)
+  "pricing_billing_toggle",
+  "roi_calculated",
+  "pricing_faq_open",
 ];
 
 // A real, minimal event log -- no analytics provider is connected in this

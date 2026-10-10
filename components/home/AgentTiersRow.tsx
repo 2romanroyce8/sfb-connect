@@ -86,17 +86,6 @@ export default function AgentTiersRow() {
           </div>
         );
       })}
-      <style jsx global>{`
-        .sfb-glass {
-          background:
-            radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 45%, rgba(255, 255, 255, 0.015) 100%),
-            rgba(12, 12, 12, 0.55);
-          border: 1px solid rgba(255, 255, 255, 0.13);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 30px 80px rgba(0, 0, 0, 0.55);
-          backdrop-filter: blur(22px) saturate(1.2);
-          -webkit-backdrop-filter: blur(22px) saturate(1.2);
-        }
-      `}</style>
     </div>
   );
 }

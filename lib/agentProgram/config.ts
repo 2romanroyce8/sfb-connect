@@ -107,6 +107,39 @@ export const DEMO_HREF = "/start"; // the demo form left the homepage 2026-10-09
 export const PRICING_NOTE = "Pricing shown is for roofing. Clinics and private equity are priced by consultation.";
 export const fmtUsd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
+// ---- Billing intervals (pricing page overhaul, Roman spec 2026-10-10) ----
+// Annual = ANNUAL_MONTHS_CHARGED × monthly, billed once a year (2 months free).
+// The setup fee is one-time and is NEVER discounted. Credits still refill
+// monthly on annual plans (see lib/agentProgram/provision.ts refillAnnualPlans).
+export type BillingInterval = "month" | "year";
+export const ANNUAL_MONTHS_CHARGED = 10;
+export const annualUsd = (monthlyUsd: number) => monthlyUsd * ANNUAL_MONTHS_CHARGED;
+export const annualPerMonthUsd = (monthlyUsd: number) => Math.round((annualUsd(monthlyUsd) / 12) * 100) / 100;
+
+// ---- Niche multipliers: roofing is the price shown; the others are quoted by consultation ----
+export const NICHES = [
+  { key: "roofing", name: "Roofing", multiplier: 1.0, shown: true },
+  { key: "clinics", name: "Clinics", multiplier: 1.5, shown: false },
+  { key: "private_equity", name: "Private equity", multiplier: 3.0, shown: false },
+] as const;
+export const nicheUsd = (usd: number, multiplier: number) => Math.round(usd * multiplier);
+
+// ---- BLANKS — only Rome fills these. NEVER invent. ----
+// While a value is null the UI renders nothing for it: no strikethrough, no
+// "Launch pricing" tag, no vendor total figure (the fallback copy is the one
+// Rome offered: "thousands").
+export const LAUNCH_PRICING_TAG = "Launch pricing";
+export const ANCHOR_WAS_USD: Record<"solo" | "agency", number | null> = { solo: null, agency: null };
+export const REPLACED_VENDORS: { name: string; monthlyUsd: number | null }[] = [
+  { name: "SEO agency", monthlyUsd: null },
+  { name: "Ad manager", monthlyUsd: null },
+  { name: "Web designer", monthlyUsd: null },
+  { name: "CRM consultant", monthlyUsd: null },
+  { name: "Answering service", monthlyUsd: null },
+  { name: "Ops consultant", monthlyUsd: null },
+];
+export const VENDORS_TOTAL_MONTHLY_USD: number | null = null;
+
 // Pricing-page FAQ (10). Final copy — Atlas copy pack 2026-10-09.
 export const AGENT_FAQ = [
   { q: "What's included in the monthly price?", a: "Your SFB Agent, all eight capabilities, your monthly credit allotment, your named human overseer, integrations with your tools, daily/weekly/monthly reports, and your dashboard. No seat fees, no contracts." },

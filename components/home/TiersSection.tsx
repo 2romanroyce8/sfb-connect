@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
 import AgentTiersRow from "@/components/home/AgentTiersRow";
 import { CREDITS_PAY_FOR_WORK, PRICING_NOTE } from "@/lib/agentProgram/config";
@@ -44,6 +45,7 @@ export default function TiersSection() {
           <span>Cancel anytime</span><span className="text-white/[0.3]">·</span><span>Month-to-month</span><span className="text-white/[0.3]">·</span><span>No contracts</span><span className="text-white/[0.3]">·</span><span>{CREDITS_PAY_FOR_WORK}</span>
         </div>
         <p className="mt-4 text-center text-[12px] text-white/[0.4]">{PRICING_NOTE}</p>
+        <p className="mt-5 text-center text-[13px]"><Link href="/pricing" className="text-white/[0.75] hover:text-white underline underline-offset-4 decoration-white/[0.25]">Full pricing: how it works, annual billing, ROI calculator, every credit price →</Link></p>
       </div>
     </section>
   );

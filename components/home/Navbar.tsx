@@ -26,7 +26,7 @@ const LOGO_SRC =
 
 const PRIMARY_LINKS = [
   { label: "Agent", href: "/#agent" },
-  { label: "Pricing", href: "/#pricing" },
+  { label: "Pricing", href: "/pricing" },
   { label: "FAQ", href: "/#faq" },
 ];
 

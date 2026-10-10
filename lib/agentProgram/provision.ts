@@ -67,6 +67,30 @@ export async function grantAgentRenewalCredits(service: SupabaseClient, invoice:
   await service.from("businesses").update({ credits_cycle_started_at: new Date().toISOString(), work_paused_reason: null }).eq("id", order.business_id);
 }
 
+/** Annual plans pay Stripe once a year, so Stripe's invoice.paid cannot drive
+ * their monthly refill. This runs daily from pg_cron (/api/cron/plan-refill):
+ * every provisioned annual order whose business started its credit cycle a
+ * month or more ago gets the expire-unspent + grant that a monthly invoice
+ * would have triggered. Idempotent per business per cycle month. */
+export async function refillAnnualPlans(service: SupabaseClient, now = new Date()): Promise<{ checked: number; refilled: string[] }> {
+  const { data: orders } = await service.from("agent_plan_orders").select("plan_key, business_id").eq("status", "provisioned").eq("billing_interval", "year");
+  const refilled: string[] = [];
+  for (const o of orders ?? []) {
+    const t = tier(o.plan_key);
+    if (!o.business_id || !t) continue;
+    const { data: b } = await service.from("businesses").select("credits_cycle_started_at, plan_key").eq("id", o.business_id).maybeSingle();
+    if (!b?.credits_cycle_started_at || b.plan_key !== t.key) continue;
+    const due = new Date(b.credits_cycle_started_at); due.setUTCMonth(due.getUTCMonth() + 1);
+    if (due > now) continue;
+    const cycleKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+    await expireUnspentAllotment(service, o.business_id, `annual_refill:${o.business_id}:${cycleKey}:expire`);
+    await appendCreditTransaction(service, { businessId: o.business_id, type: "PURCHASE", amount: t.credits, source: "sfb_agent_plan_renewal", description: `${t.name} plan — monthly credits (annual plan refill)`, idempotencyKey: `annual_refill:${o.business_id}:${cycleKey}` });
+    await service.from("businesses").update({ credits_cycle_started_at: now.toISOString(), work_paused_reason: null }).eq("id", o.business_id);
+    refilled.push(o.business_id);
+  }
+  return { checked: (orders ?? []).length, refilled };
+}
+
 /** Allotment spends first: whatever is left of this cycle's allotment (allotment granted − usage this cycle, floored at 0) expires. Top-ups are untouched. */
 export async function expireUnspentAllotment(service: SupabaseClient, businessId: string, idempotencyKey: string) {
   const { data: b } = await service.from("businesses").select("monthly_credit_allotment, credits_cycle_started_at").eq("id", businessId).single();
