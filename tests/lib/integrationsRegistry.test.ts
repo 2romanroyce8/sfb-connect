@@ -18,7 +18,7 @@ test("with nothing configured or verified, only the self-contained integrations 
 });
 
 test("every live integration has an official logo (marketing never shows a generic icon)", () => {
-  const env = { STRIPE_SECRET_KEY: "sk_test_x", GHL_CLIENT_ID: "a", GHL_CLIENT_SECRET: "b", GOOGLE_CLIENT_ID: "a", GOOGLE_CLIENT_SECRET: "b", META_APP_ID: "a", META_APP_SECRET: "b", SLACK_CLIENT_ID: "a", SLACK_CLIENT_SECRET: "b", NOTION_CLIENT_ID: "a", NOTION_CLIENT_SECRET: "b", LINKEDIN_CLIENT_ID: "a", LINKEDIN_CLIENT_SECRET: "b" };
+  const env = { RESEND_API_KEY: "re_x", STRIPE_SECRET_KEY: "sk_test_x", GHL_CLIENT_ID: "a", GHL_CLIENT_SECRET: "b", GOOGLE_CLIENT_ID: "a", GOOGLE_CLIENT_SECRET: "b", META_APP_ID: "a", META_APP_SECRET: "b", SLACK_CLIENT_ID: "a", SLACK_CLIENT_SECRET: "b", NOTION_CLIENT_ID: "a", NOTION_CLIENT_SECRET: "b", LINKEDIN_CLIENT_ID: "a", LINKEDIN_CLIENT_SECRET: "b" };
   const all = integrationRegistry({ env, verified: new Set(["gmail", "meta", "slack", "notion", "linkedin"]) });
   assert.equal(liveOf(all).length, all.length - 1, "everything live when configured + verified, except parked GoHighLevel");
   assert.equal(all.find((i) => i.key === "gohighlevel")!.status, "planned", "GHL is parked");
@@ -41,4 +41,11 @@ test("Stripe flips to live only when the secret key is configured", () => {
 test("strip tagline is tempered under three live integrations", () => {
   assert.match(stripTagline(2), /only once they're live/);
   assert.match(stripTagline(3), /no rip-and-replace/);
+});
+
+test("Resend is a system service: live iff RESEND_API_KEY is set, never customer-connectable", () => {
+  const off = integrationRegistry(bare).find((i) => i.key === "resend")!;
+  assert.equal(off.status, "needs_setup"); assert.equal(off.connectKind, "system");
+  const on = integrationRegistry({ ...bare, env: { RESEND_API_KEY: "re_x" } }).find((i) => i.key === "resend")!;
+  assert.equal(on.status, "live"); assert.ok(on.logo, "official Resend mark present");
 });

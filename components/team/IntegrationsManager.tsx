@@ -84,6 +84,7 @@ export default function IntegrationsManager() {
 function Actions({ i, connected, isOwner, onDisconnect, onReveal, reload }: { i: Integration; connected: boolean; isOwner: boolean; onDisconnect: () => void; onReveal: (r: { title: string; value: string; note: string }) => void; reload: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   if (i.connectKind === "google_calendar") return <a href="#google" className={btn} style={{ border: "1px solid rgba(255,255,255,0.14)", color: "#F5F5F7" }}>Manage above</a>;
+  if (i.connectKind === "system") return <span className="text-[11.5px] inline-flex items-center gap-1.5" style={{ color: i.status === "live" ? "#30D158" : "#FFD60A" }}><span className="w-[6px] h-[6px] rounded-full" style={{ background: i.status === "live" ? "#30D158" : "#FFD60A" }} />{i.status === "live" ? "Configured · system service" : "Not configured"}</span>;
   if (i.connectKind === "env") return <span className="text-[11.5px] text-[#6E6E73] font-mono text-right">{i.envVars?.join("\n")}</span>;
   if (i.connectKind === "oauth") {
     if (i.status === "planned") return <span className="text-[11.5px] text-[#6E6E73]">Parked</span>;

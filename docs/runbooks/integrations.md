@@ -7,6 +7,7 @@
 |---|---|
 | Google Calendar | always (shipped, in use) — the calendar integration |
 | Webhooks, Zapier | always (self-contained, engineering-tested) |
+| Resend (system service — SFB's own sender, not customer-connectable) | `RESEND_API_KEY` set in Vercel |
 | Stripe | `STRIPE_SECRET_KEY` set in Vercel |
 | OAuth (GoHighLevel, Gmail, Meta, Slack, Notion, LinkedIn) | vendor app credentials in Vercel **and** one successful connection recorded |
 
@@ -39,7 +40,7 @@ Auth = API key (`X-API-Key`, minted on the team page, SHA-256 stored). Endpoints
 `lib/integrations/gmail.ts`: `sendGmail`, `listGmailMessages`, `getGmailMessage` on the connected member's own mailbox. Team API: `GET /api/team/integrations/gmail/messages[?q=|?id=]`, `POST /api/team/integrations/gmail/send`. A human triggers sends; agent drafts travel through the task queue and are sent after approval. Transactional product mail stays on Resend.
 
 ## Brand assets
-`lib/integrations/logos.ts`. Sources: Google Calendar (icon-icons/Google mark), Stripe (Stripe S), GoHighLevel (gohighlevel.com/brand-assets), Zapier/Meta/Slack/Notion (Simple Icons official paths, brand colours; Notion rendered white for the dark site), Gmail + LinkedIn (Wikimedia Commons official marks), Webhooks (gilbarbara/logos). A live integration without a logo is a test failure.
+`lib/integrations/logos.ts`. Sources: Google Calendar (icon-icons/Google mark), Stripe (Stripe S), GoHighLevel (gohighlevel.com/brand-assets), Zapier/Meta/Slack/Notion (Simple Icons official paths, brand colours; Notion rendered white for the dark site), Gmail + LinkedIn (Wikimedia Commons official marks), Webhooks (gilbarbara/logos), Resend (Simple Icons official path, rendered white). A live integration without a logo is a test failure.
 
 ## Tables
 `integration_connections`, `integration_provider_verifications`, `webhook_endpoints`, `webhook_deliveries`, `inbound_webhook_tokens`, `inbound_webhook_events`, `zapier_api_keys`, `zapier_subscriptions` — migration `supabase/migrations/20261010_integrations.sql`.

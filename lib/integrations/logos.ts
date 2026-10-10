@@ -14,4 +14,5 @@ export const LOGOS: Record<string, string | null> = {
   slack: "https://pub.hyperagent.com/api/published/pbf01M4J442RG_8SXXHAHGK13ZPAAR/logo-slack.png",
   notion: "https://pub.hyperagent.com/api/published/pbf01M4J448TD_2Z2S67V3FKVB9WT5/logo-notion.png",
   linkedin: "https://pub.hyperagent.com/api/published/pbf01M4J442ZN_6QEKDZRPFCYK8ED5/logo-linkedin.png",
+  resend: "https://pub.hyperagent.com/api/published/pbf01M4KGEB7Y_DGBRN8WSDSKGENBH/logo-resend.png",
 };
