@@ -105,7 +105,8 @@ export const stockProfile = (key: string | null | undefined) => STOCK_PROFILES.f
 
 export const DEMO_HREF = "/start"; // the demo form left the homepage 2026-10-09; the trial is the demo
 export const PRICING_NOTE = "Pricing shown is for roofing. Clinics and private equity are priced by consultation.";
-export const fmtUsd = (n: number) => `$${n.toLocaleString("en-US")}`;
+// Whole dollars stay whole ($1,497); a fractional amount (annual per-month equivalent) shows cents ($1,247.50).
+export const fmtUsd = (n: number) => `$${Number.isInteger(n) ? n.toLocaleString("en-US") : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // ---- Billing intervals (pricing page overhaul, Roman spec 2026-10-10) ----
 // Annual = ANNUAL_MONTHS_CHARGED × monthly, billed once a year (2 months free).
