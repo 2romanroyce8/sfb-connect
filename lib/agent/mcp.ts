@@ -28,7 +28,8 @@ export async function handleMcp(ctx: AgentContext, body: Rpc, req: NextRequest) 
       const args = (body.params?.arguments ?? {}) as Record<string, unknown>;
       try {
         const out = await runTool(ctx, name, args, req, "mcp");
-        return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], structuredContent: out, isError: false } };
+        // Compact text: the same JSON is also in structuredContent, so pretty-printing only inflated large results (list_tasks, 2026-10-11).
+        return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(out) }], structuredContent: out, isError: false } };
       } catch (e) {
         const err = e as AgentAuthError;
         if (err instanceof AgentAuthError) return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: `${err.code}: ${err.message}` }], isError: true } };

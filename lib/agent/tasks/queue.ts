@@ -82,6 +82,15 @@ export async function listTasks(filter: { status?: TaskStatus | TaskStatus[]; ow
   return ((data ?? []) as AgentTask[]).sort((a, b) => rank[a.priority] - rank[b.priority] || (a.due && b.due ? a.due.localeCompare(b.due) : a.due ? -1 : b.due ? 1 : 0));
 }
 
+/** List rows are summaries: long context/result bodies are cut to `max` chars (flagged) so a 50-task list stays small; get_task returns the full brief. */
+export const LIST_SNIPPET_CHARS = 400;
+export type AgentTaskSummary = AgentTask & { context_truncated?: boolean; result_truncated?: boolean };
+export function summarizeTask(t: AgentTask, max = LIST_SNIPPET_CHARS): AgentTaskSummary {
+  const cut = (v: string | null) => (v && v.length > max ? { text: v.slice(0, max) + "…", truncated: true } : { text: v, truncated: false });
+  const c = cut(t.context); const r = cut(t.result);
+  return { ...t, context: c.text, result: r.text, ...(c.truncated ? { context_truncated: true } : {}), ...(r.truncated ? { result_truncated: true } : {}) };
+}
+
 export async function getTask(id: string): Promise<AgentTask> {
   const { data, error } = await db().from("agent_tasks").select(COLS).eq("id", id).maybeSingle();
   if (error) throw new TaskError(500, "get_failed", error.message);

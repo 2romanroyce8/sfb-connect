@@ -23,7 +23,7 @@ test("sfb:tasks is grantable and part of the default grant", () => {
   assert.ok(negotiateScopes("sfb:tasks").granted.includes("sfb:tasks"));
 });
 
-import { canManageTask, UPDATABLE_STATUSES, TASK_STATUSES, DEFAULT_OWNER_AGENT } from "../../lib/agent/tasks/queue";
+import { canManageTask, UPDATABLE_STATUSES, TASK_STATUSES, DEFAULT_OWNER_AGENT, summarizeTask, LIST_SNIPPET_CHARS } from "../../lib/agent/tasks/queue";
 import { handleMcp } from "../../lib/agent/mcp";
 import { TOOLS } from "../../lib/agent/tools";
 import type { AgentContext } from "../../lib/agent/auth";
@@ -58,4 +58,14 @@ test("tools/list advertises EVERY task tool to a connection holding sfb:tasks (n
   // Every callable tool whose scope is granted is listed — nothing is callable but hidden.
   const callable = TOOLS.filter((t) => scopes.has(t.scope)).map((t) => t.name).sort();
   assert.deepEqual([...listed].sort(), callable);
+});
+
+test("list_tasks summaries: long context/result are cut and flagged; short ones untouched; get_task is unaffected", () => {
+  const base = { id: "t", title: "x", owner_agent: "atlas", status: "open", priority: "normal", due: null, result: null, evidence_links: [], requires_review: true, reviewer_agent: "hyperagent", review_verdict: null, review_note: null, reviewed_by: null, reviewed_at: null, created_by: "roman", claimed_by: null, claimed_at: null, result_posted_at: null, closed_by: null, closed_at: null, created_at: "", updated_at: "" } as unknown as Omit<Parameters<typeof summarizeTask>[0], "context">;
+  const long = summarizeTask({ ...base, context: "a".repeat(5000) });
+  assert.equal(long.context!.length, LIST_SNIPPET_CHARS + 1); assert.equal(long.context_truncated, true); assert.equal(long.result_truncated, undefined);
+  const short = summarizeTask({ ...base, context: "brief" });
+  assert.equal(short.context, "brief"); assert.equal(short.context_truncated, undefined);
+  const schema = TASK_TOOLS.find((t) => t.name === "list_tasks")!.inputSchema as { properties: Record<string, unknown> };
+  assert.ok("full" in schema.properties, "full:true restores whole bodies");
 });

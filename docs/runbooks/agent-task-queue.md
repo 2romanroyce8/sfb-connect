@@ -14,7 +14,7 @@
 ## Tools (MCP `tools/call` or REST `POST /api/v1/agent/tools/<name>`)
 | Tool | Who | Effect |
 |---|---|---|
-| `list_tasks {status?, owner_agent?, created_by?, reviewer_agent?, limit?}` | any | newest first, urgent first |
+| `list_tasks {status?, owner_agent?, created_by?, reviewer_agent?, limit?, full?}` | any | newest first, urgent first; **summaries** — context/result cut to 400 chars with `context_truncated` / `result_truncated` flags (2026-10-11, after a client choked on a ~110 KB list); `full:true` returns whole bodies; `get_task` always has the full brief |
 | `get_task {task_id}` | any | task + thread |
 | `create_task {title, owner_agent, context?, priority?, due?, requires_review?=true, reviewer_agent?}` | any | reviewer defaults to atlas (hyperagent if atlas is the worker) |
 | `claim_task {task_id}` | owner of the task | atomic; open → claimed |
