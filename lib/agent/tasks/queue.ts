@@ -34,12 +34,13 @@ export type AgentTask = {
   created_by: string; claimed_by: string | null; claimed_at: string | null; result_posted_at: string | null; closed_by: string | null; closed_at: string | null; created_at: string; updated_at: string;
 };
 
-/** Who is calling: the agent handle (from the OAuth client) plus whether the authorizing user is a team owner (from users.team_role, never from arguments). */
-export type TaskActor = { handle: AgentHandle; isTeamOwner: boolean };
+/** Who is calling: the agent handle, derived from the OAuth client (never from arguments). */
+export type TaskActor = { handle: AgentHandle };
 
-/** close_task / update_task permission rule: team owner, or the task's assignee (owner_agent / claimed_by), or an unassigned task. Pure, tested. */
+/** close_task / update_task permission rule (Roman, 2026-10-11): only the `roman` handle overrides; every agent — Atlas included, even though its
+ * authorization comes from Roman's owner account — may manage tasks assigned to it (owner_agent / claimed_by) or unassigned tasks. Pure, tested. */
 export function canManageTask(actor: TaskActor, task: Pick<AgentTask, "owner_agent" | "claimed_by">): boolean {
-  if (actor.isTeamOwner) return true;
+  if (actor.handle === "roman") return true;
   if (!task.owner_agent) return true;
   return task.owner_agent === actor.handle || task.claimed_by === actor.handle;
 }

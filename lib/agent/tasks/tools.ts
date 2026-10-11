@@ -14,12 +14,8 @@ async function me(clientId: string): Promise<Q.AgentHandle> {
   const c = await getClient(clientId);
   return Q.agentHandleForClient(c?.client_name ?? clientId);
 }
-/** Handle + team-owner flag. The flag comes from the AUTHORIZING USER's team_role (RLS client), never from arguments. */
-async function actor(ctx: Parameters<ToolDef["run"]>[0]): Promise<Q.TaskActor> {
-  const handle = await me(ctx.clientId);
-  const { data } = await ctx.user.from("users").select("team_role").eq("id", ctx.userId).maybeSingle();
-  return { handle, isTeamOwner: data?.team_role === "owner" };
-}
+/** The acting handle. No owner override from the authorizing account: an agent is held to the assignee rule regardless of who authorized it. */
+async function actor(ctx: Parameters<ToolDef["run"]>[0]): Promise<Q.TaskActor> { return { handle: await me(ctx.clientId) }; }
 function wrap<T>(fn: () => Promise<T>): Promise<T> {
   return fn().catch((e) => { if (e instanceof Q.TaskError) throw new AgentAuthError(e.status, e.code, e.message); throw e; });
 }
@@ -84,7 +80,7 @@ export const TASK_TOOLS: ToolDef[] = [
   },
   {
     name: "close_task", scope: "sfb:tasks", readOnly: false,
-    description: "Close a task administratively (status closed — distinct from done, which only review_task can set). Allowed for a team owner, the task's assignee, or an unassigned task. Records closed_by/closed_at and posts the close (with your reason) to the task thread.",
+    description: "Close a task administratively (status closed — distinct from done, which only review_task can set). Allowed for the task's assignee (owner_agent / claimed_by) or an unassigned task; Roman (team API) may close anything. Records closed_by/closed_at and posts the close (with your reason) to the task thread.",
     inputSchema: obj({ task_id: str("agent_tasks.id"), reason: str("Why it is being closed (goes on the thread)") }, ["task_id"]),
     outputSchema: obj({ task: obj({}) }),
     run: (ctx, a) => wrap(async () => ({ task: await Q.closeTask(await actor(ctx), s(a.task_id), s(a.reason) || undefined) })),

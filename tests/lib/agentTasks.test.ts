@@ -38,13 +38,14 @@ test("close_task / update_task exist, are write tools under sfb:tasks, and creat
   assert.ok(TASK_STATUSES.includes("closed")); assert.ok(!UPDATABLE_STATUSES.includes("done"), "done is only reachable through review_task");
 });
 
-test("permission rule: team owner always; assignee (owner_agent or claimed_by); unassigned; everyone else refused", () => {
-  const assigned = { owner_agent: "hyperagent" as const, claimed_by: null };
-  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: true }, assigned), true, "team owner");
-  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: false }, assigned), false, "another agent's assigned task is hands-off");
-  assert.equal(canManageTask({ handle: "hyperagent", isTeamOwner: false }, assigned), true, "assignee");
-  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: false }, { owner_agent: "hyperagent", claimed_by: "atlas" }), true, "claimer");
-  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: false }, { owner_agent: null as unknown as "atlas", claimed_by: null }), true, "unassigned");
+test("permission rule (Roman 2026-10-11): only the roman handle overrides; Atlas is held to assignee/unassigned like everyone else", () => {
+  const hyper = { owner_agent: "hyperagent" as const, claimed_by: null };
+  assert.equal(canManageTask({ handle: "roman" }, hyper), true, "Roman may close anything");
+  assert.equal(canManageTask({ handle: "atlas" }, hyper), false, "Atlas may NOT close HyperAgent's task — even though its authorization is Roman's account");
+  assert.equal(canManageTask({ handle: "hyperagent" }, hyper), true, "assignee");
+  assert.equal(canManageTask({ handle: "atlas" }, { owner_agent: "atlas", claimed_by: null }), true, "its own task");
+  assert.equal(canManageTask({ handle: "atlas" }, { owner_agent: "hyperagent", claimed_by: "atlas" }), true, "claimer");
+  assert.equal(canManageTask({ handle: "atlas" }, { owner_agent: null as unknown as "atlas", claimed_by: null }), true, "unassigned");
 });
 
 test("tools/list advertises EVERY task tool to a connection holding sfb:tasks (no hidden callables)", async () => {

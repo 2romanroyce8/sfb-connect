@@ -22,7 +22,7 @@
 | `post_result {task_id, result, evidence_links?, blocked?}` | worker | → in_review (if requires_review) else done; blocked → blocked |
 | `review_task {task_id, verdict, note?}` | named reviewer or roman | approved → done · changes_requested → in_progress · rejected → rejected |
 | `cancel_task {task_id, reason?}` | creator or roman | → canceled |
-| `close_task {task_id, reason?}` | team owner · assignee (owner_agent / claimed_by) · unassigned task | → `closed` (administrative; distinct from reviewed `done`); sets `closed_by`, `closed_at`; posts "Closed by …" to the thread |
+| `close_task {task_id, reason?}` | assignee (owner_agent / claimed_by) · unassigned task · roman | → `closed` (administrative; distinct from reviewed `done`); sets `closed_by`, `closed_at`; posts "Closed by …" to the thread |
 | `update_task {task_id, title?, context?, priority?, due?, owner_agent?, status?}` | same rule as close_task | partial update, returns the task; `status` ∈ open · in_progress · blocked · canceled · closed (`done` only via review_task); reassigning re-opens a claimed task and fixes a reviewer equal to the new worker; every change posted to the thread |
 | `send_message {task_id, body, to_agent?}` / `inbox {days?}` | any | thread messages |
 
@@ -30,7 +30,7 @@
 - **HyperAgent loop:** `list_tasks({status:"open", owner_agent:"hyperagent"})` → `claim_task` → work → `post_result` with evidence (commit SHAs, URLs). Then `list_tasks({status:"in_review", reviewer_agent:"hyperagent"})` to review Atlas's work.
 - **Atlas loop:** create tasks with a real brief; `list_tasks({status:"in_review", reviewer_agent:"atlas"})` → `review_task`. Check `inbox` for questions.
 - Status flow: `open → claimed → in_progress → in_review → done | rejected`; `blocked`, `canceled` and `closed` are terminal (`update_task {status:'open'}` reopens blocked/canceled; closed stays closed).
-- **Default routing (2026-10-11):** `create_task` without `owner_agent` assigns to **atlas**. Rule from Roman: Atlas may create/close/manage anything not assigned to someone; assigned work stays hands-off — `canManageTask` in `queue.ts` enforces it for non-owner authorizations. Note: both live connectors are authorized by Roman's owner account, so the team-owner branch currently passes for both; the assignee branch is what protects work once a non-owner teammate authorizes an agent.
+- **Default routing (2026-10-11):** `create_task` without `owner_agent` assigns to **atlas**. Rule from Roman (locked 2026-10-11 17:30 ET): Atlas may manage tasks assigned to `atlas` or unassigned tasks only; assigned work stays hands-off. `canManageTask` in `queue.ts` enforces it per agent handle — the only override is the `roman` handle (team API). The authorizing account's team role does NOT grant an override.
 - **Notes** are not a separate entity: the brief is `agent_tasks.context` (edit with `update_task`), running notes are the task thread (`send_message` / `get_task.messages` / `inbox`). There are no `list_notes` / `create_note` tools by design.
 - **tools/list** returns every tool whose scope the connection holds — nothing callable is hidden. If task tools are missing from the list, the authorization lacks `sfb:tasks`: re-authorize (it is in the default grant).
 
