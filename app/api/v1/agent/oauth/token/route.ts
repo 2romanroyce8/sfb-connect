@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { consumeAuthCode, issueTokenPair, rotateRefreshToken, getAuthorization, rateLimit, audit } from "@/lib/agent/store";
+import { consumeAuthCode, issueTokenPair, rotateRefreshToken, getAuthorization, rateLimit, audit, REFRESH_REUSE_GRACE_SEC } from "@/lib/agent/store";
 import { verifyPkce } from "@/lib/agent/crypto";
 import { revokeAuthorizationFully } from "@/lib/agent/revoke";
 import { oauthError, authenticateClient, readForm, canonicalRedirectUri } from "@/lib/agent/oauth";
@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
     }
     const authz = await getAuthorization(rotated.authorizationId);
     if (!authz || authz.status !== "active" || authz.client_id !== auth.client.client_id) return oauthError(400, "invalid_grant", "Authorization is no longer active.");
-    const pair = await issueTokenPair(authz.id);
-    await audit({ authorizationId: authz.id, userId: authz.user_id, clientId: authz.client_id, accessMethod: "oauth", action: "token_refreshed", result: "success" });
+    const pair = await issueTokenPair(authz.id, rotated.replay ? undefined : rotated.replacesHash);
+    await audit({ authorizationId: authz.id, userId: authz.user_id, clientId: authz.client_id, accessMethod: "oauth", action: rotated.replay ? "token_refreshed_grace_replay" : "token_refreshed", result: "success", detail: rotated.replay ? { note: `refresh token re-presented within ${REFRESH_REUSE_GRACE_SEC}s of rotation; fresh pair issued, no revocation` } : undefined });
     return NextResponse.json({ ...pair, token_type: "Bearer", scope: authz.scopes.join(" ") }, { headers: { "Cache-Control": "no-store", Pragma: "no-cache" } });
   }
   return oauthError(400, "unsupported_grant_type", "Use authorization_code or refresh_token.");

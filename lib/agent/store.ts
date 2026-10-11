@@ -59,7 +59,8 @@ export async function consumeAuthCode(code: string) {
   return data as { authorization_id: string; redirect_uri: string; code_challenge: string; code_challenge_method: string; resource: string | null } | null;
 }
 
-export async function issueTokenPair(authorizationId: string): Promise<{ access_token: string; refresh_token: string; expires_in: number }> {
+/** Issues a new access+refresh pair. `replaces` is the hash of the refresh token being rotated, so the old row records its real successor. */
+export async function issueTokenPair(authorizationId: string, replaces?: string): Promise<{ access_token: string; refresh_token: string; expires_in: number }> {
   const access = randomToken("sfba", 32);
   const refresh = randomToken("sfbr", 32);
   const now = Date.now();
@@ -68,25 +69,48 @@ export async function issueTokenPair(authorizationId: string): Promise<{ access_
     { token_hash: sha256(refresh), authorization_id: authorizationId, kind: "refresh", expires_at: new Date(now + REFRESH_TOKEN_TTL_SEC * 1000).toISOString() },
   ]);
   if (error) throw new Error(`token insert failed: ${error.message}`);
+  if (replaces) await svc().from("agent_tokens").update({ replaced_by_hash: sha256(refresh) }).eq("token_hash", replaces).eq("kind", "refresh");
   return { access_token: access, refresh_token: refresh, expires_in: ACCESS_TOKEN_TTL_SEC };
 }
 
-/** Rotation: the presented refresh token is revoked and replaced atomically-enough
- * (update ... is null guards double use); a reused rotated token revokes the whole authorization. */
-export async function rotateRefreshToken(refreshToken: string): Promise<{ authorizationId: string } | { reuse: true; authorizationId: string } | null> {
+/**
+ * Reuse-grace window. A refresh token presented again shortly after it was
+ * rotated is almost always the same client retrying (network blip, two
+ * processes sharing one token file, a delegated-session error that made it
+ * refresh twice) — not theft. Inside the window the client gets a fresh pair;
+ * outside it, reuse still revokes the whole authorization. Muse lost its
+ * authorization four times to this before the window existed (2026-10-10/11:
+ * three rotations in 6 s, then the old token 30 s later).
+ */
+export const REFRESH_REUSE_GRACE_SEC = 120;
+
+export type RefreshDecision = { kind: "rotate" } | { kind: "replay_grace" } | { kind: "reuse" } | { kind: "expired" } | { kind: "revoked_authorization" };
+/** Pure decision used by rotateRefreshToken (unit-tested). `revokedByAuth` = the row was revoked because its authorization was revoked, not by rotation. */
+export function classifyRefreshPresentation(row: { revoked_at: string | null; expires_at: string; replaced_by_hash: string | null }, now = Date.now(), graceSec = REFRESH_REUSE_GRACE_SEC): RefreshDecision {
+  if (row.revoked_at && !row.replaced_by_hash) return { kind: "revoked_authorization" };
+  if (row.replaced_by_hash) {
+    const rotatedAt = row.revoked_at ? new Date(row.revoked_at).getTime() : 0;
+    return now - rotatedAt <= graceSec * 1000 ? { kind: "replay_grace" } : { kind: "reuse" };
+  }
+  if (new Date(row.expires_at).getTime() < now) return { kind: "expired" };
+  return { kind: "rotate" };
+}
+
+/** Rotation: the presented refresh token is revoked and replaced (update ... is null guards double use).
+ * A token re-presented inside the grace window yields a fresh pair; outside it, reuse revokes the authorization. */
+export async function rotateRefreshToken(refreshToken: string): Promise<{ authorizationId: string; replacesHash: string; replay?: true } | { reuse: true; authorizationId: string } | null> {
   const s = svc();
   const hash = sha256(refreshToken);
   const { data: row } = await s.from("agent_tokens").select("authorization_id, revoked_at, expires_at, replaced_by_hash").eq("token_hash", hash).eq("kind", "refresh").maybeSingle();
   if (!row) return null;
-  if (row.revoked_at || row.replaced_by_hash) {
-    // Reuse of a rotated token = theft signal. The caller revokes the whole
-    // authorization through revokeAuthorizationFully (delegated sessions too).
-    return { reuse: true, authorizationId: row.authorization_id };
-  }
-  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  const d = classifyRefreshPresentation(row);
+  if (d.kind === "revoked_authorization" || d.kind === "expired") return null;
+  if (d.kind === "reuse") return { reuse: true, authorizationId: row.authorization_id };
+  if (d.kind === "replay_grace") return { authorizationId: row.authorization_id, replacesHash: hash, replay: true };
   const { data: updated } = await s.from("agent_tokens").update({ revoked_at: new Date().toISOString(), replaced_by_hash: "pending" }).eq("token_hash", hash).is("revoked_at", null).select("authorization_id").maybeSingle();
-  if (!updated) return null;
-  return { authorizationId: updated.authorization_id };
+  // Lost the race to a concurrent request that just rotated this same token: treat as the grace replay it is.
+  if (!updated) return { authorizationId: row.authorization_id, replacesHash: hash, replay: true };
+  return { authorizationId: updated.authorization_id, replacesHash: hash };
 }
 
 export async function lookupAccessToken(accessToken: string): Promise<{ authorization: AgentAuthorization } | { error: "invalid" | "expired" | "revoked" }> {

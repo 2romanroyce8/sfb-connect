@@ -7,6 +7,8 @@ import { isMutatingMethod } from "../../lib/agent/readOnly";
 import { redirectUriAllowed, authorizationServerMetadata } from "../../lib/agent/oauth";
 import { handleMcp } from "../../lib/agent/mcp";
 import { TOOLS } from "../../lib/agent/tools";
+import { classifyRefreshPresentation, REFRESH_REUSE_GRACE_SEC } from "../../lib/agent/store";
+import { delegatedTokenState, DELEGATED_REFRESH_SKEW_MS } from "../../lib/agent/delegatedSession";
 import type { AgentContext } from "../../lib/agent/auth";
 
 test("PKCE S256 verifies the matching verifier and rejects everything else", () => {
@@ -92,4 +94,28 @@ test("MCP: initialize answers, unknown methods are -32601, notifications get no 
   const unknown = (await handleMcp(fakeCtx([]), { jsonrpc: "2.0", id: 3, method: "resources/list" }, req)) as { error: { code: number } };
   assert.equal(unknown.error.code, -32601);
   assert.equal(await handleMcp(fakeCtx([]), { jsonrpc: "2.0", method: "notifications/initialized" }, req), null);
+});
+
+test("refresh rotation: retry inside the grace window replays; reuse after it revokes; revoked/expired are refused (Muse server-side refresh bug)", () => {
+  const t0 = Date.parse("2026-10-10T09:00:30Z");
+  const live = { revoked_at: null, expires_at: "2026-11-09T09:00:00Z", replaced_by_hash: null };
+  assert.deepEqual(classifyRefreshPresentation(live, t0), { kind: "rotate" });
+  const rotated = { revoked_at: "2026-10-10T09:00:30Z", expires_at: "2026-11-09T09:00:00Z", replaced_by_hash: "abc" };
+  assert.deepEqual(classifyRefreshPresentation(rotated, t0 + 29_000), { kind: "replay_grace" }, "the exact 29s-later retry that used to revoke Muse");
+  assert.deepEqual(classifyRefreshPresentation(rotated, t0 + REFRESH_REUSE_GRACE_SEC * 1000), { kind: "replay_grace" });
+  assert.deepEqual(classifyRefreshPresentation(rotated, t0 + REFRESH_REUSE_GRACE_SEC * 1000 + 1), { kind: "reuse" }, "after the window it is theft");
+  assert.deepEqual(classifyRefreshPresentation({ ...rotated, replaced_by_hash: "pending" }, t0 + 1000), { kind: "replay_grace" }, "a concurrent rotation still in flight counts as grace");
+  assert.deepEqual(classifyRefreshPresentation({ revoked_at: "2026-10-10T09:00:59Z", expires_at: "2026-11-09T09:00:00Z", replaced_by_hash: null }, t0 + 60_000), { kind: "revoked_authorization" }, "revoked by authorization revocation: never replay");
+  assert.deepEqual(classifyRefreshPresentation({ revoked_at: null, expires_at: "2026-10-01T00:00:00Z", replaced_by_hash: null }, t0), { kind: "expired" });
+});
+
+test("delegated session: stored token is used while fresh, refreshed inside the 90s skew, and 'missing' only when the row holds no session", () => {
+  const now = Date.parse("2026-10-10T09:00:00Z");
+  const row = { delegated_refresh_enc: "r", delegated_access_enc: "a", delegated_access_expires_at: new Date(now + 3_600_000).toISOString() };
+  assert.equal(delegatedTokenState(row, now), "fresh");
+  assert.equal(delegatedTokenState({ ...row, delegated_access_expires_at: new Date(now + DELEGATED_REFRESH_SKEW_MS).toISOString() }, now), "refresh", "at the skew boundary we refresh");
+  assert.equal(delegatedTokenState({ ...row, delegated_access_expires_at: new Date(now - 1).toISOString() }, now), "refresh");
+  assert.equal(delegatedTokenState({ ...row, delegated_access_enc: null }, now), "refresh", "a refresh token without an access token refreshes, never fails");
+  assert.equal(delegatedTokenState({ ...row, delegated_access_expires_at: null }, now), "refresh");
+  assert.equal(delegatedTokenState({ ...row, delegated_refresh_enc: null }, now), "missing", "only a row with no session at all needs re-authorization");
 });

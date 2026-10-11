@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { lookupAccessToken, touchAuthorization, rateLimit, audit, type AgentAuthorization } from "./store";
-import { delegatedUserClient } from "./delegatedSession";
+import { resolveDelegatedUserClient } from "./delegatedSession";
 import type { Scope } from "./scopes";
 
 export type AgentContext = {
@@ -53,13 +53,22 @@ export async function authenticateAgent(req: NextRequest, accessMethod: "api" | 
     await audit({ authorizationId: auth.id, userId: auth.user_id, clientId: auth.client_id, accessMethod, action: "rate_limit", result: "denied" });
     throw new AgentAuthError(429, "rate_limited", "Too many requests for this authorization (120/min).", { "Retry-After": "30" });
   }
-  const user = await delegatedUserClient(auth);
-  if (!user) {
-    await audit({ authorizationId: auth.id, userId: auth.user_id, clientId: auth.client_id, accessMethod, action: "delegated_session", result: "error", detail: { reason: "delegated session unavailable" } });
-    throw new AgentAuthError(401, "session_unavailable", "The delegated session for this authorization is no longer valid. Re-authorize.", bearerChallenge(origin, "invalid_token", "delegated session expired"));
+  const resolved = await resolveDelegatedUserClient(auth);
+  if (!resolved) {
+    if (!auth.delegated_refresh_enc) {
+      // Nothing to refresh: the session was signed out (revoke) or never minted. Only here is re-authorization the answer.
+      await audit({ authorizationId: auth.id, userId: auth.user_id, clientId: auth.client_id, accessMethod, action: "delegated_session", result: "error", detail: { reason: "no delegated session on this authorization" } });
+      throw new AgentAuthError(401, "session_unavailable", "The delegated session for this authorization is no longer valid. Re-authorize.", bearerChallenge(origin, "invalid_token", "delegated session expired"));
+    }
+    // Refresh AND re-mint failed (Supabase auth unreachable, user deleted…). The agent's OAuth token is fine, so this must NOT carry an
+    // invalid_token challenge: that is the standard "rotate your token" signal, and on 2026-10-10 it turned a Supabase hiccup into a
+    // refresh storm and then a reuse revocation (the Muse server-side refresh bug). Tell the client to retry instead.
+    await audit({ authorizationId: auth.id, userId: auth.user_id, clientId: auth.client_id, accessMethod, action: "delegated_session", result: "error", detail: { reason: "delegated session refresh and re-mint both failed" } });
+    throw new AgentAuthError(503, "session_unavailable", "The delegated session could not be refreshed right now. Your access token is still valid — retry in a few seconds.", { "Retry-After": "5" });
   }
+  if (resolved.via === "reminted") void audit({ authorizationId: auth.id, userId: auth.user_id, clientId: auth.client_id, accessMethod, action: "delegated_session", result: "success", detail: { via: "reminted" } });
   void touchAuthorization(auth.id);
-  return { authorization: auth, user, scopes: new Set(auth.scopes), clientId: auth.client_id, userId: auth.user_id };
+  return { authorization: auth, user: resolved.client, scopes: new Set(auth.scopes), clientId: auth.client_id, userId: auth.user_id };
 }
 
 export function requireScope(ctx: AgentContext, scope: Scope) {
