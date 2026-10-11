@@ -36,7 +36,7 @@ async function business(service: SupabaseClient, businessId: string) {
 
 async function guard(service: SupabaseClient, businessId: string) {
   const w = await workAllowed(service, businessId);
-  if (!w.allowed) throw new OutboundError(`work_paused_${w.reason}`, w.reason === "out_of_credits" ? "Out of credits — the agent is paused until credits are added." : w.reason === "trial_expired" ? "The trial has ended." : "No active plan.", 402);
+  if (!w.allowed) throw new OutboundError(`work_paused_${w.reason}`, w.reason === "out_of_credits" ? "Out of credits — the agent is paused until credits are added." : w.reason === "trial_expired" ? "The trial has ended." : w.reason === "email_unverified" ? "Verify your email first — your agent can't act until then." : "No active plan.", 402);
 }
 
 // ---------- prospects ----------

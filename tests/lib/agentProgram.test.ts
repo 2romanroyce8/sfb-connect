@@ -14,7 +14,7 @@ test("eight capabilities, unique keys, all priced", () => {
 });
 
 test("tiers match the published table", () => {
-  assert.deepEqual(TIERS.map((t) => [t.key, t.monthlyUsd, t.credits, t.onboardingUsd, t.capabilityLimit, t.businesses]), [["trial", 0, 128, 0, 3, 1], ["solo", 1497, 150, 1497, 8, 1], ["agency", 4997, 500, 4997, 8, 5]]);
+  assert.deepEqual(TIERS.map((t) => [t.key, t.monthlyUsd, t.credits, t.onboardingUsd, t.capabilityLimit, t.businesses]), [["trial", 0, 128, 0, 8, 1], ["solo", 1497, 150, 1497, 8, 1], ["agency", 4997, 500, 4997, 8, 5]]);
   assert.equal(tier("trial")!.priceListVisible, false);
   assert.deepEqual(AGENT_PLAN_KEYS, ["trial", "solo", "agency"]);
   for (const t of TIERS) { assert.equal(SFB_PLAN_PRICES[t.key], t.monthlyUsd); assert.ok(isAgentPlanKey(t.key)); }

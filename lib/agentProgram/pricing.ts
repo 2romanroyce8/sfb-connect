@@ -57,9 +57,9 @@ const agencyResale = agency.businesses * solo.monthlyUsd;
 export const OFFERS: Record<TierKey, Offer> = {
   trial: {
     problem: "You don't believe an AI can run your marketing. Fair — don't take our word for it.",
-    timeLabel: "Time", time: "5 minutes to pick a demo business. The agent starts working instantly.",
+    timeLabel: "Time", time: "2 minutes: paste your website, confirm what the agent learned, verify your email. It starts working on your real business.",
     moneyLabel: "Money", money: `Costs $0 for ${TRIAL_TIER.trialDays} days. If it can't impress you for free, it doesn't deserve your money.`,
-    makesLabel: "Makes money", makes: `${trial.credits} credits ≈ ${bookedCallsFor(trial.credits)} booked calls of real agent work on demo data. Watch exactly what it would do for your business — then decide.`,
+    makesLabel: "Makes money", makes: `${trial.credits} credits ≈ ${bookedCallsFor(trial.credits)} booked calls of real agent work — real prospects, real emails from your Gmail, your approval on every send. Then decide.`,
   },
   solo: {
     problem: "Every week you lose jobs to competitors who answer faster, follow up relentlessly, and show up when customers ask AI who to hire. You're the bottleneck — there's only one of you.",

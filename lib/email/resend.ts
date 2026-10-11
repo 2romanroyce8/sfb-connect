@@ -35,6 +35,15 @@ export function trialWelcomeEmail(p: { name: string; credits: number; days: numb
   };
 }
 
+/** Demo welcome (the real thing: their business, their Gmail, their approval). */
+export function demoWelcomeEmail(p: { name: string; businessName: string; credits: number; days: number }) {
+  return {
+    subject: `Your agent is on the clock — ${p.days} days for ${p.businessName}`,
+    html: shell(`You just hired an SDR, ${p.name}.`, `<p>Your agent is set up for <strong>${p.businessName}</strong>. It works 24/7 for the next <strong>${p.days} days</strong> on <strong>${p.credits} credits</strong> of real work — real prospects, real emails from your own Gmail.</p><p>It never sends anything you haven't approved. Next step: connect Gmail so it can send as you, then approve its first three tasks.</p><p><a style="color:#f5f5f7" href="https://www.sfbconnect.com/dashboard/agent">Open your dashboard →</a></p>`),
+    text: `You just hired an SDR, ${p.name}. Your agent is set up for ${p.businessName}: ${p.days} days, ${p.credits} credits of real work. It never sends anything you haven't approved. Next: connect Gmail, then approve its first three tasks. https://www.sfbconnect.com/dashboard/agent`,
+  };
+}
+
 /** 80% usage warning (fires once per cycle, see guards.ts). */
 export function creditWarningEmail(p: { businessName: string; balance: number; allotment: number; usedPct: number }) {
   return {

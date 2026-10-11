@@ -27,6 +27,7 @@ import { ensureTrialPrice } from "./stripe";
 // ============================================================
 
 export const TRIAL_PRICE_CENTS = TRIAL_TIER.trialUsd * 100;
+const SANDBOX_PICK = 3;
 export type TrialSetup = { name: string; stock_profile: string; capabilities: CapabilityKey[]; scan_domain: string | null };
 
 /** Access ends exactly `trialDays` after the dollar cleared — never from signup time. */
@@ -40,7 +41,8 @@ export function parseTrialSetup(b: { name?: unknown; stockProfile?: unknown; cap
   const scanDomain = typeof b.scanDomain === "string" && /^[a-z0-9.-]{3,200}$/i.test(b.scanDomain) ? b.scanDomain.toLowerCase() : null;
   if (name.length < 2) return { error: "Enter your name." };
   if (!profile) return { error: "Pick a sample business." };
-  if (caps.length !== TRIAL_TIER.capabilityLimit) return { error: `Pick exactly ${TRIAL_TIER.capabilityLimit} capabilities to watch.` };
+  // The dormant sandbox wizard asked for exactly 3 capabilities to watch; the real demo (lib/demo) enables outbound and leaves the other 7 as ready toggles.
+  if (caps.length !== SANDBOX_PICK) return { error: `Pick exactly ${SANDBOX_PICK} capabilities to watch.` };
   return { setup: { name, stock_profile: profile.key, capabilities: caps, scan_domain: scanDomain } };
 }
 

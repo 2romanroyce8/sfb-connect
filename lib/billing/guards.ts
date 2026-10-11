@@ -73,10 +73,12 @@ export function splitBalance(balance: number, allotment: number, spentThisCycle:
 /** Whether the agent may do paid work for this business right now. */
 export async function workAllowed(service: SupabaseClient, businessId: string): Promise<{ allowed: boolean; reason: string | null; balance: number }> {
   const [{ data: b }, balance] = await Promise.all([
-    service.from("businesses").select("plan_key, is_sandbox, trial_expires_at").eq("id", businessId).single(),
+    service.from("businesses").select("plan_key, is_sandbox, trial_expires_at, email_verified_at").eq("id", businessId).single(),
     getCreditBalance(service, businessId),
   ]);
   if (!b?.plan_key) return { allowed: false, reason: "no_plan", balance };
+  // Demo (non-sandbox trial): no verified work email = no agent actions. Ever. Checked before credits so the reason is the real one.
+  if (b.plan_key === "trial" && !b.is_sandbox && !b.email_verified_at) return { allowed: false, reason: "email_unverified", balance };
   if (b.plan_key === "trial" && b.trial_expires_at && new Date(b.trial_expires_at) < new Date()) return { allowed: false, reason: "trial_expired", balance };
   if (balance <= 0) return { allowed: false, reason: "out_of_credits", balance };
   return { allowed: true, reason: null, balance };

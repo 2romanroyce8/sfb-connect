@@ -1,0 +1,168 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { trackMarketingEvent } from "@/lib/marketingEvents";
+import { TRIAL_TIER } from "@/lib/agentProgram/config";
+
+// The hire flow: URL + work email → build show → "Here's what your agent
+// learned" (correct inline) → 6-digit email code → signed in → dashboard.
+// Copy frames it as a hire, not a trial. No card field exists anywhere here.
+
+type Facts = { url: string; domain: string; name: string | null; logoUrl: string | null; category: string | null; city: string | null; state: string | null; services: string[]; offerLine: string | null; toneNotes: string[]; socials: Record<string, string>; phone: string | null; parked: boolean; reachable: boolean; reason: string | null };
+type Stage = "form" | "building" | "review" | "verify";
+const field: React.CSSProperties = { background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)", color: "#F5F5F7" };
+const label = "text-[11px] uppercase tracking-[0.14em] text-white/[0.45] font-semibold";
+export const GUARANTEE_LINE = `A qualified call in your ${TRIAL_TIER.trialDays}-day demo, or your first month is free.`;
+
+export default function DemoStart({ signedInEmail = null }: { signedInEmail?: string | null }) {
+  const [stage, setStage] = useState<Stage>("form");
+  const [url, setUrl] = useState(""); const [email, setEmail] = useState(signedInEmail ?? "");
+  const [steps, setSteps] = useState<string[]>([]);
+  const [facts, setFacts] = useState<Facts | null>(null); const [buildId, setBuildId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
+  // review fields
+  const [businessName, setBusinessName] = useState(""); const [contactName, setContactName] = useState(""); const [category, setCategory] = useState(""); const [city, setCity] = useState(""); const [state, setState] = useState("");
+  const [phone, setPhone] = useState(""); const [offerLine, setOfferLine] = useState(""); const [services, setServices] = useState<string[]>([]); const [newService, setNewService] = useState(""); const [socials, setSocials] = useState<Record<string, string>>({});
+  // verify
+  const [code, setCode] = useState(""); const [cooldown, setCooldown] = useState(0); const [resends, setResends] = useState(0);
+  const feedRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight }); }, [steps]);
+  useEffect(() => { if (cooldown <= 0) return; const t = setTimeout(() => setCooldown((c) => c - 1), 1000); return () => clearTimeout(t); }, [cooldown]);
+  useEffect(() => { const q = new URLSearchParams(window.location.search); const s = q.get("scan") || q.get("url"); if (s) setUrl(s.slice(0, 200)); trackMarketingEvent("trial_signup_start", { from: "start_page" }); }, []);
+
+  const build = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(null); setSteps([]); setFacts(null); setStage("building"); setBusy(true);
+    try {
+      const r = await fetch("/api/demo/build", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url, email }) });
+      if (!r.ok || !r.body) { const j = await r.json().catch(() => ({})); throw new Error(j.error || "Couldn't start the build."); }
+      const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = "";
+      let done: Facts | null = null;
+      for (;;) {
+        const { value, done: end } = await reader.read(); if (end) break;
+        buf += dec.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1); if (!line) continue;
+          const ev = JSON.parse(line) as { type: string; text?: string; message?: string; facts?: Facts; buildId?: string | null };
+          if (ev.type === "step" && ev.text) setSteps((s) => [...s, ev.text!]);
+          if (ev.type === "error" && ev.message) { setError(ev.message); }
+          if (ev.type === "done" && ev.facts) { done = ev.facts; setBuildId(ev.buildId ?? null); }
+        }
+      }
+      if (!done || !done.reachable || done.parked) { setStage("form"); if (!error && done?.reason) setError(done.reason); return; }
+      setFacts(done);
+      setBusinessName(done.name ?? ""); setCategory(done.category ?? ""); setCity(done.city ?? ""); setState(done.state ?? ""); setPhone(done.phone ?? ""); setOfferLine(done.offerLine ?? ""); setServices(done.services); setSocials(done.socials);
+      trackMarketingEvent("demo_build_complete", { domain: done.domain, services: done.services.length, logo: !!done.logoUrl });
+      await new Promise((res) => setTimeout(res, 700));
+      setStage("review");
+    } catch (err) { setError(err instanceof Error ? err.message : "Couldn't build the profile."); setStage("form"); }
+    finally { setBusy(false); }
+  };
+
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(null); setBusy(true);
+    try {
+      const r = await fetch("/api/demo/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, buildId, businessName, contactName, website: facts?.url, domain: facts?.domain, category, city, state, phone, offerLine, services, socials, logoUrl: facts?.logoUrl ?? null, toneNotes: facts?.toneNotes ?? [] }) });
+      const j = (await r.json()) as { ok?: boolean; error?: string; signIn?: boolean };
+      if (!r.ok) { if (j.signIn) { setError(`${j.error} `); } else setError(j.error || "Could not create your agent."); return; }
+      trackMarketingEvent("demo_account_created", { domain: facts?.domain });
+      setStage("verify"); setCooldown(60);
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not create your agent."); }
+    finally { setBusy(false); }
+  };
+
+  const verify = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(null); setBusy(true);
+    try {
+      const r = await fetch("/api/demo/verify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) });
+      const j = (await r.json()) as { ok?: boolean; error?: string; redirect?: string; restart?: boolean };
+      if (!r.ok) { setError(j.error || "That code isn't right."); if (j.restart) setStage("form"); return; }
+      trackMarketingEvent("demo_verified", { domain: facts?.domain });
+      window.location.href = j.redirect || "/dashboard/agent?setup=gmail";
+    } catch (err) { setError(err instanceof Error ? err.message : "Verification failed."); }
+    finally { setBusy(false); }
+  };
+  const resend = async () => {
+    setError(null);
+    const r = await fetch("/api/demo/verify", { method: "PUT" });
+    const j = (await r.json()) as { ok?: boolean; error?: string; retryInSec?: number | null };
+    if (!r.ok) { setError(j.error || "Couldn't resend."); if (j.retryInSec) setCooldown(j.retryInSec); return; }
+    setResends((n) => n + 1); setCooldown(60);
+  };
+
+  return (
+    <div className="rounded-[18px] p-7 md:p-9" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+      {stage === "form" && (
+        <form onSubmit={build} className="flex flex-col gap-3">
+          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158]">Hire your agent · free for {TRIAL_TIER.trialDays} days</div>
+          <h1 className="text-[28px] md:text-[36px] font-bold tracking-[-0.03em] leading-[1.05]">You just hired an SDR. Works 24/7, costs $0 for {TRIAL_TIER.trialDays} days.</h1>
+          <p className="text-[14px] text-white/[0.55]">Paste your website. In about two minutes your agent will have read your site, learned how you write, and be ready to find your dream clients. Real prospects, real emails from your Gmail — and it never sends anything you haven&apos;t approved.</p>
+          <input required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yourbusiness.com" inputMode="url" autoCapitalize="none" className="h-[46px] rounded-[9px] px-3 text-[15px] outline-none mt-2" style={field} />
+          <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Work email" className="h-[46px] rounded-[9px] px-3 text-[15px] outline-none" style={field} readOnly={!!signedInEmail} />
+          {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}{/Sign in/.test(error) && <a href="/login?next=%2Fdashboard%2Fagent" className="underline">Sign in →</a>}</div>}
+          <button type="submit" disabled={busy} className="mt-2 h-[48px] rounded-full bg-white text-black text-[15px] font-semibold disabled:opacity-50">Build my agent →</button>
+          <div className="text-[12px] text-white/[0.5] mt-1">{GUARANTEE_LINE}</div>
+          <div className="text-[11px] text-white/[0.35]">No card. {TRIAL_TIER.credits} credits of real work. Verified email + your own Gmail required before it sends anything.</div>
+        </form>
+      )}
+      {stage === "building" && (
+        <div className="flex flex-col gap-4">
+          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158]">Building your agent</div>
+          <h2 className="text-[24px] font-bold tracking-[-0.03em]">Reading {url.replace(/^https?:\/\//, "")}…</h2>
+          <div ref={feedRef} className="rounded-[12px] p-4 h-[260px] overflow-y-auto font-mono text-[13px] leading-[1.7]" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.08)" }}>
+            {steps.map((s, i) => <div key={i} className={i === steps.length - 1 ? "text-white" : "text-white/[0.55]"}><span className="text-[#30D158]">›</span> {s}</div>)}
+            <div className="text-white/[0.35] animate-pulse">▌</div>
+          </div>
+          {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}</div>}
+        </div>
+      )}
+      {stage === "review" && facts && (
+        <form onSubmit={create} className="flex flex-col gap-4">
+          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158]">Here&apos;s what your agent learned</div>
+          <div className="flex items-center gap-3">
+            {facts.logoUrl ? <img src={facts.logoUrl} alt="" className="w-12 h-12 rounded-[10px] object-contain bg-white/[0.06] p-1" /> : <div className="w-12 h-12 rounded-[10px] bg-white/[0.06] flex items-center justify-center text-[18px] font-bold">{(businessName || facts.domain)[0]?.toUpperCase()}</div>}
+            <div><h2 className="text-[22px] font-bold tracking-[-0.03em] leading-tight">{businessName || facts.domain}</h2><div className="text-[12px] text-white/[0.45]">{facts.domain}{facts.logoUrl ? "" : " · no clean logo found — add one from your dashboard"}</div></div>
+          </div>
+          <p className="text-[13px] text-white/[0.55]">Correct anything that&apos;s off. Your name and phone are the two things sites rarely say.</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div><div className={label}>Business name</div><input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
+            <div><div className={label}>Your name (signs the emails)</div><input required value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="First Last" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
+            <div><div className={label}>Niche</div><input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. roofing" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
+            <div className="grid grid-cols-[1fr_72px] gap-2"><div><div className={label}>City</div><input value={city} onChange={(e) => setCity(e.target.value)} className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div><div><div className={label}>State</div><input value={state} onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))} placeholder="OK" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div></div>
+            <div><div className={label}>Phone</div><input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(405) 555-0123" inputMode="tel" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
+            <div><div className={label}>Website</div><input value={facts.url} readOnly className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1 text-white/[0.5]" style={field} /></div>
+          </div>
+          <div>
+            <div className={label}>Your one-line offer (every intro uses it)</div>
+            <textarea required value={offerLine} onChange={(e) => setOfferLine(e.target.value.slice(0, 180))} rows={2} placeholder="What you do, for whom, and the one reason to reply." className="w-full rounded-[9px] px-3 py-2 text-[14px] outline-none mt-1" style={field} />
+            <div className="text-[11px] text-white/[0.35] text-right">{offerLine.length}/180</div>
+          </div>
+          <div>
+            <div className={label}>Services</div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {services.map((s) => <span key={s} className="inline-flex items-center gap-1.5 h-[30px] px-3 rounded-full text-[12.5px]" style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.12)" }}>{s}<button type="button" onClick={() => setServices(services.filter((x) => x !== s))} className="text-white/[0.4] hover:text-white">×</button></span>)}
+              <span className="inline-flex items-center gap-1"><input value={newService} onChange={(e) => setNewService(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (newService.trim()) { setServices(Array.from(new Set([...services, newService.trim()]))); setNewService(""); } } }} placeholder="Add a service" className="h-[30px] rounded-full px-3 text-[12.5px] outline-none" style={field} /></span>
+            </div>
+            {services.length === 0 && <div className="text-[12px] text-white/[0.4] mt-1">Nothing listed on your homepage — add what you sell.</div>}
+          </div>
+          {facts.toneNotes.length > 0 && <div><div className={label}>Writing style noticed on your site</div><div className="flex flex-wrap gap-2 mt-2">{facts.toneNotes.map((n) => <span key={n} className="h-[28px] inline-flex items-center px-3 rounded-full text-[12px] text-white/[0.75]" style={{ border: "1px solid rgba(48,209,88,0.3)", background: "rgba(48,209,88,0.08)" }}>{n}</span>)}</div></div>}
+          {Object.keys(socials).length > 0 && <div><div className={label}>Social profiles</div><div className="flex flex-wrap gap-2 mt-2">{Object.entries(socials).map(([k, v]) => <span key={k} className="inline-flex items-center gap-1.5 h-[28px] px-3 rounded-full text-[12px] text-white/[0.75]" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>{k}<button type="button" onClick={() => { const n = { ...socials }; delete n[k]; setSocials(n); }} className="text-white/[0.4] hover:text-white" title={v}>×</button></span>)}</div></div>}
+          {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}{/Sign in/.test(error) && <a href="/login?next=%2Fdashboard%2Fagent" className="underline">Sign in →</a>}</div>}
+          <div className="flex gap-2 mt-1"><button type="button" onClick={() => setStage("form")} className="h-[46px] px-5 rounded-full text-[14px]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Back</button><button type="submit" disabled={busy} className="flex-1 h-[46px] rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-50">{busy ? "Setting up…" : "Looks right — verify my email →"}</button></div>
+          <div className="text-[11px] text-white/[0.35]">Your agent never sends anything you haven&apos;t approved. {GUARANTEE_LINE}</div>
+        </form>
+      )}
+      {stage === "verify" && (
+        <form onSubmit={verify} className="flex flex-col gap-3">
+          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158]">One more step</div>
+          <h2 className="text-[26px] font-bold tracking-[-0.03em]">Your agent is ready — verify your email to put it to work.</h2>
+          <p className="text-[14px] text-white/[0.55]">We sent a 6-digit code to <span className="text-white">{email}</span>. It expires in 10 minutes.</p>
+          <input autoFocus inputMode="numeric" pattern="[0-9]*" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" className="h-[56px] rounded-[9px] px-3 text-[26px] tracking-[0.4em] text-center outline-none" style={field} />
+          {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}</div>}
+          <button type="submit" disabled={busy || code.length !== 6} className="h-[48px] rounded-full bg-white text-black text-[15px] font-semibold disabled:opacity-50">{busy ? "Verifying…" : "Put my agent to work →"}</button>
+          <div className="text-[12px] text-white/[0.45]">Didn&apos;t get it? Check spam. {resends >= 3 ? "Resend limit reached." : cooldown > 0 ? `Resend in ${cooldown}s.` : <button type="button" onClick={resend} className="underline text-white/[0.8]">Resend code</button>}</div>
+        </form>
+      )}
+    </div>
+  );
+}
