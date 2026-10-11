@@ -27,7 +27,7 @@ test("annual = 10× monthly, per-month equivalent shown; setup never discounted"
   assert.match(y.billedLine!, /\$14,970 billed yearly · 2 months free/);
   assert.equal(m.setupLine, y.setupLine); assert.match(m.setupLine, /\$1,497 one-time setup/);
   const trial = priceDisplay(t("trial"), "year");
-  assert.equal(trial.headline, 0); assert.equal(trial.billedLine, null); assert.match(trial.setupLine, /128 credits · no card · \d+ days/);
+  assert.equal(trial.headline, 1); assert.equal(trial.unit, "one-time"); assert.equal(trial.billedLine, null); assert.match(trial.setupLine, /128 credits · 5 days of access/);
 });
 
 test("BLANKS stay blank until Rome fills them — nothing invented", () => {
@@ -39,7 +39,8 @@ test("BLANKS stay blank until Rome fills them — nothing invented", () => {
   // Rome's anchors (2026-10-11): strikethrough shows on both intervals, annual as per-month equivalent.
   assert.equal(priceDisplay(t("solo"), "month").wasUsd, 5000); assert.equal(priceDisplay(t("agency"), "month").wasUsd, 10000);
   assert.equal(priceDisplay(t("solo"), "year").wasUsd, annualPerMonthUsd(5000));
-  assert.equal(TIERS[0].trialDays, 3); assert.equal(TIERS[0].expiry, "0 credits or 3 days");
+  // Roman 2026-10-11: "make the try demo $1 and access is for 5 days".
+  assert.equal(TIERS[0].trialDays, 5); assert.equal(TIERS[0].trialUsd, 1); assert.equal(TIERS[0].expiry, "0 credits or 5 days");
   assert.equal(REPLACED_VENDORS.length, 6);
   if (VENDORS_TOTAL_MONTHLY_USD === null) assert.equal(vendorsTotalLine(), "Typically thousands a month");
   else assert.match(vendorsTotalLine(), /^\$[\d,]+\/mo$/);

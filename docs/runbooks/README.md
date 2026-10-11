@@ -26,7 +26,7 @@ Everything here is written so Atlas (Muse) or any engineer can operate SFB Conne
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel env | app (public) | rotate in Supabase → update Vercel → redeploy |
 | `SUPABASE_SERVICE_ROLE_KEY` | Vercel env | server routes, webhooks, agent layer | same; high sensitivity |
 | `CALENDAR_TOKEN_ENCRYPTION_KEY` | Vercel env | encrypts Google tokens and delegated agent sessions | rotating invalidates stored tokens — re-connect calendar, agents re-authorize |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Vercel env (**not yet set as of 2026-10-09**) | checkout + webhook | rotate in Stripe → update Vercel → redeploy |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Vercel env (**live since 2026-10-11**) | checkout + webhook + $1 trial | rotate in Stripe → update Vercel → redeploy |
 | `EXA_API_KEY` | Vercel env | research discovery | Exa dashboard |
 | `GOOGLE_CLIENT_ID/SECRET` | Vercel env (**not yet set**) | Calendar + Meet | Google Cloud console |
 | AI provider keys (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`) | Vercel env (**not set**) | future Sales Assistant, AI visibility | provider dashboards |

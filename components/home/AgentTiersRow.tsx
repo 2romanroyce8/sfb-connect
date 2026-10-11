@@ -29,7 +29,7 @@ const LADDER: { label: string; in: Record<TierKey, boolean | string> }[] = [
 
 const sub = (key: TierKey) => {
   const t = TIERS.find((x) => x.key === key)!;
-  if (t.key === "trial") return `${t.credits} credits · no card · ${t.trialDays} days`;
+  if (t.key === "trial") return `${t.credits} credits · ${t.trialDays} days of access`;
   return `${t.creditsLabel} · one-time ${fmtUsd(t.onboardingUsd)} onboarding`;
 };
 
@@ -53,7 +53,7 @@ export default function AgentTiersRow() {
                 {t.name}
               </div>
               <div className="mt-2 text-[20px] text-white/[0.78] tracking-[-0.01em]">
-                {t.monthlyUsd ? <>{fmtUsd(t.monthlyUsd)}<span className="text-white/[0.5]">/mo</span></> : "Free"}
+                {t.monthlyUsd ? <>{fmtUsd(t.monthlyUsd)}<span className="text-white/[0.5]">/mo</span></> : <>{fmtUsd(TIERS[0].trialUsd)}<span className="text-white/[0.5]"> one-time</span></>}
               </div>
               <div className="mt-1 text-[11.5px] text-white/[0.42]">{sub(t.key)}</div>
             </div>

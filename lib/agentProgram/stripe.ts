@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { PAID_TIERS, TOP_UP_PACKS, annualUsd, type BillingInterval, type Tier } from "./config";
+import { PAID_TIERS, TOP_UP_PACKS, TRIAL_TIER, annualUsd, type BillingInterval, type Tier } from "./config";
 
 // Stripe catalog addressed by lookup_key -- no hard-coded price ids, no env
 // vars. First use creates product + prices; later uses find them. Amounts
@@ -8,6 +8,8 @@ export const monthlyLookupKey = (t: Tier) => `sfb_agent_${t.key}_monthly`;
 export const annualLookupKey = (t: Tier) => `sfb_agent_${t.key}_annual`;
 export const onboardingLookupKey = (t: Tier) => `sfb_agent_${t.key}_onboarding`;
 export const topUpLookupKey = (credits: number) => `sfb_topup_${credits}`;
+/** The $1 / 5-day trial: one-time price. Days are in the key so a future change to the length creates a new price instead of silently re-using this one. */
+export const trialLookupKey = () => `sfb_agent_trial_${TRIAL_TIER.trialDays}day`;
 
 async function findPrices(stripe: Stripe, keys: string[]) {
   const r = await stripe.prices.list({ lookup_keys: keys, active: true, limit: 10 });
@@ -33,6 +35,19 @@ export async function ensureTierPrices(stripe: Stripe, t: Tier, interval: Billin
   }
   if (!onboarding) onboarding = await stripe.prices.create({ product: product.id, currency: "usd", unit_amount: t.onboardingUsd * 100, lookup_key: keys[1], nickname: `${t.name} onboarding (one-time)`, metadata: { plan_key: t.key, kind: "onboarding" } });
   return { recurringPriceId: recurring.id, onboardingPriceId: onboarding.id };
+}
+
+/** One-time trial price from config. Found by lookup key; created on first use. */
+export async function ensureTrialPrice(stripe: Stripe): Promise<string> {
+  const key = trialLookupKey();
+  const existing = (await findPrices(stripe, [key])).get(key);
+  if (existing) {
+    if (existing.unit_amount !== TRIAL_TIER.trialUsd * 100 || existing.recurring) throw new Error(`Stripe price ${key} does not match config (${TRIAL_TIER.trialUsd} USD one-time). Archive it in Stripe and retry.`);
+    return existing.id;
+  }
+  const product = await stripe.products.create({ name: `SFB Agent — ${TRIAL_TIER.trialDays}-day trial`, description: `${TRIAL_TIER.credits} credits on a demo business · ${TRIAL_TIER.capabilityLimit} capabilities to watch · ${TRIAL_TIER.trialDays} days of access · sandbox, no real sends`, metadata: { plan_key: "trial", kind: "trial" } });
+  const price = await stripe.prices.create({ product: product.id, currency: "usd", unit_amount: TRIAL_TIER.trialUsd * 100, lookup_key: key, nickname: `Trial (${TRIAL_TIER.trialDays} days, one-time)`, metadata: { plan_key: "trial", kind: "trial", days: String(TRIAL_TIER.trialDays) } });
+  return price.id;
 }
 
 export async function ensureTopUpPrice(stripe: Stripe, credits: number): Promise<string> {

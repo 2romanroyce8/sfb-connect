@@ -12,7 +12,7 @@ import { TIERS, CAPABILITIES, CREDIT_PRICES, TOP_UP_PACKS, FREE_ACTIONS, CREDITS
 export const revalidate = 300;
 export const metadata: Metadata = {
   title: "SFB Agent — One agent. Eight jobs. You decide what it does.",
-  description: "One AI agent per business with eight capabilities you toggle on and off, a human overseer who checks everything customer-facing, and credits that pay for work done. Free trial on a sample business.",
+  description: "One AI agent per business with eight capabilities you toggle on and off, a human overseer who checks everything customer-facing, and credits that pay for work done. $1 trial on a sample business.",
   alternates: { canonical: "/agent" },
   openGraph: { title: "Meet your SFB Agent", description: "One agent. Eight jobs. You decide what it does.", url: "/agent" },
 };
@@ -32,7 +32,7 @@ export default async function AgentPage() {
           <h1 className="text-[44px] sm:text-[60px] md:text-[80px] font-bold leading-[0.95] tracking-[-0.045em] max-w-[980px]">One agent. Eight jobs.{" "}<span className="font-serif-accent italic font-normal text-white/[0.86]">You decide what it does.</span></h1>
           <p className="mt-7 text-[17px] md:text-[20px] leading-[1.5] text-white/[0.6] max-w-[720px]">One AI agent assigned to your business. Toggle the eight things it can do. A human expert checks everything customer-facing. It runs on credits, and you always see the receipt.</p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            <Link href="/start" className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Start free on a sample business →</Link>
+            <Link href="/start" className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Try it for $1 on a sample business →</Link>
             <Link href="#pricing" className="inline-flex items-center px-6 py-3.5 rounded-full text-[14px] font-medium text-white hover:bg-white/[0.05] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>See pricing →</Link>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default async function AgentPage() {
 
       <section id="pricing" className="py-20 md:py-24 px-6 section-band scroll-mt-24"><div className="max-w-[1100px] mx-auto">
         <h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.03em] mb-3">Pricing</h2>
-        <p className="text-[14px] text-white/[0.5] mb-10">Start free on a sample business. Go live from {fmtUsd(TIERS[1].monthlyUsd)}/month.</p>
+        <p className="text-[14px] text-white/[0.5] mb-10">Try it for $1 on a sample business. Go live from {fmtUsd(TIERS[1].monthlyUsd)}/month.</p>
         <div className="grid md:grid-cols-3 gap-4">
           {TIERS.map((t, i) => { const featured = "featured" in t && t.featured; return (
             <div key={t.key} className="rounded-[16px] p-7 flex flex-col" style={{ ...card, borderColor: featured ? "rgba(48,209,88,0.45)" : "rgba(255,255,255,0.08)" }}>
@@ -106,7 +106,7 @@ export default async function AgentPage() {
               <dl className="mt-5 flex flex-col gap-2.5 text-[13.5px]">
                 {[["Credits", t.creditsLabel], ["Businesses", t.businessesLabel], ["Capabilities", t.capabilitiesLabel], ["Integrations", t.integrations], ["Human overseer", t.overseer], ["Price list", t.priceListVisible ? "Visible" : "Spend shown, prices hidden"], ["Onboarding (one-time)", t.onboardingUsd ? fmtUsd(t.onboardingUsd) : "—"], ["Expiry", t.expiry]].map(([k, v]) => <div key={k} className="flex justify-between gap-4"><dt className="text-white/[0.5]">{k}</dt><dd className="font-medium text-right">{v}</dd></div>)}
               </dl>
-              {t.monthlyUsd === 0 ? <Link href="/start" className="mt-8 inline-flex justify-center items-center px-5 py-3 rounded-full text-[13.5px] font-semibold text-white hover:bg-white/[0.05]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Start free →</Link> : <AgentCheckout plan={t} />}
+              {t.monthlyUsd === 0 ? <Link href="/start" className="mt-8 inline-flex justify-center items-center px-5 py-3 rounded-full text-[13.5px] font-semibold text-white hover:bg-white/[0.05]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Try it — $1 →</Link> : <AgentCheckout plan={t} />}
             </div>); })}
         </div>
         <div className="mt-8 rounded-[12px] px-5 py-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[12.5px] text-white/[0.6]" style={card}><span>Cancel anytime</span><span>·</span><span>Month-to-month</span><span>·</span><span>No contracts</span><span>·</span><span>{CREDITS_PAY_FOR_WORK}</span></div>
@@ -114,7 +114,7 @@ export default async function AgentPage() {
       </div></section>
 
       <section className="py-20 md:py-24 px-6"><div className="max-w-[1100px] mx-auto grid md:grid-cols-[0.8fr_1.2fr] gap-10"><h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.03em]">Questions</h2><AgentFaq /></div></section>
-      <section className="pb-24 px-6"><div className="max-w-[1100px] mx-auto rounded-[18px] p-10 text-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}><h2 className="text-[28px] md:text-[36px] font-bold tracking-[-0.03em]">Get your agent.</h2><p className="mt-3 text-[14px] text-white/[0.5]">Free on a sample business today. Live on yours when you&apos;re ready.</p><Link href="/start" className="mt-6 inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85">Start free →</Link></div></section>
+      <section className="pb-24 px-6"><div className="max-w-[1100px] mx-auto rounded-[18px] p-10 text-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}><h2 className="text-[28px] md:text-[36px] font-bold tracking-[-0.03em]">Get your agent.</h2><p className="mt-3 text-[14px] text-white/[0.5]">$1 on a sample business today. Live on yours when you&apos;re ready.</p><Link href="/start" className="mt-6 inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85">Try it — $1 →</Link></div></section>
       <Footer />
     </main>
   );

@@ -29,7 +29,7 @@ export const capability = (key: string) => CAPABILITIES.find((c) => c.key === ke
 
 // ---- Tiers ----
 export const TIERS = [
-  { key: "trial", name: "Trial", monthlyUsd: 0, onboardingUsd: 0, credits: 128, creditsLabel: "128 one-time", businesses: 1, businessesLabel: "1 demo on stock data", capabilityLimit: 3, capabilitiesLabel: "Pick 3 to watch", integrations: "None (sandbox)", overseer: "—", priceListVisible: false, expiry: "0 credits or 3 days", trialDays: 3 },
+  { key: "trial", name: "Trial", monthlyUsd: 0, onboardingUsd: 0, credits: 128, creditsLabel: "128 one-time", businesses: 1, businessesLabel: "1 demo on stock data", capabilityLimit: 3, capabilitiesLabel: "Pick 3 to watch", integrations: "None (sandbox)", overseer: "—", priceListVisible: false, expiry: "0 credits or 5 days", trialDays: 5, trialUsd: 1 },
   { key: "solo", name: "Solo", monthlyUsd: 1497, onboardingUsd: 1497, credits: 150, creditsLabel: "150 / month", businesses: 1, businessesLabel: "1 real business", capabilityLimit: 8, capabilitiesLabel: "All 8", integrations: "GHL, Zapier, Calendar, Gmail, Meta, Stripe", overseer: "Shared", priceListVisible: true, expiry: "Monthly", featured: true },
   { key: "agency", name: "Agency", monthlyUsd: 4997, onboardingUsd: 4997, credits: 500, creditsLabel: "500 / month pooled", businesses: 5, businessesLabel: "5 white-labeled client spaces", capabilityLimit: 8, capabilitiesLabel: "All 8 per space", integrations: "Same per space", overseer: "Dedicated", priceListVisible: true, expiry: "Monthly" },
 ] as const;
@@ -37,6 +37,8 @@ export type Tier = (typeof TIERS)[number];
 export type TierKey = Tier["key"];
 export const tier = (key: string | null | undefined): Tier | null => TIERS.find((t) => t.key === key) ?? null;
 export const PAID_TIERS = TIERS.filter((t) => t.monthlyUsd > 0);
+/** The $1 / 5-day demo. One-time Stripe charge (`trialUsd`), access for `trialDays`. */
+export const TRIAL_TIER = TIERS[0];
 
 // ---- Credit price list (one credit type) ----
 export type CreditAction = { key: string; label: string; credits: number; capability: CapabilityKey | "human" };
@@ -145,7 +147,7 @@ export const VENDORS_TOTAL_MONTHLY_USD: number | null = null;
 export const AGENT_FAQ = [
   { q: "What's included in the monthly price?", a: "Your SFB Agent, all eight capabilities, your monthly credit allotment, your named human overseer, integrations with your tools, daily/weekly/monthly reports, and your dashboard. No seat fees, no contracts." },
   { q: "Do unused credits roll over?", a: "Monthly plan credits reset each billing cycle — they don't roll over. Top-up packs are different: purchased credits never expire while your membership is active." },
-  { q: "Is there really a free trial?", a: "Yes. The Trial is free: 128 credits on a demo business with stock data — no card required, no charge at the end. You pick a demo business, choose three capabilities to watch, and see credits being spent as the agent works. No real integrations, no real sends. Upgrade whenever you're ready." },
+  { q: "What does the $1 demo include?", a: "Five days of your own agent on a demo business with stock data: 128 credits, you pick three capabilities to watch, and you see every credit being spent as the agent works. $1 once, charged through Stripe; nothing recurring, nothing else billed at the end. No real integrations, no real sends. Upgrade whenever you're ready." },
   { q: "What happens when I run out of credits?", a: "You get a warning email at 80% usage. At zero, the agent pauses — never overcharges. Top up (100/$149, 500/$599, 1,000/$999) or wait for your monthly refill." },
   { q: "Do I pay for work that fails?", a: "No. Failed work — errors, bounces, no result — costs zero credits, always." },
   { q: "Can I get a refund?", a: "Months and credit packs are non-refundable — the work happened. Cancel anytime; your plan runs to the end of the paid period." },

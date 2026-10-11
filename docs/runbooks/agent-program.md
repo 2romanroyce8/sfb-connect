@@ -4,7 +4,10 @@
 
 ## Surfaces
 - Public: `/agent` (hero, how it works, 8 capability cards with statuses, integrations row, credits + price list + planning math + top-ups, human overseer, pricing with "Everything in X, plus…", 10-question FAQ, risk-reversal strip). Presence plans at `/#pricing` stay the downsell wedge.
-- Trial: `/start` → `POST /api/trial/start` → account (password set, email confirmed), sandbox business on a stock profile (`businesses.is_sandbox=true`, `stock_profile_key`), 128 PROMOTIONAL credits, 3 capabilities enabled, `trial_expires_at = now + 3d`. No Stripe. Rate-limited 5/IP/day.
+- Trial (**$1 once, 5 days** — Roman 2026-10-11): `/start` → `POST /api/trial/start` → account (password set, email confirmed) + pending `agent_plan_orders` row (`plan_key='trial'`, `owner_id`, `setup` = stock profile / 3 capabilities / scan domain, `amount_total_cents=100`) → Stripe Checkout (`mode=payment`, price by lookup key `sfb_agent_trial_5day`, created from config on first use) → **paid** → `provisionTrialOrder` (`lib/agentProgram/trial.ts`): sandbox business on the stock profile (`is_sandbox=true`, `stock_profile_key`), 128 PROMOTIONAL credits, the 3 capabilities enabled, `trial_expires_at = paid_at + 5d`, `billing_audit_log.trial_started`, welcome email. Provisioning runs from the webhook (`metadata.kind=agent_trial`) AND from `/start/welcome` (which reads the session from Stripe server-side); it is claim-based (pending→paid update must win) so they never double-provision. Nothing exists before the dollar clears. Rate-limited 5/IP/day.
+  - Unfinished checkout: the account exists with no business → `/start` (signed in) and `/dashboard/no-membership` show **Finish your $1 trial** → `POST /api/trial/checkout` re-opens Checkout for the latest unpaid order (`pendingTrialOrder`). `?checkout=canceled` on `/start` says nothing was charged.
+  - Refund of the dollar (`charge.refunded`) → `endRefundedTrial`: `trial_expires_at = now`, `work_paused_reason='trial_refunded'`, order `canceled`, audit `trial_refunded`. Spent credits stay spent.
+  - Changing the price or length: edit `trialUsd` / `trialDays` on the trial tier in `config.ts`. The lookup key carries the day count, so a new length creates a new Stripe price; a changed amount on the same key makes `ensureTrialPrice` refuse until the old price is archived in Stripe (no silent mismatch).
 - Customer: `/dashboard/agent` (status strip, credit bar with 80/95% colors, 8 toggle cards with per-card spend, activity feed with Done / Failed · 0 credits / Credits added), `/dashboard/credits` (balance, allotment, refill/expiry, planning calculator, top-up packs with Stripe buy buttons on paid tiers, full ledger, CSV export at `/api/dashboard/credits/export`). Trial mode: DEMO banner + Go live button, price list hidden, packs replaced by upgrade card.
 - Toggles: `PATCH /api/dashboard/capabilities {capability, enabled}` — free; trial enforces the 3-capability limit (409 with message).
 - Team: overseer assignment on `/team/team`; module statuses in Settings.
@@ -18,7 +21,7 @@
 ## Operating
 - Flip a capability to live: Settings → SFB Agent program (no deploy).
 - Change a price: edit `CREDIT_PRICES` in config, run tests (`tests/lib/agentProgram.test.ts` pins the published table), deploy. Tell customers before new work is charged (FAQ promise).
-- Trial abuse: rate limit per IP in `/api/trial/start`; `billing_audit_log` has `trial_started` rows.
+- Trial abuse: rate limit per IP in `/api/trial/start`; the dollar itself is the main gate. `billing_audit_log` has `trial_checkout_started` / `trial_checkout_resumed` (no business yet, `detail.order_id`) and `trial_started` (provisioned) rows. Orders: `select status, count(*) from agent_plan_orders where plan_key='trial' group by 1;`
 - Expired trials / zero credits: the dashboard shows the paywall; `work_paused_reason` is set by the guards when a charge is refused.
 
 ## Not built yet (disclosed)

@@ -4,6 +4,7 @@ import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
 import { appendCreditTransaction, getCreditBalance } from "@/lib/billing/credits";
 import type Stripe from "stripe";
 import { provisionAgentCustomer, grantAgentRenewalCredits, endAgentPlan } from "@/lib/agentProgram/provision";
+import { provisionTrialOrder, endRefundedTrial } from "@/lib/agentProgram/trial";
 
 // ============================================================
 // Stripe is the payment/subscription AUTHORITY. This webhook is the ONLY
@@ -95,6 +96,12 @@ async function handleCheckoutCompleted(service: ReturnType<typeof createSupabase
     await provisionAgentCustomer(service, session, eventId);
     return;
   }
+  // $1 / 5-day trial: claim-based, so the success page (which also reads the
+  // session from Stripe) and this webhook can never double-provision.
+  if (session.metadata?.kind === "agent_trial") {
+    await provisionTrialOrder(service, session, { via: "webhook", eventId });
+    return;
+  }
   const businessId = session.metadata?.business_id;
   const purchaseId = session.metadata?.purchase_id;
   if (!businessId || !purchaseId) {
@@ -179,6 +186,8 @@ async function handleSubscriptionDeleted(service: ReturnType<typeof createSupaba
 async function handleChargeRefunded(service: ReturnType<typeof createSupabaseServiceClient>, charge: Stripe.Charge, eventId: string) {
   const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : null;
   if (!paymentIntentId) return;
+  // A refunded trial dollar ends the trial (expiry = now); credits already spent stay spent.
+  if (await endRefundedTrial(service, paymentIntentId, eventId)) return;
   const { data: purchase } = await service.from("addon_purchases").select("id, business_id, purchase_type, credit_package_id").eq("stripe_payment_intent_id", paymentIntentId).maybeSingle();
   if (!purchase) return;
 

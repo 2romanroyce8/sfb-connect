@@ -150,11 +150,11 @@ export default function Hero() {
 
         <div className="mt-[26px] flex items-baseline justify-center gap-[10px] flex-wrap">
           <span className="text-[9px] font-semibold tracking-[0.14em] uppercase text-white/[0.5] self-center">
-            Free trial
+            $1 trial
           </span>
           <span className="text-[19px] font-semibold text-white">128 credits</span>
           <span className="text-[13px] font-semibold tracking-[0.08em] text-white/[0.86]">
-            / NO CARD
+            / 5 DAYS
           </span>
           <span className="text-[12px] text-white/[0.62]">
             Go live from $1,497 / month
