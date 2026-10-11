@@ -30,6 +30,8 @@ function clean(s: string | null | undefined): string | null {
   return t;
 }
 
+/** Slogans and descriptors are not names, whatever source they come from ("Oklahoma City's Trusted Roofer", "GameTime Jewelry Inc. Visual Website"). */
+export const isDescriptor = (p: string) => /\b(best|trusted|top|#1|your|we|our|near me|services?|dentist|roofer|plumber|contractor|lawyer|attorney|clinic|visual website|official site|official website|home page|welcome)\b/i.test(p) || (/\b[A-Z]{2}\b/.test(p) && p.split(" ").length <= 4 && /\b(TX|OK|CA|FL|NY|AZ|CO|GA|NC|WA|IL|OH|PA|MI|TN|VA|NJ|MA|MD|MO|IN|WI|MN|SC|AL|LA|KY|OR|CT|UT|IA|NV|AR|MS|KS|NM|NE|ID|WV|HI|NH|ME|MT|RI|DE|SD|ND|AK|VT|WY)\b/.test(p));
 /** Brand segment of a <title>: "Limitless Roofing OKC LLC | Oklahoma City's Trusted Roofer" → "Limitless Roofing OKC LLC". */
 export function nameFromTitle(title: string | null): string | null {
   if (!title) return null;
@@ -38,8 +40,7 @@ export function nameFromTitle(title: string | null): string | null {
   // Brands come first in a title almost always; take the first segment that is brand-shaped and not a
   // descriptor ("Oklahoma City's Trusted Roofer", "Austin TX Dentist"). A slogan ("AI outbound that books
   // calls") or a sentence never qualifies — the headline falls back to generic instead. Never shortest-wins.
-  const descriptor = (p: string) => /\b(best|trusted|top|#1|your|we|our|near me|services?|dentist|roofer|plumber|contractor|lawyer|attorney|clinic|visual website|official site|official website)\b/i.test(p) || (/\b[A-Z]{2}\b/.test(p) && p.split(" ").length <= 4 && /\b(TX|OK|CA|FL|NY|AZ|CO|GA|NC|WA|IL|OH|PA|MI|TN|VA|NJ|MA|MD|MO|IN|WI|MN|SC|AL|LA|KY|OR|CT|UT|IA|NV|AR|MS|KS|NM|NE|ID|WV|HI|NH|ME|MT|RI|DE|SD|ND|AK|VT|WY)\b/.test(p));
-  return parts.find((p) => looksLikeBrand(p) && !descriptor(p)) ?? null;
+  return parts.find((p) => looksLikeBrand(p) && !isDescriptor(p)) ?? null;
 }
 
 export function nameFromJsonLd(html: string): string | null {
@@ -55,12 +56,12 @@ export function resolveBusinessName(html: string | null, lookupName: string | nu
     const t = nameFromTitle(extractTitle(html));
     if (t) return { name: t, source: "title" };
     const og = clean(extractMeta(html, "og:site_name"));
-    if (og && looksLikeBrand(og) && !GENERIC.test(og)) return { name: og, source: "og" };
+    if (og && looksLikeBrand(og) && !isDescriptor(og)) return { name: og, source: "og" };
     const j = nameFromJsonLd(html);
     if (j) return { name: j, source: "jsonld" };
   }
   const l = clean(lookupName);
-  return l && looksLikeBrand(l) ? { name: l, source: "lookup" } : { name: null, source: null };
+  return l && looksLikeBrand(l) && !isDescriptor(l) ? { name: l, source: "lookup" } : { name: null, source: null };
 }
 
 const abs = (src: string, base: string): string | null => { try { return new URL(src, base).toString(); } catch { return null; } };

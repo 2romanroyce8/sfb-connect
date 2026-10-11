@@ -108,6 +108,9 @@ test("personalization: name from title → JSON-LD → lookup; generic or messy 
   assert.deepEqual(resolveBusinessName("<title>LimitlessRoofing.com is for sale</title>", "LimitlessRoofing.com is for sale"), { name: null, source: null });
   assert.equal(isParked("<title>example.com is for sale | Buy this domain</title>"), true);
   assert.equal(isParked("<title>Limitless Roofing OKC LLC</title>"), false);
+  // descriptor filter applies to every source, including the lookup name
+  assert.deepEqual(resolveBusinessName("<title>Welcome</title>", "GameTime Jewelry Inc. Visual Website"), { name: null, source: null });
+  assert.deepEqual(resolveBusinessName("<title>Welcome</title>", "GameTime Jewelry Inc."), { name: "GameTime Jewelry Inc.", source: "lookup" });
   const html = `<html><head><title>Home</title><script type="application/ld+json">{"@type":"LocalBusiness","name":"Peak Comfort HVAC"}</script></head></html>`;
   assert.deepEqual(resolveBusinessName(html, "Lookup Name"), { name: "Peak Comfort HVAC", source: "jsonld" });
   assert.deepEqual(resolveBusinessName("<title>Welcome</title>", "Lookup Name"), { name: "Lookup Name", source: "lookup" });
