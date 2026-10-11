@@ -5,6 +5,8 @@ import Footer from "@/components/home/Footer";
 import DemoStart from "@/components/demo/DemoStart";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { TRIAL_TIER } from "@/lib/agentProgram/config";
+import { cookies } from "next/headers";
+import { PENDING_COOKIE, readPending } from "@/lib/demo/verification";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: `Hire your SFB Agent — free for ${TRIAL_TIER.trialDays} days`, description: `Paste your website. Your agent reads it, learns how you write, finds your dream clients and drafts outreach in your voice. Free for ${TRIAL_TIER.trialDays} days, no card. Nothing sends without your approval.` };
 
@@ -19,7 +21,7 @@ export default async function StartPage() {
   return (
     <main className="bg-black text-white min-h-screen">
       <Navbar />
-      <section className="pt-[140px] pb-24 px-6"><div className="max-w-[760px] mx-auto"><DemoStart signedInEmail={user?.email ?? null} /></div></section>
+      <section className="pt-[140px] pb-24 px-6"><div className="max-w-[760px] mx-auto"><DemoStart signedInEmail={user?.email ?? null} pendingEmail={readPending(cookies().get(PENDING_COOKIE)?.value)?.email ?? null} /></div></section>
       <Footer />
     </main>
   );

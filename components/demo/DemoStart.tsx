@@ -14,9 +14,10 @@ const field: React.CSSProperties = { background: "#0F0F0F", border: "1px solid r
 const label = "text-[11px] uppercase tracking-[0.14em] text-white/[0.45] font-semibold";
 export const GUARANTEE_LINE = `A qualified call in your ${TRIAL_TIER.trialDays}-day demo, or your first month is free.`;
 
-export default function DemoStart({ signedInEmail = null }: { signedInEmail?: string | null }) {
-  const [stage, setStage] = useState<Stage>("form");
-  const [url, setUrl] = useState(""); const [email, setEmail] = useState(signedInEmail ?? "");
+export default function DemoStart({ signedInEmail = null, pendingEmail = null }: { signedInEmail?: string | null; pendingEmail?: string | null }) {
+  // A pending (unverified) signup resumes at code entry — closing the tab never strands anyone.
+  const [stage, setStage] = useState<Stage>(pendingEmail ? "verify" : "form");
+  const [url, setUrl] = useState(""); const [email, setEmail] = useState(pendingEmail ?? signedInEmail ?? "");
   const [steps, setSteps] = useState<string[]>([]);
   const [facts, setFacts] = useState<Facts | null>(null); const [buildId, setBuildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
@@ -160,7 +161,7 @@ export default function DemoStart({ signedInEmail = null }: { signedInEmail?: st
           <input autoFocus inputMode="numeric" pattern="[0-9]*" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" className="h-[56px] rounded-[9px] px-3 text-[26px] tracking-[0.4em] text-center outline-none" style={field} />
           {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}</div>}
           <button type="submit" disabled={busy || code.length !== 6} className="h-[48px] rounded-full bg-white text-black text-[15px] font-semibold disabled:opacity-50">{busy ? "Verifying…" : "Put my agent to work →"}</button>
-          <div className="text-[12px] text-white/[0.45]">Didn&apos;t get it? Check spam. {resends >= 3 ? "Resend limit reached." : cooldown > 0 ? `Resend in ${cooldown}s.` : <button type="button" onClick={resend} className="underline text-white/[0.8]">Resend code</button>}</div>
+          <div className="text-[12px] text-white/[0.45]">Didn&apos;t get it? Check spam. {resends >= 3 ? "Resend limit reached." : cooldown > 0 ? `Resend in ${cooldown}s.` : <button type="button" onClick={resend} className="underline text-white/[0.8]">Resend code</button>} · <button type="button" onClick={() => { setStage("form"); setCode(""); setError(null); }} className="underline text-white/[0.6]">Wrong email? Start over</button></div>
         </form>
       )}
     </div>

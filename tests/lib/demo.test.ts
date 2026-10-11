@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { extractServices, toneNotesFromText, extractSocials, offerLineFrom, splitMarket, slugify } from "../../lib/demo/build";
+import { extractServices, toneNotesFromText, extractSocials, offerLineFrom, splitMarket, slugify, verticalFrom } from "../../lib/demo/build";
 import { resendDecision, signPending, readPending, MAX_RESENDS, RESEND_COOLDOWN_SEC } from "../../lib/demo/verification";
 import { parseDemoProfile } from "../../lib/demo/provision";
 
@@ -46,4 +46,12 @@ test("profile review: business name, your name, phone and offer line are require
   assert.deepEqual(parseDemoProfile({ ...base, phone: "555" }), { error: "Enter a phone number with at least 10 digits." });
   assert.match((parseDemoProfile({ ...base, offerLine: "short" }) as { error: string }).error, /one-line offer/);
   assert.match((parseDemoProfile({ ...base, contactName: "" }) as { error: string }).error, /your name/);
+});
+
+test("build show (live defects 2026-10-11): taglines, widget text and the business name are not services; the niche is a vertical word", () => {
+  const s = extractServices(["Limitless Roofing Oklahoma City LLC", "Residential Roofing", "Roof Inspections"], ["No Roof Beyond Our Reach", "Checking OKC roof inspection conditions…", "Complete Roofing Solutions", "Limitless Roofing OKC — Storm Repair"], "Limitless Roofing OKC LLC");
+  assert.deepEqual(s, ["Residential Roofing", "Roof Inspections", "Complete Roofing Solutions"]);
+  assert.equal(verticalFrom("Limitless Roofing OKC LLC — Oklahoma City"), "roofing");
+  assert.equal(verticalFrom(null, "Family dentist in Austin"), "dental");
+  assert.equal(verticalFrom("Welcome to our homepage"), null);
 });
