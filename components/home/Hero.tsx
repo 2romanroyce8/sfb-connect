@@ -90,7 +90,7 @@ export default function Hero() {
         </p>
 
         <div className="mt-[26px] flex flex-wrap items-center justify-center gap-3">
-          <Link href="/start" onClick={() => trackMarketingEvent("trial_signup_start", { from: "hero" })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Try it free →</Link>
+          <Link href="/start" onClick={() => trackMarketingEvent("trial_signup_start", { from: "hero" })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Try it — $1 for 5 days →</Link>
           <Link href="#agent" className="inline-flex items-center px-6 py-3.5 rounded-full text-[14px] font-medium text-white hover:bg-white/[0.08] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.28)", background: "rgba(7,7,7,0.4)" }}>See the 8 capabilities →</Link>
         </div>
 

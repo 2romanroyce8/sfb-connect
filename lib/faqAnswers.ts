@@ -65,7 +65,7 @@ export const ANSWER_BANK: FaqAnswer[] = [
   { key: "security", title: "Data and security", keywords: ["data", "privacy", "secure", "security", "safe", "password", "access", "sell my data", "gdpr", "ccpa"],
     answer: "Your business data stays yours. We use it only to run the service, never sell it, and the agent only touches connected accounts within tasks you approve. Our Privacy Policy and Terms are linked in the footer." },
   { key: "support", title: "Support and contact", keywords: ["support", "contact", "help", "talk", "call", "phone", "email you", "reach", "speak", "sales"],
-    answer: "Every paid account has a named human overseer you can reach from your dashboard. Before you buy, the fastest way to see how it works is the free trial at /start; no sales call required." },
+    answer: "Every paid account has a named human overseer you can reach from your dashboard. Before you buy, the fastest way to see how it works is the $1 trial at /start; no sales call required." },
   { key: "login", title: "Signing in", keywords: ["login", "log in", "sign in", "dashboard", "account", "forgot password", "reset"],
     answer: "Customers sign in at /login (there is a Forgot password link there). Your dashboard shows your agent's activity, credit ledger, capability toggles and reports." },
   { key: "difference", title: "Agent vs. agency vs. software", keywords: ["different", "difference", "vs", "versus", "compared", "agency vs", "software", "saas", "tool", "replace", "employee", "hire"],
@@ -76,7 +76,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9%$ ]+/g, " ").repla
 
 export type AskResult = { matched: FaqAnswer | null; answer: string };
 
-export const NO_MATCH_ANSWER = "I don't have a set answer for that yet, so I won't guess. The fastest way to find out is the free trial at /start (no card, 128 credits on a demo business), where a human overseer can answer anything specific to your business.";
+export const NO_MATCH_ANSWER = "I don't have a set answer for that yet, so I won't guess. The fastest way to find out is the $1 trial at /start (5 days, 128 credits on a demo business), where a human overseer can answer anything specific to your business.";
 
 /** Keyword scoring: longer, more specific keywords outweigh short ones; ties go to earlier (more important) entries. */
 export function answerQuestion(question: string): AskResult {

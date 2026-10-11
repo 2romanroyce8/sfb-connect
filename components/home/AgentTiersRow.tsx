@@ -77,7 +77,7 @@ export default function AgentTiersRow() {
             <div className="mt-8">
               {t.monthlyUsd === 0 ? (
                 <Link href="/start" onClick={() => trackMarketingEvent("trial_signup_start", { from: "pricing" })} className="w-full inline-flex justify-center items-center h-[44px] rounded-full text-[13.5px] font-semibold text-white hover:bg-white/[0.06]" style={{ border: "1px solid rgba(255,255,255,0.2)" }}>
-                  Try it free →
+                  Try it — $1 for 5 days →
                 </Link>
               ) : (
                 <AgentCheckout plan={t} />

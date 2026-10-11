@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SFB Connect — One Agent. Eight Jobs.",
     description:
-      "An AI agent assigned to your business — outbound, ads, website, follow-up, chat, reviews, operations. A human expert checks everything it does. Try it free on a sample business.",
+      "An AI agent assigned to your business — outbound, ads, website, follow-up, chat, reviews, operations. A human expert checks everything it does. Try it for $1 on a sample business.",
     url: siteUrl,
     siteName: "SFB Connect",
     type: "website",
