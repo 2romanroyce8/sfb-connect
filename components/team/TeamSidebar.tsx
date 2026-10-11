@@ -30,6 +30,7 @@ import {
   LogOut,
   ChevronDown,
   Scale,
+  Send,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import ClockControl from "./ClockControl";
@@ -66,6 +67,7 @@ const NAV_GROUPS: {
       { href: "/team/meetings", label: "Meetings", icon: CalendarClock },
       { href: "/team/follow-ups", label: "Follow-Ups", icon: Bell },
       { href: "/team/work-plan", label: "Work Plan", icon: GanttChartSquare },
+      { href: "/team/outbound", label: "Outbound", icon: Send, ownerOnly: true },
     ],
   },
   {

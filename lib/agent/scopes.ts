@@ -28,6 +28,7 @@ export const WRITE_SCOPES = {
   "sfb:audit:run": "Generate Business Readiness Audits",
   "sfb:ai_presence:run": "Run AI Presence scans (costs provider budget)",
   "sfb:followups:write": "Create and update follow-ups",
+  "sfb:outbound:run": "Work a customer's outbound pipeline: add/enrich prospects, draft outreach into the human approval queue, propose and book meetings (costs credits; never sends)",
 } as const;
 
 export type ReadScope = keyof typeof READ_SCOPES;

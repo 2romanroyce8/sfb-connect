@@ -287,6 +287,8 @@ TOOLS.push(
 );
 import { TASK_TOOLS } from "./tasks/tools";
 for (const t of TASK_TOOLS) TOOLS.push(t);
+import { OUTBOUND_TOOLS } from "./outboundTools";
+for (const t of OUTBOUND_TOOLS) TOOLS.push(t);
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
 export async function runTool(ctx: AgentContext, name: string, args: Record<string, unknown>, req: NextRequest, accessMethod: "api" | "mcp"): Promise<unknown> {

@@ -72,8 +72,12 @@ test("MCP tools/list only lists tools whose scope was granted; every tool is rea
   const names = r.result.tools.map((t) => t.name).sort();
   assert.deepEqual(names, ["get_sfb_lead", "search_sfb_leads"]);
   assert.ok(r.result.tools.every((t) => t.annotations.readOnlyHint === true));
-  assert.equal(TOOLS.some((t) => isWriteScope(t.scope)), false, "no tool requires a customer-data write scope");
-  assert.ok(TOOLS.filter((t) => t.readOnly === false).every((t) => t.scope === "sfb:tasks"), "the only writing tools are task-queue tools");
+  // Policy (2026-10-11): the only write scope any tool may require is sfb:outbound:run (Phase 1 outbound);
+  // it is NOT grantable until Roman flips GRANTABLE_SCOPES, and none of its tools can approve or send.
+  const writeScoped = TOOLS.filter((t) => isWriteScope(t.scope));
+  assert.ok(writeScoped.every((t) => t.scope === "sfb:outbound:run"), "no tool requires a customer-data write scope other than sfb:outbound:run");
+  assert.ok(writeScoped.every((t) => !/approve|send/.test(t.name)), "no agent tool approves or sends outbound mail");
+  assert.ok(TOOLS.filter((t) => t.readOnly === false).every((t) => t.scope === "sfb:tasks" || t.scope === "sfb:outbound:run"), "writing tools are task-queue or outbound tools only");
 });
 
 test("MCP tools/call without the tool's scope is refused as a tool error, not executed", async () => {

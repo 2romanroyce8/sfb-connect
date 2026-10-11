@@ -38,6 +38,7 @@ Never paste a secret into chat, code, logs, or a task result.
 - [agent-program.md](./agent-program.md) — tiers, 8 capabilities, trial sandbox, dashboard
 - [credit-ledger.md](./credit-ledger.md) — ledger rules, guards, charging actions
 - [checkout.md](./checkout.md) — Stripe setup, paths, failure modes
+- [outbound.md](./outbound.md) — Outbound / GTM: enrich → write → human approval → send → track → book, credits, cron, agent tools
 - [pricing-page.md](./pricing-page.md) — /pricing single source of truth, Rome's blanks, annual billing + monthly refill cron
 - [legal-pages.md](./legal-pages.md) — Privacy/Terms drafts, open items, how they publish
 - Integrations registry: `lib/integrations/registry.ts` is the single source for the homepage "Plugs into your stack" strip, the #agent row and the team Integrations page audit list. Marketing shows only `live` entries; Stripe flips to live automatically when its keys are set. Add an integration there with status `planned` first; flip to `live` only when its connect flow works.
