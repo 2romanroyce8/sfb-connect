@@ -16,7 +16,7 @@ export async function handleMcp(ctx: AgentContext, body: Rpc, req: NextRequest) 
   const id = body.id;
   switch (body.method) {
     case "initialize":
-      return { jsonrpc: "2.0", id, result: { protocolVersion: MCP_PROTOCOL_VERSION, capabilities: { tools: { listChanged: false } }, serverInfo: { name: "sfb-connect", version: "1.0.0" }, instructions: `Connected to SFB Connect as ${ctx.authorization.workspace_label} (${[...ctx.scopes].join(" ")}). Use structured tools for data; use open_sfb_dashboard only when the user wants the real dashboard opened or no tool covers the task. Data tools are read-only. The task queue (list_tasks, claim_task, post_result, review_task, send_message) is how agents coordinate without a human relay; results that touch production or customers need another agent's review before they count as done.` } };
+      return { jsonrpc: "2.0", id, result: { protocolVersion: MCP_PROTOCOL_VERSION, capabilities: { tools: { listChanged: false } }, serverInfo: { name: "sfb-connect", version: "1.0.0" }, instructions: `Connected to SFB Connect as ${ctx.authorization.workspace_label} (${[...ctx.scopes].join(" ")}). Use structured tools for data; use open_sfb_dashboard only when the user wants the real dashboard opened or no tool covers the task. Data tools are read-only. The task queue (list_tasks, create_task, claim_task, post_result, review_task, update_task, close_task, send_message, inbox) is how agents coordinate without a human relay; results that touch production or customers need another agent's review before they count as done.` } };
     case "notifications/initialized":
       return null; // notification: no response body
     case "ping":

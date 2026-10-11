@@ -8,7 +8,8 @@
 - Library: `lib/agent/tasks/queue.ts`. Tools: `lib/agent/tasks/tools.ts` (registered into the agent connector's tool registry).
 - Agent identity is derived from the OAuth client (`Muse` → `atlas`, `Hyperagent` → `hyperagent`); arguments can never impersonate another agent. Roman acts as `roman` through the team API.
 - Board: `/team/tasks` (all team members read; owner creates, reviews, cancels, messages). API: `app/api/team/tasks/route.ts`.
-- Scope: `sfb:tasks` (in the default grant; already granted to both live authorizations).
+- Scope: `sfb:tasks` (in the default grant). A client that requests an explicit scope list WITHOUT `sfb:tasks` does not get it — Muse's 2026-10-11 15:29 UTC grant did exactly that until it re-authorized at 20:34 UTC.
+- Migrations: `20261009_agent_task_queue.sql`, `20261011_task_close_update.sql` (status `closed`, `closed_by`, `closed_at`).
 
 ## Tools (MCP `tools/call` or REST `POST /api/v1/agent/tools/<name>`)
 | Tool | Who | Effect |
@@ -21,12 +22,17 @@
 | `post_result {task_id, result, evidence_links?, blocked?}` | worker | → in_review (if requires_review) else done; blocked → blocked |
 | `review_task {task_id, verdict, note?}` | named reviewer or roman | approved → done · changes_requested → in_progress · rejected → rejected |
 | `cancel_task {task_id, reason?}` | creator or roman | → canceled |
+| `close_task {task_id, reason?}` | team owner · assignee (owner_agent / claimed_by) · unassigned task | → `closed` (administrative; distinct from reviewed `done`); sets `closed_by`, `closed_at`; posts "Closed by …" to the thread |
+| `update_task {task_id, title?, context?, priority?, due?, owner_agent?, status?}` | same rule as close_task | partial update, returns the task; `status` ∈ open · in_progress · blocked · canceled · closed (`done` only via review_task); reassigning re-opens a claimed task and fixes a reviewer equal to the new worker; every change posted to the thread |
 | `send_message {task_id, body, to_agent?}` / `inbox {days?}` | any | thread messages |
 
 ## Runner contract
 - **HyperAgent loop:** `list_tasks({status:"open", owner_agent:"hyperagent"})` → `claim_task` → work → `post_result` with evidence (commit SHAs, URLs). Then `list_tasks({status:"in_review", reviewer_agent:"hyperagent"})` to review Atlas's work.
 - **Atlas loop:** create tasks with a real brief; `list_tasks({status:"in_review", reviewer_agent:"atlas"})` → `review_task`. Check `inbox` for questions.
-- Status flow: `open → claimed → in_progress → in_review → done | rejected`; `blocked` and `canceled` are terminal until reopened by a new task.
+- Status flow: `open → claimed → in_progress → in_review → done | rejected`; `blocked`, `canceled` and `closed` are terminal (`update_task {status:'open'}` reopens blocked/canceled; closed stays closed).
+- **Default routing (2026-10-11):** `create_task` without `owner_agent` assigns to **atlas**. Rule from Roman: Atlas may create/close/manage anything not assigned to someone; assigned work stays hands-off — `canManageTask` in `queue.ts` enforces it for non-owner authorizations. Note: both live connectors are authorized by Roman's owner account, so the team-owner branch currently passes for both; the assignee branch is what protects work once a non-owner teammate authorizes an agent.
+- **Notes** are not a separate entity: the brief is `agent_tasks.context` (edit with `update_task`), running notes are the task thread (`send_message` / `get_task.messages` / `inbox`). There are no `list_notes` / `create_note` tools by design.
+- **tools/list** returns every tool whose scope the connection holds — nothing callable is hidden. If task tools are missing from the list, the authorization lacks `sfb:tasks`: re-authorize (it is in the default grant).
 
 ## Operating it
 - Roman sees everything at `/team/tasks`, filterable by agent and status; the board refreshes every 30 s.

@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type Task = { id: string; title: string; owner_agent: string; status: string; priority: string; due: string | null; context: string | null; result: string | null; evidence_links: string[]; requires_review: boolean; reviewer_agent: string | null; review_verdict: string | null; review_note: string | null; reviewed_by: string | null; created_by: string; claimed_by: string | null; created_at: string; updated_at: string; result_posted_at: string | null };
 type Msg = { id: string; from_agent: string; to_agent: string | null; body: string; created_at: string };
 
-const STATUSES = ["open", "claimed", "in_progress", "in_review", "done", "rejected", "blocked", "canceled"];
+const STATUSES = ["open", "claimed", "in_progress", "in_review", "done", "rejected", "blocked", "canceled", "closed"];
 const AGENTS = ["atlas", "hyperagent", "roman"];
-const STATUS_COLOR: Record<string, string> = { open: "#A1A1A6", claimed: "#0A84FF", in_progress: "#0A84FF", in_review: "#FFD60A", done: "#30D158", rejected: "#FF453A", blocked: "#FF9F0A", canceled: "#6E6E73" };
+const STATUS_COLOR: Record<string, string> = { open: "#A1A1A6", claimed: "#0A84FF", in_progress: "#0A84FF", in_review: "#FFD60A", done: "#30D158", rejected: "#FF453A", blocked: "#FF9F0A", canceled: "#6E6E73", closed: "#8E8E93" };
 const PRIO_COLOR: Record<string, string> = { urgent: "#FF453A", high: "#FF9F0A", normal: "#A1A1A6", low: "#6E6E73" };
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
 const field: React.CSSProperties = { background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F5F7" };
@@ -117,7 +117,7 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
                 )}
                 {isOwner && <form onSubmit={async (e) => { e.preventDefault(); if (await act({ action: "message", task_id: open.id, body: chat })) setChat(""); }} className="flex gap-2 mt-2"><input value={chat} onChange={(e) => setChat(e.target.value)} placeholder="Message the agents on this task" className="flex-1 h-[32px] rounded-[8px] px-3 text-[12.5px] outline-none" style={field} /><button type="submit" className="h-[32px] px-3 rounded-[7px] text-[12px] font-semibold bg-white text-black">Send</button></form>}
               </div>
-              {isOwner && !["done", "canceled"].includes(open.status) && <button onClick={() => { if (confirm("Cancel this task?")) act({ action: "cancel", task_id: open.id }); }} className="self-start text-[12px] text-[#FF6961] underline underline-offset-2">Cancel task</button>}
+              {isOwner && !["done", "canceled", "closed"].includes(open.status) && <button onClick={() => { if (confirm("Cancel this task?")) act({ action: "cancel", task_id: open.id }); }} className="self-start text-[12px] text-[#FF6961] underline underline-offset-2">Cancel task</button>}
             </div>
           )}
         </div>

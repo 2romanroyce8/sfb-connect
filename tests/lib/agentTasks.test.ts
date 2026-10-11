@@ -22,3 +22,39 @@ test("sfb:tasks is grantable and part of the default grant", () => {
   assert.ok(negotiateScopes(undefined).granted.includes("sfb:tasks"));
   assert.ok(negotiateScopes("sfb:tasks").granted.includes("sfb:tasks"));
 });
+
+import { canManageTask, UPDATABLE_STATUSES, TASK_STATUSES, DEFAULT_OWNER_AGENT } from "../../lib/agent/tasks/queue";
+import { handleMcp } from "../../lib/agent/mcp";
+import { TOOLS } from "../../lib/agent/tools";
+import type { AgentContext } from "../../lib/agent/auth";
+import type { NextRequest } from "next/server";
+
+test("close_task / update_task exist, are write tools under sfb:tasks, and create_task no longer requires owner_agent (defaults to atlas)", () => {
+  const byName = Object.fromEntries(TASK_TOOLS.map((t) => [t.name, t]));
+  assert.ok(byName.close_task && byName.close_task.readOnly === false && byName.close_task.scope === "sfb:tasks");
+  assert.ok(byName.update_task && byName.update_task.readOnly === false && byName.update_task.scope === "sfb:tasks");
+  assert.deepEqual((byName.create_task.inputSchema as { required: string[] }).required, ["title"]);
+  assert.equal(DEFAULT_OWNER_AGENT, "atlas");
+  assert.ok(TASK_STATUSES.includes("closed")); assert.ok(!UPDATABLE_STATUSES.includes("done"), "done is only reachable through review_task");
+});
+
+test("permission rule: team owner always; assignee (owner_agent or claimed_by); unassigned; everyone else refused", () => {
+  const assigned = { owner_agent: "hyperagent" as const, claimed_by: null };
+  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: true }, assigned), true, "team owner");
+  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: false }, assigned), false, "another agent's assigned task is hands-off");
+  assert.equal(canManageTask({ handle: "hyperagent", isTeamOwner: false }, assigned), true, "assignee");
+  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: false }, { owner_agent: "hyperagent", claimed_by: "atlas" }), true, "claimer");
+  assert.equal(canManageTask({ handle: "atlas", isTeamOwner: false }, { owner_agent: null as unknown as "atlas", claimed_by: null }), true, "unassigned");
+});
+
+test("tools/list advertises EVERY task tool to a connection holding sfb:tasks (no hidden callables)", async () => {
+  const scopes = new Set(["sfb:workspace:read", "sfb:tasks"]);
+  const ctx = { authorization: { id: "a", user_id: "u", client_id: "test", workspace_label: "SFB Connect Team", scopes: [...scopes], status: "active", delegated_refresh_enc: null, delegated_access_enc: null, delegated_access_expires_at: null, created_at: "", revoked_at: null, last_used_at: null }, user: {} as never, scopes, clientId: "test", userId: "u" } as unknown as AgentContext;
+  const r = (await handleMcp(ctx, { jsonrpc: "2.0", id: 1, method: "tools/list" }, {} as NextRequest)) as { result: { tools: { name: string }[] } };
+  const listed = new Set(r.result.tools.map((t) => t.name));
+  for (const t of TASK_TOOLS) assert.ok(listed.has(t.name), `${t.name} must be listed`);
+  for (const n of ["list_tasks", "create_task", "claim_task", "close_task", "update_task", "inbox", "get_task", "start_task", "post_result", "review_task", "cancel_task", "send_message"]) assert.ok(listed.has(n), n);
+  // Every callable tool whose scope is granted is listed — nothing is callable but hidden.
+  const callable = TOOLS.filter((t) => scopes.has(t.scope)).map((t) => t.name).sort();
+  assert.deepEqual([...listed].sort(), callable);
+});
