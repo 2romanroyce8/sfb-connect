@@ -46,7 +46,13 @@ export async function issueCode(service: SupabaseClient, userId: string, email: 
   await service.from("email_verification_codes").update({ consumed_at: new Date().toISOString() }).eq("user_id", userId).is("consumed_at", null);
   await service.from("email_verification_codes").insert({ user_id: userId, email, code_hash: hashCode(code, userId), expires_at: new Date(Date.now() + CODE_TTL_MIN * 60_000).toISOString() });
   const r = await sendEmail({ to: email, subject: `${code} is your SFB Connect code`, ...verificationEmail(code, businessName) });
-  if (!r.sent) { console.error("[demo] verification email not sent", r.error ?? r.skipped); return { ok: false, reason: "send_failed" }; }
+  if (!r.sent) {
+    // The reason must be readable without Vercel logs: operator row (no code, no secrets).
+    console.error("[demo] verification email not sent", r.error ?? r.skipped);
+    await service.from("billing_audit_log").insert({ business_id: null, action: "email_send_failed", detail: { purpose: "demo_verification", to_domain: email.split("@")[1] ?? null, error: r.error ?? null, skipped: r.skipped ?? null, user_id: userId } }).then(() => undefined, () => undefined);
+    return { ok: false, reason: "send_failed" };
+  }
+  await service.from("billing_audit_log").insert({ business_id: null, action: "email_sent", detail: { purpose: "demo_verification", to_domain: email.split("@")[1] ?? null, resend_id: r.id ?? null, user_id: userId } }).then(() => undefined, () => undefined);
   return { ok: true };
 }
 
