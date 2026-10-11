@@ -54,6 +54,7 @@ export default function OutboundWorkspace() {
   if (!s.business) return <div className="rounded-[12px] p-5 text-[13px] text-[#A1A1A6]" style={card}>No business with a plan yet. Outbound runs per customer business (Solo/Agency, or a trial in simulated mode).</div>;
 
   const pending = s.messages.filter((m) => m.status === "pending_approval");
+  const failed = s.messages.filter((m) => m.status === "failed" && m.approved_by);
   const byId = Object.fromEntries(s.prospects.map((p) => [p.id, p]));
   const sentCount = s.messages.filter((m) => m.status === "sent" || m.status === "simulated").length;
   const openedCount = s.messages.filter((m) => m.opened_at).length;
@@ -81,6 +82,12 @@ export default function OutboundWorkspace() {
         <div className="grid lg:grid-cols-[1fr_1.2fr] gap-4">
           <div className="flex flex-col gap-2">
             {pending.length === 0 && <div className="rounded-[12px] p-5 text-[13px] text-[#6E6E73]" style={card}>Nothing waiting. Drafts land here the moment the agent (or a sequence step) writes one.</div>}
+            {failed.length > 0 && (
+              <div className="rounded-[12px] p-4" style={{ ...card, borderColor: "rgba(255,69,58,0.3)" }}>
+                <div className="text-[12.5px] font-semibold text-[#FF6961]">{failed.length} approved {failed.length === 1 ? "message" : "messages"} failed to send</div>
+                {failed.map((m) => <div key={m.id} className="mt-2 flex items-center justify-between gap-3 text-[12px]"><div className="min-w-0"><div className="text-[#F5F5F7] truncate">{byId[m.prospect_id]?.name ?? "Prospect"} · {m.to_email}</div><div className="text-[#A1A1A6] truncate">{m.error}</div></div><button onClick={() => act({ action: "retry", message_id: m.id }, `retry-${m.id}`)} disabled={busy === `retry-${m.id}`} className={ghost} style={ghostStyle}>{busy === `retry-${m.id}` ? "Sending…" : "Retry send"}</button></div>)}
+              </div>
+            )}
             {pending.map((m) => (
               <button key={m.id} onClick={() => setOpen(m)} className="text-left rounded-[12px] p-4" style={{ ...card, borderColor: open?.id === m.id ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center justify-between gap-3"><div className="text-[13px] font-semibold text-[#F5F5F7] truncate">{byId[m.prospect_id]?.name ?? "Prospect"} <span className="font-normal text-[#6E6E73]">· {m.to_email}</span></div><span className="text-[10.5px] uppercase tracking-wide" style={{ color: STATUS[m.status] }}>{m.template_key ?? `step ${m.step}`}</span></div>

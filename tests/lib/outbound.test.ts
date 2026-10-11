@@ -63,3 +63,9 @@ test("templates render from facts only and refuse when a required fact is missin
   assert.match(noName.body, /^Hi Hallmark Property Management team,/);
   for (const t of Object.values(TEMPLATES)) assert.ok(t.requires.includes("company") && t.requires.includes("sender_name"));
 });
+
+test("retry rule: a failed send keeps its human approval, so the gate passes again once status is reset to approved", () => {
+  // The DB update in retryFailedSend only matches status='failed' with approved_by/approved_at set; the gate then re-checks.
+  assert.deepEqual(canSend({ ...base, status: "approved" }, false), { ok: true });
+  assert.equal(canSend({ ...base, status: "failed" }, false).ok, false, "a failed row is never sent directly — it must be reset to approved first");
+});

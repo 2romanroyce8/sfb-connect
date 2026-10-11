@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
-import { addProspect, approveMessage, bookMeeting, draftMessage, enrichProspect, importFindings, OutboundError, proposeMeetingSlots, rejectMessage, sendApprovedMessage, startSequence, syncReplies, advanceSequences, InsufficientCreditsError } from "@/lib/outbound/engine";
+import { addProspect, approveMessage, bookMeeting, draftMessage, enrichProspect, importFindings, OutboundError, proposeMeetingSlots, rejectMessage, sendApprovedMessage, retryFailedSend, startSequence, syncReplies, advanceSequences, InsufficientCreditsError } from "@/lib/outbound/engine";
 import type { TemplateKey } from "@/lib/outbound/templates";
 
 export const runtime = "nodejs";
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
       case "approve": return NextResponse.json({ message: await approveMessage(service, s("message_id"), { id: me.id, label: actor.label }, { andSend: body.and_send !== false, note: s("note") || undefined }) });
       case "reject": return NextResponse.json({ message: await rejectMessage(service, s("message_id"), { id: me.id, label: actor.label }, s("reason") || "Rejected by reviewer") });
       case "send": return NextResponse.json({ message: await sendApprovedMessage(service, s("message_id"), actor) });
+      case "retry": return NextResponse.json({ message: await retryFailedSend(service, s("message_id"), actor) });
       case "slots": return NextResponse.json(await proposeMeetingSlots(service, b.id));
       case "book": return NextResponse.json(await bookMeeting(service, { prospectId: s("prospect_id"), startISO: s("start"), endISO: s("end"), replyToMessageId: s("message_id") || null }, actor));
       case "sync": { const r = await syncReplies(service, b.id); const a = await advanceSequences(service, b.id, actor); return NextResponse.json({ ...r, ...a }); }

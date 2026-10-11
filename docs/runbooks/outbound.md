@@ -35,6 +35,9 @@ Enrich → write → **human approval** → send → track → book. Every charg
 - Approve requires: team owner, the business owner, or the business's assigned overseer. Approve = charge review pass → (optionally) send. Reject keeps the reason on the row.
 - Open tracking is a pixel (opens are a hint, not a fact). Replies are detected by Gmail thread, stored as `direction=in` rows.
 
+## Known blocker found in live E2E (2026-10-11)
+**Gmail API is not enabled in the Google Cloud project behind `GOOGLE_CLIENT_ID`** (project 612333806040). The Gmail OAuth connection succeeds (OAuth is a different API), but the first send returns `Gmail API has not been used in project … or it is disabled`. Fix (Roman, 1 minute): Google Cloud console → APIs & Services → Library → **Gmail API → Enable** on that project. Then `/team/outbound` → the red "approved messages failed to send" banner → **Retry send** (the approval stays on the row; `retryFailedSend` resets failed→approved and the gate re-runs). Calendar API is enabled (booking verified live: real event + Meet link).
+
 ## Operate
 - Pending approvals: `select count(*) from outbound_messages where status='pending_approval'`.
 - Cron health: `select last_run_at, last_result from outbound_cron_settings`; `select * from cron.job where jobname='outbound-sync-hourly'`. Pause: `update outbound_cron_settings set enabled=false; select outbound_cron_schedule();`

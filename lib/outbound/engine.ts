@@ -154,6 +154,13 @@ export async function rejectMessage(service: SupabaseClient, messageId: string, 
   return m;
 }
 
+/** A send that failed after a human approved it (e.g. Gmail API not enabled yet) may be retried: the approval stays on the row, the gate still applies. */
+export async function retryFailedSend(service: SupabaseClient, messageId: string, actor: Actor) {
+  const { data: m } = await service.from("outbound_messages").update({ status: "approved", error: null, updated_at: now() }).eq("id", messageId).eq("status", "failed").not("approved_by", "is", null).not("approved_at", "is", null).select("id").maybeSingle();
+  if (!m) throw new OutboundError("not_retryable", "Only a failed message that a human already approved can be retried.");
+  return sendApprovedMessage(service, messageId, actor);
+}
+
 // ---------- 4. send (gate enforced; sandbox simulates; sends are free) ----------
 export async function sendApprovedMessage(service: SupabaseClient, messageId: string, actor: Actor) {
   const { data: m } = await service.from("outbound_messages").select("*").eq("id", messageId).maybeSingle();
