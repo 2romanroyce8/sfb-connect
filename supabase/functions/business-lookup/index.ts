@@ -327,31 +327,91 @@ Deno.serve(async (req) => {
     sources,
   };
 
+  // ---- Templated AI summary — assembled ONLY from the evidence above.
+  // No LLM call: every sentence maps directly to a verified/uncertain/missing
+  // signal already computed, so nothing here can be invented.
+  const displayName = name.value || "This business";
+  const categoryPhrase = category.value ? ` (${category.value})` : "";
+  const scoreEntries: [string, number][] = [
+    ["Identity", identityScore],
+    ["Knowledge", knowledgeScore],
+    ["Authority", authorityScore],
+    ["Location", locationScore],
+    ["Machine Readability", machineReadabilityScore],
+  ];
+  const lowest = scoreEntries.reduce((a, b) => (b[1] < a[1] ? b : a));
+  const highest = scoreEntries.reduce((a, b) => (b[1] > a[1] ? b : a));
+
+  const summaryParts = [
+    `${displayName}${categoryPhrase} has a public web presence AI systems can partially read.`,
+  ];
+  if (result.strengths[0]) summaryParts.push(result.strengths[0] + ".");
+  if (result.gaps[0] || result.missing[0]) {
+    summaryParts.push(
+      `The biggest gap right now: ${(result.gaps[0] || result.missing[0]).toLowerCase()}.`
+    );
+  }
+  const summaryText = summaryParts.join(" ");
+
+  const whyScoreText = `Overall score is ${overall}/100 — ${highest[0]} is the strongest category (${highest[1]}/20), while ${lowest[0]} is the weakest (${lowest[1]}/20) and is pulling the score down the most.`;
+
+  const nextSteps: string[] = [];
+  if (locationScore < 20) nextSteps.push("Add structured address/location data (schema.org LocalBusiness)");
+  if (knowledgeScore < 20) nextSteps.push("Add a clear meta description and structured business data");
+  if (authorityScore < 20) nextSteps.push("Link social profiles and build review/rating signals");
+  if (identityScore < 20) nextSteps.push("Make the business name consistent across title, headings and schema");
+  if (machineReadabilityScore < 20) nextSteps.push("Serve the site over HTTPS and add schema.org markup");
+  if (nextSteps.length === 0) nextSteps.push("Keep monitoring — all core signals are currently strong");
+
+  const summary = {
+    headline: `${displayName} — AI Presence Preview`,
+    summary: summaryText,
+    whatAIUnderstands: result.strengths,
+    whatMayBeMissing: [...result.gaps, ...result.missing].slice(0, 4),
+    whyScoreIsWhatItIs: whyScoreText,
+    recommendedNextSteps: nextSteps.slice(0, 3),
+  };
+
   if (supabase) {
     await supabase
       .from("business_lookup_jobs")
       .update({ status: "completed", completed_at: new Date().toISOString() })
       .eq("id", jobId);
-    await supabase.from("business_lookup_results").insert({
-      job_id: jobId,
-      business_name: name.value,
-      website: website.value,
-      phone: phone.value,
-      location: locationField.value,
-      category: category.value,
-      overall_score: overall,
-      identity_score: identityScore,
-      knowledge_score: knowledgeScore,
-      authority_score: authorityScore,
-      location_score: locationScore,
-      machine_readability_score: machineReadabilityScore,
-      strengths: result.strengths,
-      gaps: result.gaps,
-      missing: result.missing,
-      sources,
-      raw_verified_data: result,
-    });
+    const { data: resultRow } = await supabase
+      .from("business_lookup_results")
+      .insert({
+        job_id: jobId,
+        business_name: name.value,
+        website: website.value,
+        phone: phone.value,
+        location: locationField.value,
+        category: category.value,
+        overall_score: overall,
+        identity_score: identityScore,
+        knowledge_score: knowledgeScore,
+        authority_score: authorityScore,
+        location_score: locationScore,
+        machine_readability_score: machineReadabilityScore,
+        strengths: result.strengths,
+        gaps: result.gaps,
+        missing: result.missing,
+        sources,
+        raw_verified_data: result,
+      })
+      .select("id")
+      .single();
+    if (resultRow?.id) {
+      await supabase.from("business_ai_summaries").insert({
+        result_id: resultRow.id,
+        headline: summary.headline,
+        summary: summary.summary,
+        what_ai_understands: summary.whatAIUnderstands,
+        what_may_be_missing: summary.whatMayBeMissing,
+        why_score: { text: summary.whyScoreIsWhatItIs },
+        recommended_next_steps: summary.recommendedNextSteps,
+      });
+    }
   }
 
-  return json({ jobId, status: "completed", result });
+  return json({ jobId, status: "completed", result, summary });
 });

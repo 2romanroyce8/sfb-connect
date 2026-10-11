@@ -160,5 +160,5 @@ export function checkChat(site: SiteFetch): Finding {
   if (!site.ok) return { ...base, status: "missing", headline: "Couldn't check your site for chat.", items: [], reason: site.reason ?? "Unknown fetch error.", metrics: {}, sources: [site.finalUrl] };
   const vendor = detectChat(site.html);
   if (!vendor) return { ...base, status: "found", headline: "No chat on your site — nobody answers after hours.", items: [], reason: null, metrics: { hasChat: 0 }, sources: [site.finalUrl] };
-  return { ...base, status: "found", headline: `${vendor} chat is installed.`, items: [], reason: "Whether it answers after hours can't be seen from outside — the agent checks the response log on day 1.", metrics: { hasChat: 1, vendor }, sources: [site.finalUrl] };
+  return { ...base, status: "found", headline: `${vendor} is installed.`, items: [], reason: "Whether it answers after hours can't be seen from outside — the agent checks the response log on day 1.", metrics: { hasChat: 1, vendor }, sources: [site.finalUrl] };
 }

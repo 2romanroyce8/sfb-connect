@@ -59,6 +59,7 @@ test("website fixes and chat detection come from the HTML, nothing else", () => 
   const w = checkWebsite(site);
   assert.equal(w.items.length, 3); assert.match(w.headline, /^3 quick-hit fixes/);
   assert.equal(detectChat(html), "Drift");
+  assert.equal(checkChat(site).headline, "Drift is installed.");
   assert.equal(checkChat(site).metrics.hasChat, 1);
   assert.equal(checkChat({ ...site, html: "<html></html>" }).headline, "No chat on your site — nobody answers after hours.");
   const down = checkWebsite({ ...site, ok: false, reason: "The site answered 503." });
@@ -92,12 +93,21 @@ test("scope cards: five dimensions; action lines follow the registry", () => {
   assert.equal(r.live, false); assert.match(r.line, /when Reviews & Reputation ships — you're first in line/);
 });
 
-import { nameFromTitle, resolveBusinessName, logoCandidates, initialOf } from "../../lib/analyzer/identity";
+import { nameFromTitle, resolveBusinessName, logoCandidates, initialOf, isParked } from "../../lib/analyzer/identity";
 test("personalization: name from title → JSON-LD → lookup; generic or messy titles yield null", () => {
   assert.equal(nameFromTitle("Limitless Roofing OKC LLC | Oklahoma City's Trusted Roofer"), "Limitless Roofing OKC LLC");
   assert.equal(nameFromTitle("Home"), null);
   assert.equal(nameFromTitle("Welcome | Home"), null);
   assert.equal(nameFromTitle("Bright Smile Dental – Austin TX Dentist"), "Bright Smile Dental");
+  // Slogans, sentences and parked pages never become names (a wrong name kills trust).
+  assert.equal(nameFromTitle("AI outbound that books calls"), null);
+  assert.equal(nameFromTitle("GameTime Jewelry Inc. Visual Website"), null);
+  assert.equal(nameFromTitle("LimitlessRoofing.com is for sale"), null);
+  assert.equal(nameFromTitle("Peak Comfort HVAC | Denver's #1 Heating & Cooling"), "Peak Comfort HVAC");
+  assert.deepEqual(resolveBusinessName("<title>AI outbound that books calls</title><meta property=\"og:site_name\" content=\"GTM\">", null), { name: "GTM", source: "og" });
+  assert.deepEqual(resolveBusinessName("<title>LimitlessRoofing.com is for sale</title>", "LimitlessRoofing.com is for sale"), { name: null, source: null });
+  assert.equal(isParked("<title>example.com is for sale | Buy this domain</title>"), true);
+  assert.equal(isParked("<title>Limitless Roofing OKC LLC</title>"), false);
   const html = `<html><head><title>Home</title><script type="application/ld+json">{"@type":"LocalBusiness","name":"Peak Comfort HVAC"}</script></head></html>`;
   assert.deepEqual(resolveBusinessName(html, "Lookup Name"), { name: "Peak Comfort HVAC", source: "jsonld" });
   assert.deepEqual(resolveBusinessName("<title>Welcome</title>", "Lookup Name"), { name: "Lookup Name", source: "lookup" });

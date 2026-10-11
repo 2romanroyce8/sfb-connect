@@ -7,6 +7,17 @@
 import { extractTitle, extractMeta, extractJsonLd, findLocalBusiness } from "@/lib/research/htmlExtract";
 
 const GENERIC = /^(home|homepage|welcome|index|untitled|website|site|coming soon|under construction|loading|page not found|404)$/i;
+/** A parked / for-sale domain has no business behind it. Never name it, never score it. */
+export const PARKED_RE = /\b(is for sale|domain (is )?(for sale|parked)|buy this domain|parking page|this domain may be for sale|sedo|godaddy auctions|afternic|hugedomains|dan\.com)\b/i;
+export const isParked = (html: string | null) => !!html && (PARKED_RE.test(extractTitle(html) ?? "") || PARKED_RE.test(html.slice(0, 20_000)));
+const SMALL = /^(and|of|the|&|for|in|at|by|to|a|an|co|inc|llc|ltd|plc|corp|group|dds|md|pllc|pc)\.?$/i;
+/** Brand-shaped: ≤ 5 words, every word capitalised / all-caps / numeric / a small connector, no sentence punctuation. "Limitless Roofing OKC LLC" yes; "AI outbound that books calls" no. */
+export function looksLikeBrand(s: string): boolean {
+  const words = s.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 5) return false;
+  if (/[.!?]$/.test(s) && !/\b(inc|llc|ltd|co|corp)\.$/i.test(s)) return false;
+  return words.every((w) => SMALL.test(w) || /^[A-Z0-9][\w'&.-]*$/.test(w) || /^[A-Z][a-z]+[A-Z]/.test(w));
+}
 const SEPARATORS = /\s+[|\-–—·•:]\s+|\s+[|]\s*|\s*[|]\s+/;
 
 function clean(s: string | null | undefined): string | null {
@@ -24,10 +35,11 @@ export function nameFromTitle(title: string | null): string | null {
   if (!title) return null;
   const parts = title.split(SEPARATORS).map((p) => clean(p)).filter((p): p is string => !!p);
   if (parts.length === 0) return null;
-  // Brands come first in a title almost always; take the first segment that isn't a slogan or a
-  // descriptor ("Oklahoma City's Trusted Roofer", "Austin TX Dentist"). Never shortest-wins.
-  const descriptor = (p: string) => /[.!?]$/.test(p) || /\b(best|trusted|top|#1|your|we|our|near me|services?|dentist|roofer|plumber|contractor|lawyer|attorney|clinic)\b/i.test(p) || /\b[A-Z]{2}\b/.test(p) && p.split(" ").length <= 4 && /\b(TX|OK|CA|FL|NY|AZ|CO|GA|NC|WA|IL|OH|PA|MI|TN|VA|NJ|MA|MD|MO|IN|WI|MN|SC|AL|LA|KY|OR|OK|CT|UT|IA|NV|AR|MS|KS|NM|NE|ID|WV|HI|NH|ME|MT|RI|DE|SD|ND|AK|VT|WY)\b/.test(p);
-  return parts.find((p) => p.split(" ").length <= 6 && !descriptor(p)) ?? parts[0] ?? null;
+  // Brands come first in a title almost always; take the first segment that is brand-shaped and not a
+  // descriptor ("Oklahoma City's Trusted Roofer", "Austin TX Dentist"). A slogan ("AI outbound that books
+  // calls") or a sentence never qualifies — the headline falls back to generic instead. Never shortest-wins.
+  const descriptor = (p: string) => /\b(best|trusted|top|#1|your|we|our|near me|services?|dentist|roofer|plumber|contractor|lawyer|attorney|clinic|visual website|official site|official website)\b/i.test(p) || (/\b[A-Z]{2}\b/.test(p) && p.split(" ").length <= 4 && /\b(TX|OK|CA|FL|NY|AZ|CO|GA|NC|WA|IL|OH|PA|MI|TN|VA|NJ|MA|MD|MO|IN|WI|MN|SC|AL|LA|KY|OR|CT|UT|IA|NV|AR|MS|KS|NM|NE|ID|WV|HI|NH|ME|MT|RI|DE|SD|ND|AK|VT|WY)\b/.test(p));
+  return parts.find((p) => looksLikeBrand(p) && !descriptor(p)) ?? null;
 }
 
 export function nameFromJsonLd(html: string): string | null {
@@ -36,16 +48,19 @@ export function nameFromJsonLd(html: string): string | null {
   return clean(typeof n === "string" ? n : null);
 }
 
-/** Title → JSON-LD → lookup (GBP-equivalent). Null when none is clean. */
-export function resolveBusinessName(html: string | null, lookupName: string | null): { name: string | null; source: "title" | "jsonld" | "lookup" | null } {
+/** Page title (brand segment) → og:site_name → JSON-LD → lookup (GBP-equivalent). Parked domain → null. Null when none is clean. */
+export function resolveBusinessName(html: string | null, lookupName: string | null): { name: string | null; source: "title" | "og" | "jsonld" | "lookup" | null } {
+  if (isParked(html)) return { name: null, source: null };
   if (html) {
     const t = nameFromTitle(extractTitle(html));
     if (t) return { name: t, source: "title" };
+    const og = clean(extractMeta(html, "og:site_name"));
+    if (og && looksLikeBrand(og) && !GENERIC.test(og)) return { name: og, source: "og" };
     const j = nameFromJsonLd(html);
     if (j) return { name: j, source: "jsonld" };
   }
   const l = clean(lookupName);
-  return l ? { name: l, source: "lookup" } : { name: null, source: null };
+  return l && looksLikeBrand(l) ? { name: l, source: "lookup" } : { name: null, source: null };
 }
 
 const abs = (src: string, base: string): string | null => { try { return new URL(src, base).toString(); } catch { return null; } };
