@@ -36,6 +36,10 @@ test("BLANKS stay blank until Rome fills them — nothing invented", () => {
     if (ANCHOR_WAS_USD[k] === null) assert.equal(priceDisplay(t(k), "month").wasUsd, null);
     else assert.ok(ANCHOR_WAS_USD[k]! > t(k).monthlyUsd, "a 'was' price must be higher than the live price");
   }
+  // Rome's anchors (2026-10-11): strikethrough shows on both intervals, annual as per-month equivalent.
+  assert.equal(priceDisplay(t("solo"), "month").wasUsd, 5000); assert.equal(priceDisplay(t("agency"), "month").wasUsd, 10000);
+  assert.equal(priceDisplay(t("solo"), "year").wasUsd, annualPerMonthUsd(5000));
+  assert.equal(TIERS[0].trialDays, 3); assert.equal(TIERS[0].expiry, "0 credits or 3 days");
   assert.equal(REPLACED_VENDORS.length, 6);
   if (VENDORS_TOTAL_MONTHLY_USD === null) assert.equal(vendorsTotalLine(), "Typically thousands a month");
   else assert.match(vendorsTotalLine(), /^\$[\d,]+\/mo$/);

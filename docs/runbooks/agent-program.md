@@ -4,7 +4,7 @@
 
 ## Surfaces
 - Public: `/agent` (hero, how it works, 8 capability cards with statuses, integrations row, credits + price list + planning math + top-ups, human overseer, pricing with "Everything in X, plus…", 10-question FAQ, risk-reversal strip). Presence plans at `/#pricing` stay the downsell wedge.
-- Trial: `/start` → `POST /api/trial/start` → account (password set, email confirmed), sandbox business on a stock profile (`businesses.is_sandbox=true`, `stock_profile_key`), 128 PROMOTIONAL credits, 3 capabilities enabled, `trial_expires_at = now + 14d`. No Stripe. Rate-limited 5/IP/day.
+- Trial: `/start` → `POST /api/trial/start` → account (password set, email confirmed), sandbox business on a stock profile (`businesses.is_sandbox=true`, `stock_profile_key`), 128 PROMOTIONAL credits, 3 capabilities enabled, `trial_expires_at = now + 3d`. No Stripe. Rate-limited 5/IP/day.
 - Customer: `/dashboard/agent` (status strip, credit bar with 80/95% colors, 8 toggle cards with per-card spend, activity feed with Done / Failed · 0 credits / Credits added), `/dashboard/credits` (balance, allotment, refill/expiry, planning calculator, top-up packs with Stripe buy buttons on paid tiers, full ledger, CSV export at `/api/dashboard/credits/export`). Trial mode: DEMO banner + Go live button, price list hidden, packs replaced by upgrade card.
 - Toggles: `PATCH /api/dashboard/capabilities {capability, enabled}` — free; trial enforces the 3-capability limit (409 with message).
 - Team: overseer assignment on `/team/team`; module statuses in Settings.
