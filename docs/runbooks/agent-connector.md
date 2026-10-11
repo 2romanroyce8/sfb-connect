@@ -25,6 +25,9 @@ The connector is how Muse (Atlas) and HyperAgent act inside SFB Connect: `https:
 - **Self-healing order** (`getDelegatedAccessToken`): stored token still fresh → re-read the row (a parallel request may have refreshed it) → Supabase refresh → **re-mint** a new delegated session for the same user (the authorization is still active and was granted by that user) → only then fail. A re-mint is audited as `delegated_session` / result `success` / `{via:"reminted"}`.
 - **Failure codes.** No delegated session on the row (revoked / never minted) → `401 session_unavailable` with an `invalid_token` challenge: the agent must re-authorize. Refresh *and* re-mint failed → `503 session_unavailable` + `Retry-After: 5`, **no** `invalid_token` challenge. The 401 used to be returned for both cases; an `invalid_token` challenge is the standard signal for "rotate your OAuth token", which turned a Supabase hiccup into a refresh storm and then into a reuse revocation.
 
+## Transport
+MCP responses carry an explicit `Content-Length` + `Cache-Control: no-store` (`json()` in `app/api/v1/agent/mcp/route.ts`); `content[0].text` is compact JSON and `list_tasks` returns summaries (`full:true` for bodies). Added 2026-10-11 after Muse saw `IncompleteRead` on chunked bodies. If a client still reports truncated reads, get the exact exception text (`IncompleteRead(N bytes read, M more expected)` means a length mismatch; `(N bytes read)` alone means the stream closed) and the `x-vercel-id` header.
+
 ## Reading the audit log for a connector problem
 ```sql
 select created_at, action, result, detail from agent_audit_log

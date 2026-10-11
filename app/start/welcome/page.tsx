@@ -5,7 +5,7 @@ import Footer from "@/components/home/Footer";
 import { getStripeClient, isStripeConfigured } from "@/lib/billing/stripe";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { provisionTrialOrder } from "@/lib/agentProgram/trial";
-import { TRIAL_TIER } from "@/lib/agentProgram/config";
+import { TRIAL_TIER, fmtUsd } from "@/lib/agentProgram/config";
 import TrialResume from "@/components/agent/TrialResume";
 export const dynamic = "force-dynamic";
 
@@ -54,8 +54,8 @@ export default async function TrialWelcomePage({ searchParams }: { searchParams:
           ) : state === "open" ? (
             <>
               <h1 className="text-[32px] font-bold tracking-[-0.03em]">Payment not completed yet.</h1>
-              <p className="mt-4 text-[15px] text-white/[0.6]">Stripe hasn&apos;t confirmed the $1 payment. Your account exists; finish the checkout to start the {TRIAL_TIER.trialDays} days.</p>
-              <div className="mt-8"><TrialResume label="Finish the $1 checkout →" /></div>
+              <p className="mt-4 text-[15px] text-white/[0.6]">Stripe hasn&apos;t confirmed the {fmtUsd(TRIAL_TIER.trialUsd)} payment. Your account exists; finish the checkout to start the {TRIAL_TIER.trialDays} days.</p>
+              <div className="mt-8"><TrialResume label={`Finish the ${fmtUsd(TRIAL_TIER.trialUsd)} checkout →`} /></div>
             </>
           ) : (
             <>

@@ -14,7 +14,7 @@ export const revalidate = 300;
 const solo = TIERS.find((t) => t.key === "solo")!;
 export const metadata: Metadata = {
   title: "Pricing — SFB Agent | One build. One monthly. That's it.",
-  description: `$1 trial on a sample business for 5 days. Live on yours from ${fmtUsd(solo.monthlyUsd)}/month plus a one-time setup. Every credit price published; cancel anytime.`,
+  description: `Free 5-day trial. Live on yours from ${fmtUsd(solo.monthlyUsd)}/month plus a one-time setup. Every credit price published; cancel anytime.`,
   alternates: { canonical: "/pricing" },
   openGraph: { title: "SFB Agent pricing", description: "One build. One monthly. That's it.", url: "/pricing" },
 };

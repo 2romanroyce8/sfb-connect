@@ -39,26 +39,26 @@ export default function TrialWizard({ signedInEmail = null }: { signedInEmail?: 
     try {
       const url = signedInEmail ? "/api/trial/checkout" : "/api/trial/start";
       const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: name || undefined, email, password, stockProfile: profile, capabilities: caps, scanDomain }) });
-      const j = (await r.json()) as { checkoutUrl?: string; redirect?: string; error?: string };
+      const j = (await r.json()) as { ok?: boolean; checkoutUrl?: string; redirect?: string; error?: string };
       if (j.redirect) { window.location.href = j.redirect; return; }
-      if (!r.ok || !j.checkoutUrl) throw new Error(j.error || "Could not start the trial.");
-      trackMarketingEvent("trial_checkout_start", { stockProfile: profile, capabilities: caps, signedIn: !!signedInEmail });
+      if (!r.ok) throw new Error(j.error || "Could not start the trial.");
       if (!signedInEmail) {
-        // Sign in before leaving for Stripe so the return trip lands straight in the dashboard.
         const { error } = await createSupabaseBrowserClient().auth.signInWithPassword({ email, password });
-        if (error) console.warn("[trial] pre-checkout sign-in failed; the welcome page will ask for sign-in.");
+        if (error) throw new Error("Account created, but sign-in failed. Use the sign-in page.");
       }
-      window.location.href = j.checkoutUrl;
+      if (j.checkoutUrl) { trackMarketingEvent("trial_checkout_start", { stockProfile: profile, capabilities: caps }); window.location.href = j.checkoutUrl; return; }
+      trackMarketingEvent("trial_signup_complete", { stockProfile: profile, capabilities: caps });
+      window.location.href = "/dashboard/agent?welcome=trial";
     } catch (e) { setError(e instanceof Error ? e.message : "Could not start the trial."); setBusy(false); }
   };
 
   return (
     <div className="rounded-[18px] p-7 md:p-9" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-      <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-3">{fmtUsd(trial.trialUsd)} trial · {trial.trialDays} days · step {step} of 3</div>
+      <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-3">Free trial · {trial.trialDays} days · step {step} of 3</div>
       {step === 1 && (
         <form onSubmit={(e) => { e.preventDefault(); setStep(2); }} className="flex flex-col gap-3">
           <h1 className="text-[28px] md:text-[34px] font-bold tracking-[-0.03em] leading-[1.05]">Get your agent. Watch it work on a sample business.</h1>
-          <p className="text-[14px] text-white/[0.55] mb-2">{trial.credits} credits ≈ {bookedCallsFor(trial.credits)} booked calls of agent work. {fmtUsd(trial.trialUsd)} once, {trial.trialDays} days of access. No integrations, nothing recurring.</p>
+          <p className="text-[14px] text-white/[0.55] mb-2">{trial.credits} credits ≈ {bookedCallsFor(trial.credits)} booked calls of agent work. Free. No card. {trial.trialDays} days.</p>
           {scanDomain && <p className="text-[12.5px] text-[#30D158] -mt-1 mb-1">Your first tasks will mirror the live findings from your {scanDomain} preview.</p>}
           <input required minLength={2} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="h-[44px] rounded-[9px] px-3 text-[14px] outline-none" style={field} />
           <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="h-[44px] rounded-[9px] px-3 text-[14px] outline-none" style={field} />
@@ -100,8 +100,8 @@ export default function TrialWizard({ signedInEmail = null }: { signedInEmail?: 
             </div>
           )}
           {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}</div>}
-          <div className="flex gap-2 mt-2"><button type="button" onClick={() => setStep(2)} className="h-[44px] px-5 rounded-full text-[14px]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Back</button><button type="button" disabled={busy || caps.length !== trial.capabilityLimit || (prefilled && password.length < 8)} onClick={submit} className="flex-1 h-[44px] rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-50">{busy ? "Opening checkout…" : `Continue to ${fmtUsd(trial.trialUsd)} checkout →`}</button></div>
-          <div className="text-[11px] text-white/[0.4]">{fmtUsd(trial.trialUsd)} one-time via Stripe; your agent starts the moment it clears and runs {trial.trialDays} days. Sandboxed: nothing is sent to real customers. Spend is shown per action; the price list unlocks on a paid plan.</div>
+          <div className="flex gap-2 mt-2"><button type="button" onClick={() => setStep(2)} className="h-[44px] px-5 rounded-full text-[14px]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Back</button><button type="button" disabled={busy || caps.length !== trial.capabilityLimit || (prefilled && password.length < 8)} onClick={submit} className="flex-1 h-[44px] rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-50">{busy ? "Creating your agent…" : "Start the agent →"}</button></div>
+          <div className="text-[11px] text-white/[0.4]">Free for {trial.trialDays} days, no card. Sandboxed: nothing is sent to real customers. Spend is shown per action; the price list unlocks on a paid plan.</div>
         </div>
       )}
     </div>

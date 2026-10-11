@@ -2,10 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { trialExpiry, parseTrialSetup, TRIAL_PRICE_CENTS } from "../../lib/agentProgram/trial";
 import { trialLookupKey } from "../../lib/agentProgram/stripe";
-import { TRIAL_TIER, STOCK_PROFILES } from "../../lib/agentProgram/config";
+import { TRIAL_TIER, TRIAL_IS_FREE, STOCK_PROFILES } from "../../lib/agentProgram/config";
 
-test("$1 / 5-day trial: price and expiry come from config, expiry counts from the moment the dollar cleared", () => {
-  assert.equal(TRIAL_PRICE_CENTS, 100);
+test("5-day trial: free (no Stripe path at signup), expiry counts from provisioning; the paid path stays config-switchable", () => {
+  assert.equal(TRIAL_IS_FREE, true); assert.equal(TRIAL_PRICE_CENTS, 0);
   assert.equal(trialLookupKey(), "sfb_agent_trial_5day");
   const paid = new Date("2026-10-11T16:00:00Z");
   assert.equal(trialExpiry(paid).toISOString(), "2026-10-16T16:00:00.000Z");

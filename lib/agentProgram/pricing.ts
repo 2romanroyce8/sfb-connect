@@ -5,7 +5,7 @@
 // numbers inside it substituted from config.
 // ============================================================
 import {
-  TIERS, TRIAL_TIER, TOP_UP_PACKS, CREDITS_PER_BOOKED_CALL, ANNUAL_MONTHS_CHARGED, ANCHOR_WAS_USD, REPLACED_VENDORS, VENDORS_TOTAL_MONTHLY_USD,
+  TIERS, TRIAL_TIER, TRIAL_IS_FREE, TOP_UP_PACKS, CREDITS_PER_BOOKED_CALL, ANNUAL_MONTHS_CHARGED, ANCHOR_WAS_USD, REPLACED_VENDORS, VENDORS_TOTAL_MONTHLY_USD,
   bookedCallsFor, annualUsd, annualPerMonthUsd, fmtUsd, tier, type Tier, type TierKey, type BillingInterval,
 } from "./config";
 
@@ -39,7 +39,7 @@ export type PriceDisplay = { headline: number; unit: string; billedLine: string 
 /** What the big number on a card says for the chosen interval. Setup is one-time and never discounted. */
 export function priceDisplay(t: Tier, interval: BillingInterval): PriceDisplay {
   const wasUsd = t.key === "solo" || t.key === "agency" ? ANCHOR_WAS_USD[t.key] : null;
-  if (t.monthlyUsd === 0) return { headline: TRIAL_TIER.trialUsd, unit: "one-time", billedLine: null, setupLine: `${t.credits} credits · ${t.trialDays} days of access`, wasUsd: null };
+  if (t.monthlyUsd === 0) return TRIAL_IS_FREE ? { headline: 0, unit: "", billedLine: null, setupLine: `${t.credits} credits · no card · ${t.trialDays} days`, wasUsd: null } : { headline: TRIAL_TIER.trialUsd, unit: "one-time", billedLine: null, setupLine: `${t.credits} credits · ${t.trialDays} days of access`, wasUsd: null };
   const setupLine = `+ ${fmtUsd(t.onboardingUsd)} one-time setup`;
   if (interval === "year") {
     return { headline: annualPerMonthUsd(t.monthlyUsd), unit: "/mo", billedLine: `${fmtUsd(annualUsd(t.monthlyUsd))} billed yearly · ${12 - ANNUAL_MONTHS_CHARGED} months free`, setupLine, wasUsd: wasUsd === null ? null : annualPerMonthUsd(wasUsd) };
@@ -58,7 +58,7 @@ export const OFFERS: Record<TierKey, Offer> = {
   trial: {
     problem: "You don't believe an AI can run your marketing. Fair — don't take our word for it.",
     timeLabel: "Time", time: "5 minutes to pick a demo business. The agent starts working instantly.",
-    moneyLabel: "Money", money: `Costs ${fmtUsd(TRIAL_TIER.trialUsd)}, once, for ${TRIAL_TIER.trialDays} days. If it can't impress you for a dollar, it doesn't deserve your money.`,
+    moneyLabel: "Money", money: `Costs $0 for ${TRIAL_TIER.trialDays} days. If it can't impress you for free, it doesn't deserve your money.`,
     makesLabel: "Makes money", makes: `${trial.credits} credits ≈ ${bookedCallsFor(trial.credits)} booked calls of real agent work on demo data. Watch exactly what it would do for your business — then decide.`,
   },
   solo: {

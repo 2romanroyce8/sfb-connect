@@ -43,7 +43,7 @@ export default async function AgentSection() {
           <div className="rounded-[16px] p-6 md:p-8 flex flex-col justify-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}>
             <h3 className="text-[26px] md:text-[32px] font-bold tracking-[-0.03em] leading-[1.05]">Every agent has a human.</h3>
             <p className="mt-4 text-[14.5px] leading-[1.65] text-white/[0.6]">Don&apos;t trust AI with your business? Good — neither do we, unsupervised. A human expert reviews your agent&apos;s work, approves anything customer-facing, and signs every report.</p>
-            <div className="mt-6 flex flex-wrap gap-3"><Link href="/start" className="inline-flex items-center bg-white text-black px-5 py-3 rounded-full text-[13.5px] font-semibold hover:opacity-85">Try it — $1 →</Link><Link href="#pricing" className="inline-flex items-center px-5 py-3 rounded-full text-[13.5px] text-white hover:bg-white/[0.05]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>See pricing →</Link></div>
+            <div className="mt-6 flex flex-wrap gap-3"><Link href="/start" className="inline-flex items-center bg-white text-black px-5 py-3 rounded-full text-[13.5px] font-semibold hover:opacity-85">Try it free →</Link><Link href="#pricing" className="inline-flex items-center px-5 py-3 rounded-full text-[13.5px] text-white hover:bg-white/[0.05]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>See pricing →</Link></div>
         <IntegrationsStrip compact />
           </div>
         </div>

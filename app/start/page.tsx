@@ -6,9 +6,9 @@ import TrialWizard from "@/components/agent/TrialWizard";
 import TrialResume from "@/components/agent/TrialResume";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { pendingTrialOrder } from "@/lib/agentProgram/trial";
-import { TRIAL_TIER, fmtUsd } from "@/lib/agentProgram/config";
+import { TRIAL_TIER, TRIAL_IS_FREE, fmtUsd } from "@/lib/agentProgram/config";
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: `Start your SFB Agent trial — ${fmtUsd(TRIAL_TIER.trialUsd)} for ${TRIAL_TIER.trialDays} days`, description: `${TRIAL_TIER.credits} credits of agent work on a sample business. ${fmtUsd(TRIAL_TIER.trialUsd)} once, ${TRIAL_TIER.trialDays} days of access, no integrations, zero setup.` };
+export const metadata: Metadata = { title: `Start your free ${TRIAL_TIER.trialDays}-day SFB Agent trial`, description: `${TRIAL_TIER.credits} credits of agent work. Free, no card, ${TRIAL_TIER.trialDays} days.` };
 
 export default async function StartPage({ searchParams }: { searchParams: { checkout?: string } }) {
   // Signed-in visitors: a customer goes to the dashboard; an account with an
@@ -19,7 +19,7 @@ export default async function StartPage({ searchParams }: { searchParams: { chec
     const service = createSupabaseServiceClient();
     const { data: biz } = await service.from("businesses").select("id").eq("owner_id", user.id).not("plan_key", "is", null).limit(1).maybeSingle();
     if (biz) redirect("/dashboard/agent");
-    pending = !!(await pendingTrialOrder(service, user.id));
+    pending = !TRIAL_IS_FREE && !!(await pendingTrialOrder(service, user.id));
   }
   return (
     <main className="bg-black text-white min-h-screen">

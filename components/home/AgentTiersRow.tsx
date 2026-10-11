@@ -29,7 +29,7 @@ const LADDER: { label: string; in: Record<TierKey, boolean | string> }[] = [
 
 const sub = (key: TierKey) => {
   const t = TIERS.find((x) => x.key === key)!;
-  if (t.key === "trial") return `${t.credits} credits · ${t.trialDays} days of access`;
+  if (t.key === "trial") return `${t.credits} credits · no card · ${t.trialDays} days`;
   return `${t.creditsLabel} · one-time ${fmtUsd(t.onboardingUsd)} onboarding`;
 };
 
@@ -53,7 +53,7 @@ export default function AgentTiersRow() {
                 {t.name}
               </div>
               <div className="mt-2 text-[20px] text-white/[0.78] tracking-[-0.01em]">
-                {t.monthlyUsd ? <>{fmtUsd(t.monthlyUsd)}<span className="text-white/[0.5]">/mo</span></> : <>{fmtUsd(TIERS[0].trialUsd)}<span className="text-white/[0.5]"> one-time</span></>}
+                {t.monthlyUsd ? <>{fmtUsd(t.monthlyUsd)}<span className="text-white/[0.5]">/mo</span></> : "Free"}
               </div>
               <div className="mt-1 text-[11.5px] text-white/[0.42]">{sub(t.key)}</div>
             </div>
@@ -77,7 +77,7 @@ export default function AgentTiersRow() {
             <div className="mt-8">
               {t.monthlyUsd === 0 ? (
                 <Link href="/start" onClick={() => trackMarketingEvent("trial_signup_start", { from: "pricing" })} className="w-full inline-flex justify-center items-center h-[44px] rounded-full text-[13.5px] font-semibold text-white hover:bg-white/[0.06]" style={{ border: "1px solid rgba(255,255,255,0.2)" }}>
-                  Try it — $1 for 5 days →
+                  Try it free — 5 days →
                 </Link>
               ) : (
                 <AgentCheckout plan={t} />

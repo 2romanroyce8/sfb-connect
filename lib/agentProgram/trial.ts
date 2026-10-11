@@ -5,14 +5,17 @@ import { sendEmail, trialWelcomeEmail } from "@/lib/email/resend";
 import { readCache } from "@/lib/analyzer/run";
 import { firstThreeTasks } from "@/lib/analyzer/narrate";
 import { createTask } from "@/lib/agent/tasks/queue";
-import { CAPABILITY_KEYS, TRIAL_TIER, stockProfile, type CapabilityKey } from "./config";
+import { CAPABILITY_KEYS, TRIAL_TIER, TRIAL_IS_FREE, stockProfile, type CapabilityKey } from "./config";
 import { fetchAgentModules } from "./modules";
 import { ensureTrialPrice } from "./stripe";
 
 // ============================================================
-// THE $1 / 5-DAY TRIAL (2026-10-11)
+// THE 5-DAY TRIAL (2026-10-11)
 //
-// The trial is an order like a paid plan. /api/trial/start creates the
+// FREE (TRIAL_IS_FREE, Roman 18:09 ET): /api/trial/start provisions the
+// sandbox business immediately via createTrialBusiness — no order, no Stripe,
+// no card. The paid path below stays wired for a non-zero `trialUsd`:
+// the trial becomes an order like a paid plan. /api/trial/start creates the
 // account and a pending `agent_plan_orders` row (plan_key 'trial'), Stripe
 // Checkout collects the dollar, and the sandbox business — stock profile,
 // 128 credits, 3 capabilities, 5-day expiry — is provisioned ONLY once
@@ -50,6 +53,8 @@ export async function pendingTrialOrder(service: SupabaseClient, ownerId: string
 }
 
 /** Creates (or re-uses) the pending order and opens a fresh Stripe Checkout for it. Amount comes from config; the browser sends nothing about money. */
+export { TRIAL_IS_FREE };
+
 export async function startTrialCheckout(service: SupabaseClient, stripe: Stripe, input: { ownerId: string; email: string; setup: TrialSetup; origin: string; reuseOrderId?: string | null }): Promise<{ orderId: string; checkoutUrl: string }> {
   const priceId = await ensureTrialPrice(stripe);
   const profile = stockProfile(input.setup.stock_profile)!;
@@ -109,7 +114,7 @@ export async function provisionTrialOrder(service: SupabaseClient, session: Stri
 }
 
 /** The sandbox business itself: stock profile, 128 PROMOTIONAL credits, the 3 chosen capabilities, expiry = paid + 5 days, audit, analyzer tie-in, welcome email. */
-export async function createTrialBusiness(service: SupabaseClient, p: { ownerId: string; email: string; setup: TrialSetup; paidAt: Date; orderId: string; paidCents: number; stripeEventId: string | null; via: "webhook" | "success_page" }): Promise<string> {
+export async function createTrialBusiness(service: SupabaseClient, p: { ownerId: string; email: string; setup: TrialSetup; paidAt: Date; orderId: string | null; paidCents: number; stripeEventId: string | null; via: "webhook" | "success_page" | "free" }): Promise<string> {
   const profile = stockProfile(p.setup.stock_profile);
   if (!profile) throw new Error(`Unknown stock profile ${p.setup.stock_profile}.`);
   const caps = p.setup.capabilities.filter((c) => (CAPABILITY_KEYS as string[]).includes(c));

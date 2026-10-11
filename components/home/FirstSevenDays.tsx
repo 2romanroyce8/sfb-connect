@@ -109,9 +109,9 @@ export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) 
         <div className="rounded-[18px] p-6 flex flex-wrap items-center justify-between gap-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}>
           <div>
             <div className="text-[16px] font-semibold text-white">The preview shows findings. The trial is where the agent acts.</div>
-            <div className="text-[13px] text-white/[0.55] mt-1">{liveFound > 0 ? `Your first ${Math.min(3, liveFound)} task${Math.min(3, liveFound) === 1 ? "" : "s"} in the trial mirror what's above on live capabilities.` : "Live capabilities act in the trial; the rest queue for when they ship."} $1 once, 5 days of access.</div>
+            <div className="text-[13px] text-white/[0.55] mt-1">{liveFound > 0 ? `Your first ${Math.min(3, liveFound)} task${Math.min(3, liveFound) === 1 ? "" : "s"} in the trial mirror what's above on live capabilities.` : "Live capabilities act in the trial; the rest queue for when they ship."} Free, no card, 5 days.</div>
           </div>
-          <Link href={`/start${scanParam}`} onClick={() => trackMarketingEvent("trial_signup_start", { from: "first_7_days", domain: s.meta?.domain })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Start the $1 trial — put the agent to work →</Link>
+          <Link href={`/start${scanParam}`} onClick={() => trackMarketingEvent("trial_signup_start", { from: "first_7_days", domain: s.meta?.domain })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Start free — put the agent to work →</Link>
         </div>
       )}
     </div>
