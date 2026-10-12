@@ -10,11 +10,14 @@ import StepConnect from "./steps/StepConnect";
 import StepBrand from "./steps/StepBrand";
 import StepCapabilities from "./steps/StepCapabilities";
 import StepNotYet from "./steps/StepNotYet";
+import StepIcp from "./steps/StepIcp";
+import StepLeads from "./steps/StepLeads";
+import StepAutomations from "./steps/StepAutomations";
 
 export type Cap = { key: string; name: string; short: string; enabled: boolean };
 export type ShellProps = {
   state: OnboardingState; step: StepDef; business: BusinessProfile; stepData: Record<string, unknown> | null;
-  integrations: { gmail: string | null; calendar: string | null }; capabilities: Cap[]; flash: { ok: boolean; text: string } | null;
+  integrations: { gmail: string | null; calendar: string | null }; capabilities: Cap[]; flash: { ok: boolean; text: string } | null; prospectCount: number;
 };
 
 /** Progress rail + the current step. Progress saves per step; resume lands on the first unfinished step. */
@@ -71,6 +74,9 @@ export default function OnboardingShell(p: ShellProps) {
             : p.step.no === 3 ? <StepConnect kind="calendar" account={p.integrations.calendar} done={me.done} onNext={goNext} />
             : p.step.no === 4 ? <StepBrand business={p.business} onConfirm={confirm} />
             : p.step.no === 5 ? <StepCapabilities capabilities={p.capabilities} onConfirm={confirm} />
+            : p.step.no === 6 ? <StepIcp business={p.business} onDone={() => { router.refresh(); goNext(); }} />
+            : p.step.no === 7 ? <StepLeads stepData={p.stepData} prospectCount={p.prospectCount} onDone={() => { router.refresh(); goNext(); }} />
+            : p.step.no === 8 ? <StepAutomations onDone={() => { router.refresh(); goNext(); }} />
             : <StepNotYet step={p.step} onNext={goNext} hasNext={!!next} />}
           {err && <div className="mt-4 text-[13px] text-red-600">{err}</div>}
         </div>

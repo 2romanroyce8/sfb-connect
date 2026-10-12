@@ -23,20 +23,21 @@ Roman, 2026-10-12: starts the moment Stripe checkout succeeds. No trial. Steps 2
 | 3 Calendar | `crm_calendar_connections` row for the owner without `refresh_failed_at` |
 | 4 Brand | `businesses.brand_logo_url` set, or confirmed without a logo |
 | 5 Capabilities | confirmed (toggles themselves live in `business_capabilities`) |
-| 6 ICP | `businesses.icp` set *(step ships in O2)* |
-| 7 Lead list | ≥1 `outbound_prospects` **and** the user reviewed (`confirmed_steps.7`) *(O2)* |
-| 8 Automations | an active `outbound_sequences` row *(O2)* |
+| 6 ICP | `businesses.icp` set — suggested from the category preset (`lib/analyzer/icp.ts`) + own city/state, edited by the customer (`lib/onboarding/icp.ts`) |
+| 7 Lead list | ≥1 `outbound_prospects` **and** the user reviewed (`confirmed_steps.7`). Candidates come from Exa (company category, one query per ICP industry × location, ≤ 6 searches, directories/own domain/existing prospects filtered — `lib/onboarding/leads.ts`), sit in `step_data.7.candidates` until the customer removes/keeps; kept ones become prospects with status `sourced` (0 credits). Nobody is contacted here. |
+| 8 Automations | an active `outbound_sequences` row named `Default 3-step` — cadence steady/quick/patient (`lib/onboarding/automations.ts`), preview rendered from the real templates with the business's facts; refuses (and links to step 1) when the offer line is missing |
 | 9 DFY | `customer_onboarding.dfy_choice` *(O3)* |
 | 10 Campaign | ≥1 prospect in_sequence/replied/booked or ≥1 approved/sent message *(O3)* |
 | 11 Dashboard | confirmed / `completed_at` *(O3)* |
 Steps 4–11 are **locked** until 2 and 3 are done. `/dashboard` redirects into the flow while the gates are open (`showFlow`); afterwards it shows a "Finish setting up" card and the sidebar "Finish setup" item until everything is done. "Go to dashboard, finish later" (`dismiss`) is offered only once the gates pass.
 
-Steps 6–11 render an honest "next in line" panel (`StepNotYet`) until their slices ship — no fake progress.
+Steps 9–11 render an honest "next in line" panel (`StepNotYet`) until O3 ships — no fake progress.
 
 ## Resume
 Drafts save as the user types (`step_data[step]`, debounced 800 ms). Logging in → `/dashboard` → current step with the inputs restored (step 1 reads `step_data.1` before the business row).
 
 ## Operate
+- Lead search returned nothing: `step_data.7.queries` shows what was searched; Exa cost is logged via `logSearchCall`. Widen the ICP in step 6.
 - Where is a customer: `select b.legal_name, o.last_step, o.confirmed_steps, o.dismissed_at, o.completed_at from customer_onboarding o join businesses b on b.id=o.business_id;`
 - Gmail/Calendar "connected" but step shows open: the connection must belong to `businesses.owner_id` (not a teammate). Check `integration_connections.owner_id` / `crm_calendar_connections.rep_id`.
 - Brand pull failed: the site blocked the fetch or has no `<link rel=icon>/<img logo>`; the customer uploads instead (bucket `brand-assets/<business_id>/`).
