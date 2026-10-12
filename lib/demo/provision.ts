@@ -7,7 +7,7 @@ import { issueCode } from "./verification";
 
 // ============================================================
 // DEMO PROVISIONING
-// createDemoAccount: account (no password) + business row with the real
+// createDemoAccount: account (password chosen on the review screen — Roman 2026-10-11 20:31 ET) + business row with the real
 // profile + capabilities + verification code. Nothing is granted yet.
 // activateDemo (after the code): verified → 5-day clock + 128 credits.
 // ============================================================
@@ -52,7 +52,7 @@ async function uniqueSlug(service: SupabaseClient, name: string): Promise<string
 }
 
 /** Account + business + capabilities + first code. Returns ids for the signed pending cookie. */
-export async function createDemoAccount(service: SupabaseClient, input: { email: string; buildId: string | null; profile: DemoProfile }): Promise<{ userId: string; businessId: string; reusedAccount: boolean }> {
+export async function createDemoAccount(service: SupabaseClient, input: { email: string; password: string; buildId: string | null; profile: DemoProfile }): Promise<{ userId: string; businessId: string; reusedAccount: boolean }> {
   const email = input.email.trim().toLowerCase();
   const { data: existing } = await service.from("users").select("id").eq("email", email).maybeSingle();
   let userId = existing?.id as string | undefined; let reused = false;
@@ -61,9 +61,11 @@ export async function createDemoAccount(service: SupabaseClient, input: { email:
     if (biz?.plan_key && (biz.email_verified_at || biz.plan_key !== "trial")) throw new DemoError("exists", "This email already has an SFB Connect account. Sign in instead.", 409);
     // An abandoned, unverified demo: reuse the account, replace the unverified business.
     if (biz?.id) await service.from("businesses").delete().eq("id", biz.id).is("email_verified_at", null);
+    const { error: pErr } = await service.auth.admin.updateUserById(userId, { password: input.password, user_metadata: { full_name: input.profile.contactName } });
+    if (pErr) throw new DemoError("account", pErr.message, 500);
     reused = true;
   } else {
-    const { data: created, error } = await service.auth.admin.createUser({ email, email_confirm: false, user_metadata: { full_name: input.profile.contactName } });
+    const { data: created, error } = await service.auth.admin.createUser({ email, password: input.password, email_confirm: false, user_metadata: { full_name: input.profile.contactName } });
     if (error || !created.user) throw new DemoError("account", error?.message || "Could not create the account.", 500);
     userId = created.user.id;
   }

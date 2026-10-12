@@ -23,7 +23,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   // review fields
   const [businessName, setBusinessName] = useState(""); const [contactName, setContactName] = useState(""); const [category, setCategory] = useState(""); const [city, setCity] = useState(""); const [state, setState] = useState("");
-  const [phone, setPhone] = useState(""); const [offerLine, setOfferLine] = useState(""); const [services, setServices] = useState<string[]>([]); const [newService, setNewService] = useState(""); const [socials, setSocials] = useState<Record<string, string>>({});
+  const [phone, setPhone] = useState(""); const [password, setPassword] = useState(""); const [offerLine, setOfferLine] = useState(""); const [services, setServices] = useState<string[]>([]); const [newService, setNewService] = useState(""); const [socials, setSocials] = useState<Record<string, string>>({});
   // verify
   const [code, setCode] = useState(""); const [cooldown, setCooldown] = useState(0); const [resends, setResends] = useState(0);
   const feedRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
   const create = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null); setBusy(true);
     try {
-      const r = await fetch("/api/demo/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, buildId, businessName, contactName, website: facts?.url, domain: facts?.domain, category, city, state, phone, offerLine, services, socials, logoUrl: facts?.logoUrl ?? null, toneNotes: facts?.toneNotes ?? [] }) });
+      const r = await fetch("/api/demo/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password, buildId, businessName, contactName, website: facts?.url, domain: facts?.domain, category, city, state, phone, offerLine, services, socials, logoUrl: facts?.logoUrl ?? null, toneNotes: facts?.toneNotes ?? [] }) });
       const j = (await r.json()) as { ok?: boolean; error?: string; signIn?: boolean };
       if (!r.ok) { if (j.signIn) { setError(`${j.error} `); } else setError(j.error || "Could not create your agent."); return; }
       trackMarketingEvent("demo_account_created", { domain: facts?.domain });
@@ -124,7 +124,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
             {facts.logoUrl ? <img src={facts.logoUrl} alt="" className="w-12 h-12 rounded-[10px] object-contain bg-white/[0.06] p-1" /> : <div className="w-12 h-12 rounded-[10px] bg-white/[0.06] flex items-center justify-center text-[18px] font-bold">{(businessName || facts.domain)[0]?.toUpperCase()}</div>}
             <div><h2 className="text-[22px] font-bold tracking-[-0.03em] leading-tight">{businessName || facts.domain}</h2><div className="text-[12px] text-white/[0.45]">{facts.domain}{facts.logoUrl ? "" : " · no clean logo found — add one from your dashboard"}</div></div>
           </div>
-          <p className="text-[13px] text-white/[0.55]">Correct anything that&apos;s off. Your name and phone are the two things sites rarely say.</p>
+          <p className="text-[13px] text-white/[0.55]">Correct anything that&apos;s off. Your name, phone and a password are the things a site can&apos;t tell us.</p>
           <div className="grid sm:grid-cols-2 gap-3">
             <div><div className={label}>Business name</div><input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
             <div><div className={label}>Your name (signs the emails)</div><input required value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="First Last" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
@@ -132,6 +132,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
             <div className="grid grid-cols-[1fr_72px] gap-2"><div><div className={label}>City</div><input value={city} onChange={(e) => setCity(e.target.value)} className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div><div><div className={label}>State</div><input value={state} onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))} placeholder="OK" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div></div>
             <div><div className={label}>Phone</div><input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(405) 555-0123" inputMode="tel" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
             <div><div className={label}>Website</div><input value={facts.url} readOnly className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1 text-white/[0.5]" style={field} /></div>
+            <div className="sm:col-span-2"><div className={label}>Create a password (to sign back in)</div><input required type="password" minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8+ characters" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
           </div>
           <div>
             <div className={label}>Your one-line offer (every intro uses it)</div>
@@ -149,7 +150,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
           {facts.toneNotes.length > 0 && <div><div className={label}>Writing style noticed on your site</div><div className="flex flex-wrap gap-2 mt-2">{facts.toneNotes.map((n) => <span key={n} className="h-[28px] inline-flex items-center px-3 rounded-full text-[12px] text-white/[0.75]" style={{ border: "1px solid rgba(48,209,88,0.3)", background: "rgba(48,209,88,0.08)" }}>{n}</span>)}</div></div>}
           {Object.keys(socials).length > 0 && <div><div className={label}>Social profiles</div><div className="flex flex-wrap gap-2 mt-2">{Object.entries(socials).map(([k, v]) => <span key={k} className="inline-flex items-center gap-1.5 h-[28px] px-3 rounded-full text-[12px] text-white/[0.75]" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>{k}<button type="button" onClick={() => { const n = { ...socials }; delete n[k]; setSocials(n); }} className="text-white/[0.4] hover:text-white" title={v}>×</button></span>)}</div></div>}
           {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}{/Sign in/.test(error) && <a href="/login?next=%2Fdashboard%2Fagent" className="underline">Sign in →</a>}</div>}
-          <div className="flex gap-2 mt-1"><button type="button" onClick={() => setStage("form")} className="h-[46px] px-5 rounded-full text-[14px]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Back</button><button type="submit" disabled={busy} className="flex-1 h-[46px] rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-50">{busy ? "Setting up…" : "Looks right — verify my email →"}</button></div>
+          <div className="flex gap-2 mt-1"><button type="button" onClick={() => setStage("form")} className="h-[46px] px-5 rounded-full text-[14px]" style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Back</button><button type="submit" disabled={busy || password.length < 8} className="flex-1 h-[46px] rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-50">{busy ? "Setting up…" : "Looks right — verify my email →"}</button></div>
           <div className="text-[11px] text-white/[0.35]">Your agent never sends anything you haven&apos;t approved. {GUARANTEE_LINE}</div>
         </form>
       )}
