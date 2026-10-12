@@ -33,6 +33,9 @@ Everything here is written so Atlas (Muse) or any engineer can operate SFB Conne
 | Agent OAuth tokens | `agent_tokens` (SHA-256 hashes only) | connector | revoke in Settings → Connected Agents |
 Never paste a secret into chat, code, logs, or a task result.
 
+## Spikes (decisions backed by evidence)
+- [2026-10-11 Muse conversation sync](../spikes/2026-10-11-muse-conversation-sync.md) — no public API to read/post a user's Muse conversations; connect is outward-only.
+
 ## Runbooks
 - [client-projects.md](./client-projects.md) — client project graph (/team/projects; client mirror after Phase 2)
 - [demo-5-day.md](./demo-5-day.md) — Phase 2: the 5-day demo (build show, email gate, activation, first tasks)
