@@ -13,7 +13,7 @@ Roman, 2026-10-12. Sits over the 11-step onboarding and the dashboard. $0. Skip 
 | Tests | `tests/lib/tours.test.ts` |
 
 ## Adding or editing a tour (no engine change)
-Add an entry to `TOURS`: `{ key, name, description, autoStart(pathname), steps: [{ id, target: '[data-tour="…"]', title, body, placement?, route? }] }` and put the matching `data-tour` attribute on the element. If a step has `route`, the engine navigates there first and waits ≤ 2.5 s for the target. Keep bodies to 1–2 sentences (the test enforces 20–220 chars). Roman reviews copy — it's his voice.
+Add an entry to `TOURS`: `{ key, name, description, autoStart(pathname), steps: [{ id, target: '[data-tour="…"]', title, body, placement?, route? }] }` and put the matching `data-tour` attribute on the element. If a step has `route`, the engine navigates there first and waits up to 10 s for the route and the target (a server-rendered step page takes 3–5 s live); same-page targets get 2.5 s. Keep bodies to 1–2 sentences (the test enforces 20–220 chars). Roman reviews copy — it's his voice.
 
 Anchors today: `onb-step-1…11` (the onboarding step panel, locked or not), `activity`, `agent-panel`, `nav-<slug>` on every sidebar link (`nav-actions`, `nav-agent`, `nav-reports`, `nav-credits`…).
 

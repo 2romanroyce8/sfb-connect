@@ -37,10 +37,13 @@ export default function TourProvider({ children }: { children: React.ReactNode }
   const show = useCallback(async (tour: TourDef, i: number, sessionId: string, dir: 1 | -1 = 1) => {
     if (i < 0 || i >= tour.steps.length) { finish(tour, sessionId); return; }
     const step = tour.steps[i];
-    if (step.route && window.location.pathname !== step.route) { setSt({ tour, index: i, sessionId, rect: null, waiting: true }); router.push(step.route); }
-    // Wait up to 2.5 s for the target to exist (route change / client render).
-    const deadline = Date.now() + 2500; let el = findTarget(step);
-    while (!el && Date.now() < deadline) { await new Promise((r) => setTimeout(r, 100)); el = findTarget(step); }
+    const needsRoute = !!step.route && window.location.pathname !== step.route;
+    if (needsRoute) { setSt({ tour, index: i, sessionId, rect: null, waiting: true }); router.push(step.route!); }
+    // Wait for the target: a route change means a server render (found live: 3–5 s), so allow 10 s for the
+    // route to arrive and the target to mount; on the same page 2.5 s is plenty. Only then is it "missing".
+    const deadline = Date.now() + (needsRoute ? 10_000 : 2500); let el = findTarget(step);
+    while ((!el || (step.route && window.location.pathname !== step.route)) && Date.now() < deadline) { await new Promise((r) => setTimeout(r, 120)); el = findTarget(step); }
+    if (step.route && window.location.pathname !== step.route) el = null;
     if (!el) {
       log(tour.key, "step_skipped", { step: i, sessionId });
       const nxt = i + dir; if (nxt < 0 || nxt >= tour.steps.length) { finish(tour, sessionId); return; }
