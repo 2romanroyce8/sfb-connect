@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getClient, createAuthorization, issueAuthCode, audit } from "@/lib/agent/store";
+import { getClient, createAuthorization, issueAuthCode, audit, svc } from "@/lib/agent/store";
 import { mintDelegatedSession } from "@/lib/agent/delegatedSession";
+import { revokeAuthorizationFully } from "@/lib/agent/revoke";
 import { redirectUriAllowed, canonicalRedirectUri, isLoopbackUri, originOf } from "@/lib/agent/oauth";
 import { negotiateScopes } from "@/lib/agent/scopes";
 import { AGENT_SESSION_COOKIE } from "@/lib/agent/readOnly";
@@ -53,6 +54,10 @@ export async function POST(req: NextRequest) {
   if (!g("code_challenge")) return back({ error: "invalid_request", error_description: "PKCE required.", state: g("state") });
 
   try {
+    // Reconnect replaces the grant: one active authorization per (user, client). Older ones are revoked
+    // fully (tokens, delegated session, handoffs) so the Connected Agents list never shows duplicates.
+    const { data: priors } = await svc().from("agent_authorizations").select("id").eq("user_id", user.id).eq("client_id", client.client_id).eq("status", "active");
+    for (const prior of priors ?? []) await revokeAuthorizationFully(prior.id, "replaced_by_reconnect", user.id);
     const delegated = await mintDelegatedSession(user.id);
     const authz = await createAuthorization({ userId: user.id, clientId: client.client_id, scopes: granted, workspaceLabel: "SFB Connect Team", delegatedRefreshEnc: delegated.refreshEnc, delegatedAccessEnc: delegated.accessEnc, delegatedAccessExpiresAt: delegated.expiresAt });
     const code = await issueAuthCode({ authorizationId: authz.id, redirectUri: canonicalRedirectUri(redirectUri), codeChallenge: g("code_challenge"), codeChallengeMethod: "S256", resource: g("resource") || null });
