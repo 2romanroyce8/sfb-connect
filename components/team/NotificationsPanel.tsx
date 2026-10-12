@@ -52,6 +52,11 @@ const TYPE_ICON: Record<string, React.ElementType> = {
   sop_required: Workflow,
   booking_sync_failed: CloudOff,
   system: Info,
+  lead_new: UserPlus,
+  callback_sla: TriangleAlert,
+  credits_warning: TriangleAlert,
+  approval_pending: ClipboardCheck,
+  sms_test: Info,
 };
 
 function timeAgo(iso: string) {

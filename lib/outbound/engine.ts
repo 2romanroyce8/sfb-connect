@@ -12,6 +12,7 @@ import { extractMailtoEmails, extractVisibleEmails, extractPhoneNumbers, extract
 import { sendGmail, listGmailMessages, getGmailMessage } from "@/lib/integrations/gmail";
 import { getBusyBlocks, createCalendarEvent } from "@/lib/crm/googleCalendar";
 import { emitIntegrationEvent } from "@/lib/integrations/events";
+import { alertOwners } from "@/lib/notify/ownerAlerts";
 import { appOrigin } from "@/lib/integrations/providers";
 import { canSend, dueSteps, pickEmail, proposeSlots, toE164, unsubscribeToken, type MessageStatus } from "./gate";
 import { renderTemplate, unsubscribeFooter, DEFAULT_SEQUENCE_STEPS, type TemplateKey, type TemplateVars } from "./templates";
@@ -115,6 +116,16 @@ export async function draftMessage(service: SupabaseClient, input: { prospectId:
   const tx = await chargeAction(service, { businessId: b.id, actionKey: "outbound.message_written", outcome: "completed", description: `Message written — ${p.name} (${input.template})`, idempotencyKey: `outbound:${m.id}:write`, actorId: actor.kind === "user" ? actor.id : null, resultRef: m.id });
   await service.from("outbound_messages").update({ credit_tx_id: tx.id }).eq("id", m.id);
   await event(service, { businessId: b.id, prospectId: p.id, messageId: m.id, kind: "approval_requested", actor, payload: { template: input.template, credit_tx: tx.id } });
+  // Owners (and the assigned overseer): something is waiting for a human. SMS is coalesced to one per 10 minutes per person.
+  const { data: ownerRows } = await service.from("users").select("id").eq("team_role", "owner");
+  const ids = Array.from(new Set([...(ownerRows ?? []).map((r) => r.id as string), ...(b.agent_overseer_id ? [b.agent_overseer_id] : [])]));
+  await alertOwners(service, {
+    trigger: "approval_pending", userIds: ids,
+    sms: `Approval needed: ${b.legal_name} -> ${p.name} (${input.template}). Review at sfbconnect.com/team/outbound`,
+    email: { subject: `Approval needed: ${b.legal_name} → ${p.name}`, html: `<p>An outbound draft for <strong>${p.name}</strong> (${b.legal_name}, template ${input.template}) is waiting for approval.</p><p><a href="https://www.sfbconnect.com/team/outbound">Open the approval queue</a></p>`, text: `An outbound draft for ${p.name} (${b.legal_name}, ${input.template}) is waiting for approval: https://www.sfbconnect.com/team/outbound` },
+    inApp: { type: "approval_pending", title: `Approval needed: ${p.name}`, body: `${b.legal_name} · ${input.template}`, actionUrl: "/team/outbound", actionLabel: "Review" },
+    detail: { message_id: m.id, business_id: b.id },
+  });
   return m;
 }
 

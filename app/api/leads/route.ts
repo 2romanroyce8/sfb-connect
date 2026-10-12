@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
+import { newLeadAlert } from "@/lib/notify/leadAlert";
 
 const leadSchema = z.object({
   businessName: z.string().min(1).optional(),
@@ -50,5 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not save lead." }, { status: 500 });
   }
 
+  // Owners are told about every real lead the moment it lands (SMS + in-app; email as fallback).
+  await newLeadAlert(createSupabaseServiceClient(), { source: "website_lead", businessName: parsed.data.businessName, name: parsed.data.ownerName, email: parsed.data.email, phone: parsed.data.phone, website: parsed.data.website, category: parsed.data.category }).catch(() => undefined);
   return NextResponse.json({ ok: true });
 }

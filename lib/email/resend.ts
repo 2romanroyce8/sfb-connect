@@ -11,11 +11,13 @@ const FROM_DEFAULT = "SFB Connect <hello@sfbconnect.com>";
 
 export type SendResult = { sent: boolean; id?: string; skipped?: "not_configured"; error?: string };
 
-export async function sendEmail(msg: { to: string; subject: string; html: string; text?: string; replyTo?: string; attachments?: { filename: string; content: string }[] }): Promise<SendResult> {
+export async function sendEmail(msg: { to: string; subject: string; html?: string; text?: string; replyTo?: string; attachments?: { filename: string; content: string }[] }): Promise<SendResult> {
   if (!resendConfigured()) return { sent: false, skipped: "not_configured" };
   try {
     const resend = new Resend(process.env.RESEND_API_KEY!.trim());
-    const { data, error } = await resend.emails.send({ from: (process.env.RESEND_FROM_EMAIL || FROM_DEFAULT).trim(), to: msg.to, subject: msg.subject, html: msg.html, text: msg.text, replyTo: msg.replyTo, attachments: msg.attachments });
+    const base = { from: (process.env.RESEND_FROM_EMAIL || FROM_DEFAULT).trim(), to: msg.to, subject: msg.subject, replyTo: msg.replyTo, attachments: msg.attachments };
+    // Resend's types want html OR text as required; gateway texts are text-only.
+    const { data, error } = await resend.emails.send(msg.html ? { ...base, html: msg.html, text: msg.text } : { ...base, text: msg.text ?? "" });
     if (error) { console.error("[email] resend error:", error.message); return { sent: false, error: error.message }; }
     return { sent: true, id: data?.id };
   } catch (e) {

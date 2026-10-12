@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getBusyBlocks, createCalendarEvent } from "@/lib/crm/googleCalendar";
 import { getAccessToken } from "@/lib/integrations/connections";
 import { sendEmail } from "@/lib/email/resend";
-import { notify } from "@/lib/crm/notify";
+import { alertOwners } from "@/lib/notify/ownerAlerts";
 
 // ============================================================
 // BOOK A DEMO CALL (Roman, 2026-10-12)
@@ -113,24 +113,40 @@ export async function bookDemoCall(service: SupabaseClient, input: DemoCallInput
 }
 
 async function notifyTeam(service: SupabaseClient, call: DemoCall, origin: string) {
-  const { data: owners } = await service.from("users").select("id, email").eq("team_role", "owner");
-  const line = `${call.call_now ? "⚡ CALL NOW (5-minute promise) — " : "📅 Demo booked — "}${call.name} · ${call.phone} · ${call.email}${call.website ? ` · ${call.website}` : ""} · ${fmtET(call.start_at)}${call.meet_url ? ` · ${call.meet_url}` : ""}`;
-  for (const o of owners ?? []) await notify(service, { userId: o.id, type: "meeting_booked" as never, title: call.call_now ? `CALL NOW: ${call.name} is free right now` : `Demo booked: ${call.name}`, body: line, actionUrl: call.html_link ?? `${origin}/team/calendar`, actionLabel: "Open event" });
-  if (!call.call_now) return;
+  const when = fmtET(call.start_at);
+  const line = `${call.call_now ? "⚡ CALL NOW (5-minute promise) — " : "📅 Demo booked — "}${call.name} · ${call.phone} · ${call.email}${call.website ? ` · ${call.website}` : ""} · ${when}${call.meet_url ? ` · ${call.meet_url}` : ""}`;
   const results: Record<string, string> = {};
-  // Slack: the connected workspace's incoming-webhook channel (#all-sfb-connect) via chat.postMessage.
-  try {
-    const { data: sc } = await service.from("integration_connections").select("owner_id, metadata").eq("provider", "slack").eq("status", "active").limit(1).maybeSingle();
-    const channel = (sc?.metadata as { incoming_webhook?: { channel_id?: string } } | null)?.incoming_webhook?.channel_id;
-    if (sc && channel) {
-      const { token } = await getAccessToken("slack", sc.owner_id as string);
-      const r = await fetch("https://slack.com/api/chat.postMessage", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify({ channel, text: `<!channel> ${line}\nCall them from ${SFB_PHONE_DISPLAY} within 5 minutes.` }) });
-      const j = (await r.json()) as { ok: boolean; error?: string }; results.slack = j.ok ? "sent" : `error:${j.error}`;
-    } else results.slack = "not_connected";
-  } catch (e) { results.slack = `error:${e instanceof Error ? e.message : "unknown"}`; }
-  // Email every owner.
-  for (const o of owners ?? []) { if (!o.email) continue; const r = await sendEmail({ to: o.email, subject: `CALL NOW: ${call.name} is free right now (${call.phone})`, html: `<p><strong>${esc(call.name)}</strong> booked a demo and said they're free right now.</p><p>Call <strong>${esc(call.phone)}</strong> from ${SFB_PHONE_DISPLAY} within 5 minutes.</p><p>${esc(call.email)}${call.website ? ` · ${esc(call.website)}` : ""}<br/>Scheduled slot: ${fmtET(call.start_at)}${call.meet_url ? `<br/>Meet: ${call.meet_url}` : ""}</p>`, text: `${call.name} is free right now. Call ${call.phone} from ${SFB_PHONE_DISPLAY} within 5 minutes. ${call.email}. Slot ${fmtET(call.start_at)}.` }); results[`email:${o.email}`] = r.sent ? "sent" : `error:${r.error ?? r.skipped}`; }
-  await service.from("demo_calls").update({ call_now_notified_at: new Date().toISOString(), call_now_notify_result: results }).eq("id", call.id);
+  // Slack (call-now only): the connected workspace's incoming-webhook channel (#all-sfb-connect) via chat.postMessage. Runs in parallel with SMS/email.
+  const slack = (async () => {
+    if (!call.call_now) return;
+    try {
+      const { data: sc } = await service.from("integration_connections").select("owner_id, metadata").eq("provider", "slack").eq("status", "active").limit(1).maybeSingle();
+      const channel = (sc?.metadata as { incoming_webhook?: { channel_id?: string } } | null)?.incoming_webhook?.channel_id;
+      if (sc && channel) {
+        const { token } = await getAccessToken("slack", sc.owner_id as string);
+        const r = await fetch("https://slack.com/api/chat.postMessage", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify({ channel, text: `<!channel> ${line}\nCall them from ${SFB_PHONE_DISPLAY} within 5 minutes.` }) });
+        const j = (await r.json()) as { ok: boolean; error?: string }; results.slack = j.ok ? "sent" : `error:${j.error}`;
+      } else results.slack = "not_connected";
+    } catch (e) { results.slack = `error:${e instanceof Error ? e.message : "unknown"}`; }
+  })();
+  // Owners: in-app + SMS (+ email: always for call-now; otherwise as fallback / until SMS verified).
+  const owners = alertOwners(service, call.call_now ? {
+    trigger: "callback_sla",
+    sms: `CALL NOW: ${call.name} is free right now. Call ${call.phone} from ${SFB_PHONE_DISPLAY} within 5 min. Slot ${when}.`,
+    email: { subject: `CALL NOW: ${call.name} is free right now (${call.phone})`, html: `<p><strong>${esc(call.name)}</strong> booked a demo and said they're free right now.</p><p>Call <strong>${esc(call.phone)}</strong> from ${SFB_PHONE_DISPLAY} within 5 minutes.</p><p>${esc(call.email)}${call.website ? ` · ${esc(call.website)}` : ""}<br/>Scheduled slot: ${when}${call.meet_url ? `<br/>Meet: ${call.meet_url}` : ""}</p>`, text: `${call.name} is free right now. Call ${call.phone} from ${SFB_PHONE_DISPLAY} within 5 minutes. ${call.email}. Slot ${when}.` },
+    inApp: { type: "callback_sla", title: `CALL NOW: ${call.name} is free right now`, body: line, actionUrl: call.html_link ?? `${origin}/team/calendar`, actionLabel: "Open event" },
+    detail: { demo_call_id: call.id },
+  } : {
+    trigger: "demo_booked",
+    sms: `Demo booked ${when}: ${call.name}, ${call.phone}${call.website ? `, ${call.website}` : ""}.`,
+    email: { subject: `Demo booked: ${call.name} — ${when}`, html: `<p><strong>${esc(call.name)}</strong> booked a demo call for <strong>${when}</strong>.</p><p>${esc(call.phone)} · ${esc(call.email)}${call.website ? ` · ${esc(call.website)}` : ""}${call.meet_url ? `<br/>Meet: ${call.meet_url}` : ""}</p>`, text: `${call.name} booked a demo call for ${when}. ${call.phone} · ${call.email}.` },
+    inApp: { type: "meeting_booked", title: `Demo booked: ${call.name}`, body: line, actionUrl: call.html_link ?? `${origin}/team/calendar`, actionLabel: "Open event" },
+    detail: { demo_call_id: call.id },
+  });
+  const [, delivered] = await Promise.all([slack, owners]);
+  for (const d of delivered) { results[`sms:${d.userId.slice(0, 8)}`] = d.sms; results[`email:${d.userId.slice(0, 8)}`] = d.email; }
+  if (call.call_now) await service.from("demo_calls").update({ call_now_notified_at: new Date().toISOString(), call_now_notify_result: results }).eq("id", call.id);
+  else await service.from("demo_calls").update({ call_now_notify_result: results }).eq("id", call.id);
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));

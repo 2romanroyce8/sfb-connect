@@ -6,6 +6,7 @@ import { COMMON_TIMEZONES } from "@/lib/crm/commonTimezones";
 import ConnectedAgentsSection from "./ConnectedAgentsSection";
 import DangerZoneSection from "./DangerZoneSection";
 import AgentProgramSection from "./AgentProgramSection";
+import TextAlertsSection from "./TextAlertsSection";
 
 type Profile = {
   full_name: string | null;
@@ -280,6 +281,10 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
         </div>
       </Section>
 
+      <Section title="Text alerts" id="text-alerts">
+        <TextAlertsSection />
+      </Section>
+
       <Section title="Security" id="security">
         <div className="flex flex-col gap-3">
           <div>
@@ -328,7 +333,7 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
             <span className="text-[#F5F5F7]">AI Provider:</span>{" "}
             {integrations?.aiProviderConfigured ? "configured for this workspace. AI defaults will appear here as they are introduced." : "not configured. The owner adds a provider key in the hosting environment; AI defaults appear here afterwards."}
           </li>
-          <li><span className="text-[#F5F5F7]">Notifications and sales defaults:</span> not yet configurable — coming with the SOP and notifications phases.</li>
+          <li><span className="text-[#F5F5F7]">Notifications:</span> text alerts are configured above. Sales defaults: not yet configurable — coming with the SOP phase.</li>
         </ul>
       </Section>
     </div>

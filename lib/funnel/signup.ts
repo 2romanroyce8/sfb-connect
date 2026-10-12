@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { issueCode, verifyCode } from "@/lib/demo/verification";
 import { parseDemoProfile, type DemoProfile } from "@/lib/demo/provision";
+import { newLeadAlert } from "@/lib/notify/leadAlert";
 
 // ============================================================
 // THE GATED FUNNEL (Roman, 2026-10-12 01:40 ET)
@@ -82,6 +83,7 @@ export async function verifySignup(db: SupabaseClient, userId: string, code: str
   await db.from("funnel_signups").update({ email_verified_at: now }).eq("user_id", userId);
   await db.auth.admin.updateUserById(userId, { email_confirm: true }).catch(() => undefined);
   await db.from("billing_audit_log").insert({ business_id: null, action: "funnel_verified", detail: { user_id: userId, domain: s.domain } });
+  await newLeadAlert(db, { source: "funnel_verified", name: s.name, email: s.email, phone: s.phone, website: s.website }).catch(() => undefined);
   return { ok: true };
 }
 

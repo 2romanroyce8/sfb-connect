@@ -2,6 +2,7 @@ import { sendEmail, creditWarningEmail, creditsExhaustedEmail } from "@/lib/emai
 import { emitIntegrationEvent } from "@/lib/integrations/events";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCreditBalance } from "./credits";
+import { alertOwners } from "@/lib/notify/ownerAlerts";
 import { creditPrice, WARN_AT, CRITICAL_AT } from "@/lib/agentProgram/config";
 
 // ============================================================
@@ -107,6 +108,21 @@ async function notifyCreditThresholds(service: SupabaseClient, businessId: strin
       if (ov?.email) void sendEmail({ to: ov.email as string, subject: `Agent paused — ${b.legal_name} is out of credits`, html: `<p><strong>${b.legal_name}</strong> reached zero credits; the agent paused and the owner was notified. Reporting still works. Nothing to approve until they top up or refill.</p>`, text: `${b.legal_name} reached zero credits; agent paused, owner notified.` });
     }
     if (r.sent) await service.from("businesses").update({ credit_alerts_sent: { ...sent, [want]: cycle } }).eq("id", businessId);
+    // Team owners: a customer account is low / stopped — text + in-app (email as fallback / until SMS verified).
+    const name = b.legal_name as string;
+    await alertOwners(service, want === "exhausted" ? {
+      trigger: "credits_exhausted",
+      sms: `Credits at zero: ${name}. Agent paused. Owner emailed.`,
+      email: { subject: `Credits at zero — ${name}`, html: `<p><strong>${name}</strong> reached zero credits; the agent paused and the owner was emailed.</p>`, text: `${name} reached zero credits; the agent paused and the owner was emailed.` },
+      inApp: { type: "credits_warning", title: `Credits at zero: ${name}`, body: "Agent paused. The customer was emailed.", actionUrl: `/team/dashboard`, actionLabel: "Open" },
+      detail: { business_id: businessId, balance: balanceAfter },
+    } : {
+      trigger: "credits_warning",
+      sms: `Credits ${state.usedPct}% used: ${name} has ${balanceAfter} of ${allotment} left this cycle.`,
+      email: { subject: `Credits at ${state.usedPct}% — ${name}`, html: `<p><strong>${name}</strong> has used ${state.usedPct}% of this cycle's credits (${balanceAfter} of ${allotment} left). The owner was emailed.</p>`, text: `${name} has used ${state.usedPct}% of this cycle's credits (${balanceAfter} of ${allotment} left).` },
+      inApp: { type: "credits_warning", title: `Credits at ${state.usedPct}%: ${name}`, body: `${balanceAfter} of ${allotment} left this cycle. The customer was emailed.`, actionUrl: `/team/dashboard`, actionLabel: "Open" },
+      detail: { business_id: businessId, balance: balanceAfter },
+    });
   } catch (e) {
     console.error("[credits] threshold notice failed:", e instanceof Error ? e.message : e);
   }

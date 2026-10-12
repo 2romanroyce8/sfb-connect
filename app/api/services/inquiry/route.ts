@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
+import { newLeadAlert } from "@/lib/notify/leadAlert";
 import { SERVICE_INTERESTS } from "@/lib/marketing/serviceInterests";
 
 const inquirySchema = z.object({
@@ -42,5 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not submit your request. Please try again." }, { status: 500 });
   }
 
+  // Owners are told about every real lead the moment it lands (SMS + in-app; email as fallback).
+  await newLeadAlert(createSupabaseServiceClient(), { source: "service_inquiry", businessName: parsed.data.businessName, name: parsed.data.name, email: parsed.data.email, phone: parsed.data.phone, website: parsed.data.website, serviceInterest: parsed.data.serviceInterest }).catch(() => undefined);
   return NextResponse.json({ ok: true });
 }

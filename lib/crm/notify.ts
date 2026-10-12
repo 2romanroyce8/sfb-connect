@@ -15,7 +15,12 @@ export type NotificationType =
   | "quiz_required"
   | "sop_required"
   | "booking_sync_failed"
-  | "system";
+  | "system"
+  | "lead_new"
+  | "callback_sla"
+  | "credits_warning"
+  | "approval_pending"
+  | "sms_test";
 
 // Every call here is a real CRM event that already happened -- reassigning a
 // lead, booking/rescheduling/cancelling a meeting, a Google sync failure.
