@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/agent/store";
 import { buildProfileFromSite, type BuildEvent } from "@/lib/demo/build";
 export const runtime = "nodejs";
@@ -15,8 +15,15 @@ export async function POST(req: NextRequest) {
   const rl = await rateLimit(`demo-build:${ip}:1h`, 20, 3600);
   if (!rl.allowed) return NextResponse.json({ error: "Too many builds from this network. Try again in an hour." }, { status: 429 });
   const b = (await req.json().catch(() => ({}))) as { url?: string; email?: string };
-  const url = (b.url ?? "").trim().slice(0, 300); const email = (b.email ?? "").trim().toLowerCase();
+  const url = (b.url ?? "").trim().slice(0, 300); let email = (b.email ?? "").trim().toLowerCase();
   if (url.length < 4) return NextResponse.json({ error: "Enter your website address." }, { status: 400 });
+  // Funnel step 3 runs signed in and does not resend the address: resolve it from the session.
+  // (Bug 2026-10-12: the client sent the placeholder "signed-in", which failed this check and left every
+  // real signup stuck at "Enter your work email." on Step 3.)
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const { data: { user } } = await createSupabaseServerClient().auth.getUser();
+    if (user?.email) email = user.email.toLowerCase();
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter your work email." }, { status: 400 });
 
   const encoder = new TextEncoder();

@@ -117,7 +117,7 @@ function BuildStep({ website, name, phone }: { website: string; name: string; ph
   const build = async () => {
     setError(null); setSteps([]); setFacts(null); setPhase("building"); setBusy(true);
     try {
-      const r = await fetch("/api/demo/build", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: website, email: "signed-in" }) });
+      const r = await fetch("/api/demo/build", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: website }) }); // email comes from the session server-side
       if (!r.ok || !r.body) { const j = await r.json().catch(() => ({})); throw new Error(j.error || "Couldn't start the build."); }
       const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = ""; let done: Facts | null = null;
       for (;;) {
