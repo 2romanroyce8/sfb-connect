@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { addProspect, approveMessage, bookMeeting, draftMessage, enrichProspect, importFindings, OutboundError, proposeMeetingSlots, rejectMessage, sendApprovedMessage, retryFailedSend, startSequence, syncReplies, advanceSequences, InsufficientCreditsError } from "@/lib/outbound/engine";
 import type { TemplateKey } from "@/lib/outbound/templates";
+import { previewCsv, importProspects } from "@/lib/outbound/importProspects";
+import type { ImportField } from "@/lib/outbound/csvImport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,16 +31,17 @@ export async function GET(req: NextRequest) {
   const businesses = (bizRows ?? []).filter((b) => mayManage(me, b));
   const businessId = req.nextUrl.searchParams.get("business") || businesses[0]?.id || null;
   if (!businessId || !businesses.some((b) => b.id === businessId)) return NextResponse.json({ businesses, business: null });
-  const [p, m, e, bk, f, bal] = await Promise.all([
+  const [p, m, e, bk, f, bal, imps] = await Promise.all([
     service.from("outbound_prospects").select("*").eq("business_id", businessId).order("updated_at", { ascending: false }).limit(200),
     service.from("outbound_messages").select("*").eq("business_id", businessId).order("created_at", { ascending: false }).limit(200),
     service.from("outbound_events").select("*").eq("business_id", businessId).order("created_at", { ascending: false }).limit(100),
     service.from("outbound_bookings").select("*").eq("business_id", businessId).order("start_at", { ascending: false }).limit(50),
     service.from("research_feed_findings").select("id, business_name, website, city, state, category, identity_label, created_at").eq("accepted", true).order("created_at", { ascending: false }).limit(50),
     service.rpc("get_credit_breakdown", { p_business_id: businessId }),
+    service.from("outbound_imports").select("id, filename, uploaded_by, counts, created_at").eq("business_id", businessId).order("created_at", { ascending: false }).limit(20),
   ]);
   const breakdown = Array.isArray(bal.data) ? bal.data[0] : bal.data;
-  return NextResponse.json({ businesses, business: businesses.find((b) => b.id === businessId), prospects: p.data ?? [], messages: m.data ?? [], events: e.data ?? [], bookings: bk.data ?? [], findings: f.data ?? [], credits: breakdown ?? null });
+  return NextResponse.json({ businesses, business: businesses.find((b) => b.id === businessId), prospects: p.data ?? [], messages: m.data ?? [], events: e.data ?? [], bookings: bk.data ?? [], findings: f.data ?? [], credits: breakdown ?? null, imports: imps.data ?? [] });
 }
 
 export async function POST(req: NextRequest) {
@@ -64,6 +67,13 @@ export async function POST(req: NextRequest) {
       }
       case "add_prospect": return NextResponse.json({ prospect: await addProspect(service, { businessId: b.id, name: s("name"), website: s("website") || null, email: s("email") || null, phone: s("phone") || null, city: s("city") || null, state: s("state") || null, category: s("category") || null, contactName: s("contact_name") || null }, actor) });
       case "import_findings": return NextResponse.json({ results: await importFindings(service, b.id, Array.isArray(body.finding_ids) ? (body.finding_ids as string[]).slice(0, 50) : [], actor) });
+      // CSV list upload (team side, same engine as the customer's step 7). 0 credits.
+      case "import_csv_preview": { const r = previewCsv(s("csv")); if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 }); return NextResponse.json({ ok: true, preview: r }); }
+      case "import_csv": {
+        const r = await importProspects(service, { businessId: b.id, filename: s("filename") || "upload.csv", csv: typeof body.csv === "string" ? body.csv : "", mapping: (body.mapping && typeof body.mapping === "object" ? body.mapping : {}) as Record<string, ImportField> }, { kind: "user", id: me.id, label: actor.label });
+        if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
+        return NextResponse.json({ ok: true, ...r });
+      }
       case "enrich": return NextResponse.json(await enrichProspect(service, s("prospect_id"), actor));
       case "start_sequence": return NextResponse.json({ message: await startSequence(service, s("prospect_id"), actor) });
       case "draft": return NextResponse.json({ message: await draftMessage(service, { prospectId: s("prospect_id"), template: (s("template") || "intro") as TemplateKey, slots: s("slots") || null }, actor) });

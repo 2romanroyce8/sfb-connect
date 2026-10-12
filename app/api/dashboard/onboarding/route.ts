@@ -6,6 +6,8 @@ import { fetchSite } from "@/lib/analyzer/checks";
 import { resolveLogo } from "@/lib/analyzer/identity";
 import { parseIcpInput, defaultIcp, type Icp } from "@/lib/onboarding/icp";
 import { sourceCandidates, acceptCandidates, type LeadCandidate } from "@/lib/onboarding/leads";
+import { previewCsv, importProspects } from "@/lib/outbound/importProspects";
+import type { ImportField } from "@/lib/outbound/csvImport";
 import { activateSequence, previewSequence, cadence, type CadenceKey } from "@/lib/onboarding/automations";
 import { startDfyCheckout } from "@/lib/billing/dfy";
 import { campaignStatus, launchCampaign, approveCampaign, rejectCampaignMessage } from "@/lib/onboarding/campaignRun";
@@ -97,6 +99,25 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     await confirmStep(service, who.businessId, 6);
     return NextResponse.json({ ok: true, icp: parsed.icp });
+  }
+
+  // Customer list upload (step 7 and later): preview → mapping → import. 0 credits.
+  if (body.action === "leads_import_preview") {
+    const r = previewCsv(typeof body.data?.csv === "string" ? body.data.csv : "");
+    if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
+    return NextResponse.json({ ok: true, preview: r });
+  }
+  if (body.action === "leads_import_commit") {
+    const { data: { user } } = await createSupabaseServerClient().auth.getUser();
+    const mapping = (body.data?.mapping && typeof body.data.mapping === "object" ? body.data.mapping : {}) as Record<string, ImportField>;
+    const r = await importProspects(service, { businessId: who.businessId, filename: typeof body.data?.filename === "string" ? body.data.filename : "upload.csv", csv: typeof body.data?.csv === "string" ? body.data.csv : "", mapping }, { kind: "user", id: who.userId, label: user?.email ?? "customer" });
+    if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
+    const { row } = await loadOnboarding(service, who.businessId);
+    const d = (row.step_data?.["7"] as Record<string, unknown> | undefined) ?? {};
+    const imports = Array.isArray(d.imports) ? (d.imports as unknown[]).slice(-9) : [];
+    await saveStepData(service, who.businessId, 7, { ...d, imports: [...imports, { id: r.importId, filename: typeof body.data?.filename === "string" ? body.data.filename : "upload.csv", at: new Date().toISOString(), imported: r.report.imported, skipped: r.report.skipped }] });
+    if (r.report.imported > 0) await confirmStep(service, who.businessId, 7);
+    return NextResponse.json({ ok: true, importId: r.importId, report: r.report });
   }
 
   if (body.action === "leads_source") {

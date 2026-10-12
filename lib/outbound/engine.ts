@@ -40,13 +40,15 @@ async function guard(service: SupabaseClient, businessId: string) {
 }
 
 // ---------- prospects ----------
-export async function addProspect(service: SupabaseClient, input: { businessId: string; name: string; website?: string | null; email?: string | null; phone?: string | null; city?: string | null; state?: string | null; category?: string | null; contactName?: string | null; findingId?: string | null }, actor: Actor) {
+export type ProspectSource = "agent" | "feed" | "manual" | "upload";
+export async function addProspect(service: SupabaseClient, input: { businessId: string; name: string; website?: string | null; email?: string | null; phone?: string | null; city?: string | null; state?: string | null; category?: string | null; contactName?: string | null; findingId?: string | null; source?: ProspectSource; importId?: string | null; customFields?: Record<string, string> | null }, actor: Actor) {
   let domain: string | null = null;
   if (input.website) { try { domain = new URL(/^https?:/i.test(input.website) ? input.website : `https://${input.website}`).hostname.replace(/^www\./, "").toLowerCase(); } catch { domain = null; } }
-  const row = { business_id: input.businessId, finding_id: input.findingId ?? null, name: input.name.trim().slice(0, 200), contact_name: input.contactName?.trim() || null, website: input.website ? (/^https?:/i.test(input.website) ? input.website : `https://${input.website}`) : null, canonical_domain: domain, email: input.email?.toLowerCase().trim() || null, email_source: input.email ? "manual" : null, phone_e164: input.phone ? toE164(input.phone) : null, city: input.city ?? null, state: input.state ?? null, category: input.category ?? null, created_by: actor.label };
+  const source: ProspectSource = input.source ?? (input.findingId ? "feed" : "manual");
+  const row = { business_id: input.businessId, finding_id: input.findingId ?? null, name: input.name.trim().slice(0, 200), contact_name: input.contactName?.trim() || null, website: input.website ? (/^https?:/i.test(input.website) ? input.website : `https://${input.website}`) : null, canonical_domain: domain, email: input.email?.toLowerCase().trim() || null, email_source: input.email ? (source === "upload" ? "upload" : "manual") : null, phone_e164: input.phone ? toE164(input.phone) : null, city: input.city ?? null, state: input.state ?? null, category: input.category ?? null, created_by: actor.label, source, import_id: input.importId ?? null, custom_fields: input.customFields ?? {} };
   const { data, error } = await service.from("outbound_prospects").insert(row).select("*").single();
   if (error) { if (error.code === "23505") throw new OutboundError("duplicate", "That prospect (same domain or email) is already in this business's list.", 409); throw new Error(error.message); }
-  await event(service, { businessId: input.businessId, prospectId: data.id, kind: "sourced", actor, payload: { from: input.findingId ? "feed" : "manual" } });
+  await event(service, { businessId: input.businessId, prospectId: data.id, kind: "sourced", actor, payload: { from: source } });
   return data;
 }
 

@@ -38,7 +38,7 @@ export async function getAgentFeed(service: SupabaseClient, businessId: string, 
     const actor = (e.actor as { kind?: string } | null)?.kind;
     return {
       id: e.id as string, at: e.created_at as string, kind,
-      title: (TITLES[kind] ?? ((x: string) => `${kind.replace(/_/g, " ")} — ${x}`))(p),
+      title: kind === "sourced" && payload.from === "upload" ? `Added ${p} from your uploaded list` : (TITLES[kind] ?? ((x: string) => `${kind.replace(/_/g, " ")} — ${x}`))(p),
       detail: kind === "enriched" ? (payload.found ? `Found a contact${payload.email ? ` (${payload.email})` : ""}` : "Nothing public found — 0 credits") : kind === "failed" ? friendlyFail(payload.error) : kind === "approval_requested" ? "Nothing sends until you approve it." : null,
       approved: kind === "approved" || kind === "sent" || (kind === "booked" && actor === "user"),
       credits, status: kind === "failed" ? "failed" : kind === "approval_requested" && !resolved.has((e as { message_id?: string | null }).message_id ?? "") ? "waiting" : "done",
