@@ -103,7 +103,7 @@ export default function OutboundWorkspace() {
                 <div className="mt-3 text-[11px] uppercase tracking-wide text-[#6E6E73]">Subject</div><div className="text-[13px] text-[#F5F5F7]">{open.subject}</div>
                 <div className="mt-3 text-[11px] uppercase tracking-wide text-[#6E6E73]">Body</div><pre className="mt-1 whitespace-pre-wrap text-[13px] leading-[1.55] text-[#E5E5EA] font-sans">{open.body_text}</pre>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <button onClick={async () => { const r = await act({ action: "approve", message_id: open.id, and_send: true }, open.id); if (r) setOpen(null); }} disabled={busy === open.id} className={primary}></button>
+                  <button onClick={async () => { const r = await act({ action: "approve", message_id: open.id, and_send: true }, open.id); if (r) setOpen(null); }} disabled={busy === open.id} className={primary}>{busy === open.id ? "Approving…" : "Approve & send"}</button>
                   <button onClick={async () => { const reason = prompt("Why? (kept on the record)") ?? ""; if (!reason) return; const r = await act({ action: "reject", message_id: open.id, reason }, `rej-${open.id}`); if (r) setOpen(null); }} className={ghost} style={{ ...ghostStyle, color: "#FF6961" }}>Reject</button>
                 </div>
               </>
