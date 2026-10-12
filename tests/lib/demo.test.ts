@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { extractServices, toneNotesFromText, extractSocials, offerLineFrom, splitMarket, slugify, verticalFrom } from "../../lib/demo/build";
+import { extractServices, toneNotesFromText, extractSocials, offerLineFrom, splitMarket, slugify, verticalFrom, classifyNiche } from "../../lib/demo/build";
 import { resendDecision, signPending, readPending, MAX_RESENDS, RESEND_COOLDOWN_SEC } from "../../lib/demo/verification";
 import { parseDemoProfile } from "../../lib/demo/provision";
 
@@ -54,4 +54,18 @@ test("build show (live defects 2026-10-11): taglines, widget text and the busine
   assert.equal(verticalFrom("Limitless Roofing OKC LLC — Oklahoma City"), "roofing");
   assert.equal(verticalFrom(null, "Family dentist in Austin"), "dental");
   assert.equal(verticalFrom("Welcome to our homepage"), null);
+});
+
+test("niche classifier (etmhere.com root cause 2026-10-11): scored across weighted signals, boilerplate 'legal' never makes a law firm, community beats education, secondary tags surface", () => {
+  const etm = classifyNiche([
+    { text: "Escape The Matrix | Community, Education, Network", weight: 4 },
+    { text: "ESCAPE THE MATRIX. · Plan. Build. Scale. Repeat. · Community · Inner Circle · SFB Access", weight: 2 },
+    { text: "Join a private community. Free education and skills. Discord access, inner circle, network with people who build. Learn trading, content, business. Legal · Terms · Privacy", weight: 1 },
+  ]);
+  assert.equal(etm.primary, "community"); assert.ok(etm.tags.includes("education"), JSON.stringify(etm)); assert.ok(!("law firm" in etm.scores), "bare 'Legal' footer link is not a law firm");
+  const roof = classifyNiche([{ text: "Limitless Roofing OKC LLC — Oklahoma City", weight: 4 }, { text: "Residential Roofing · Roof Repair · Gutters · Legal", weight: 2 }]);
+  assert.equal(roof.primary, "roofing");
+  assert.equal(classifyNiche([{ text: "Welcome to our homepage", weight: 4 }]).primary, null, "nothing invented below the minimum score");
+  assert.equal(verticalFrom("Family dentist in Austin"), "dental");
+  const law = classifyNiche([{ text: "Smith & Co — Personal Injury Attorneys", weight: 4 }]); assert.equal(law.primary, "law firm");
 });

@@ -14,7 +14,7 @@ import { issueCode } from "./verification";
 
 export type DemoProfile = {
   businessName: string; contactName: string; website: string; domain: string;
-  category: string | null; city: string | null; state: string | null; phone: string;
+  category: string | null; nicheTags: string[]; city: string | null; state: string | null; phone: string;
   services: string[]; offerLine: string; socials: Record<string, string>; logoUrl: string | null; toneNotes: string[];
 };
 
@@ -38,7 +38,8 @@ export function parseDemoProfile(b: Record<string, unknown>): { profile: DemoPro
   for (const [k, v] of Object.entries(socialsIn)) { const u = clean(v, 300); if (/^[a-z]{1,16}$/.test(k) && /^https?:\/\//.test(u)) socials[k] = u; }
   const state = clean(b.state, 2).toUpperCase();
   const logoUrl = clean(b.logoUrl, 500); const toneNotes = (Array.isArray(b.toneNotes) ? b.toneNotes : []).map((s) => clean(s, 80)).filter(Boolean).slice(0, 6);
-  return { profile: { businessName, contactName, website, domain, category: clean(b.category, 80) || null, city: clean(b.city, 80) || null, state: US_STATE.test(state) ? state : null, phone, services, offerLine, socials, logoUrl: /^https?:\/\//.test(logoUrl) ? logoUrl : null, toneNotes } };
+  const nicheTags = Array.from(new Set((Array.isArray(b.nicheTags) ? b.nicheTags : []).map((t) => clean(t, 40).toLowerCase()).filter(Boolean))).slice(0, 4);
+  return { profile: { businessName, contactName, website, domain, category: clean(b.category, 80) || null, nicheTags, city: clean(b.city, 80) || null, state: US_STATE.test(state) ? state : null, phone, services, offerLine, socials, logoUrl: /^https?:\/\//.test(logoUrl) ? logoUrl : null, toneNotes } };
 }
 
 async function uniqueSlug(service: SupabaseClient, name: string): Promise<string> {
@@ -73,7 +74,7 @@ export async function createDemoAccount(service: SupabaseClient, input: { email:
   const p = input.profile;
   const slug = await uniqueSlug(service, p.businessName);
   const { data: biz, error: bErr } = await service.from("businesses").insert({
-    owner_id: userId, legal_name: p.businessName, website: p.website, primary_category: p.category, city: p.city, state: p.state, phone: p.phone, slug,
+    owner_id: userId, legal_name: p.businessName, website: p.website, primary_category: p.category, niche_tags: p.nicheTags, city: p.city, state: p.state, phone: p.phone, slug,
     brand_logo_url: p.logoUrl, tone_notes: p.toneNotes.join(" · ") || null, services: p.services, social_links: p.socials, outbound_offer_line: p.offerLine,
     plan_key: "trial", is_sandbox: false, stock_profile_key: null, monthly_credit_allotment: TRIAL_TIER.credits, trial_expires_at: null, email_verified_at: null,
     demo_build_id: input.buildId, analyzer_scan_domain: p.domain,

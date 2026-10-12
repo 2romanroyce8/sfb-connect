@@ -8,7 +8,7 @@ import { TRIAL_TIER } from "@/lib/agentProgram/config";
 // learned" (correct inline) → 6-digit email code → signed in → dashboard.
 // Copy frames it as a hire, not a trial. No card field exists anywhere here.
 
-type Facts = { url: string; domain: string; name: string | null; logoUrl: string | null; category: string | null; city: string | null; state: string | null; services: string[]; offerLine: string | null; toneNotes: string[]; socials: Record<string, string>; phone: string | null; parked: boolean; reachable: boolean; reason: string | null };
+type Facts = { url: string; domain: string; name: string | null; logoUrl: string | null; category: string | null; nicheTags: string[]; city: string | null; state: string | null; services: string[]; offerLine: string | null; toneNotes: string[]; socials: Record<string, string>; phone: string | null; parked: boolean; reachable: boolean; reason: string | null };
 type Stage = "form" | "building" | "review" | "verify";
 const field: React.CSSProperties = { background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)", color: "#F5F5F7" };
 const label = "text-[11px] uppercase tracking-[0.14em] text-white/[0.45] font-semibold";
@@ -22,7 +22,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
   const [facts, setFacts] = useState<Facts | null>(null); const [buildId, setBuildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   // review fields
-  const [businessName, setBusinessName] = useState(""); const [contactName, setContactName] = useState(""); const [category, setCategory] = useState(""); const [city, setCity] = useState(""); const [state, setState] = useState("");
+  const [businessName, setBusinessName] = useState(""); const [contactName, setContactName] = useState(""); const [category, setCategory] = useState(""); const [nicheTags, setNicheTags] = useState<string[]>([]); const [newTag, setNewTag] = useState(""); const [city, setCity] = useState(""); const [state, setState] = useState("");
   const [phone, setPhone] = useState(""); const [password, setPassword] = useState(""); const [offerLine, setOfferLine] = useState(""); const [services, setServices] = useState<string[]>([]); const [newService, setNewService] = useState(""); const [socials, setSocials] = useState<Record<string, string>>({});
   // verify
   const [code, setCode] = useState(""); const [cooldown, setCooldown] = useState(0); const [resends, setResends] = useState(0);
@@ -52,7 +52,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
       }
       if (!done || !done.reachable || done.parked) { setStage("form"); if (!error && done?.reason) setError(done.reason); return; }
       setFacts(done);
-      setBusinessName(done.name ?? ""); setCategory(done.category ?? ""); setCity(done.city ?? ""); setState(done.state ?? ""); setPhone(done.phone ?? ""); setOfferLine(done.offerLine ?? ""); setServices(done.services); setSocials(done.socials);
+      setBusinessName(done.name ?? ""); setCategory(done.category ?? ""); setNicheTags(done.nicheTags ?? []); setCity(done.city ?? ""); setState(done.state ?? ""); setPhone(done.phone ?? ""); setOfferLine(done.offerLine ?? ""); setServices(done.services); setSocials(done.socials);
       trackMarketingEvent("demo_build_complete", { domain: done.domain, services: done.services.length, logo: !!done.logoUrl });
       await new Promise((res) => setTimeout(res, 700));
       setStage("review");
@@ -63,7 +63,7 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
   const create = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null); setBusy(true);
     try {
-      const r = await fetch("/api/demo/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password, buildId, businessName, contactName, website: facts?.url, domain: facts?.domain, category, city, state, phone, offerLine, services, socials, logoUrl: facts?.logoUrl ?? null, toneNotes: facts?.toneNotes ?? [] }) });
+      const r = await fetch("/api/demo/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, password, buildId, businessName, contactName, website: facts?.url, domain: facts?.domain, category, nicheTags, city, state, phone, offerLine, services, socials, logoUrl: facts?.logoUrl ?? null, toneNotes: facts?.toneNotes ?? [] }) });
       const j = (await r.json()) as { ok?: boolean; error?: string; signIn?: boolean };
       if (!r.ok) { if (j.signIn) { setError(`${j.error} `); } else setError(j.error || "Could not create your agent."); return; }
       trackMarketingEvent("demo_account_created", { domain: facts?.domain });
@@ -128,7 +128,8 @@ export default function DemoStart({ signedInEmail = null, pendingEmail = null }:
           <div className="grid sm:grid-cols-2 gap-3">
             <div><div className={label}>Business name</div><input required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
             <div><div className={label}>Your name (signs the emails)</div><input required value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="First Last" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
-            <div><div className={label}>Niche</div><input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. roofing" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
+            <div><div className={label}>Niche — confirm or correct</div><input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={facts.category ? undefined : "We couldn't tell — type it (e.g. roofing, coaching)"} className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={{ ...field, borderColor: category ? "rgba(255,255,255,0.12)" : "rgba(255,159,10,0.6)" }} />
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] text-white/[0.45]">Also:{nicheTags.map((t) => <span key={t} className="inline-flex items-center gap-1 px-2 h-[22px] rounded-full text-white/[0.75]" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>{t}<button type="button" onClick={() => setNicheTags(nicheTags.filter((x) => x !== t))} className="text-white/[0.35] hover:text-white">×</button></span>)}<input value={newTag} onChange={(e) => setNewTag(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const t = newTag.trim().toLowerCase(); if (t && !nicheTags.includes(t) && nicheTags.length < 4) setNicheTags([...nicheTags, t]); setNewTag(""); } }} placeholder="add a tag" className="h-[22px] rounded-full px-2 text-[11px] outline-none w-[90px]" style={field} /></div></div>
             <div className="grid grid-cols-[1fr_72px] gap-2"><div><div className={label}>City</div><input value={city} onChange={(e) => setCity(e.target.value)} className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div><div><div className={label}>State</div><input value={state} onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))} placeholder="OK" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div></div>
             <div><div className={label}>Phone</div><input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(405) 555-0123" inputMode="tel" className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1" style={field} /></div>
             <div><div className={label}>Website</div><input value={facts.url} readOnly className="h-[42px] w-full rounded-[9px] px-3 text-[14px] outline-none mt-1 text-white/[0.5]" style={field} /></div>
