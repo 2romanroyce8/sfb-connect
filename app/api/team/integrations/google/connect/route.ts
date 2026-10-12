@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/team/login", req.url));
+  const ret = req.nextUrl.searchParams.get("return"); // onboarding | dashboard | (team)
+  if (!user) return NextResponse.redirect(new URL(ret ? `/login?next=${encodeURIComponent(ret === "onboarding" ? "/dashboard/onboarding/calendar" : "/dashboard/integrations")}` : "/team/login", req.url));
 
   let authUrl: string;
   try {
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
     authUrl = buildGoogleAuthUrl(state);
     const res = NextResponse.redirect(authUrl);
     res.cookies.set("google_oauth_state", state, { httpOnly: true, secure: true, sameSite: "lax", maxAge: 600, path: "/" });
+    res.cookies.set("google_oauth_return", ret === "onboarding" || ret === "dashboard" ? ret : "team", { httpOnly: true, secure: true, sameSite: "lax", maxAge: 600, path: "/" });
     return res;
   } catch (err) {
     const url = new URL("/team/integrations", req.url);

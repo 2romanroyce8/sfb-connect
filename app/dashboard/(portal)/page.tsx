@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { loadOnboarding } from "@/lib/onboarding/state";
+import { stepByNo } from "@/lib/onboarding/flow";
 import { getCustomerContext } from "@/lib/customerPortal/context";
 import { getPresenceSummary, getRecentFindings, getRecentActivity, getOnboardingStages } from "@/lib/customerPortal/overview";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -22,6 +24,11 @@ export default async function OverviewPage() {
   const result = await getCustomerContext("/dashboard");
   if (result.status === "no_customer") redirect("/dashboard/no-membership");
   const { context } = result;
+
+  // Post-payment onboarding: resume on login. While Gmail/Calendar (the hard gates) are not connected the
+  // overview sends the customer to the current step; after that it nudges with the unfinished list.
+  const { state: onboarding } = await loadOnboarding(createSupabaseServiceClient(), context.business.id);
+  if (onboarding.showFlow) redirect(`/dashboard/onboarding/${stepByNo(onboarding.current)!.slug}`);
 
   const supabase = createSupabaseServerClient();
 
@@ -69,6 +76,15 @@ export default async function OverviewPage() {
 
   return (
     <div>
+      {!onboarding.completed && onboarding.remaining.length > 0 && (
+        <div className="mb-8 border border-neutral-200 rounded-2xl p-5 flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <div className="text-[14px] font-semibold text-neutral-900">Finish setting up your agent · {onboarding.percent}% done</div>
+            <div className="text-[13px] text-neutral-500 mt-1">Still open: {onboarding.remaining.map((s) => s.title).join(" · ")}</div>
+          </div>
+          <Link href={`/dashboard/onboarding/${stepByNo(onboarding.current)!.slug}`} className="h-[38px] px-4 rounded-full bg-neutral-900 text-white text-[13px] font-semibold inline-flex items-center">Continue setup →</Link>
+        </div>
+      )}
       <div className="mb-10">
         <div className="text-[13px] text-neutral-500 mb-1">
           {greeting()}, {context.firstName || "there"}

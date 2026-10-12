@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 
 /** OAuth return leg: verifies state, exchanges the code, stores tokens encrypted, marks the provider verified. */
 export async function GET(req: NextRequest, { params }: { params: { provider: string } }) {
-  const returnTo = req.cookies.get(`oauth_return_${params.provider}`)?.value === "dashboard" ? "/dashboard/integrations" : "/team/integrations";
+  const retCookie = req.cookies.get(`oauth_return_${params.provider}`)?.value;
+  const returnTo = retCookie === "onboarding" ? `/dashboard/onboarding/${params.provider === "gmail" ? "gmail" : "integrations"}` : retCookie === "dashboard" ? "/dashboard/integrations" : "/team/integrations";
   const back = new URL(returnTo, req.url);
   if (!isOAuthProviderKey(params.provider)) { back.searchParams.set("error", "Unknown integration."); return NextResponse.redirect(back); }
   const p = OAUTH_PROVIDERS[params.provider];

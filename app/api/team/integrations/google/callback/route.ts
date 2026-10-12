@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
   // identified by its own state cookie; hand it to the generic OAuth handler.
   const st = req.nextUrl.searchParams.get("state");
   if (st && req.cookies.get("oauth_state_gmail")?.value === st) return genericCallback(req, { params: { provider: "gmail" } });
-  const url = new URL("/team/integrations", req.url);
+  const ret = req.cookies.get("google_oauth_return")?.value;
+  const url = new URL(ret === "onboarding" ? "/dashboard/onboarding/calendar" : ret === "dashboard" ? "/dashboard/integrations" : "/team/integrations", req.url);
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   const cookieState = req.cookies.get("google_oauth_state")?.value;
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/team/login", req.url));
+  if (!user) return NextResponse.redirect(new URL(ret ? `/login?next=${encodeURIComponent(url.pathname)}` : "/team/login", req.url));
 
   try {
     const { email } = await connectGoogleCalendar(user.id, code);
@@ -38,5 +39,6 @@ export async function GET(req: NextRequest) {
 
   const res = NextResponse.redirect(url);
   res.cookies.set("google_oauth_state", "", { maxAge: 0, path: "/" });
+  res.cookies.set("google_oauth_return", "", { maxAge: 0, path: "/" });
   return res;
 }

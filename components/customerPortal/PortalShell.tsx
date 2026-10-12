@@ -81,13 +81,11 @@ export default function PortalShell({
   businessName,
   planLabel,
   displayName,
-  children,
-}: {
+  children, setup }: {
   businessName: string;
   planLabel: string;
   displayName: string;
-  children: React.ReactNode;
-}) {
+  children: React.ReactNode; setup?: { current: number; percent: number; remaining: number } | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -113,6 +111,11 @@ export default function PortalShell({
           <div className="text-[12px] text-neutral-500 mt-0.5">{planLabel}</div>
         </div>
 
+        {setup && setup.remaining > 0 && (
+          <Link href="/dashboard/onboarding" className={`mb-3 flex items-center justify-between rounded-lg px-3 py-2.5 text-[13px] ${pathname.startsWith("/dashboard/onboarding") ? "bg-neutral-900 text-white" : "bg-neutral-50 border border-neutral-200 text-neutral-900 hover:bg-neutral-100"}`}>
+            <span className="font-medium">Finish setup</span><span className="text-[11.5px] opacity-70">{setup.percent}% · step {setup.current}</span>
+          </Link>
+        )}
         <nav className="flex flex-col gap-0.5">
           {PRIMARY_NAV.map((item) => (
             <NavLink key={item.href} item={item} active={isActive(item.href)} />
