@@ -58,11 +58,15 @@ export async function createAccount(db: SupabaseClient, input: { name: string; e
     if (biz) throw new FunnelError("exists", "This email already has an SFB Connect account. Sign in instead.", 409);
     const { data: s } = await db.from("funnel_signups").select("email_verified_at").eq("user_id", userId).maybeSingle();
     if (s?.email_verified_at) throw new FunnelError("exists", "This email is already verified. Sign in to continue where you left off.", 409);
-    // Unverified, abandoned: let them start over with a fresh password.
-    const { error } = await db.auth.admin.updateUserById(userId, { password: input.password, user_metadata: { full_name: input.name } });
+    // Unverified, abandoned: let them start over with a fresh password (and clear Supabase's own confirm flag — see below).
+    const { error } = await db.auth.admin.updateUserById(userId, { password: input.password, email_confirm: true, user_metadata: { full_name: input.name } });
     if (error) throw new FunnelError("account", error.message, 500);
   } else {
-    const { data: created, error } = await db.auth.admin.createUser({ email: input.email, password: input.password, email_confirm: false, user_metadata: { full_name: input.name } });
+    // email_confirm: true on purpose (bug 2026-10-12: with Supabase "Confirm email" on, email_confirm:false made the
+    // very next signInWithPassword fail with "Email not confirmed" → "Account created, but sign-in failed"). Email
+    // verification is enforced by OUR 6-digit code (funnel_signups.email_verified_at gates every later stage), not by
+    // Supabase's flag, so the flag only ever blocked legitimate sign-ins.
+    const { data: created, error } = await db.auth.admin.createUser({ email: input.email, password: input.password, email_confirm: true, user_metadata: { full_name: input.name } });
     if (error || !created.user) throw new FunnelError("account", error?.message || "Could not create the account.", 500);
     userId = created.user.id;
   }

@@ -25,3 +25,6 @@ Trial tier (`config.ts`), `TRIAL_TIER`, stock profiles, `lib/agentProgram/trial.
 - Logged-out `/start` shows step 1 and no price; `/pricing` → `/start`; `curl /` and `/agent` contain no "$1,497".
 - Fresh signup → code → build → pricing visible → Stripe Checkout opens with the right plan; `agent_plan_orders.signup_id` set; webhook provisions from the profile.
 - Tests: `tests/lib/funnel.test.ts`, `pricing.test.ts`, `agentProgram.test.ts`, `legal.test.ts`.
+
+## Incident 2026-10-12 — "Account created, but sign-in failed"
+Root cause: `createAccount` created the auth user with `email_confirm: false` while the Supabase project has "Confirm email" on, so the immediate `signInWithPassword` was rejected with "Email not confirmed". Our 6-digit code (`funnel_signups.email_verified_at`) is the real verification gate, so Supabase's flag only blocked legitimate sign-ins. Fix: users are created (and abandoned ones re-armed) with `email_confirm: true`; the account route now signs the visitor in on the same response and logs `[funnel-account cid=…]` with the stage that failed; the browser falls back to its own sign-in and, failing that, shows a retry-safe message carrying the `cid`. Stranded accounts created by the bug were repaired by setting `auth.users.email_confirmed_at`. Look up a report: search Vercel runtime logs for the `cid` the customer quotes.

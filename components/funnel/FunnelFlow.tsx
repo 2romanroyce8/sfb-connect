@@ -42,10 +42,13 @@ function AccountStep({ prefillSite }: { prefillSite: string | null }) {
     e.preventDefault(); setBusy(true); setError(null);
     try {
       const r = await fetch("/api/funnel/account", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
-      const j = (await r.json()) as { ok?: boolean; email?: string; error?: string; signIn?: boolean };
+      const j = (await r.json()) as { ok?: boolean; email?: string; error?: string; signIn?: boolean; signedIn?: boolean; cid?: string };
       if (!r.ok) { setError(j.error || "Could not create your account."); if (j.signIn) setError(`${j.error} `); return; }
-      const { error: sErr } = await createSupabaseBrowserClient().auth.signInWithPassword({ email: j.email ?? f.email, password: f.password });
-      if (sErr) { setError("Account created, but sign-in failed. Use the sign-in page."); return; }
+      if (!j.signedIn) {
+        // The server could not issue the session on its response; try once from the browser before saying anything.
+        const { error: sErr } = await createSupabaseBrowserClient().auth.signInWithPassword({ email: j.email ?? f.email, password: f.password });
+        if (sErr) { setError(`Your account was created, but we couldn't sign you in automatically (ref ${j.cid ?? "—"}). Press the button again to continue — your details are kept.`); return; }
+      }
       trackMarketingEvent("funnel_account_created", {});
       window.location.href = "/start";
     } catch (err) { setError(err instanceof Error ? err.message : "Could not create your account."); }
