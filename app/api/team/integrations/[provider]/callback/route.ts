@@ -19,7 +19,9 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
   const clear = (res: NextResponse) => { res.cookies.set(cookieName, "", { maxAge: 0, path: "/" }); res.cookies.set(`oauth_return_${p.key}`, "", { maxAge: 0, path: "/" }); return res; };
 
   if (q.get("error")) {
-    if (p.key === "gmail" && q.get("error") === "access_denied" && (retCookie === "onboarding" || retCookie === "dashboard")) {
+    let customer = retCookie === "onboarding" || retCookie === "dashboard";
+    if (!customer && p.key === "gmail") { const { data: { user: u } } = await createSupabaseServerClient().auth.getUser(); if (u) { const { data: me } = await createSupabaseServiceClient().from("users").select("team_role").eq("id", u.id).maybeSingle(); customer = !me?.team_role; } }
+    if (p.key === "gmail" && q.get("error") === "access_denied" && customer) {
       // Backstop (2026-10-12): customer hit Google's testing-mode block. Friendly page, team alerted, Google's text never shown.
       const { data: { user: denied } } = await createSupabaseServerClient().auth.getUser();
       await recordAccessDenied(createSupabaseServiceClient(), denied?.id ?? null, appOrigin(req));

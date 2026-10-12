@@ -19,7 +19,12 @@ export async function GET(req: NextRequest) {
   const googleError = req.nextUrl.searchParams.get("error");
 
   if (googleError) {
-    if (googleError === "access_denied" && (ret === "onboarding" || ret === "dashboard")) {
+    let customer = ret === "onboarding" || ret === "dashboard";
+    if (!customer) { // cookies expired (>10 min on Google's page)? a signed-in non-team user is still a customer
+      const { data: { user: u } } = await createSupabaseServerClient().auth.getUser();
+      if (u) { const { data: me } = await createSupabaseServiceClient().from("users").select("team_role").eq("id", u.id).maybeSingle(); customer = !me?.team_role; }
+    }
+    if (googleError === "access_denied" && customer) {
       // Backstop (2026-10-12): a customer reached Google's consent screen before being cleared. Never show Google's text;
       // log + alert the team, send them to the friendly holding page.
       const { data: { user: denied } } = await createSupabaseServerClient().auth.getUser();
