@@ -71,6 +71,11 @@ export type SkipReason = "invalid_email" | "missing_name" | "duplicate_in_file" 
 export type ImportReport = { total: number; imported: number; skipped: number; reasons: Record<SkipReason, number>; examples: Partial<Record<SkipReason, string[]>> };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/** "Royce, Roman" → "Roman Royce" (a single comma with text both sides is the Last, First convention); anything else untouched. */
+export function normalizePersonName(s: string): string {
+  const m = /^([^,]+),\s*([^,]+)$/.exec(s.trim());
+  return m ? `${m[2].trim()} ${m[1].trim()}` : s.trim();
+}
 export const emptyReport = (total = 0): ImportReport => ({ total, imported: 0, skipped: 0, reasons: { invalid_email: 0, missing_name: 0, duplicate_in_file: 0, duplicate_existing: 0, error: 0 }, examples: {} });
 export function skip(r: ImportReport, reason: SkipReason, example?: string) { r.skipped++; r.reasons[reason]++; if (example) { (r.examples[reason] ??= []); if (r.examples[reason]!.length < 3) r.examples[reason]!.push(example); } }
 
@@ -100,7 +105,7 @@ export function buildRows(parsed: ParsedCsv, mapping: Record<string, ImportField
     if (seen.has(email)) { skip(report, "duplicate_in_file", email); continue; }
     seen.add(email);
     const custom: Record<string, string> = {}; for (const { h, i } of customCols) if ((r[i] ?? "").trim()) custom[h.slice(0, 60)] = (r[i] ?? "").trim().slice(0, 500);
-    rows.push({ name, contact_name: person ? person.slice(0, 120) : null, email, phone: col(r, "phone") || null, website: col(r, "website") || null, city: col(r, "city") || null, state: (col(r, "state") || null)?.toUpperCase().slice(0, 40) ?? null, custom });
+    rows.push({ name: normalizePersonName(name), contact_name: person ? normalizePersonName(person).slice(0, 120) : null, email, phone: col(r, "phone") || null, website: col(r, "website") || null, city: col(r, "city") || null, state: (col(r, "state") || null)?.toUpperCase().slice(0, 40) ?? null, custom });
   }
   return { rows, report };
 }

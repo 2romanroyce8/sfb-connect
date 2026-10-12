@@ -17,14 +17,19 @@ export const perProspectCredits = () => PRICES.enrich + PRICES.write;
 
 export type LaunchPlan = { count: number; estimatedCredits: number; topUp: boolean; reason: string | null };
 
-/** How many of the available prospects this balance can afford (never negative, never a dead end). */
-export function planLaunch(availableProspects: number, balance: number, batch = LAUNCH_BATCH): LaunchPlan {
+/** How many of the available prospects this balance can afford (never negative, never a dead end).
+ *  `withEmail` prospects (uploaded lists, enriched earlier) skip the site read and are drafted first, so they cost only the write price. */
+export function planLaunch(availableProspects: number, balance: number, batch = LAUNCH_BATCH, withEmail = 0): LaunchPlan {
   if (availableProspects <= 0) return { count: 0, estimatedCredits: 0, topUp: false, reason: "no_prospects" };
   if (balance <= 0) return { count: 0, estimatedCredits: 0, topUp: true, reason: "out_of_credits" };
-  const affordable = Math.floor(balance / perProspectCredits());
-  const count = Math.max(0, Math.min(batch, availableProspects, affordable));
+  let count = 0; let estimatedCredits = 0;
+  for (let i = 0; i < Math.min(batch, availableProspects); i++) {
+    const cost = i < withEmail ? PRICES.write : perProspectCredits();
+    if (estimatedCredits + cost > balance) break;
+    estimatedCredits += cost; count++;
+  }
   if (count === 0) return { count: 0, estimatedCredits: 0, topUp: true, reason: "insufficient_for_one" };
-  return { count, estimatedCredits: count * perProspectCredits(), topUp: false, reason: null };
+  return { count, estimatedCredits, topUp: false, reason: null };
 }
 
 export type LaunchResult = { prospectId: string; name: string; outcome: "drafted" | "no_email" | "no_website" | "paused" | "error"; detail?: string };

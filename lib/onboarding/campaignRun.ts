@@ -32,7 +32,7 @@ export async function campaignStatus(service: SupabaseClient, business: { id: st
     balance, prices: PRICES, gmailConnected: !!gmail,
     prospects: { total: ps.length, sourced, inSequence: ps.filter((p) => p.status === "in_sequence").length, noEmail: ps.filter((p) => p.status === "enriched" && !p.email).length },
     queue, counts: { pending: c("pending_approval"), approved: c("approved"), sent: c("sent"), failed: c("failed"), rejected: c("rejected") },
-    plan: planLaunch(sourced, balance),
+    plan: planLaunch(sourced, balance, undefined, ps.filter((p) => (p.status === "sourced" || p.status === "enriched") && !!p.email).length),
   };
 }
 
@@ -40,11 +40,13 @@ export async function campaignStatus(service: SupabaseClient, business: { id: st
 export async function launchCampaign(service: SupabaseClient, business: { id: string; owner_id: string }, actor: { id: string; label: string }) {
   const balance = await getCreditBalance(service, business.id);
   const { data: candidates } = await service.from("outbound_prospects").select("id, name, email, website, status").eq("business_id", business.id).in("status", ["sourced", "enriched"]).order("created_at", { ascending: true }).limit(40);
-  const plan = planLaunch((candidates ?? []).length, balance);
+  // Prospects that already have an email (uploaded lists) go first: no site read, half the cost, ready now.
+  const ordered = [...(candidates ?? [])].sort((x, y) => Number(!!y.email) - Number(!!x.email));
+  const plan = planLaunch(ordered.length, balance, undefined, ordered.filter((p) => !!p.email).length);
   if (plan.count === 0) return { plan, results: [] as LaunchResult[], summary: summarizeLaunch([]) };
   const results: LaunchResult[] = [];
   const a = { kind: "user" as const, id: actor.id, label: actor.label };
-  for (const p of (candidates ?? []).slice(0, plan.count)) {
+  for (const p of ordered.slice(0, plan.count)) {
     try {
       let email = p.email as string | null;
       if (!email) {

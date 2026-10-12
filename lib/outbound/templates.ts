@@ -85,7 +85,13 @@ Talk soon,
   },
 };
 
-const firstName = (full: string | null | undefined) => (full ?? "").trim().split(/\s+/)[0] || null;
+/** "Jane Example" → Jane; "Royce, Roman" (Last, First) → Roman; trailing punctuation never leaks into the greeting (found live 2026-10-12: "Hi Royce,,"). */
+export const firstName = (full: string | null | undefined) => {
+  const s = (full ?? "").trim(); if (!s) return null;
+  const base = s.includes(",") ? (s.split(",")[1] ?? "").trim() || s.split(",")[0].trim() : s;
+  const first = base.split(/\s+/)[0]?.replace(/[^\p{L}\p{N}'’\-.]+$/u, "").replace(/^[^\p{L}\p{N}]+/u, "");
+  return first || null;
+};
 
 /** Renders a template. Throws listing the missing facts rather than inventing them. */
 export function renderTemplate(key: TemplateKey, v: TemplateVars): { subject: string; body: string } {

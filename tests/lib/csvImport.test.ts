@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseCsv, suggestMapping, validateMapping, buildRows } from "../../lib/outbound/csvImport";
+import { parseCsv, suggestMapping, validateMapping, buildRows, normalizePersonName } from "../../lib/outbound/csvImport";
+import { firstName } from "../../lib/outbound/templates";
 
 const MESSY = `﻿"Full Name",E-Mail Address,"Company Name",Phone Number,Web Site,Notes
 "Smith, Jane",JANE@Example.com,Acme Property Mgmt,(813) 555-0100,www.acmepm.com,"Met at expo, wants ""quote"""
@@ -37,8 +38,13 @@ test("buildRows: invalid emails and nameless rows skipped, in-file duplicates co
   const p = parseCsv(MESSY); const { rows, report } = buildRows(p, suggestMapping(p.headers));
   assert.equal(report.total, 5); assert.equal(rows.length, 2); assert.equal(report.skipped, 3);
   assert.deepEqual(report.reasons, { invalid_email: 1, missing_name: 1, duplicate_in_file: 1, duplicate_existing: 0, error: 0 });
-  assert.equal(rows[0].name, "Acme Property Mgmt", "company wins as the prospect name"); assert.equal(rows[0].contact_name, "Smith, Jane"); assert.equal(rows[0].email, "jane@example.com", "email lower-cased");
+  assert.equal(rows[0].name, "Acme Property Mgmt", "company wins as the prospect name"); assert.equal(rows[0].contact_name, "Jane Smith", "Last, First is normalised at import"); assert.equal(rows[0].email, "jane@example.com", "email lower-cased");
   assert.deepEqual(rows[0].custom, { Notes: 'Met at expo, wants "quote"' });
   assert.equal(rows[1].name, "Bob Jones", "consumer lead: the person is the prospect"); assert.equal(rows[1].contact_name, "Bob Jones");
   assert.deepEqual(report.examples.invalid_email, ["not-an-email"]);
+});
+
+test("names: Last, First is normalised; the greeting never carries punctuation", () => {
+  assert.equal(normalizePersonName("Royce, Roman"), "Roman Royce"); assert.equal(normalizePersonName("Jane Example"), "Jane Example"); assert.equal(normalizePersonName("Acme, Inc, LLC"), "Acme, Inc, LLC");
+  assert.equal(firstName("Royce, Roman"), "Roman"); assert.equal(firstName("Jane Example"), "Jane"); assert.equal(firstName("O'Brien, Pat"), "Pat"); assert.equal(firstName("  "), null); assert.equal(firstName("Dr. Lee"), "Dr.");
 });

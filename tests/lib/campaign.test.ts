@@ -14,6 +14,9 @@ test("launch plan: capped by batch, by prospects, and by what the balance afford
   assert.deepEqual(planLaunch(25, 0), { count: 0, estimatedCredits: 0, topUp: true, reason: "out_of_credits" });
   assert.deepEqual(planLaunch(25, 3), { count: 0, estimatedCredits: 0, topUp: true, reason: "insufficient_for_one" });
   assert.deepEqual(planLaunch(0, 150), { count: 0, estimatedCredits: 0, topUp: false, reason: "no_prospects" });
+  assert.deepEqual(planLaunch(2, 150, 10, 2), { count: 2, estimatedCredits: 4, topUp: false, reason: null }, "uploaded leads with emails skip the site read: 2 credits each");
+  assert.deepEqual(planLaunch(5, 150, 10, 2), { count: 5, estimatedCredits: 16, topUp: false, reason: null }, "2 emailed (2 each) + 3 to enrich (4 each)");
+  assert.deepEqual(planLaunch(5, 5, 10, 2), { count: 2, estimatedCredits: 4, topUp: false, reason: null }, "balance affords the two cheap ones, not a third at 4");
 });
 
 test("launch summary buckets outcomes", () => {
