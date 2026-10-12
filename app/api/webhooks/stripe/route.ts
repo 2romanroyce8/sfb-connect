@@ -4,6 +4,7 @@ import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
 import { appendCreditTransaction, getCreditBalance } from "@/lib/billing/credits";
 import type Stripe from "stripe";
 import { provisionAgentCustomer, grantAgentRenewalCredits, endAgentPlan } from "@/lib/agentProgram/provision";
+import { onDfyPurchased, DFY_KEY } from "@/lib/billing/dfy";
 
 // ============================================================
 // Stripe is the payment/subscription AUTHORITY. This webhook is the ONLY
@@ -148,6 +149,9 @@ async function handleCheckoutCompleted(service: ReturnType<typeof createSupabase
     // a one-off right, not an ongoing entitlement -- recorded as a
     // completed purchase; no customer_addons row (there's nothing ongoing
     // to track as "active").
+    // The done-for-you install (onboarding step 9) additionally hands the account to the team instantly.
+    const { data: prod } = await service.from("addon_products").select("key").eq("id", purchase.addon_product_id).maybeSingle();
+    if (prod?.key === DFY_KEY || session.metadata?.dfy === "1") await onDfyPurchased(service, businessId, purchaseId).catch((e) => console.error("[dfy] handoff failed:", e instanceof Error ? e.message : e));
   }
 
   await service.from("billing_audit_log").insert({

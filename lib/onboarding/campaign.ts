@@ -1,0 +1,34 @@
+// Step 10 — first campaign, pure planning rules (tested). The campaign is the
+// outbound engine's existing path (enrich → draft → human approval → send);
+// this module only decides how much of it the balance can afford and
+// summarizes outcomes. Every price comes from CREDIT_PRICES.
+import { creditPrice } from "@/lib/agentProgram/config";
+
+export const LAUNCH_BATCH = 10;
+
+export const PRICES = {
+  enrich: creditPrice("outbound.prospect_enriched")?.credits ?? 0,
+  write: creditPrice("outbound.message_written")?.credits ?? 0,
+  review: creditPrice("human.review_pass")?.credits ?? 0,
+};
+
+/** Cost to take one prospect through enrich + first draft (the review pass is charged only when the customer approves). */
+export const perProspectCredits = () => PRICES.enrich + PRICES.write;
+
+export type LaunchPlan = { count: number; estimatedCredits: number; topUp: boolean; reason: string | null };
+
+/** How many of the available prospects this balance can afford (never negative, never a dead end). */
+export function planLaunch(availableProspects: number, balance: number, batch = LAUNCH_BATCH): LaunchPlan {
+  if (availableProspects <= 0) return { count: 0, estimatedCredits: 0, topUp: false, reason: "no_prospects" };
+  if (balance <= 0) return { count: 0, estimatedCredits: 0, topUp: true, reason: "out_of_credits" };
+  const affordable = Math.floor(balance / perProspectCredits());
+  const count = Math.max(0, Math.min(batch, availableProspects, affordable));
+  if (count === 0) return { count: 0, estimatedCredits: 0, topUp: true, reason: "insufficient_for_one" };
+  return { count, estimatedCredits: count * perProspectCredits(), topUp: false, reason: null };
+}
+
+export type LaunchResult = { prospectId: string; name: string; outcome: "drafted" | "no_email" | "no_website" | "paused" | "error"; detail?: string };
+export function summarizeLaunch(results: LaunchResult[]) {
+  const by = (o: LaunchResult["outcome"]) => results.filter((r) => r.outcome === o).length;
+  return { drafted: by("drafted"), noEmail: by("no_email") + by("no_website"), paused: by("paused"), errors: by("error"), total: results.length };
+}

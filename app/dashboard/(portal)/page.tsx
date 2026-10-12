@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { loadOnboarding } from "@/lib/onboarding/state";
 import { stepByNo } from "@/lib/onboarding/flow";
+import { getAgentFeed } from "@/lib/customerPortal/agentFeed";
+import AgentFeed from "@/components/customerPortal/AgentFeed";
 import { getCustomerContext } from "@/lib/customerPortal/context";
 import { getPresenceSummary, getRecentFindings, getRecentActivity, getOnboardingStages } from "@/lib/customerPortal/overview";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -49,6 +51,7 @@ export default async function OverviewPage() {
     return { modules, receipts: receipts ?? [], overseer };
   })();
 
+  const agentFeed = getAgentFeed(createSupabaseServiceClient(), context.business.id, 12);
   const [presence, findings, activity, stages, { data: opportunity }, agent] = await Promise.all([
     getPresenceSummary(context.business.id),
     getRecentFindings(context.business.id, 5),
@@ -102,6 +105,8 @@ export default async function OverviewPage() {
           </span>
         </div>
       </div>
+
+      <AgentFeed items={await agentFeed} />
 
       <Link href="/dashboard/presence" className="block">
         <OverviewPresence presence={presence} />

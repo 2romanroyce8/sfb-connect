@@ -9,15 +9,18 @@ import StepProfile from "./steps/StepProfile";
 import StepConnect from "./steps/StepConnect";
 import StepBrand from "./steps/StepBrand";
 import StepCapabilities from "./steps/StepCapabilities";
-import StepNotYet from "./steps/StepNotYet";
 import StepIcp from "./steps/StepIcp";
 import StepLeads from "./steps/StepLeads";
 import StepAutomations from "./steps/StepAutomations";
+import StepDfy from "./steps/StepDfy";
+import StepCampaign from "./steps/StepCampaign";
+import StepDashboard from "./steps/StepDashboard";
+import type { FeedItem } from "@/lib/customerPortal/agentFeed";
 
 export type Cap = { key: string; name: string; short: string; enabled: boolean };
 export type ShellProps = {
   state: OnboardingState; step: StepDef; business: BusinessProfile; stepData: Record<string, unknown> | null;
-  integrations: { gmail: string | null; calendar: string | null }; capabilities: Cap[]; flash: { ok: boolean; text: string } | null; prospectCount: number;
+  integrations: { gmail: string | null; calendar: string | null }; capabilities: Cap[]; flash: { ok: boolean; text: string } | null; prospectCount: number; dfyChoice: string | null; purchaseFlag: string | null; prefill: { name: string | null; email: string | null; phone: string | null; website: string | null }; feed: FeedItem[];
 };
 
 /** Progress rail + the current step. Progress saves per step; resume lands on the first unfinished step. */
@@ -27,6 +30,7 @@ export default function OnboardingShell(p: ShellProps) {
   const me = p.state.steps.find((s) => s.no === p.step.no)!;
   const next = p.state.steps.find((s) => s.no > p.step.no && !s.locked) ?? null;
   const goNext = () => router.push(next ? `/dashboard/onboarding/${next.slug}` : "/dashboard");
+  void next;
 
   const post = async (body: Record<string, unknown>) => {
     const r = await fetch("/api/dashboard/onboarding", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -77,7 +81,9 @@ export default function OnboardingShell(p: ShellProps) {
             : p.step.no === 6 ? <StepIcp business={p.business} onDone={() => { router.refresh(); goNext(); }} />
             : p.step.no === 7 ? <StepLeads stepData={p.stepData} prospectCount={p.prospectCount} onDone={() => { router.refresh(); goNext(); }} />
             : p.step.no === 8 ? <StepAutomations onDone={() => { router.refresh(); goNext(); }} />
-            : <StepNotYet step={p.step} onNext={goNext} hasNext={!!next} />}
+            : p.step.no === 9 ? <StepDfy dfyChoice={p.dfyChoice} purchaseFlag={p.purchaseFlag} prefill={p.prefill} onDone={() => { router.refresh(); goNext(); }} />
+            : p.step.no === 10 ? <StepCampaign onDone={() => { router.refresh(); goNext(); }} />
+            : <StepDashboard feed={p.feed} onConfirm={() => confirm()} />}
           {err && <div className="mt-4 text-[13px] text-red-600">{err}</div>}
         </div>
       </div>

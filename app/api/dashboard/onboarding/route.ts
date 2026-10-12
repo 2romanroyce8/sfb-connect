@@ -7,6 +7,9 @@ import { resolveLogo } from "@/lib/analyzer/identity";
 import { parseIcpInput, defaultIcp, type Icp } from "@/lib/onboarding/icp";
 import { sourceCandidates, acceptCandidates, type LeadCandidate } from "@/lib/onboarding/leads";
 import { activateSequence, previewSequence, cadence, type CadenceKey } from "@/lib/onboarding/automations";
+import { startDfyCheckout } from "@/lib/billing/dfy";
+import { campaignStatus, launchCampaign, approveCampaign, rejectCampaignMessage } from "@/lib/onboarding/campaignRun";
+import { appOrigin } from "@/lib/agent/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -145,6 +148,44 @@ export async function POST(req: NextRequest) {
     const id = await activateSequence(service, who.businessId, key);
     await confirmStep(service, who.businessId, 8);
     return NextResponse.json({ ok: true, sequenceId: id, cadence: key });
+  }
+
+  // ---------- O3: steps 9–11 ----------
+  const bizFull = async () => { const { data } = await service.from("businesses").select("id, legal_name, owner_id, stripe_customer_id").eq("id", who.businessId).single(); return data!; };
+  const meLabel = async () => { const { data: { user } } = await createSupabaseServerClient().auth.getUser(); return { id: who.userId, label: user?.email ?? "customer" }; };
+
+  if (body.action === "dfy_choose") {
+    const choice = body.data?.choice;
+    if (choice !== "self_serve" && choice !== "retainer_talk") return NextResponse.json({ error: "Unknown choice." }, { status: 400 });
+    const { row } = await loadOnboarding(service, who.businessId);
+    if (row.dfy_choice === "install") return NextResponse.json({ ok: true, choice: "install" }); // paid install wins; never downgrade
+    await service.from("customer_onboarding").update({ dfy_choice: choice, dfy_chosen_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("business_id", who.businessId);
+    if (choice === "self_serve") await confirmStep(service, who.businessId, 9);
+    return NextResponse.json({ ok: true, choice });
+  }
+  if (body.action === "dfy_checkout") {
+    try {
+      const b = await bizFull(); const me = await meLabel();
+      const { checkoutUrl } = await startDfyCheckout(service, b, { id: me.id, email: me.label }, appOrigin(req));
+      return NextResponse.json({ ok: true, checkoutUrl });
+    } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Checkout failed." }, { status: 502 }); }
+  }
+  if (body.action === "campaign_status") return NextResponse.json({ ok: true, status: await campaignStatus(service, await bizFull()) });
+  if (body.action === "campaign_launch") {
+    const r = await launchCampaign(service, await bizFull(), await meLabel());
+    return NextResponse.json({ ok: true, ...r });
+  }
+  if (body.action === "campaign_approve") {
+    const ids = body.data?.ids === "all" ? "all" : Array.isArray(body.data?.ids) ? (body.data!.ids as unknown[]).filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x)) : [];
+    if (ids !== "all" && !ids.length) return NextResponse.json({ error: "Pick a draft to approve." }, { status: 400 });
+    const r = await approveCampaign(service, await bizFull(), await meLabel(), ids);
+    return NextResponse.json({ ok: true, ...r });
+  }
+  if (body.action === "campaign_reject") {
+    const id = typeof body.data?.id === "string" ? body.data.id : "";
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: "id required." }, { status: 400 });
+    await rejectCampaignMessage(service, id, await meLabel(), typeof body.data?.reason === "string" ? body.data.reason : "");
+    return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ error: "Unknown action." }, { status: 400 });
