@@ -4,7 +4,8 @@
 // guards come from the engine (workAllowed / spend_credits); this layer turns
 // a paused balance into a friendly top-up prompt instead of a dead end.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { enrichProspect, startSequence, approveMessage, rejectMessage, OutboundError } from "@/lib/outbound/engine";
+import { enrichProspect, startSequence, approveMessage, rejectMessage, OutboundError, introTemplateFor } from "@/lib/outbound/engine";
+import { presetByKey } from "@/lib/outbound/presets";
 import { InsufficientCreditsError } from "@/lib/billing/guards";
 import { getCreditBalance } from "@/lib/billing/credits";
 import { planLaunch, summarizeLaunch, PRICES, type LaunchResult } from "./campaign";
@@ -12,32 +13,37 @@ import { planLaunch, summarizeLaunch, PRICES, type LaunchResult } from "./campai
 export type CampaignStatus = {
   balance: number; prices: typeof PRICES; gmailConnected: boolean;
   prospects: { total: number; sourced: number; inSequence: number; noEmail: number };
-  queue: { id: string; prospect: string; to: string | null; subject: string | null; body: string | null; status: string; approvedAt: string | null; sentAt: string | null; error: string | null; createdAt: string }[];
+  queue: { id: string; prospect: string; to: string | null; subject: string | null; body: string | null; status: string; approvedAt: string | null; sentAt: string | null; error: string | null; createdAt: string; templateKey: string | null; templateLabel: string }[];
+  intro: { key: string; picked: boolean; reason: string; name: string };
   counts: { pending: number; approved: number; sent: number; failed: number; rejected: number };
   plan: ReturnType<typeof planLaunch>;
 };
 
 export async function campaignStatus(service: SupabaseClient, business: { id: string; owner_id: string }): Promise<CampaignStatus> {
-  const [balance, { data: prospects }, { data: msgs }, { data: gmail }] = await Promise.all([
+  const [balance, { data: prospects }, { data: msgs }, { data: gmail }, { data: bizRow }] = await Promise.all([
     getCreditBalance(service, business.id),
     service.from("outbound_prospects").select("id, name, status, email, website").eq("business_id", business.id),
-    service.from("outbound_messages").select("id, prospect_id, to_email, subject, body_text, status, approved_at, sent_at, error, created_at").eq("business_id", business.id).eq("direction", "out").order("created_at", { ascending: false }).limit(60),
+    service.from("outbound_messages").select("id, prospect_id, to_email, subject, body_text, status, approved_at, sent_at, error, created_at, template_key").eq("business_id", business.id).eq("direction", "out").order("created_at", { ascending: false }).limit(60),
     service.from("integration_connections").select("id").eq("provider", "gmail").eq("owner_id", business.owner_id).eq("status", "active").limit(1).maybeSingle(),
+    service.from("businesses").select("id, outbound_intro_template, icp").eq("id", business.id).single(),
   ]);
+  const intro = await introTemplateFor(service, { id: business.id, outbound_intro_template: (bizRow?.outbound_intro_template as string | null) ?? null, icp: (bizRow?.icp as { industries?: string[]; notes?: string | null } | null) ?? null });
+  const templateName = (k: string | null) => !k ? "—" : k === "custom" ? "Your own email" : k.startsWith("saved:") ? "Saved preset" : presetByKey(k)?.name ?? k;
   const ps = prospects ?? []; const names = new Map(ps.map((p) => [p.id as string, p.name as string]));
   const sourced = ps.filter((p) => p.status === "sourced" || p.status === "enriched").length;
-  const queue = (msgs ?? []).map((m) => ({ id: m.id as string, prospect: names.get(m.prospect_id as string) ?? "—", to: m.to_email as string | null, subject: m.subject as string | null, body: m.body_text as string | null, status: m.status as string, approvedAt: m.approved_at as string | null, sentAt: m.sent_at as string | null, error: m.error as string | null, createdAt: m.created_at as string }));
+  const queue = (msgs ?? []).map((m) => ({ id: m.id as string, prospect: names.get(m.prospect_id as string) ?? "—", to: m.to_email as string | null, subject: m.subject as string | null, body: m.body_text as string | null, status: m.status as string, approvedAt: m.approved_at as string | null, sentAt: m.sent_at as string | null, error: m.error as string | null, createdAt: m.created_at as string, templateKey: (m.template_key as string | null) ?? null, templateLabel: templateName((m.template_key as string | null) ?? null) }));
   const c = (s: string) => queue.filter((q) => q.status === s).length;
   return {
     balance, prices: PRICES, gmailConnected: !!gmail,
     prospects: { total: ps.length, sourced, inSequence: ps.filter((p) => p.status === "in_sequence").length, noEmail: ps.filter((p) => p.status === "enriched" && !p.email).length },
     queue, counts: { pending: c("pending_approval"), approved: c("approved"), sent: c("sent"), failed: c("failed"), rejected: c("rejected") },
     plan: planLaunch(sourced, balance, undefined, ps.filter((p) => (p.status === "sourced" || p.status === "enriched") && !!p.email).length),
+    intro: { ...intro, name: templateName(intro.key) },
   };
 }
 
 /** Launch: enrich + draft the first batch. Stops cleanly when credits run out; nothing is ever sent here. */
-export async function launchCampaign(service: SupabaseClient, business: { id: string; owner_id: string }, actor: { id: string; label: string }) {
+export async function launchCampaign(service: SupabaseClient, business: { id: string; owner_id: string }, actor: { id: string; label: string }, compose?: { template: string; custom?: { subject: string; body: string } | null } | null) {
   const balance = await getCreditBalance(service, business.id);
   const { data: candidates } = await service.from("outbound_prospects").select("id, name, email, website, status").eq("business_id", business.id).in("status", ["sourced", "enriched"]).order("created_at", { ascending: true }).limit(40);
   // Prospects that already have an email (uploaded lists) go first: no site read, half the cost, ready now.
@@ -54,7 +60,7 @@ export async function launchCampaign(service: SupabaseClient, business: { id: st
         const r = await enrichProspect(service, p.id, a); email = (r.prospect?.email as string | null) ?? null;
         if (!email) { results.push({ prospectId: p.id, name: p.name, outcome: "no_email" }); continue; }
       }
-      await startSequence(service, p.id, a);
+      await startSequence(service, p.id, a, compose ?? null);
       results.push({ prospectId: p.id, name: p.name, outcome: "drafted" });
     } catch (e) {
       if (e instanceof InsufficientCreditsError || (e instanceof OutboundError && e.code.startsWith("work_paused"))) { results.push({ prospectId: p.id, name: p.name, outcome: "paused", detail: e.message }); break; }

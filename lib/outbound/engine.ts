@@ -15,10 +15,13 @@ import { emitIntegrationEvent } from "@/lib/integrations/events";
 import { alertOwners } from "@/lib/notify/ownerAlerts";
 import { appOrigin } from "@/lib/integrations/providers";
 import { canSend, dueSteps, pickEmail, proposeSlots, toE164, unsubscribeToken, type MessageStatus } from "./gate";
-import { renderTemplate, unsubscribeFooter, DEFAULT_SEQUENCE_STEPS, type TemplateKey, type TemplateVars } from "./templates";
+import { renderSource, unsubscribeFooter, DEFAULT_SEQUENCE_STEPS, type TemplateKey, type TemplateVars } from "./templates";
 
 export type Actor = { kind: "user" | "agent" | "system"; id: string | null; label: string };
-export class OutboundError extends Error { constructor(public code: string, message: string, public status = 400) { super(message); } }
+import { OutboundError } from "./errors";
+export { OutboundError };
+import { resolveSource } from "./library";
+import { recommendIntro, resolveStepTemplate } from "./presets";
 
 const now = () => new Date().toISOString();
 const secret = () => process.env.CALENDAR_TOKEN_ENCRYPTION_KEY || "sfb-outbound";
@@ -29,9 +32,9 @@ async function event(service: SupabaseClient, e: { businessId: string; prospectI
 }
 
 async function business(service: SupabaseClient, businessId: string) {
-  const { data } = await service.from("businesses").select("id, legal_name, owner_id, primary_category, plan_key, outbound_offer_line, outbound_time_zone, agent_overseer_id").eq("id", businessId).maybeSingle();
+  const { data } = await service.from("businesses").select("id, legal_name, owner_id, primary_category, plan_key, outbound_offer_line, outbound_time_zone, agent_overseer_id, outbound_intro_template, icp").eq("id", businessId).maybeSingle();
   if (!data) throw new OutboundError("business_not_found", "Business not found.", 404);
-  return data as { id: string; legal_name: string; owner_id: string; primary_category: string | null; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string; agent_overseer_id: string | null };
+  return data as { id: string; legal_name: string; owner_id: string; primary_category: string | null; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string; agent_overseer_id: string | null; outbound_intro_template: string | null; icp: { industries?: string[]; notes?: string | null } | null };
 }
 
 async function guard(service: SupabaseClient, businessId: string) {
@@ -102,7 +105,7 @@ async function senderVars(service: SupabaseClient, b: Awaited<ReturnType<typeof 
   return { sender_name: (owner?.full_name as string) || (owner?.email as string) || b.legal_name, sender_company: b.legal_name, sender_category: b.primary_category, offer_line: b.outbound_offer_line };
 }
 
-export async function draftMessage(service: SupabaseClient, input: { prospectId: string; template: TemplateKey; sequenceId?: string | null; step?: number; slots?: string | null; bookingTime?: string | null; meetUrl?: string | null; inReplyTo?: string | null }, actor: Actor) {
+export async function draftMessage(service: SupabaseClient, input: { prospectId: string; template: TemplateKey; custom?: { subject: string; body: string } | null; sequenceId?: string | null; step?: number; slots?: string | null; bookingTime?: string | null; meetUrl?: string | null; inReplyTo?: string | null }, actor: Actor) {
   const { data: p } = await service.from("outbound_prospects").select("*").eq("id", input.prospectId).maybeSingle();
   if (!p) throw new OutboundError("not_found", "Prospect not found.", 404);
   const b = await business(service, p.business_id);
@@ -111,33 +114,44 @@ export async function draftMessage(service: SupabaseClient, input: { prospectId:
   const { data: sup } = await service.from("outbound_suppressions").select("id").eq("business_id", b.id).eq("email", p.email.toLowerCase()).maybeSingle();
   if (sup) throw new OutboundError("suppressed", "This address unsubscribed or bounced — the agent won't write to it.");
   const vars: TemplateVars = { company: p.name, contact_name: p.contact_name, city: p.city, category: p.category, ...(await senderVars(service, b)), slots: input.slots ?? null, booking_time: input.bookingTime ?? null, meet_url: input.meetUrl ?? null };
+  // Source: a system preset, the business's saved preset ("saved:<id>") or the customer's own email ("custom"). Stored in variable form so it can be saved as a preset later.
+  const src = await resolveSource(service, b.id, input.template, input.custom ?? null);
   let rendered: { subject: string; body: string };
-  try { rendered = renderTemplate(input.template, vars); } catch (e) { throw new OutboundError("missing_facts", e instanceof Error ? e.message : "Missing facts."); }
-  const { data: m, error } = await service.from("outbound_messages").insert({ business_id: b.id, prospect_id: p.id, sequence_id: input.sequenceId ?? null, step: input.step ?? 0, direction: "out", to_email: p.email, subject: rendered.subject, body_text: rendered.body, template_key: input.template, status: "pending_approval", approval_requested_at: now(), in_reply_to: input.inReplyTo ?? null, created_by: actor.label }).select("*").single();
+  try { rendered = renderSource(src, vars); } catch (e) { throw new OutboundError("missing_facts", e instanceof Error ? e.message : "Missing facts."); }
+  const { data: m, error } = await service.from("outbound_messages").insert({ business_id: b.id, prospect_id: p.id, sequence_id: input.sequenceId ?? null, step: input.step ?? 0, direction: "out", to_email: p.email, subject: rendered.subject, body_text: rendered.body, template_key: src.label, template_source: { subject: src.subject, body: src.body, label: src.label }, status: "pending_approval", approval_requested_at: now(), in_reply_to: input.inReplyTo ?? null, created_by: actor.label }).select("*").single();
   if (error) throw new Error(error.message);
   const tx = await chargeAction(service, { businessId: b.id, actionKey: "outbound.message_written", outcome: "completed", description: `Message written — ${p.name} (${input.template})`, idempotencyKey: `outbound:${m.id}:write`, actorId: actor.kind === "user" ? actor.id : null, resultRef: m.id });
   await service.from("outbound_messages").update({ credit_tx_id: tx.id }).eq("id", m.id);
-  await event(service, { businessId: b.id, prospectId: p.id, messageId: m.id, kind: "approval_requested", actor, payload: { template: input.template, credit_tx: tx.id } });
+  await event(service, { businessId: b.id, prospectId: p.id, messageId: m.id, kind: "approval_requested", actor, payload: { template: src.label, credit_tx: tx.id } });
   // Owners (and the assigned overseer): something is waiting for a human. SMS is coalesced to one per 10 minutes per person.
   const { data: ownerRows } = await service.from("users").select("id").eq("team_role", "owner");
   const ids = Array.from(new Set([...(ownerRows ?? []).map((r) => r.id as string), ...(b.agent_overseer_id ? [b.agent_overseer_id] : [])]));
   await alertOwners(service, {
     trigger: "approval_pending", userIds: ids,
-    sms: `Approval needed: ${b.legal_name} -> ${p.name} (${input.template}). Review at sfbconnect.com/team/outbound`,
-    email: { subject: `Approval needed: ${b.legal_name} → ${p.name}`, html: `<p>An outbound draft for <strong>${p.name}</strong> (${b.legal_name}, template ${input.template}) is waiting for approval.</p><p><a href="https://www.sfbconnect.com/team/outbound">Open the approval queue</a></p>`, text: `An outbound draft for ${p.name} (${b.legal_name}, ${input.template}) is waiting for approval: https://www.sfbconnect.com/team/outbound` },
-    inApp: { type: "approval_pending", title: `Approval needed: ${p.name}`, body: `${b.legal_name} · ${input.template}`, actionUrl: "/team/outbound", actionLabel: "Review" },
+    sms: `Approval needed: ${b.legal_name} -> ${p.name} (${src.label}). Review at sfbconnect.com/team/outbound`,
+    email: { subject: `Approval needed: ${b.legal_name} → ${p.name}`, html: `<p>An outbound draft for <strong>${p.name}</strong> (${b.legal_name}, template ${src.label}) is waiting for approval.</p><p><a href="https://www.sfbconnect.com/team/outbound">Open the approval queue</a></p>`, text: `An outbound draft for ${p.name} (${b.legal_name}, ${src.label}) is waiting for approval: https://www.sfbconnect.com/team/outbound` },
+    inApp: { type: "approval_pending", title: `Approval needed: ${p.name}`, body: `${b.legal_name} · ${src.label}`, actionUrl: "/team/outbound", actionLabel: "Review" },
     detail: { message_id: m.id, business_id: b.id },
   });
   return m;
 }
 
-/** Start the default sequence: drafts step 0 now; later steps are drafted by the cron when due (each one needs its own approval). */
-export async function startSequence(service: SupabaseClient, prospectId: string, actor: Actor) {
+/** The intro this business uses: its explicit pick, else the deterministic recommendation (people-list / consumer ICP → consumer intro). */
+export async function introTemplateFor(service: SupabaseClient, b: { id: string; outbound_intro_template: string | null; icp: { industries?: string[]; notes?: string | null } | null }): Promise<{ key: string; picked: boolean; reason: string }> {
+  if (b.outbound_intro_template) return { key: b.outbound_intro_template, picked: true, reason: "Chosen by you." };
+  const { data: prospects } = await service.from("outbound_prospects").select("name, contact_name, website, source").eq("business_id", b.id).in("status", ["sourced", "enriched"]).limit(200);
+  const r = recommendIntro((prospects ?? []) as { source?: string | null; website?: string | null; contact_name?: string | null; name: string }[], b.icp);
+  return { key: r.key, picked: false, reason: r.reason };
+}
+
+/** Start the default sequence: drafts step 0 now (the chosen intro, or a one-off override such as a custom email); later steps are drafted by the cron when due (each one needs its own approval). */
+export async function startSequence(service: SupabaseClient, prospectId: string, actor: Actor, override?: { template: string; custom?: { subject: string; body: string } | null } | null) {
   const { data: p } = await service.from("outbound_prospects").select("id, business_id").eq("id", prospectId).maybeSingle();
   if (!p) throw new OutboundError("not_found", "Prospect not found.", 404);
   let { data: seq } = await service.from("outbound_sequences").select("id").eq("business_id", p.business_id).eq("name", "Default 3-step").maybeSingle();
   if (!seq) { const ins = await service.from("outbound_sequences").insert({ business_id: p.business_id, name: "Default 3-step", steps: DEFAULT_SEQUENCE_STEPS }).select("id").single(); seq = ins.data; }
-  const m = await draftMessage(service, { prospectId, template: "intro", sequenceId: seq!.id, step: 0 }, actor);
+  const intro = override ?? { template: (await introTemplateFor(service, await business(service, p.business_id))).key, custom: null };
+  const m = await draftMessage(service, { prospectId, template: intro.template, custom: intro.custom ?? null, sequenceId: seq!.id, step: 0 }, actor);
   await service.from("outbound_prospects").update({ status: "in_sequence", updated_at: now() }).eq("id", prospectId);
   return m;
 }
@@ -248,6 +262,7 @@ export async function syncReplies(service: SupabaseClient, businessId: string): 
 export async function advanceSequences(service: SupabaseClient, businessId: string, actor: Actor): Promise<{ drafted: number }> {
   const { data: prospects } = await service.from("outbound_prospects").select("id").eq("business_id", businessId).eq("status", "in_sequence");
   let drafted = 0;
+  const introKey = (prospects ?? []).length ? (await introTemplateFor(service, await business(service, businessId))).key : "intro";
   for (const p of prospects ?? []) {
     const { data: msgs } = await service.from("outbound_messages").select("sequence_id, step, status, sent_at, created_at").eq("prospect_id", p.id).eq("direction", "out").not("sequence_id", "is", null).order("created_at");
     if (!msgs?.length) continue;
@@ -258,7 +273,7 @@ export async function advanceSequences(service: SupabaseClient, businessId: stri
     const due = dueSteps(seq.steps as { day: number; template: string }[], new Date(first.sent_at), consumed);
     for (const i of due) {
       const step = (seq.steps as { day: number; template: TemplateKey }[])[i];
-      try { await draftMessage(service, { prospectId: p.id, template: step.template, sequenceId: seqId, step: i }, actor); drafted++; }
+      try { await draftMessage(service, { prospectId: p.id, template: resolveStepTemplate(step.template, introKey), sequenceId: seqId, step: i }, actor); drafted++; }
       catch (e) { if (!(e instanceof OutboundError)) throw e; /* no credits / suppressed → skip, surfaced in events */ }
     }
   }

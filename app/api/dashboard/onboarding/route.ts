@@ -11,6 +11,10 @@ import type { ImportField } from "@/lib/outbound/csvImport";
 import { activateSequence, previewSequence, cadence, type CadenceKey } from "@/lib/onboarding/automations";
 import { startDfyCheckout } from "@/lib/billing/dfy";
 import { campaignStatus, launchCampaign, approveCampaign, rejectCampaignMessage } from "@/lib/onboarding/campaignRun";
+import { listLibrary, pickIntro, saveTemplate, archiveTemplate, resolveSource, senderVarsFor, sampleProspect } from "@/lib/outbound/library";
+import { renderSource } from "@/lib/outbound/templates";
+import { assistEdit, assistConfigured, ASSIST_INSTRUCTIONS, type AssistKey } from "@/lib/outbound/assist";
+import { OutboundError } from "@/lib/outbound/errors";
 import { appOrigin } from "@/lib/agent/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -204,8 +208,36 @@ export async function POST(req: NextRequest) {
     } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Checkout failed." }, { status: 502 }); }
   }
   if (body.action === "campaign_status") return NextResponse.json({ ok: true, status: await campaignStatus(service, await bizFull()) });
+  // ---------- Template library + custom emails (2026-10-12) ----------
+  if (body.action === "template_library") return NextResponse.json({ ok: true, library: await listLibrary(service, who.businessId), assist: { configured: assistConfigured(), instructions: ASSIST_INSTRUCTIONS } });
+  if (body.action === "template_pick") {
+    const key = typeof body.data?.key === "string" && body.data.key ? body.data.key : null;
+    try { await pickIntro(service, who.businessId, key); return NextResponse.json({ ok: true, key }); }
+    catch (e) { if (e instanceof OutboundError) return NextResponse.json({ error: e.message, code: e.code }, { status: e.status }); throw e; }
+  }
+  if (body.action === "template_preview") {
+    try {
+      const src = await resolveSource(service, who.businessId, typeof body.data?.key === "string" ? body.data.key : "custom", body.data?.custom as { subject: string; body: string } | undefined);
+      const [sender, sample] = await Promise.all([senderVarsFor(service, who.businessId), sampleProspect(service, who.businessId)]);
+      const rendered = renderSource(src, { company: sample.company, contact_name: sample.contact_name, city: sample.city, category: sample.category, sender_name: sender.sender_name, sender_company: sender.sender_company, sender_category: sender.sender_category, offer_line: sender.offer_line });
+      return NextResponse.json({ ok: true, preview: rendered, sample });
+    } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Can't preview." }, { status: e instanceof OutboundError ? e.status : 400 }); }
+  }
+  if (body.action === "template_assist") {
+    const d = body.data ?? {}; const draft = { subject: String(d.subject ?? ""), body: String(d.body ?? "") };
+    const ins = ASSIST_INSTRUCTIONS.some((i) => i.key === d.instruction) ? (d.instruction as AssistKey) : "shorter";
+    try { return NextResponse.json({ ok: true, edited: await assistEdit(draft, ins) }); }
+    catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Editing help failed." }, { status: assistConfigured() ? 502 : 503 }); }
+  }
+  if (body.action === "template_save") {
+    const { data: { user } } = await createSupabaseServerClient().auth.getUser();
+    try { const t = await saveTemplate(service, who.businessId, { name: String(body.data?.name ?? ""), messageId: typeof body.data?.message_id === "string" ? body.data.message_id : null, subject: typeof body.data?.subject === "string" ? body.data.subject : undefined, body: typeof body.data?.body === "string" ? body.data.body : undefined, category: body.data?.category === "saved" ? "saved" : "custom" }, { label: user?.email ?? "customer" }); return NextResponse.json({ ok: true, template: t }); }
+    catch (e) { if (e instanceof OutboundError) return NextResponse.json({ error: e.message, code: e.code }, { status: e.status }); throw e; }
+  }
+  if (body.action === "template_archive") { if (typeof body.data?.id === "string") await archiveTemplate(service, who.businessId, body.data.id); return NextResponse.json({ ok: true }); }
+
   if (body.action === "campaign_launch") {
-    const r = await launchCampaign(service, await bizFull(), await meLabel());
+    const r = await launchCampaign(service, await bizFull(), await meLabel(), typeof body.data?.template === "string" && body.data.template ? { template: body.data.template, custom: (body.data.custom as { subject: string; body: string } | undefined) ?? null } : null);
     return NextResponse.json({ ok: true, ...r });
   }
   if (body.action === "campaign_approve") {

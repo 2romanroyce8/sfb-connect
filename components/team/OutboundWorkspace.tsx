@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import CsvImport from "@/components/outbound/CsvImport";
+import ComposePicker, { type Compose } from "@/components/outbound/ComposePicker";
 
 type Biz = { id: string; legal_name: string; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string };
 type Prospect = { id: string; name: string; contact_name: string | null; website: string | null; email: string | null; email_source: string | null; phone_e164: string | null; city: string | null; state: string | null; category: string | null; status: string; enriched_at: string | null; last_contacted_at: string | null; source?: string | null; import_id?: string | null };
 type Import = { id: string; filename: string; uploaded_by: string; counts: { imported?: number; skipped?: number; total?: number }; created_at: string };
-type Msg = { id: string; prospect_id: string; direction: "out" | "in"; step: number; to_email: string | null; subject: string | null; body_text: string | null; template_key: string | null; status: string; approved_by: string | null; approved_at: string | null; sent_at: string | null; opened_at: string | null; replied_at: string | null; rejected_reason: string | null; error: string | null; created_at: string; created_by: string };
+type Msg = { id: string; prospect_id: string; direction: "out" | "in"; step: number; to_email: string | null; subject: string | null; body_text: string | null; template_key: string | null; template_source?: { subject: string; body: string; label: string } | null; status: string; approved_by: string | null; approved_at: string | null; sent_at: string | null; opened_at: string | null; replied_at: string | null; rejected_reason: string | null; error: string | null; created_at: string; created_by: string };
 type Ev = { id: string; kind: string; actor: string; payload: Record<string, unknown>; prospect_id: string | null; created_at: string };
 type Booking = { id: string; prospect_id: string; start_at: string; end_at: string; meet_url: string | null; status: string; calendar_event_id: string | null };
 type Finding = { id: string; business_name: string; website: string | null; city: string | null; state: string | null; category: string; identity_label: string };
@@ -34,6 +35,7 @@ export default function OutboundWorkspace() {
   const [newP, setNewP] = useState({ name: "", website: "", email: "", contact_name: "" });
   const [offer, setOffer] = useState("");
   const [slots, setSlots] = useState<{ start: string; end: string }[] | null>(null);
+  const [compose, setCompose] = useState<Compose | null>(null); const [saveFor, setSaveFor] = useState<{ id: string; name: string } | null>(null);
 
   const load = useCallback(async (b?: string | null) => {
     const r = await fetch(`/api/team/outbound${b ? `?business=${b}` : ""}`, { cache: "no-store" });
@@ -81,6 +83,11 @@ export default function OutboundWorkspace() {
       <div className="flex gap-2">{(["queue", "prospects", "activity"] as const).map((t) => <button key={t} onClick={() => setTab(t)} className={`${btn} ${tab === t ? "bg-white text-black" : "text-[#A1A1A6]"}`} style={tab === t ? undefined : ghostStyle}>{t === "queue" ? `Approval queue (${pending.length})` : t === "prospects" ? `Prospects (${s.prospects.length})` : "Activity"}</button>)}</div>
 
       {tab === "queue" && (
+        <div className="flex flex-col gap-4">
+        <details className="rounded-[12px] p-4" style={card}><summary className="cursor-pointer text-[12.5px] text-[#A1A1A6]">Compose &amp; templates — what new sequences say{compose ? ` (current: ${compose.label})` : ""}</summary>
+          <div className="mt-3"><ComposePicker target={{ kind: "team", businessId: s.business.id }} dark onChange={setCompose} /></div>
+          <div className="mt-3 text-[11.5px] text-[#6E6E73]">“Start sequence” on the Prospects tab uses the intro chosen here (or your own email if “Write my own” is selected and filled in).</div>
+        </details>
         <div className="grid lg:grid-cols-[1fr_1.2fr] gap-4">
           <div className="flex flex-col gap-2">
             {pending.length === 0 && <div className="rounded-[12px] p-5 text-[13px] text-[#6E6E73]" style={card}>Nothing waiting. Drafts land here the moment the agent (or a sequence step) writes one.</div>}
@@ -112,6 +119,7 @@ export default function OutboundWorkspace() {
             )}
           </div>
         </div>
+        </div>
       )}
 
       {tab === "prospects" && (
@@ -141,7 +149,7 @@ export default function OutboundWorkspace() {
                   <td className="px-4 py-2.5"><span className="text-[11px] uppercase tracking-wide" style={{ color: STATUS[p.status] ?? "#A1A1A6" }}>{p.status.replace("_", " ")}</span></td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <button onClick={() => act({ action: "enrich", prospect_id: p.id }, `en-${p.id}`)} disabled={busy === `en-${p.id}` || !p.website} className={ghost} style={ghostStyle} title="Reads their site for email/phone/city · 2 credits (0 if nothing found)">{busy === `en-${p.id}` ? "Reading…" : "Enrich"}</button>{" "}
-                    <button onClick={() => act({ action: "start_sequence", prospect_id: p.id }, `seq-${p.id}`)} disabled={busy === `seq-${p.id}` || !p.email || p.status === "in_sequence" || p.status === "unsubscribed"} className={ghost} style={ghostStyle} title="Drafts the intro (2 credits) → approval queue; follow-ups draft on day 3 and 7">Start sequence</button>{" "}
+                    <button onClick={() => act({ action: "start_sequence", prospect_id: p.id, ...(compose && compose.mode !== "agent" && !(compose.mode === "custom" && (!compose.custom?.subject.trim() || !compose.custom?.body.trim())) ? { template: compose.template, custom: compose.custom } : {}) }, `seq-${p.id}`)} disabled={busy === `seq-${p.id}` || !p.email || p.status === "in_sequence" || p.status === "unsubscribed"} className={ghost} style={ghostStyle} title="Drafts the intro (2 credits) → approval queue; follow-ups draft on day 3 and 7">Start sequence</button>{" "}
                     <button onClick={async () => { const r = await act({ action: "slots" }, `sl-${p.id}`); if (r?.slots) setSlots(r.slots.map((x: { start: string; end: string }) => ({ ...x, prospect: p.id })) as never); }} disabled={busy === `sl-${p.id}`} className={ghost} style={ghostStyle} title="Open slots on the owner's calendar">Book…</button>
                   </td>
                 </tr>
@@ -158,7 +166,8 @@ export default function OutboundWorkspace() {
       {tab === "activity" && (
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[#F5F5F7]">Messages</div>
-            <ul className="divide-y divide-white/[0.06]">{s.messages.slice(0, 60).map((m) => <li key={m.id} className="px-4 py-2.5 text-[12.5px]"><div className="flex items-center justify-between gap-3"><span className="text-[#F5F5F7] truncate">{m.direction === "in" ? "↩ " : ""}{byId[m.prospect_id]?.name ?? "Prospect"} <span className="text-[#6E6E73]">· {m.subject}</span></span><span className="text-[10.5px] uppercase tracking-wide shrink-0" style={{ color: STATUS[m.status] ?? "#A1A1A6" }}>{m.status.replace("_", " ")}</span></div><div className="text-[11px] text-[#6E6E73]">{m.sent_at ? `sent ${fmt(m.sent_at)}` : fmt(m.created_at)}{m.opened_at ? ` · opened ${fmt(m.opened_at)}` : ""}{m.replied_at ? ` · replied ${fmt(m.replied_at)}` : ""}{m.rejected_reason ? ` · ${m.rejected_reason}` : ""}{m.error ? ` · ${m.error}` : ""}</div></li>)}</ul></div>
+            <ul className="divide-y divide-white/[0.06]">{s.messages.slice(0, 60).map((m) => <li key={m.id} className="px-4 py-2.5 text-[12.5px]"><div className="flex items-center justify-between gap-3"><span className="text-[#F5F5F7] truncate">{m.direction === "in" ? "↩ " : ""}{byId[m.prospect_id]?.name ?? "Prospect"} <span className="text-[#6E6E73]">· {m.subject}</span></span><span className="text-[10.5px] uppercase tracking-wide shrink-0" style={{ color: STATUS[m.status] ?? "#A1A1A6" }}>{m.status.replace("_", " ")}</span></div><div className="text-[11px] text-[#6E6E73]">{m.sent_at ? `sent ${fmt(m.sent_at)}` : fmt(m.created_at)}{m.opened_at ? ` · opened ${fmt(m.opened_at)}` : ""}{m.replied_at ? ` · replied ${fmt(m.replied_at)}` : ""}{m.rejected_reason ? ` · ${m.rejected_reason}` : ""}{m.error ? ` · ${m.error}` : ""}{m.template_key ? ` · ${m.template_key}` : ""}{m.direction === "out" && (m.status === "sent" || m.status === "approved") && !m.template_key?.startsWith("saved:") ? <> · <button onClick={() => setSaveFor({ id: m.id, name: "" })} className="underline text-[#A1A1A6]">save as preset</button></> : null}</div></li>)}</ul>
+            {saveFor && <div className="px-4 py-3 flex items-center gap-2 flex-wrap" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}><input autoFocus value={saveFor.name} onChange={(e) => setSaveFor({ ...saveFor, name: e.target.value })} placeholder="Name this preset" className="h-[32px] rounded-[8px] px-3 text-[12.5px] bg-[#0F0F0F] text-[#F5F5F7] outline-none" style={ghostStyle} /><button onClick={async () => { const r = await act({ action: "template_save", name: saveFor.name, message_id: saveFor.id, category: "saved" }, "tsave"); if (r) setSaveFor(null); }} disabled={!saveFor.name.trim() || busy === "tsave"} className={primary}>{busy === "tsave" ? "Saving…" : "Save"}</button><button onClick={() => setSaveFor(null)} className={ghost} style={ghostStyle}>Cancel</button></div>}</div>
           <div className="flex flex-col gap-4">
             <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[#F5F5F7]">Bookings</div><ul className="divide-y divide-white/[0.06]">{s.bookings.length === 0 ? <li className="px-4 py-3 text-[12.5px] text-[#6E6E73]">None yet.</li> : s.bookings.map((b) => <li key={b.id} className="px-4 py-2.5 text-[12.5px] text-[#F5F5F7]">{byId[b.prospect_id]?.name ?? "Prospect"} · {fmt(b.start_at)}{b.meet_url ? <a href={b.meet_url} target="_blank" rel="noopener noreferrer" className="ml-2 underline text-[#A1A1A6]">Meet</a> : null}<span className="ml-2 text-[10.5px] uppercase text-[#6E6E73]">{b.status}</span></li>)}</ul></div>
             <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[#F5F5F7]">Event log</div><ul className="divide-y divide-white/[0.06] max-h-[420px] overflow-auto">{s.events.map((e) => <li key={e.id} className="px-4 py-2 text-[12px]"><span className="text-[#F5F5F7]">{e.kind}</span> <span className="text-[#6E6E73]">· {e.actor} · {fmt(e.created_at)}</span></li>)}</ul></div>

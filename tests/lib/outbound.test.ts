@@ -61,7 +61,9 @@ test("templates render from facts only and refuse when a required fact is missin
   assert.throws(() => renderTemplate("booking_confirmation", { ...v, booking_time: null }), /booking_time/);
   const noName = renderTemplate("follow_up_1", { ...v, contact_name: null });
   assert.match(noName.body, /^Hi Hallmark Property Management team,/);
-  for (const t of Object.values(TEMPLATES)) assert.ok(t.requires.includes("company") && t.requires.includes("sender_name"));
+  // Business-facing templates must know the company; consumer presets deliberately do not (the person is the prospect). Every template needs the sender.
+  for (const t of Object.values(TEMPLATES)) assert.ok(t.requires.includes("sender_name") && t.requires.includes("sender_company"), `${t.key} must require the sender`);
+  for (const k of ["intro", "follow_up_1", "follow_up_2", "reply_thanks", "booking_confirmation"]) assert.ok(TEMPLATES[k].requires.includes("company"), `${k} must require company`);
 });
 
 test("retry rule: a failed send keeps its human approval, so the gate passes again once status is reset to approved", () => {
