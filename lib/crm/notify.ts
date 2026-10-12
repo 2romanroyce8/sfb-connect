@@ -20,7 +20,8 @@ export type NotificationType =
   | "callback_sla"
   | "credits_warning"
   | "approval_pending"
-  | "sms_test";
+  | "sms_test"
+  | "google_gate";
 
 // Every call here is a real CRM event that already happened -- reassigning a
 // lead, booking/rescheduling/cancelling a meeting, a Google sync failure.

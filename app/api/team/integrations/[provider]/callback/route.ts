@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
+import { recordAccessDenied, markConnected } from "@/lib/google/clearance";
+import { appOrigin } from "@/lib/agent/auth";
 import { OAUTH_PROVIDERS, exchangeCode, isOAuthProviderKey } from "@/lib/integrations/providers";
 import { saveConnection } from "@/lib/integrations/connections";
 
@@ -16,7 +18,15 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
   const cookieName = `oauth_state_${p.key}`;
   const clear = (res: NextResponse) => { res.cookies.set(cookieName, "", { maxAge: 0, path: "/" }); res.cookies.set(`oauth_return_${p.key}`, "", { maxAge: 0, path: "/" }); return res; };
 
-  if (q.get("error")) { back.searchParams.set("error", q.get("error") === "access_denied" ? `${p.name} connection was cancelled.` : `${p.name}: ${q.get("error_description") || q.get("error")}`); return clear(NextResponse.redirect(back)); }
+  if (q.get("error")) {
+    if (p.key === "gmail" && q.get("error") === "access_denied" && (retCookie === "onboarding" || retCookie === "dashboard")) {
+      // Backstop (2026-10-12): customer hit Google's testing-mode block. Friendly page, team alerted, Google's text never shown.
+      const { data: { user: denied } } = await createSupabaseServerClient().auth.getUser();
+      await recordAccessDenied(createSupabaseServiceClient(), denied?.id ?? null, appOrigin(req));
+      return clear(NextResponse.redirect(new URL("/dashboard/google-not-cleared", req.url)));
+    }
+    back.searchParams.set("error", q.get("error") === "access_denied" ? `${p.name} connection was cancelled.` : `${p.name}: ${q.get("error_description") || q.get("error")}`); return clear(NextResponse.redirect(back));
+  }
   const code = q.get("code"), state = q.get("state"), cookieState = req.cookies.get(cookieName)?.value;
   if (!code || !state || !cookieState || state !== cookieState) { back.searchParams.set("error", `${p.name} sign-in couldn't be verified — please try connecting again.`); return clear(NextResponse.redirect(back)); }
 
@@ -35,6 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
     if (meta.incoming_webhook && typeof meta.incoming_webhook === "object") { const iw = meta.incoming_webhook as Record<string, unknown>; delete iw.url; } // the Slack webhook URL is a secret
     await saveConnection(p.key, user.id, token, label, meta);
     back.searchParams.set("connected", `${p.name}${label ? ` (${label})` : ""}`);
+    if (p.key === "gmail" && (retCookie === "onboarding" || retCookie === "dashboard")) await markConnected(createSupabaseServiceClient(), user.id, label).catch(() => undefined);
   } catch (err) {
     back.searchParams.set("error", err instanceof Error ? err.message : `Could not connect ${p.name}.`);
   }

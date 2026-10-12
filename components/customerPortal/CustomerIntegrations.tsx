@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import GoogleGate from "./GoogleGate";
 
 type Item = { key: string; name: string; description: string; logo: string | null; status: "live" | "needs_setup" | "planned"; configured: boolean; connected: { account_label: string | null; connected_at: string; status: "active" | "error"; last_error: string | null } | null };
 
@@ -45,6 +46,8 @@ export default function CustomerIntegrations() {
           <div className="shrink-0">
             {i.connected ? (
               <button onClick={() => disconnect(i.key, i.name)} className="text-[12.5px] font-medium text-red-600 border border-red-200 rounded-full px-3 py-1.5">Disconnect</button>
+            ) : i.configured && i.key === "gmail" ? (
+              <div className="max-w-[360px]"><GoogleGate connectHref={`/api/team/integrations/gmail/connect?return=dashboard`} label="Connect" connected={false} account={null} /></div>
             ) : i.configured ? (
               <a href={`/api/team/integrations/${i.key}/connect?return=dashboard`} className="text-[12.5px] font-semibold text-white bg-neutral-900 rounded-full px-4 py-2 inline-block">Connect</a>
             ) : (

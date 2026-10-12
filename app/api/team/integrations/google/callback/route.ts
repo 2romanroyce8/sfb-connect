@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { connectGoogleCalendar } from "@/lib/crm/googleCalendar";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { recordAccessDenied, markConnected } from "@/lib/google/clearance";
+import { appOrigin } from "@/lib/agent/auth";
 import { GET as genericCallback } from "@/app/api/team/integrations/[provider]/callback/route";
 
 export async function GET(req: NextRequest) {
@@ -16,6 +19,13 @@ export async function GET(req: NextRequest) {
   const googleError = req.nextUrl.searchParams.get("error");
 
   if (googleError) {
+    if (googleError === "access_denied" && (ret === "onboarding" || ret === "dashboard")) {
+      // Backstop (2026-10-12): a customer reached Google's consent screen before being cleared. Never show Google's text;
+      // log + alert the team, send them to the friendly holding page.
+      const { data: { user: denied } } = await createSupabaseServerClient().auth.getUser();
+      await recordAccessDenied(createSupabaseServiceClient(), denied?.id ?? null, appOrigin(req));
+      const res = NextResponse.redirect(new URL("/dashboard/google-not-cleared", req.url)); res.cookies.set("google_oauth_state", "", { maxAge: 0, path: "/" }); res.cookies.set("google_oauth_return", "", { maxAge: 0, path: "/" }); return res;
+    }
     url.searchParams.set("error", googleError === "access_denied" ? "Google connection was cancelled." : googleError);
     return NextResponse.redirect(url);
   }
@@ -33,6 +43,7 @@ export async function GET(req: NextRequest) {
   try {
     const { email } = await connectGoogleCalendar(user.id, code);
     url.searchParams.set("connected", email);
+    if (ret === "onboarding" || ret === "dashboard") await markConnected(createSupabaseServiceClient(), user.id, email).catch(() => undefined);
   } catch (err) {
     url.searchParams.set("error", err instanceof Error ? err.message : "Could not connect Google Calendar.");
   }

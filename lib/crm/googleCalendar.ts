@@ -36,6 +36,7 @@ export function getGoogleOAuthConfig() {
   };
 }
 
+// ⚠️ Google app stays in TESTING MODE on purpose (bridge strategy, 2026-10-12) — customers are gated by lib/google/gate.ts. Do not publish to 'fix'.
 export function buildGoogleAuthUrl(state: string) {
   const { clientId, redirectUri } = getGoogleOAuthConfig();
   const params = new URLSearchParams({

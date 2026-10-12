@@ -6,6 +6,7 @@ import { listConnectionSummaries } from "@/lib/integrations/connections";
 import { OAUTH_PROVIDERS, isOAuthProviderKey, oauthConfigured } from "@/lib/integrations/providers";
 import IntegrationsGrid, { type GridCard } from "@/components/team/IntegrationsGrid";
 import Link from "next/link";
+import GoogleGatePanel from "@/components/team/GoogleGatePanel";
 
 // The page IS the icon grid (Roman, 2026-10-10): one card per integration,
 // state + single action at a glance. Blocker/setup details live only inside
@@ -71,6 +72,12 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
         <div className="text-[20px] font-semibold text-[#F5F5F7]">Integrations</div>
         <div className="text-[13px] text-[#6E6E73] mt-1">What goes live here is what the public site shows.</div>
       </div>
+
+      {isOwner && (
+        <div className="mb-6 max-w-[900px] rounded-[12px] p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <GoogleGatePanel />
+        </div>
+      )}
 
       {searchParams.error && (
         <div className="mb-4 max-w-[900px] rounded-[10px] p-3 text-[12.5px] text-[#FF453A]" style={{ background: "rgba(255,69,58,0.08)" }}>

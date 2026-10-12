@@ -61,6 +61,10 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderKey, OAuthProvider> = {
     accountLabel: async (t) => (typeof t.locationId === "string" ? `Location ${t.locationId}` : null),
     consoleUrl: "https://marketplace.gohighlevel.com/",
   },
+  // ⚠️ GOOGLE APP STAYS IN TESTING MODE ON PURPOSE until verification completes (bridge strategy, 2026-10-12).
+  // Testing mode admits only listed test users (cap 100); customers are gated by lib/google/gate.ts so they never
+  // see Google's "Access blocked". Do NOT "fix" a blocked customer by publishing the app — gmail.modify is a
+  // restricted scope and publishing without verification breaks every connection. See docs/runbooks/google-gate.md.
   gmail: {
     key: "gmail", name: "Gmail",
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
