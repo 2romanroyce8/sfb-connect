@@ -37,7 +37,9 @@ All tokens: `integration_connections`, AES-256-GCM via `lib/crm/tokenCrypto.ts` 
 Auth = API key (`X-API-Key`, minted on the team page, SHA-256 stored). Endpoints for the Zapier app: `GET /api/zapier/auth`, `POST/DELETE /api/zapier/subscribe` (REST hooks `{event, target_url}`), `GET /api/zapier/sample/<event>`. Events: `task.created`, `task.result_posted`, `prospect_feed.run_completed`, `credits.charged`. Build the Zapier app in the Developer Platform pointing at those three URLs; it does not need to be public to use it.
 
 ## Gmail
-`lib/integrations/gmail.ts`: `sendGmail`, `listGmailMessages`, `getGmailMessage` on the connected member's own mailbox. Team API: `GET /api/team/integrations/gmail/messages[?q=|?id=]`, `POST /api/team/integrations/gmail/send`. A human triggers sends; agent drafts travel through the task queue and are sent after approval. Transactional product mail stays on Resend.
+**Company account:** since 2026-10-12 the owner's Gmail and Google Calendar connections are **sfbconnects@gmail.com** (test user on the OAuth app; Gmail API enabled on project 612333806040). Switching accounts is Disconnect → Connect on each card as the signed-in owner — no code or env change (see `outbound.md` → Sending account).
+
+`lib/integrations/gmail.ts`: `sendGmail` (Subject RFC 2047-encoded when non-ASCII), `listGmailMessages`, `getGmailMessage` on the connected member's own mailbox. Team API: `GET /api/team/integrations/gmail/messages[?q=|?id=]`, `POST /api/team/integrations/gmail/send`. A human triggers sends; agent drafts travel through the task queue and are sent after approval. Transactional product mail stays on Resend.
 
 ## Brand assets
 `lib/integrations/logos.ts`. Sources: Google Calendar (icon-icons/Google mark), Stripe (Stripe S), GoHighLevel (gohighlevel.com/brand-assets), Zapier/Meta/Slack/Notion (Simple Icons official paths, brand colours; Notion rendered white for the dark site), Gmail + LinkedIn (Wikimedia Commons official marks), Webhooks (gilbarbara/logos), Resend (Simple Icons official path, rendered white). A live integration without a logo is a test failure.

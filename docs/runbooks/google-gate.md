@@ -29,6 +29,7 @@ Roman, 2026-10-12. **The Google Cloud OAuth app (project `612333806040`) stays i
 - At **20** cleared/connected: a high-priority task "Start Google OAuth verification + security assessment" is created once.
 - Manual block: `POST /api/team/google-gate {action:"set_block", blocked:true}` (or flip `google_gate_state.clearances_blocked`).
 - Reset after a simulation: `update google_gate_state set alerts_fired='[]', verification_task_id=null, verification_task_created_at=null where id=1;` then `recount`.
+- Live-verified 2026-10-12 (owner login): the panel's **Mark cleared** button on an `email_submitted` row → `mark_cleared` API → row `cleared` with `cleared_by` = owner, `google_gate_events.cleared`, counter 0 → 1, customer "cleared — connect now" email sent. The QA row (`qa-gate-ui-test@sfbconnect.com`) was deleted afterwards and `recount` returned the counter to 0; its `cleared` event row remains in the log on purpose.
 
 ## Backstop
 Google's own error page cannot be restyled. If a customer somehow reaches it and Google returns `access_denied`, the callback logs `google_gate_events(access_denied)` with email + timestamp, increments `denied_count`, alerts the team (callback_sla channel: SMS + email + in-app), and shows `/dashboard/google-not-cleared`. Google's raw text is never surfaced.

@@ -35,8 +35,12 @@ Enrich → write → **human approval** → send → track → book. Every charg
 - Approve requires: team owner, the business owner, or the business's assigned overseer. Approve = charge review pass → (optionally) send. Reject keeps the reason on the row.
 - Open tracking is a pixel (opens are a hint, not a fact). Replies are detected by Gmail thread, stored as `direction=in` rows.
 
-## Known blocker found in live E2E (2026-10-11)
-**Gmail API is not enabled in the Google Cloud project behind `GOOGLE_CLIENT_ID`** (project 612333806040). The Gmail OAuth connection succeeds (OAuth is a different API), but the first send returns `Gmail API has not been used in project … or it is disabled`. Fix (Roman, 1 minute): Google Cloud console → APIs & Services → Library → **Gmail API → Enable** on that project. Then `/team/outbound` → the red "approved messages failed to send" banner → **Retry send** (the approval stays on the row; `retryFailedSend` resets failed→approved and the gate re-runs). Calendar API is enabled (booking verified live: real event + Meet link).
+## Sending account (switched 2026-10-12)
+The owner's Gmail **and** Google Calendar connections are on the company account **sfbconnects@gmail.com** (previously Roman's personal address). Both live under Roman's team user (`owner_id` = `a7398ad8…`); the account label comes from Google's userinfo at connect time — nothing in source names the address. Verified live 2026-10-12: approval-queue send `766d9892` → Gmail id `1a131c50f838be41`, headers `From: SFB CONNECTS <sfbconnects@gmail.com>`; reply sync lists the `sfbconnects@gmail.com` inbox; demo booking created a Calendar event with `organizer: sfbconnects@gmail.com` + Meet link. To move accounts again: `/team/integrations` → Gmail → Disconnect → Connect Gmail (sign in as the new account, allow send + modify), then Google Calendar → Disconnect → Connect. Anyone with the new account's password can do it; no code or env change.
+
+Resolved the same day: the **Gmail API is now enabled** on project 612333806040 (it was not on 2026-10-11, which made every approved send fail with `Gmail API has not been used in project … or it is disabled`). If that error ever returns: Google Cloud console → APIs & Services → Library → Gmail API → Enable, then `/team/outbound` → "approved messages failed to send" → **Retry send**.
+
+Subject headers with non-ASCII (em dash, curly quotes) are RFC 2047-encoded by `encodeHeaderValue()` in `lib/integrations/gmail.ts` (found live 2026-10-12: raw UTF-8 arrived as `Ã¢Â€Â”`).
 
 ## Operate
 - Pending approvals: `select count(*) from outbound_messages where status='pending_approval'`.
