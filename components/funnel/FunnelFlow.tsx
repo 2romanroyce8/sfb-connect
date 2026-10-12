@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { trackMarketingEvent } from "@/lib/marketingEvents";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import PricingTiers from "@/components/pricing/PricingTiers";
+import BookDemoCall from "@/components/demo/BookDemoCall";
 
 // The gated funnel. The SERVER decides the stage (see app/start/page.tsx);
 // this component renders it and advances by reloading, so no step can be
@@ -195,6 +196,7 @@ function PricingStep() {
       <h2 className="text-[26px] md:text-[32px] font-bold tracking-[-0.03em]">Your agent is built. Put it to work.</h2>
       <p className="text-[14px] text-white/[0.55]">Pick a plan to finish onboarding and unlock your dashboard. One monthly, one setup. Cancel anytime.</p>
       <PricingTiers funnel />
+      <div className="flex flex-wrap items-center gap-3 text-[13px] text-white/[0.55]">Prefer to talk it through first? <BookDemoCall source="funnel_pricing" compact /></div>
     </div>
   );
 }

@@ -12,6 +12,8 @@ const VALID_EVENTS = [
   "demo_started_from_addon",
   // SFB Agent site revision (2026-10-09)
   "funnel_start_click",
+  "demo_call_open",
+  "demo_call_booked",
   "funnel_account_start",
   "funnel_account_created",
   "funnel_verified",

@@ -194,15 +194,17 @@ export async function getBusyBlocks(repId: string, timeMinISO: string, timeMaxIS
 
 export async function createCalendarEvent(
   repId: string,
-  params: { summary: string; description: string; startISO: string; endISO: string; timeZone: string }
+  params: { summary: string; description: string; startISO: string; endISO: string; timeZone: string; attendees?: { email: string; displayName?: string }[]; sendUpdates?: "all" | "externalOnly" | "none" }
 ) {
-  const data = await callCalendarApi(repId, "/calendars/primary/events?conferenceDataVersion=1", {
+  // sendUpdates=all makes Google email the invite to attendees, so the event lands on THEIR calendar too (demo calls).
+  const data = await callCalendarApi(repId, `/calendars/primary/events?conferenceDataVersion=1${params.sendUpdates ? `&sendUpdates=${params.sendUpdates}` : ""}`, {
     method: "POST",
     body: JSON.stringify({
       summary: params.summary,
       description: params.description,
       start: { dateTime: params.startISO, timeZone: params.timeZone },
       end: { dateTime: params.endISO, timeZone: params.timeZone },
+      ...(params.attendees?.length ? { attendees: params.attendees } : {}),
       conferenceData: {
         createRequest: {
           requestId: `sfb-${Date.now()}-${Math.random().toString(36).slice(2)}`,

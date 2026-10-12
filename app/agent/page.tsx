@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BookDemoCall from "@/components/demo/BookDemoCall";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import StatusBadge from "@/components/agent/StatusBadge";
@@ -33,6 +34,7 @@ export default async function AgentPage() {
           <p className="mt-7 text-[17px] md:text-[20px] leading-[1.5] text-white/[0.6] max-w-[720px]">One AI agent assigned to your business. Toggle the eight things it can do. A human expert checks everything customer-facing. It runs on credits, and you always see the receipt.</p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Link href="/start" className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Get started →</Link>
+            <BookDemoCall source="agent_page" />
             
           </div>
         </div>
