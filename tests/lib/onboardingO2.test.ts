@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { defaultIcp, parseIcpInput, icpQueries } from "../../lib/onboarding/icp";
+import { defaultIcp, parseIcpInput, icpQueries, parseLocations } from "../../lib/onboarding/icp";
 import { toCandidates } from "../../lib/onboarding/leads";
 import { previewSequence, CADENCES, cadence } from "../../lib/onboarding/automations";
 
@@ -15,6 +15,9 @@ test("ICP input: at least one industry and one location; lists deduped and cappe
   assert.match((parseIcpInput({ industries: "HOA", locations: [] }) as { error: string }).error, /city or area/);
   const ok = parseIcpInput({ industries: "HOA, hoa, home builder", locations: ["Tampa, FL", "Orlando, FL"], size: "nope", notes: "x" });
   assert.ok("icp" in ok); if ("icp" in ok) { assert.deepEqual(ok.icp.industries, ["HOA", "hoa", "home builder"].filter((v, i, a) => a.indexOf(v) === i)); assert.equal(ok.icp.size, "any"); assert.equal(ok.icp.source, "user"); }
+  assert.deepEqual(parseLocations("Tampa, FL, Orlando, FL"), ["Tampa, FL", "Orlando, FL"], "City, ST pairs survive the comma split");
+  assert.deepEqual(parseLocations("Tampa Bay area, Miami, fl"), ["Tampa Bay area", "Miami, FL"]);
+  assert.deepEqual(parseLocations(["Tampa, FL"]), ["Tampa, FL"]);
   const q = icpQueries({ industries: ["a", "b", "c", "d"], locations: ["X, FL", "Y, FL"], size: "any", notes: null, source: "user" });
   assert.equal(q.length, 6); assert.equal(q[0], "a in X, FL");
 });

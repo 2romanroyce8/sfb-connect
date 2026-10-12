@@ -67,7 +67,10 @@ export default function TourProvider({ children }: { children: React.ReactNode }
     const sessionId = uuid(); setDontShow(false);
     log(key, "started", { sessionId });
     setSaved((s) => ({ ...s, [key]: { ...(s[key] ?? { dont_show: false }), status: "started", last_step: 0 } }));
-    const first = opts?.replay ? 0 : 0;
+    // Auto-start begins at the step for the page the user is already on (found live: starting at 0 dragged a
+    // resumed customer from step 6 back to the step-1 page). Replay from Help always starts at the top.
+    const here = window.location.pathname;
+    const first = opts?.replay ? 0 : Math.max(0, tour.steps.findIndex((s) => s.route === here));
     void show(tour, nextPresentStep(tour.steps, first, () => true), sessionId, 1);
   }, [show, log]);
 

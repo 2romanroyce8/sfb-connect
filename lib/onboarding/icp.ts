@@ -28,9 +28,17 @@ export function defaultIcp(b: { primary_category: string | null; city: string | 
   return { industries: preset?.queries ?? [], locations: loc, size: "any", notes: preset ? `Suggested for a ${b.primary_category} business: ${preset.label}.` : null, source: "preset" };
 }
 
+/** "Tampa, FL, Orlando, FL" → ["Tampa, FL", "Orlando, FL"]: a bare two-letter state token joins the city before it (found live: the plain splitter searched "in FL"). */
+export function parseLocations(v: unknown, n = 6): string[] {
+  const raw = Array.isArray(v) ? v.flatMap((x) => String(x).split(/[,\n]/)) : typeof v === "string" ? v.split(/[,\n]/) : [];
+  const toks = raw.map((x) => clean(x, 80)).filter(Boolean); const out: string[] = [];
+  for (const t of toks) { if (/^[A-Za-z]{2}$/.test(t) && out.length && !/,\s*[A-Z]{2}$/.test(out[out.length - 1])) out[out.length - 1] = `${out[out.length - 1]}, ${t.toUpperCase()}`; else out.push(t); }
+  return Array.from(new Set(out)).slice(0, n);
+}
+
 export function parseIcpInput(b: Record<string, unknown>): { error: string } | { icp: Icp } {
   const industries = list(b.industries, 60, 6);
-  const locations = list(b.locations, 80, 6);
+  const locations = parseLocations(b.locations);
   const size = (ICP_SIZES.some((s) => s.key === b.size) ? b.size : "any") as IcpSize;
   if (!industries.length) return { error: "Name at least one kind of business you want more of (e.g. property management company)." };
   if (!locations.length) return { error: "Add at least one city or area (e.g. Tampa, FL)." };
