@@ -9,7 +9,7 @@ const STATUS_STYLE: Record<ActivityItem["status"], string> = {
 
 export default function OverviewActivity({ activity }: { activity: ActivityItem[] }) {
   return (
-    <section className="mb-10">
+    <section className="mb-10" data-tour="activity">
       <h2 className="text-[13px] font-semibold text-neutral-900 mb-3">Recent SFB Activity</h2>
       {activity.length === 0 ? (
         <div className="border border-neutral-200 rounded-xl p-6 text-[13px] text-neutral-500">

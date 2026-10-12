@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import TourProvider, { TourLauncher } from "@/components/tours/TourProvider";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutGrid,
@@ -66,6 +67,7 @@ function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean;
   return (
     <Link
       href={item.href}
+      data-tour={`nav-${item.href.replace("/dashboard/", "").replace("/dashboard", "overview")}`}
       onClick={onNavigate}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-colors ${
         active ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
@@ -99,6 +101,7 @@ export default function PortalShell({
   const isActive = (href: string) => (href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href));
 
   return (
+    <TourProvider>
     <div className="min-h-screen bg-white text-neutral-900">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-[248px] border-r border-neutral-200 px-4 py-6">
@@ -131,7 +134,7 @@ export default function PortalShell({
         </nav>
 
         <div className="mt-auto pt-5 border-t border-neutral-200 px-2">
-          <div className="text-[13px] font-medium text-neutral-800 truncate">{displayName}</div>
+          <div className="flex items-center justify-between gap-2"><div className="text-[13px] font-medium text-neutral-800 truncate">{displayName}</div><TourLauncher compact /></div>
           <button
             onClick={handleSignOut}
             className="mt-2 flex items-center gap-2 text-[12.5px] text-neutral-500 hover:text-neutral-900 transition-colors"
@@ -216,5 +219,6 @@ export default function PortalShell({
         <div className="max-w-[880px] mx-auto px-5 md:px-10 py-8 md:py-12">{children}</div>
       </main>
     </div>
+    </TourProvider>
   );
 }

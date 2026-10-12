@@ -10,7 +10,7 @@ type Overseer = { name: string; role: string } | null;
 export default function AgentPanel({ modules, creditBalance, receipts, overseer }: { modules: AgentModule[]; creditBalance: number; receipts: Receipt[]; overseer: Overseer }) {
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
-    <section className="mb-10">
+    <section className="mb-10" data-tour="agent-panel">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-[13px] font-semibold text-neutral-900">Your SFB Agent</h2>
         <span className="text-[11.5px] text-neutral-400">{modules.filter((m) => m.status === "live").length} of {modules.length} modules live</span>

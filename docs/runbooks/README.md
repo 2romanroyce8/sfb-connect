@@ -40,6 +40,7 @@ Never paste a secret into chat, code, logs, or a task result.
 - [client-projects.md](./client-projects.md) — client project graph (/team/projects; client mirror after Phase 2)
 - [owner-sms-alerts.md](./owner-sms-alerts.md) — owner text alerts via carrier email-to-SMS through Resend: carrier reality, routing rules, triggers, delivery log
 - [demo-call.md](./demo-call.md) — Book a demo call: ET slots from Rome's calendar, Meet + invite, .ics/vCard, 5-minute call-now alert
+- [guided-tours.md](./guided-tours.md) — data-driven tour engine over onboarding + dashboard: definitions, anchors, auto-start, analytics without PII
 - [onboarding-post-payment.md](./onboarding-post-payment.md) — thank-you page + 11-step onboarding after payment: gates, derivation rules, resume, operate
 - [onboarding-funnel.md](./onboarding-funnel.md) — gated funnel: account → email code → build show → pricing → pay (no trial)
 - [agent-connector.md](./agent-connector.md) — OAuth tokens, 120 s refresh grace window, self-healing delegated sessions, audit log reading

@@ -62,7 +62,7 @@ export default function OnboardingShell(p: ShellProps) {
           ))}
         </ol>
 
-        <div className="min-w-0">
+        <div className="min-w-0" data-tour={`onb-step-${p.step.no}`}>
           {p.flash && <div className={`rounded-xl px-4 py-3 text-[13px] mb-4 ${p.flash.ok ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>{p.flash.text}</div>}
           {me.locked ? (
             <div className="border border-amber-200 bg-amber-50 rounded-2xl p-6 text-[14px] text-amber-900">{me.lockReason} <Link href="/dashboard/onboarding/gmail" className="underline">Go to step 2.</Link></div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TourLauncher } from "@/components/tours/TourProvider";
 
 export default function SupportPage() {
   const [message, setMessage] = useState("");
@@ -29,6 +30,11 @@ export default function SupportPage() {
 
   return (
     <div>
+      <section className="mb-10">
+        <h2 className="text-[13px] font-semibold text-neutral-900 mb-1">Guided tours</h2>
+        <p className="text-[12.5px] text-neutral-500 mb-3">Replay a walkthrough any time. Skipping or finishing a tour never changes your setup.</p>
+        <TourLauncher />
+      </section>
       <h1 className="text-3xl font-bold mb-2">Support</h1>
       <p className="text-medium-gray mb-10 max-w-[560px]">
         Questions about your analysis, your score, or your account — send a
