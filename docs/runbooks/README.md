@@ -36,6 +36,9 @@ Never paste a secret into chat, code, logs, or a task result.
 ## Spikes (decisions backed by evidence)
 - [2026-10-11 Muse conversation sync](../spikes/2026-10-11-muse-conversation-sync.md) — no public API to read/post a user's Muse conversations; connect is outward-only.
 
+## Operating manual
+**`docs/sop/sfb-agent-sop.md`** — the SOP for everything the agent does (onboarding 1–11, lead list, CSV import, campaign launch, approval queue, sending, reply detection, credit ledger, owner notifications, Gmail/Calendar, Google gate), eight headings per process, written from the code as built, with a gap register. Read it first; the runbooks below are the per-area detail.
+
 ## Runbooks
 - [client-projects.md](./client-projects.md) — client project graph (/team/projects; client mirror after Phase 2)
 - [owner-sms-alerts.md](./owner-sms-alerts.md) — owner text alerts via carrier email-to-SMS through Resend: carrier reality, routing rules, triggers, delivery log
