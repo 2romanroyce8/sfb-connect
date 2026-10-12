@@ -67,10 +67,12 @@ export async function pickIntro(service: SupabaseClient, businessId: string, key
 export async function saveTemplate(service: SupabaseClient, businessId: string, input: { name: string; messageId?: string | null; subject?: string; body?: string; category?: "saved" | "custom" }, actor: { label: string }) {
   let subject = input.subject ?? "", body = input.body ?? "", category: "saved" | "custom" = input.category ?? "custom", sourceMessageId: string | null = null;
   if (input.messageId) {
-    const { data: m } = await service.from("outbound_messages").select("id, subject, body_text, template_source").eq("id", input.messageId).eq("business_id", businessId).maybeSingle();
+    const { data: m } = await service.from("outbound_messages").select("id, subject, body_text, template_source, template_key").eq("id", input.messageId).eq("business_id", businessId).maybeSingle();
     if (!m) throw new OutboundError("not_found", "Message not found.", 404);
-    const src = m.template_source as { subject?: string; body?: string } | null;
-    subject = src?.subject ?? (m.subject as string); body = src?.body ?? (m.body_text as string); category = "saved"; sourceMessageId = m.id as string;
+    // Variable form only. Messages drafted before template_source existed (2026-10-12) fall back to their preset by key; a custom one with no source cannot be saved honestly.
+    const src = (m.template_source as { subject?: string; body?: string } | null) ?? (() => { const p = presetByKey((m.template_key as string | null) ?? ""); return p ? { subject: p.subject, body: p.body } : null; })();
+    if (!src?.subject || !src?.body) throw new OutboundError("no_source", "This email was sent before templates were kept in variable form, so it can't be saved as a reusable preset. Write it under “Write my own” and save it there.");
+    subject = src.subject; body = src.body; category = "saved"; sourceMessageId = m.id as string;
   }
   const name = (input.name || "").trim().slice(0, 80); if (!name) throw new OutboundError("name_required", "Give the preset a name.");
   if (!subject.trim() || !body.trim()) throw new OutboundError("custom_empty", "A preset needs a subject and a body.");
