@@ -124,8 +124,14 @@ async function notifyTeam(service: SupabaseClient, call: DemoCall, origin: strin
       const channel = (sc?.metadata as { incoming_webhook?: { channel_id?: string } } | null)?.incoming_webhook?.channel_id;
       if (sc && channel) {
         const { token } = await getAccessToken("slack", sc.owner_id as string);
-        const r = await fetch("https://slack.com/api/chat.postMessage", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify({ channel, text: `<!channel> ${line}\nCall them from ${SFB_PHONE_DISPLAY} within 5 minutes.` }) });
-        const j = (await r.json()) as { ok: boolean; error?: string }; results.slack = j.ok ? "sent" : `error:${j.error}`;
+        const post = async () => { const r = await fetch("https://slack.com/api/chat.postMessage", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify({ channel, text: `<!channel> ${line}\nCall them from ${SFB_PHONE_DISPLAY} within 5 minutes.` }) }); return (await r.json()) as { ok: boolean; error?: string }; };
+        let j = await post();
+        // Live finding 2026-10-12: the bot is not a member of the webhook channel → not_in_channel. channels:join is granted, so join once and retry.
+        if (!j.ok && j.error === "not_in_channel") {
+          await fetch("https://slack.com/api/conversations.join", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify({ channel }) });
+          j = await post();
+        }
+        results.slack = j.ok ? "sent" : `error:${j.error}`;
       } else results.slack = "not_connected";
     } catch (e) { results.slack = `error:${e instanceof Error ? e.message : "unknown"}`; }
   })();

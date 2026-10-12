@@ -13,6 +13,8 @@ The trial's CTA is replaced by **Book a demo call** (Roman, 2026-10-12). Trigger
 `demo_calls` (name, email, phone, website, start_at/end_at UTC, time_zone ET, calendar_owner_id, calendar_event_id, html_link, meet_url, call_now, call_now_notified_at, call_now_notify_result, status, source, signup_user_id) — migration `20261012_demo_calls.sql`. Team members read.
 
 ## Operate
+- Cancel a booking (owner only): `DELETE /api/team/demo-calls/<id>` — removes the Google event (attendee gets Google's cancellation) and marks the row `canceled`.
+- Slack alert `not_in_channel` (found live 2026-10-12): the code now `conversations.join`s the channel once and retries; if it still fails, add the SFB Connect app to the channel by hand.
 - Who's booked: `select start_at at time zone 'America/New_York' as et, name, phone, email, call_now, call_now_notify_result from demo_calls order by start_at desc;`
 - Calendar unreachable (owner's Google token revoked): the modal says so honestly and points to hello@sfbconnect.com; reconnect Google in `/team/integrations`.
 - Slack alert says `not_connected` / `error:*`: check the Slack connection in `/team/integrations` (scope `chat:write`, channel from the incoming-webhook metadata).
