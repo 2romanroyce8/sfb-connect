@@ -14,21 +14,26 @@ const field: React.CSSProperties = { background: "#0F0F0F", border: "1px solid r
 const PHONE = "213-523-1641";
 const timeET = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 
-export default function BookDemoCall({ source, compact = false, prefill }: { source: string; compact?: boolean; prefill?: { name?: string | null; email?: string | null; phone?: string | null; website?: string | null } }) {
+/** Reported to `onClose` on every dismiss (X, backdrop, Esc, Done): whether a booking was completed in this session, and its id. */
+export type BookDemoCallClose = { booked: boolean; callId: string | null };
+
+export default function BookDemoCall({ source, compact = false, prefill, onClose }: { source: string; compact?: boolean; prefill?: { name?: string | null; email?: string | null; phone?: string | null; website?: string | null }; onClose?: (r: BookDemoCallClose) => void }) {
   const [open, setOpen] = useState(false);
   const trigger = compact
     ? <button type="button" onClick={() => { setOpen(true); trackMarketingEvent("demo_call_open", { source }); }} className="underline underline-offset-4 text-white/[0.85] hover:text-white">Book a demo call</button>
     : <button type="button" onClick={() => { setOpen(true); trackMarketingEvent("demo_call_open", { source }); }} className="inline-flex items-center px-6 py-3.5 rounded-full text-[14px] font-medium text-white hover:bg-white/[0.08] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.28)", background: "rgba(7,7,7,0.4)" }}>Book a demo call</button>;
-  return <>{trigger}{open && <Modal source={source} prefill={prefill} onClose={() => setOpen(false)} />}</>;
+  return <>{trigger}{open && <Modal source={source} prefill={prefill} onClose={(r) => { setOpen(false); onClose?.(r); }} />}</>;
 }
 
-function Modal({ source, prefill, onClose }: { source: string; prefill?: { name?: string | null; email?: string | null; phone?: string | null; website?: string | null }; onClose: () => void }) {
+function Modal({ source, prefill, onClose: close }: { source: string; prefill?: { name?: string | null; email?: string | null; phone?: string | null; website?: string | null }; onClose: (r: BookDemoCallClose) => void }) {
   const [days, setDays] = useState<Day[] | null>(null); const [calendarConnected, setCalendarConnected] = useState(true);
   const [day, setDay] = useState<string | null>(null); const [slot, setSlot] = useState<Slot | null>(null);
   const [f, setF] = useState({ name: prefill?.name ?? "", email: prefill?.email ?? "", phone: prefill?.phone ?? "", website: prefill?.website ?? "", callNow: false });
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null); const [booked, setBooked] = useState<Booked | null>(null);
+  // Every dismiss path reports whether a booking was completed, so a host (onboarding step 9) can advance only when it was.
+  const onClose = () => close({ booked: !!booked, callId: booked?.call.id ?? null });
   useEffect(() => { (async () => { try { const r = await fetch("/api/demo-call/slots", { cache: "no-store" }); const j = (await r.json()) as { days: Day[]; calendarConnected: boolean }; setDays(j.days); setCalendarConnected(j.calendarConnected); setDay(j.days[0]?.date ?? null); } catch { setDays([]); setCalendarConnected(false); } })(); }, []);
-  useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") close({ booked: !!booked, callId: booked?.call.id ?? null }); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [close, booked]);
   const set = (k: keyof typeof f, v: string | boolean) => setF((x) => ({ ...x, [k]: v }));
   const book = async (e: React.FormEvent) => {
     e.preventDefault(); if (!slot) { setError("Pick a time first."); return; } setBusy(true); setError(null);

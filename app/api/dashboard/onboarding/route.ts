@@ -159,9 +159,19 @@ export async function POST(req: NextRequest) {
     if (choice !== "self_serve" && choice !== "retainer_talk") return NextResponse.json({ error: "Unknown choice." }, { status: 400 });
     const { row } = await loadOnboarding(service, who.businessId);
     if (row.dfy_choice === "install") return NextResponse.json({ ok: true, choice: "install" }); // paid install wins; never downgrade
+    // retainer_talk only counts once a demo call was actually booked by this customer (the popup reports its id); never trust the id blindly.
+    let demoCallId: string | null = null;
+    if (choice === "retainer_talk") {
+      const id = typeof body.data?.demo_call_id === "string" ? body.data.demo_call_id : "";
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: "Book the call first — the popup advances you once the booking is saved." }, { status: 400 });
+      const { data: call } = await service.from("demo_calls").select("id, status").eq("id", id).eq("signup_user_id", who.userId).maybeSingle();
+      if (!call || call.status === "canceled") return NextResponse.json({ error: "We couldn't find that booking on your account." }, { status: 404 });
+      demoCallId = call.id as string;
+    }
     await service.from("customer_onboarding").update({ dfy_choice: choice, dfy_chosen_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("business_id", who.businessId);
-    if (choice === "self_serve") await confirmStep(service, who.businessId, 9);
-    return NextResponse.json({ ok: true, choice });
+    if (demoCallId) await saveStepData(service, who.businessId, 9, { demo_call_id: demoCallId, booked_at: new Date().toISOString() });
+    await confirmStep(service, who.businessId, 9);
+    return NextResponse.json({ ok: true, choice, demoCallId });
   }
   if (body.action === "dfy_checkout") {
     try {

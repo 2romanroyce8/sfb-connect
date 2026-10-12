@@ -11,7 +11,9 @@ export default function StepDfy({ dfyChoice, purchaseFlag, prefill, onDone }: { 
   // Returned from Stripe: the webhook marks the purchase within seconds — poll until it has.
   useEffect(() => { if (purchaseFlag !== "success" || paid) return; let n = 0; const id = setInterval(async () => { n++; const r = await fetch("/api/dashboard/onboarding", { cache: "no-store" }); const j = await r.json(); if (j?.row?.dfy_choice === "install") { setPaid(true); clearInterval(id); } if (n > 20) clearInterval(id); }, 3000); return () => clearInterval(id); }, [purchaseFlag, paid]);
   const buy = async () => { setBusy("buy"); setErr(null); try { const j = await post({ action: "dfy_checkout" }); window.location.href = j.checkoutUrl; } catch (e) { setErr(e instanceof Error ? e.message : "Checkout failed."); setBusy(null); } };
-  const choose = async (choice: "self_serve" | "retainer_talk") => { setBusy(choice); setErr(null); try { await post({ action: "dfy_choose", data: { choice } }); if (choice === "self_serve") onDone(); } catch (e) { setErr(e instanceof Error ? e.message : "Could not save."); } finally { setBusy(null); } };
+  const choose = async (choice: "self_serve" | "retainer_talk", demoCallId?: string | null) => { setBusy(choice); setErr(null); try { await post({ action: "dfy_choose", data: { choice, demo_call_id: demoCallId ?? null } }); onDone(); } catch (e) { setErr(e instanceof Error ? e.message : "Could not save."); } finally { setBusy(null); } };
+  // Option B: a completed booking closes the popup → step 10, same as "I'll run it myself". Closing without booking stays here.
+  const onDemoClose = ({ booked, callId }: { booked: boolean; callId: string | null }) => { if (booked) void choose("retainer_talk", callId); };
 
   if (paid) return (
     <div className="border border-emerald-200 bg-emerald-50 rounded-2xl p-6">
@@ -39,8 +41,8 @@ export default function StepDfy({ dfyChoice, purchaseFlag, prefill, onDone }: { 
           <div className="text-[18px] font-semibold text-neutral-900 mt-1">Monthly retainer</div>
           <div className="text-[14px] text-neutral-700 mt-1">Ongoing hands-on management. Scoped to your business — let&apos;s talk it through.</div>
           <div className="mt-auto pt-4 flex items-center gap-3 flex-wrap">
-            <span onClick={() => void choose("retainer_talk")} className="inline-flex"><BookDemoCall source="onboarding-dfy" prefill={prefill} /></span>
-            <span className="text-[12.5px] text-neutral-500">Talk to us — no price until we&apos;ve scoped it.</span>
+            <BookDemoCall source="onboarding-dfy" prefill={prefill} onClose={onDemoClose} />
+            <span className="text-[12.5px] text-neutral-500">{busy === "retainer_talk" ? "Booked — taking you to your first campaign…" : "Talk to us — no price until we've scoped it."}</span>
           </div>
         </div>
       </div>
