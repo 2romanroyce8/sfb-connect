@@ -53,10 +53,16 @@ export async function loadOnboarding(service: SupabaseClient, businessId: string
 
 /** The signed-in customer's business (plan_key set), or null. */
 export async function customerBusiness(supabase: SupabaseClient): Promise<{ userId: string; businessId: string } | null> {
+  const r = await customerBusinessOrReason(supabase);
+  return "businessId" in r ? r : null;
+}
+
+/** Same lookup, but says WHY it failed: a signed-out call is a 401 ("sign in again"), not a 403 ("no membership"). Found live 2026-10-12: an expired browser session read as "No active membership." */
+export async function customerBusinessOrReason(supabase: SupabaseClient): Promise<{ userId: string; businessId: string } | { reason: "signed_out" | "no_business" }> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return { reason: "signed_out" };
   const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", user.id).not("plan_key", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  return biz ? { userId: user.id, businessId: biz.id } : null;
+  return biz ? { userId: user.id, businessId: biz.id } : { reason: "no_business" };
 }
 
 export async function confirmStep(service: SupabaseClient, businessId: string, step: number) {

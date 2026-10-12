@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
-import { customerBusiness, loadOnboarding, confirmStep, saveStepData } from "@/lib/onboarding/state";
+import { customerBusinessOrReason, loadOnboarding, confirmStep, saveStepData } from "@/lib/onboarding/state";
 import { parseProfileInput, extractBrandColors, stepByNo } from "@/lib/onboarding/flow";
 import { fetchSite } from "@/lib/analyzer/checks";
 import { resolveLogo } from "@/lib/analyzer/identity";
@@ -17,8 +17,9 @@ export const dynamic = "force-dynamic";
 
 /** The signed-in customer's onboarding state (derived from real stored state) + profile + saved inputs. */
 export async function GET() {
-  const who = await customerBusiness(createSupabaseServerClient());
-  if (!who) return NextResponse.json({ error: "No active membership." }, { status: 403 });
+  const whoOr = await customerBusinessOrReason(createSupabaseServerClient());
+  if (!("businessId" in whoOr)) return NextResponse.json({ error: whoOr.reason === "signed_out" ? "You\u2019re signed out \u2014 sign in again and retry." : "No active membership." }, { status: whoOr.reason === "signed_out" ? 401 : 403 });
+  const who = whoOr;
   const out = await loadOnboarding(createSupabaseServiceClient(), who.businessId);
   return NextResponse.json(out);
 }
@@ -31,8 +32,9 @@ export async function GET() {
  * action=brand_colors {colors}      — set colors by hand
  */
 export async function POST(req: NextRequest) {
-  const who = await customerBusiness(createSupabaseServerClient());
-  if (!who) return NextResponse.json({ error: "No active membership." }, { status: 403 });
+  const whoOr = await customerBusinessOrReason(createSupabaseServerClient());
+  if (!("businessId" in whoOr)) return NextResponse.json({ error: whoOr.reason === "signed_out" ? "You\u2019re signed out \u2014 sign in again and retry." : "No active membership." }, { status: whoOr.reason === "signed_out" ? 401 : 403 });
+  const who = whoOr;
   const service = createSupabaseServiceClient();
   const body = (await req.json().catch(() => ({}))) as { action?: string; step?: number; data?: Record<string, unknown>; colors?: unknown };
   const step = Number(body.step);

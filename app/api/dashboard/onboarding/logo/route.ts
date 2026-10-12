@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
-import { customerBusiness } from "@/lib/onboarding/state";
+import { customerBusinessOrReason } from "@/lib/onboarding/state";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -8,8 +8,9 @@ const TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg",
 
 /** Step 4 fallback: upload a logo (≤ 2 MB, png/jpg/svg/webp) into the public brand-assets bucket under the business's own folder. */
 export async function POST(req: NextRequest) {
-  const who = await customerBusiness(createSupabaseServerClient());
-  if (!who) return NextResponse.json({ error: "No active membership." }, { status: 403 });
+  const whoOr = await customerBusinessOrReason(createSupabaseServerClient());
+  if (!("businessId" in whoOr)) return NextResponse.json({ error: whoOr.reason === "signed_out" ? "You\u2019re signed out \u2014 sign in again and retry." : "No active membership." }, { status: whoOr.reason === "signed_out" ? 401 : 403 });
+  const who = whoOr;
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "Choose an image file." }, { status: 400 });
