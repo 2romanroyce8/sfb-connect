@@ -19,9 +19,13 @@ const BIZ_COLS = "id, owner_id, legal_name, website, primary_category, niche_tag
 export async function ensureRow(service: SupabaseClient, businessId: string): Promise<OnboardingRow> {
   const { data } = await service.from("customer_onboarding").select("*").eq("business_id", businessId).maybeSingle();
   if (data) return data as OnboardingRow;
-  const { data: created, error } = await service.from("customer_onboarding").insert({ business_id: businessId }).select("*").single();
+  // First render of a brand-new customer: the portal layout and the page both land here in parallel.
+  // An insert raced itself on the primary key (found live 2026-10-12) — upsert-ignore, then read.
+  const { error } = await service.from("customer_onboarding").upsert({ business_id: businessId }, { onConflict: "business_id", ignoreDuplicates: true });
   if (error) throw new Error(error.message);
-  return created as OnboardingRow;
+  const { data: row, error: readErr } = await service.from("customer_onboarding").select("*").eq("business_id", businessId).single();
+  if (readErr || !row) throw new Error(readErr?.message ?? "Onboarding row missing after upsert.");
+  return row as OnboardingRow;
 }
 
 export async function loadOnboarding(service: SupabaseClient, businessId: string): Promise<{ state: OnboardingState; row: OnboardingRow; business: BusinessProfile; integrations: { gmail: string | null; calendar: string | null } }> {
