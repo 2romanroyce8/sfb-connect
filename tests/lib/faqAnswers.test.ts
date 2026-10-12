@@ -34,8 +34,7 @@ test("unmatched or empty questions never get an invented answer", () => {
 
 test("numbers in the bank come from the pricing single source", () => {
   const price = ANSWER_BANK.find((a) => a.key === "price")!.answer;
-  assert.match(price, /Solo is \$1,497\/month plus a one-time \$1,497 onboarding fee, with 150 credits/);
-  assert.match(price, /Agency is \$4,997\/month/);
+  assert.ok(!/\$\d/.test(price), "the public FAQ never quotes a price — pricing is gated (2026-10-12)");
   assert.match(ANSWER_BANK.find((a) => a.key === "zero")!.answer, /100 for \$149, 500 for \$599, 1,000 for \$999/);
   assert.match(ANSWER_BANK.find((a) => a.key === "outbound")!.answer, /roughly 10 fully worked prospects/);
 });

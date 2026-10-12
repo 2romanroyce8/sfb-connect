@@ -26,7 +26,6 @@ const LOGO_SRC =
 
 const PRIMARY_LINKS = [
   { label: "Agent", href: "/#agent" },
-  { label: "Pricing", href: "/pricing" },
   { label: "FAQ", href: "/#faq" },
 ];
 
@@ -73,7 +72,7 @@ export default function Navbar() {
           href="/start"
           className="hidden sm:inline-flex bg-white text-black px-5 py-2.5 rounded-full text-[13.5px] font-semibold hover:opacity-80 transition-opacity whitespace-nowrap"
         >
-          Try it free
+          Get started
         </Link>
         <button className="lg:hidden text-white p-1.5" onClick={() => setMobileOpen((v) => !v)} aria-label="Menu">
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -99,7 +98,7 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
               className="mt-5 bg-white text-black px-5 py-3 rounded-full text-[14px] font-semibold text-center"
             >
-              Try it free
+              Get started
             </Link>
           </div>
         </div>

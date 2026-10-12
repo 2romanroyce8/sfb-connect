@@ -16,7 +16,7 @@ export type FaqAnswer = { key: string; title: string; keywords: string[]; answer
 
 export const ANSWER_BANK: FaqAnswer[] = [
   { key: "price", title: "Pricing", keywords: ["price", "pricing", "cost", "how much", "monthly", "month", "annual", "yearly", "plan", "plans", "solo", "agency", "expensive", "cheap", "fee", "fees", "setup", "onboarding"],
-    answer: `Two plans. Solo is ${fmtUsd(solo.monthlyUsd)}/month plus a one-time ${fmtUsd(solo.onboardingUsd)} onboarding fee, with ${solo.credits} credits a month for one real business. Agency is ${fmtUsd(agency.monthlyUsd)}/month plus a one-time ${fmtUsd(agency.onboardingUsd)} onboarding fee, with ${agency.credits} pooled credits a month across five client spaces. Month-to-month, no contracts.` },
+    answer: "Two plans: Solo (one real business) and Agency (five white-labeled client spaces, pooled credits), each a monthly membership plus a one-time onboarding fee. Exact pricing is shown after you create your account and your agent builds itself — or on a demo call." },
   { key: "trial", title: "Free trial", keywords: ["trial", "free", "demo", "try", "test", "sample", "card", "credit card", "no card", "start"],
     answer: "There is no free trial. Create your account, verify your email, and your agent reads your website and builds its own profile of your business before you see a price — then you pick a plan to finish onboarding. Or book a demo call and we'll walk you through it live." },
   { key: "credits", title: "How credits work", keywords: ["how do credits", "credits work", "what are credits", "ledger", "receipt", "receipts", "charge", "charged", "metered", "per action", "price list", "how many credits"],
@@ -58,7 +58,7 @@ export const ANSWER_BANK: FaqAnswer[] = [
   { key: "who_for", title: "Who it's for", keywords: ["who is this for", "for me", "roofing", "roofer", "contractor", "contractors", "clinic", "clinics", "dental", "med spa", "private equity", "restaurant", "local business", "service business", "industry", "industries", "small business"],
     answer: "Local and service businesses: roofing and other contractors, home services, clinics and professional services. Pricing shown is for roofing; clinics and private equity are priced by consultation." },
   { key: "agency_plan", title: "Agency plan", keywords: ["white label", "white-label", "white labeled", "client spaces", "clients", "resell", "resale", "multiple businesses", "locations", "multi"],
-    answer: `Agency is ${fmtUsd(agency.monthlyUsd)}/month with ${agency.credits} pooled credits across five white-labeled client spaces, all eight capabilities per space, and a dedicated overseer. Reselling the service outside those spaces requires written permission.` },
+    answer: `Agency gives you ${agency.credits} pooled credits across five white-labeled client spaces, all eight capabilities per space, and a dedicated overseer. Reselling the service outside those spaces requires written permission.` },
   { key: "time", title: "Speed and timeline", keywords: ["how long", "how fast", "timeline", "when", "soon", "quick", "days", "weeks", "turnaround", "setup time", "onboard"],
     answer: "Onboarding starts with your overseer recommending a capability mix, connecting your tools and approving the first tasks; the agent works continuously from there and you see every action in the dashboard as it happens." },
   { key: "security", title: "Data and security", keywords: ["data", "privacy", "secure", "security", "safe", "password", "access", "sell my data", "gdpr", "ccpa"],

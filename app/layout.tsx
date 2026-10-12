@@ -34,11 +34,11 @@ export const metadata: Metadata = {
     template: "%s | SFB Connect",
   },
   description:
-    "One AI agent, eight jobs, a human overseer. SFB Connect gets your business found by AI search and automates growth work. Free on a sample business; live on yours from $1,497/month.",
+    "One AI agent, eight jobs, a human overseer. SFB Connect gets your business found by AI search and automates growth work.",
   openGraph: {
     title: "SFB Connect — One Agent. Eight Jobs.",
     description:
-      "An AI agent assigned to your business — outbound, ads, website, follow-up, chat, reviews, operations. A human expert checks everything it does. Try it free for 5 days.",
+      "An AI agent assigned to your business — outbound, ads, website, follow-up, chat, reviews, operations. A human expert checks everything it does.",
     url: siteUrl,
     siteName: "SFB Connect",
     type: "website",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SFB Connect — Be The Business AI Finds.",
     description:
-      "One AI agent, eight jobs, a human overseer. Free on a sample business; live on yours from $1,497/month.",
+      "One AI agent, eight jobs, a human overseer.",
   },
   alternates: { canonical: "/" },
 };
