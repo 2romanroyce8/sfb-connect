@@ -18,9 +18,12 @@ async function gfetch(ownerId: string, path: string, init: RequestInit = {}) {
 
 const b64url = (s: string) => Buffer.from(s, "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
+/** RFC 2047 encoded-word for header values with non-ASCII (em dashes, curly quotes). Found live 2026-10-12: a raw UTF-8 Subject arrived as "Ã¢Â€Â”". */
+export const encodeHeaderValue = (v: string) => (/^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v, "utf8").toString("base64")}?=`);
+
 export async function sendGmail(ownerId: string, msg: { to: string; subject: string; text: string; html?: string; replyTo?: string; threadId?: string; inReplyTo?: string }) {
   const boundary = `sfb_${Date.now()}`;
-  const headers = [`To: ${msg.to}`, `Subject: ${msg.subject}`, msg.replyTo ? `Reply-To: ${msg.replyTo}` : null, msg.inReplyTo ? `In-Reply-To: ${msg.inReplyTo}` : null, msg.inReplyTo ? `References: ${msg.inReplyTo}` : null, "MIME-Version: 1.0"].filter(Boolean);
+  const headers = [`To: ${msg.to}`, `Subject: ${encodeHeaderValue(msg.subject.replace(/[\r\n]+/g, " "))}`, msg.replyTo ? `Reply-To: ${msg.replyTo}` : null, msg.inReplyTo ? `In-Reply-To: ${msg.inReplyTo}` : null, msg.inReplyTo ? `References: ${msg.inReplyTo}` : null, "MIME-Version: 1.0"].filter(Boolean);
   const body = msg.html
     ? [`Content-Type: multipart/alternative; boundary="${boundary}"`, "", `--${boundary}`, "Content-Type: text/plain; charset=UTF-8", "", msg.text, `--${boundary}`, "Content-Type: text/html; charset=UTF-8", "", msg.html, `--${boundary}--`].join("\r\n")
     : ["Content-Type: text/plain; charset=UTF-8", "", msg.text].join("\r\n");
