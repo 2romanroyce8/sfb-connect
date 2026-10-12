@@ -8,7 +8,6 @@ export const SFB_PLAN_PRICES = {
   revenue_growth: 197,
   revenue_dominance: 359,
   // SFB Agent tiers (monthly; onboarding fee is a separate one-time charge, see lib/agentProgram/config.ts)
-  trial: 0,
   solo: 1497,
   agency: 4997,
 } as const;
@@ -19,12 +18,11 @@ export const SFB_PLAN_LABELS: Record<PlanKey, string> = {
   revenue_presence: "Revenue Presence",
   revenue_growth: "Revenue Growth",
   revenue_dominance: "Revenue Dominance",
-  trial: "SFB Agent — Trial",
   solo: "SFB Agent — Solo",
   agency: "SFB Agent — Agency",
 };
 
-export const AGENT_PLAN_KEYS = ["trial", "solo", "agency"] as const;
+export const AGENT_PLAN_KEYS = ["solo", "agency"] as const;
 export type AgentPlanKey = (typeof AGENT_PLAN_KEYS)[number];
 export function isAgentPlanKey(value: unknown): value is AgentPlanKey {
   return typeof value === "string" && (AGENT_PLAN_KEYS as readonly string[]).includes(value);

@@ -6,7 +6,7 @@ export type InvoiceRow = { id: string; number: string | null; createdAt: string;
 /**
  * The customer's real Stripe invoices (plan + renewals). Read-only; returns []
  * when Stripe isn't configured or the business has no Stripe customer yet
- * (trial), so the Billing tab never shows a fabricated history.
+ * (no Stripe customer yet), so the Billing tab never shows a fabricated history.
  */
 export async function listInvoices(businessId: string, limit = 12): Promise<InvoiceRow[]> {
   if (!isStripeConfigured()) return [];

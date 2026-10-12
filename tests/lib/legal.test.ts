@@ -39,7 +39,7 @@ test("terms: plan and pack numbers are generated from the pricing single source 
   const items = LEGAL_DOCS.terms.sections.find((s) => s.heading.startsWith("2."))!.blocks.flatMap((b) => (b.kind === "ul" ? b.items : []));
   assert.ok(items.some((t) => t.startsWith("Solo: $1,497/month plus a one-time $1,497 onboarding fee. 150 credits")));
   assert.ok(items.some((t) => t.startsWith("Agency: $4,997/month plus a one-time $4,997 onboarding fee. 500 credits")));
-  assert.ok(items.some((t) => t.includes("128 one-time credits")));
+  assert.ok(items.every((t) => !/trial/i.test(t)), "no trial plan is listed (removed 2026-10-12)");
   assert.ok(items.some((t) => t.includes("100 credits $149 · 500 credits $599 · 1,000 credits $999")));
   assert.ok(items.every((t) => !/Presence \$|Dominance|Growth \$/.test(t)));
 });

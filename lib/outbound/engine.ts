@@ -2,8 +2,7 @@
 // Every charged step goes through chargeAction (spend_credits: idempotent,
 // never negative, 0-credit receipt on failure) behind workAllowed. Every send
 // goes through canSend() — no code path reaches Gmail without a human
-// approval recorded on the row. Sandbox (trial) businesses never send: the
-// message is marked `simulated` and nothing leaves the building.
+// approval recorded on the row.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chargeAction, workAllowed, InsufficientCreditsError } from "@/lib/billing/guards";
 import { fetchSite } from "@/lib/analyzer/checks";
@@ -29,14 +28,14 @@ async function event(service: SupabaseClient, e: { businessId: string; prospectI
 }
 
 async function business(service: SupabaseClient, businessId: string) {
-  const { data } = await service.from("businesses").select("id, legal_name, owner_id, primary_category, is_sandbox, plan_key, outbound_offer_line, outbound_time_zone, agent_overseer_id").eq("id", businessId).maybeSingle();
+  const { data } = await service.from("businesses").select("id, legal_name, owner_id, primary_category, plan_key, outbound_offer_line, outbound_time_zone, agent_overseer_id").eq("id", businessId).maybeSingle();
   if (!data) throw new OutboundError("business_not_found", "Business not found.", 404);
-  return data as { id: string; legal_name: string; owner_id: string; primary_category: string | null; is_sandbox: boolean; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string; agent_overseer_id: string | null };
+  return data as { id: string; legal_name: string; owner_id: string; primary_category: string | null; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string; agent_overseer_id: string | null };
 }
 
 async function guard(service: SupabaseClient, businessId: string) {
   const w = await workAllowed(service, businessId);
-  if (!w.allowed) throw new OutboundError(`work_paused_${w.reason}`, w.reason === "out_of_credits" ? "Out of credits — the agent is paused until credits are added." : w.reason === "trial_expired" ? "The trial has ended." : w.reason === "email_unverified" ? "Verify your email first — your agent can't act until then." : "No active plan.", 402);
+  if (!w.allowed) throw new OutboundError(`work_paused_${w.reason}`, w.reason === "out_of_credits" ? "Out of credits — the agent is paused until credits are added." : "No active plan.", 402);
 }
 
 // ---------- prospects ----------
@@ -161,7 +160,7 @@ export async function retryFailedSend(service: SupabaseClient, messageId: string
   return sendApprovedMessage(service, messageId, actor);
 }
 
-// ---------- 4. send (gate enforced; sandbox simulates; sends are free) ----------
+// ---------- 4. send (gate enforced; sends are free) ----------
 export async function sendApprovedMessage(service: SupabaseClient, messageId: string, actor: Actor) {
   const { data: m } = await service.from("outbound_messages").select("*").eq("id", messageId).maybeSingle();
   if (!m) throw new OutboundError("not_found", "Message not found.", 404);
@@ -175,12 +174,6 @@ export async function sendApprovedMessage(service: SupabaseClient, messageId: st
   const text = `${m.body_text}${unsubscribeFooter(unsub)}`;
   const html = `<div style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111">${m.body_text.split("\n").map((l: string) => (l.trim() ? `<p style="margin:0 0 12px">${escapeHtml(l)}</p>` : "")).join("")}<p style="margin:24px 0 0;font-size:12px;color:#777">If you'd rather not hear from us, one click and you won't: <a href="${unsub}">unsubscribe</a></p><img src="${origin}/api/outbound/o/${m.id}.gif" width="1" height="1" alt="" /></div>`;
 
-  if (b.is_sandbox) {
-    await service.from("outbound_messages").update({ status: "simulated", sent_at: now(), updated_at: now() }).eq("id", m.id);
-    await service.from("outbound_prospects").update({ last_contacted_at: now(), updated_at: now() }).eq("id", m.prospect_id);
-    await event(service, { businessId: b.id, prospectId: m.prospect_id, messageId: m.id, kind: "simulated", actor, payload: { to: m.to_email } });
-    return { ...m, status: "simulated" };
-  }
   try {
     const res = await sendGmail(b.owner_id, { to: m.to_email, subject: m.subject, text, html, threadId: m.gmail_thread_id ?? undefined, inReplyTo: m.in_reply_to ? (await service.from("outbound_messages").select("gmail_message_id").eq("id", m.in_reply_to).maybeSingle()).data?.gmail_message_id ?? undefined : undefined });
     const { data: sent } = await service.from("outbound_messages").update({ status: "sent", sent_at: now(), gmail_message_id: res.id, gmail_thread_id: res.threadId, updated_at: now() }).eq("id", m.id).select("*").single();
@@ -217,7 +210,6 @@ export async function unsubscribe(service: SupabaseClient, messageId: string, to
 /** Replies: for every sent message with a Gmail thread, look for newer messages in that thread not from the owner. */
 export async function syncReplies(service: SupabaseClient, businessId: string): Promise<{ checked: number; replies: number }> {
   const b = await business(service, businessId);
-  if (b.is_sandbox) return { checked: 0, replies: 0 };
   const { data: sent } = await service.from("outbound_messages").select("id, prospect_id, to_email, gmail_thread_id, gmail_message_id, replied_at").eq("business_id", businessId).eq("status", "sent").not("gmail_thread_id", "is", null).is("replied_at", null).order("sent_at", { ascending: false }).limit(50);
   let replies = 0;
   for (const m of sent ?? []) {
@@ -276,13 +268,13 @@ export async function bookMeeting(service: SupabaseClient, input: { prospectId: 
   const b = await business(service, p.business_id);
   await guard(service, b.id);
   let eventRes: { eventId: string; htmlLink: string; meetUrl: string | null } | null = null;
-  if (!b.is_sandbox) {
+  {
     try { eventRes = await createCalendarEvent(b.owner_id, { summary: `${b.legal_name} × ${p.name}`, description: `Booked by your SFB Agent. Prospect: ${p.name}${p.email ? ` <${p.email}>` : ""}${p.website ? ` · ${p.website}` : ""}`, startISO: input.startISO, endISO: input.endISO, timeZone: b.outbound_time_zone }); }
     catch (e) { throw new OutboundError("calendar_failed", e instanceof Error ? e.message : "Calendar refused the event.", 502); }
   }
   const { data: booking, error } = await service.from("outbound_bookings").insert({ business_id: b.id, prospect_id: p.id, message_id: input.replyToMessageId ?? null, calendar_owner_id: b.owner_id, calendar_event_id: eventRes?.eventId ?? null, meet_url: eventRes?.meetUrl ?? null, start_at: input.startISO, end_at: input.endISO, time_zone: b.outbound_time_zone, created_by: actor.label }).select("*").single();
   if (error) throw new Error(error.message);
-  const tx = await chargeAction(service, { businessId: b.id, actionKey: "outbound.meeting_booked", outcome: "completed", description: `Meeting booked — ${p.name}${b.is_sandbox ? " (simulated)" : ""}`, idempotencyKey: `outbound:booking:${booking.id}`, actorId: actor.kind === "user" ? actor.id : null, resultRef: booking.id });
+  const tx = await chargeAction(service, { businessId: b.id, actionKey: "outbound.meeting_booked", outcome: "completed", description: `Meeting booked — ${p.name}`, idempotencyKey: `outbound:booking:${booking.id}`, actorId: actor.kind === "user" ? actor.id : null, resultRef: booking.id });
   await service.from("outbound_bookings").update({ credit_tx_id: tx.id }).eq("id", booking.id);
   await service.from("outbound_prospects").update({ status: "booked", updated_at: now() }).eq("id", p.id);
   await event(service, { businessId: b.id, prospectId: p.id, kind: "booked", actor, payload: { booking_id: booking.id, start: input.startISO, meet: eventRes?.meetUrl ?? null, credit_tx: tx.id } });

@@ -56,7 +56,7 @@ export function buildRows(findings: Finding[], modules: AgentModule[]): DayRow[]
 
 export const CHECK_CAPABILITY: Record<CheckKey, Finding["capability"]> = { presence: "ai_presence", outbound: "outbound_gtm", reviews: "reviews_reputation", website: "website", chat: "chat_texting" };
 
-/** The trial's "first 3 tasks": top findings on LIVE capabilities only, most issues first. */
+/** The agent's "first 3 tasks": top findings on LIVE capabilities only, most issues first. */
 export function firstThreeTasks(findings: Finding[], modules: AgentModule[]): { title: string; context: string }[] {
   const live = new Set(modules.filter((m) => m.status === "live").map((m) => m.key));
   const score = (f: Finding) => Number(f.metrics.issues ?? f.metrics.prospects ?? f.metrics.unanswered ?? f.items.length ?? 0);

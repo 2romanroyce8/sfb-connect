@@ -8,9 +8,8 @@ type Item = { key: string; name: string; description: string; logo: string | nul
  * Customer-side integrations: the same OAuth flows the team uses, scoped to
  * the signed-in customer's own account. A client connecting here is what
  * flips a provider to Live in the registry (first successful connection by
- * anyone). Sandbox (trial) businesses see the list but cannot connect.
  */
-export default function CustomerIntegrations({ isSandbox }: { isSandbox: boolean }) {
+export default function CustomerIntegrations() {
   const [items, setItems] = useState<Item[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const load = useCallback(async () => {
@@ -32,7 +31,6 @@ export default function CustomerIntegrations({ isSandbox }: { isSandbox: boolean
   return (
     <div className="flex flex-col gap-3">
       {flash && <div className={`rounded-xl px-4 py-3 text-[13px] ${flash.ok ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>{flash.text}</div>}
-      {isSandbox && <div className="rounded-xl px-4 py-3 text-[13px] bg-amber-50 text-amber-900 border border-amber-200">Integrations connect on Solo and Agency. The trial runs on demo data with no real connections or sends.</div>}
       {items.map((i) => (
         <div key={i.key} className="border border-neutral-200 rounded-xl p-4 flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0">
@@ -47,10 +45,10 @@ export default function CustomerIntegrations({ isSandbox }: { isSandbox: boolean
           <div className="shrink-0">
             {i.connected ? (
               <button onClick={() => disconnect(i.key, i.name)} className="text-[12.5px] font-medium text-red-600 border border-red-200 rounded-full px-3 py-1.5">Disconnect</button>
-            ) : i.configured && !isSandbox ? (
+            ) : i.configured ? (
               <a href={`/api/team/integrations/${i.key}/connect?return=dashboard`} className="text-[12.5px] font-semibold text-white bg-neutral-900 rounded-full px-4 py-2 inline-block">Connect</a>
             ) : (
-              <span className="text-[12.5px] text-neutral-400 border border-neutral-200 rounded-full px-3 py-1.5 inline-block">{isSandbox ? "Paid plans" : "Soon"}</span>
+              <span className="text-[12.5px] text-neutral-400 border border-neutral-200 rounded-full px-3 py-1.5 inline-block">Soon</span>
             )}
           </div>
         </div>

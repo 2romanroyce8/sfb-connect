@@ -68,7 +68,7 @@ export default function ProjectsWorkspace() {
       <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
         <div><h1 className="text-[22px] font-semibold text-[#F5F5F7] tracking-tight">Projects</h1><div className="text-[13px] text-[#6E6E73] mt-1">Client → tasks → subtasks, notes and roles. Drag to arrange; positions persist.</div></div>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={businessId ?? ""} onChange={(e) => void load(e.target.value, null)} className="h-[34px] rounded-[8px] px-2 text-[12.5px] outline-none max-w-[240px]" style={field}>{data.spaces.map((s) => <option key={s.id} value={s.id}>{s.name}{s.plan_key === "trial" ? " · trial" : ""}</option>)}{data.spaces.length === 0 && <option value="">No client spaces yet</option>}</select>
+          <select value={businessId ?? ""} onChange={(e) => void load(e.target.value, null)} className="h-[34px] rounded-[8px] px-2 text-[12.5px] outline-none max-w-[240px]" style={field}>{data.spaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}{data.spaces.length === 0 && <option value="">No client spaces yet</option>}</select>
           <select value={projectId ?? ""} onChange={(e) => void load(businessId, e.target.value)} className="h-[34px] rounded-[8px] px-2 text-[12.5px] outline-none max-w-[240px]" style={field} disabled={!data.projects.length}>{data.projects.map((p) => <option key={p.id} value={p.id}>{p.name}{p.status !== "active" ? ` · ${p.status}` : ""}</option>)}{data.projects.length === 0 && <option value="">No projects</option>}</select>
           <button type="button" onClick={() => setCreating((c) => !c)} disabled={!businessId} className={btnP}>+ Project</button>
           {g && <button type="button" onClick={() => void autoLayout()} className={btnS} style={{ border: "1px solid rgba(255,255,255,0.16)" }}>Auto-layout</button>}
@@ -86,7 +86,7 @@ export default function ProjectsWorkspace() {
       {!g ? (
         <div className="rounded-[16px] p-10 text-center" style={{ border: "1px dashed rgba(255,255,255,0.14)", background: "radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px) 0 0 / 22px 22px, #0A0A0B" }}>
           <div className="text-[15px] text-white font-semibold">{data.spaces.length === 0 ? "No client spaces yet." : `No projects for ${space?.name ?? "this client"} yet.`}</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1">{data.spaces.length === 0 ? "A client space appears when a business has a plan (trial or paid)." : "Create the first project to start the graph. Nothing here is sample data."}</div>
+          <div className="text-[13px] text-[#6E6E73] mt-1">{data.spaces.length === 0 ? "A client space appears when a business has a paid plan." : "Create the first project to start the graph. Nothing here is sample data."}</div>
         </div>
       ) : (
         <div className={`grid gap-4 ${sel ? "lg:grid-cols-[1fr_360px]" : ""}`}>

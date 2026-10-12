@@ -7,7 +7,7 @@ import { CAPABILITIES, CREDITS_PAY_FOR_WORK } from "@/lib/agentProgram/config";
 type Pack = { id: string; name: string; credits: number; usd: number };
 const fmt = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-export default function CreditsTools({ balance, isSandbox, priceListVisible, packs, ledger, creditsPerCall }: { balance: number; isSandbox: boolean; priceListVisible: boolean; packs: Pack[]; ledger: LedgerRow[]; creditsPerCall: number }) {
+export default function CreditsTools({ balance, priceListVisible, packs, ledger, creditsPerCall }: { balance: number; priceListVisible: boolean; packs: Pack[]; ledger: LedgerRow[]; creditsPerCall: number }) {
   const [calls, setCalls] = useState(10);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -23,12 +23,12 @@ export default function CreditsTools({ balance, isSandbox, priceListVisible, pac
   const need = calls * creditsPerCall;
   return (
     <div className="flex flex-col gap-8">
-      {!isSandbox && <section className="border border-neutral-200 rounded-xl p-5">
+      {<section className="border border-neutral-200 rounded-xl p-5">
         <h2 className="text-[13px] font-semibold text-neutral-900 mb-1">Planning calculator</h2>
         <p className="text-[12.5px] text-neutral-500 mb-3">One fully-worked prospect ≈ {creditsPerCall} credits (sourced, enriched, messaged, replied, booked).</p>
         <div className="flex flex-wrap items-center gap-3"><label className="text-[12.5px] text-neutral-700">Booked calls I want</label><input type="number" min={1} max={500} value={calls} onChange={(e) => setCalls(Math.max(1, Math.min(500, Number(e.target.value) || 1)))} className="w-24 h-9 border border-neutral-300 rounded-lg px-2 text-[13px]" /><div className="text-[13px] text-neutral-900">≈ <span className="font-semibold">{need}</span> credits · you have {balance}{need > balance ? <span className="text-amber-700"> · {need - balance} short</span> : <span className="text-emerald-700"> · covered</span>}</div></div>
       </section>}
-      {priceListVisible && !isSandbox && (
+      {priceListVisible && (
         <section><h2 className="text-[13px] font-semibold text-neutral-900 mb-1">Top-up packs <span className="font-normal text-neutral-400">· never expire while your membership is active</span></h2><p className="text-[12px] text-neutral-500 mb-3">{CREDITS_PAY_FOR_WORK}</p>{msg && <div className="text-[12px] text-amber-700 mb-2">{msg}</div>}<div className="grid sm:grid-cols-3 gap-3">{packs.map((p) => <div key={p.id} className="border border-neutral-200 rounded-xl p-4 flex flex-col"><div className="text-[15px] font-semibold text-neutral-900">{p.name}</div><div className="text-[20px] font-semibold text-neutral-900 mt-1">${p.usd.toLocaleString("en-US")}</div><button onClick={() => buy(p.id)} disabled={busy === p.id} className="mt-3 text-[12.5px] font-semibold text-white bg-neutral-900 rounded-full px-4 py-2 disabled:opacity-50">{busy === p.id ? "Opening…" : "Buy"}</button></div>)}</div></section>
       )}
       <section>

@@ -248,10 +248,10 @@ TOOLS.push(
     description: "A customer business's plan, credit balance and recent credit transactions -- exactly what the signed-in user can see (owners: every business; others: their own). Use for 'how many credits does X have', 'what did the agent charge', 'is work paused'. Read-only.",
     scope: "sfb:billing:read",
     inputSchema: obj({ business_id: str("Business UUID. Omit to list the businesses you can see with their balances."), limit: int("Transactions to return (default 50)", 1, 200) }),
-    outputSchema: obj({ businesses: { type: "array", items: obj({ id: str(""), legal_name: str(""), plan_key: str(""), credits_balance: { type: "number" }, monthly_credit_allotment: { type: "number" }, work_paused_reason: str(""), trial_expires_at: str(""), is_sandbox: { type: "boolean" } }) }, transactions: { type: "array", items: obj({ id: str(""), business_id: str(""), amount: { type: "number" }, balance_after: { type: "number" }, type: str(""), capability_key: str(""), action_key: str(""), description: str(""), created_at: str("") }) } }),
+    outputSchema: obj({ businesses: { type: "array", items: obj({ id: str(""), legal_name: str(""), plan_key: str(""), credits_balance: { type: "number" }, monthly_credit_allotment: { type: "number" }, work_paused_reason: str("") }) }, transactions: { type: "array", items: obj({ id: str(""), business_id: str(""), amount: { type: "number" }, balance_after: { type: "number" }, type: str(""), capability_key: str(""), action_key: str(""), description: str(""), created_at: str("") }) } }),
     async run(ctx, args) {
       const id = s(args.business_id) ? uuid(args.business_id, "business") : null;
-      let q = ctx.user.from("businesses").select("id, legal_name, plan_key, monthly_credit_allotment, work_paused_reason, trial_expires_at, is_sandbox").order("created_at", { ascending: false }).limit(25);
+      let q = ctx.user.from("businesses").select("id, legal_name, plan_key, monthly_credit_allotment, work_paused_reason").order("created_at", { ascending: false }).limit(25);
       if (id) q = q.eq("id", id);
       const b = await q;
       fail(b.error, "load businesses");

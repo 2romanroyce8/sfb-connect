@@ -3,6 +3,8 @@ import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import { getStripeClient, isStripeConfigured } from "@/lib/billing/stripe";
 import { tier } from "@/lib/agentProgram/config";
+import { redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 // Post-checkout landing. Reads the session from Stripe (server-side,
@@ -12,6 +14,10 @@ export default async function AgentWelcomePage({ searchParams }: { searchParams:
   let state: "paid" | "open" | "unknown" = "unknown";
   let email = "";
   let planName = "";
+  // Funnel customers are already signed in: once the webhook has provisioned, go straight to the dashboard.
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) { const { data: biz } = await supabase.from("businesses").select("id").eq("owner_id", user.id).not("plan_key", "is", null).limit(1).maybeSingle(); if (biz) redirect("/dashboard/agent?welcome=paid"); }
   if (searchParams.session_id && isStripeConfigured()) {
     try {
       const s = await getStripeClient().checkout.sessions.retrieve(searchParams.session_id);
@@ -29,7 +35,7 @@ export default async function AgentWelcomePage({ searchParams }: { searchParams:
           {state === "paid" ? (
             <>
               <h1 className="text-[32px] md:text-[40px] font-bold tracking-[-0.03em] leading-[1.05]">Your agent is being assigned.</h1>
-              <p className="mt-5 text-[15px] leading-[1.6] text-white/[0.6]">Payment received{planName ? ` for the ${planName} plan` : ""}. Within a few minutes you&apos;ll get an email{email ? <> at <span className="text-white">{email}</span></> : null} with a link to set your password and open your SFB dashboard — your agent, its modules, your credits and your human overseer all live there.</p>
+              <p className="mt-5 text-[15px] leading-[1.6] text-white/[0.6]">Payment received{planName ? ` for the ${planName} plan` : ""}. Your dashboard unlocks within a minute{user ? <> — <meta httpEquiv="refresh" content="4" />this page refreshes itself</> : <>; if you set up through our site, sign in{email ? <> as <span className="text-white">{email}</span></> : null} to open it</>}.</p>
               <p className="mt-4 text-[13px] text-white/[0.45]">Didn&apos;t get it within 10 minutes? Check spam, then request a new link from the <Link href="/login" className="underline underline-offset-2 text-white/[0.8]">sign-in page</Link>.</p>
               <Link href="/login" className="mt-8 inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-[14px] font-semibold hover:opacity-85">Go to sign in →</Link>
             </>
@@ -37,13 +43,13 @@ export default async function AgentWelcomePage({ searchParams }: { searchParams:
             <>
               <h1 className="text-[32px] font-bold tracking-[-0.03em]">Payment not completed yet.</h1>
               <p className="mt-4 text-[15px] text-white/[0.6]">Stripe hasn&apos;t confirmed this payment. If you closed checkout early, start again from the pricing section.</p>
-              <Link href="/agent#pricing" className="mt-8 inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-[14px] font-semibold">Back to pricing →</Link>
+              <Link href="/start" className="mt-8 inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-[14px] font-semibold">Back to get started →</Link>
             </>
           ) : (
             <>
               <h1 className="text-[32px] font-bold tracking-[-0.03em]">Welcome.</h1>
               <p className="mt-4 text-[15px] text-white/[0.6]">If you just completed checkout, watch your inbox for your sign-in email. Otherwise, choose a plan to get your agent.</p>
-              <Link href="/agent#pricing" className="mt-8 inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-[14px] font-semibold">See plans →</Link>
+              <Link href="/start" className="mt-8 inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-[14px] font-semibold">Get started →</Link>
             </>
           )}
         </div>

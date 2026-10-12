@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const me = await caller();
   if (!me) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const service = createSupabaseServiceClient();
-  const { data: bizRows } = await service.from("businesses").select("id, legal_name, owner_id, agent_overseer_id, is_sandbox, plan_key, outbound_offer_line, outbound_time_zone").not("plan_key", "is", null).order("created_at", { ascending: false });
+  const { data: bizRows } = await service.from("businesses").select("id, legal_name, owner_id, agent_overseer_id, plan_key, outbound_offer_line, outbound_time_zone").not("plan_key", "is", null).order("created_at", { ascending: false });
   const businesses = (bizRows ?? []).filter((b) => mayManage(me, b));
   const businessId = req.nextUrl.searchParams.get("business") || businesses[0]?.id || null;
   if (!businessId || !businesses.some((b) => b.id === businessId)) return NextResponse.json({ businesses, business: null });

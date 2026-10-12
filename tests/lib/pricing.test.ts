@@ -9,7 +9,7 @@ import { priceDisplay, creditsMath, OFFERS, roiEstimate, fmtCustomers, vendorsTo
 const t = (k: string) => TIERS.find((x) => x.key === k)!;
 
 test("ground truth: tier numbers match Roman's spec", () => {
-  assert.equal(t("trial").monthlyUsd, 0); assert.equal(t("trial").credits, 128);
+  
   assert.equal(t("solo").monthlyUsd, 1497); assert.equal(t("solo").onboardingUsd, 1497); assert.equal(t("solo").credits, 150); assert.equal(t("solo").businesses, 1);
   assert.equal(t("agency").monthlyUsd, 4997); assert.equal(t("agency").onboardingUsd, 4997); assert.equal(t("agency").credits, 500); assert.equal(t("agency").businesses, 5);
   assert.deepEqual(TOP_UP_PACKS.map((p) => [p.credits, p.usd]), [[100, 149], [500, 599], [1000, 999]]);
@@ -26,8 +26,6 @@ test("annual = 10× monthly, per-month equivalent shown; setup never discounted"
   assert.equal(m.headline, 1497); assert.equal(y.headline, 1247.5);
   assert.match(y.billedLine!, /\$14,970 billed yearly · 2 months free/);
   assert.equal(m.setupLine, y.setupLine); assert.match(m.setupLine, /\$1,497 one-time setup/);
-  const trial = priceDisplay(t("trial"), "year");
-  assert.equal(trial.headline, 0); assert.equal(trial.unit, ""); assert.equal(trial.billedLine, null); assert.match(trial.setupLine, /128 credits · no card · 5 days/);
 });
 
 test("BLANKS stay blank until Rome fills them — nothing invented", () => {
@@ -39,8 +37,6 @@ test("BLANKS stay blank until Rome fills them — nothing invented", () => {
   // Rome's anchors (2026-10-11): strikethrough shows on both intervals, annual as per-month equivalent.
   assert.equal(priceDisplay(t("solo"), "month").wasUsd, 5000); assert.equal(priceDisplay(t("agency"), "month").wasUsd, 10000);
   assert.equal(priceDisplay(t("solo"), "year").wasUsd, annualPerMonthUsd(5000));
-  // Roman 2026-10-11 18:09 ET: free, no card, 5 days (the $1 was a Stripe test).
-  assert.equal(TIERS[0].trialDays, 5); assert.equal(TIERS[0].trialUsd, 0); assert.equal(TIERS[0].expiry, "0 credits or 5 days");
   assert.equal(REPLACED_VENDORS.length, 6);
   if (VENDORS_TOTAL_MONTHLY_USD === null) assert.equal(vendorsTotalLine(), "Typically thousands a month");
   else assert.match(vendorsTotalLine(), /^\$[\d,]+\/mo$/);
@@ -49,7 +45,6 @@ test("BLANKS stay blank until Rome fills them — nothing invented", () => {
 test("offer copy carries config numbers (no drift)", () => {
   assert.match(creditsMath(t("solo")), /^150 credits ≈ 10 booked calls\/mo$/);
   assert.match(creditsMath(t("agency")), /^500 credits ≈ 33 booked calls\/mo$/);
-  assert.match(OFFERS.trial.makes, /^128 credits ≈ 8 booked calls/);
   assert.match(OFFERS.solo.money, /One \$1,497\/mo instead of six vendors — seo agency, ad manager, web designer, crm consultant, answering service, ops consultant\./);
   assert.match(OFFERS.solo.makes, /150 credits ≈ 10 fully-worked prospects every month\. 10 booked calls\./);
   assert.match(OFFERS.agency.money, /500 pooled credits ≈ 33 booked calls\/mo/);

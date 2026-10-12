@@ -13,7 +13,7 @@ import { useState } from "react";
  * The day-grouped punch list. Every row is a real finding (or an honest
  * "couldn't measure — here's why"); the agent line is status-aware from the
  * capability registry passed in from the server. Rows fill in as the stream
- * lands. The preview promises; the trial shows.
+ * lands. The preview promises; the agent delivers.
  */
 /** Their logo (or a clean initial tile — never a broken image) + their name + "Analyzed: exactly what they typed". */
 function ReportHeader({ name, logoUrl, enteredQuery, domain, market, cached, status }: { name: string | null; logoUrl: string | null; enteredQuery: string; domain: string; market: string | null; cached: boolean; status: string }) {
@@ -42,7 +42,7 @@ function Heading({ name }: { name: string | null }) {
       <h2 className="text-[32px] sm:text-[40px] md:text-[56px] font-extrabold tracking-[-0.025em] leading-[1.06]">
         Your agent&apos;s first 7 days{name ? <> at <span className="font-serif-accent italic font-normal">{name}.</span></> : <span className="font-serif-accent italic font-normal">.</span>}
       </h2>
-      <p className="mt-4 text-[15px] leading-relaxed text-[#a3a3a8]">Real findings from public data, grouped by day. Live capabilities act in the trial; the rest tell you when they ship. <a href="#agent" className="underline underline-offset-2 text-white/[0.85]">See all 8 →</a></p>
+      <p className="mt-4 text-[15px] leading-relaxed text-[#a3a3a8]">Real findings from public data, grouped by day. Live capabilities act first; the rest tell you when they ship. <a href="#agent" className="underline underline-offset-2 text-white/[0.85]">See all 8 →</a></p>
     </div>
   );
 }
@@ -108,10 +108,10 @@ export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) 
       {s.phase === "done" && (
         <div className="rounded-[18px] p-6 flex flex-wrap items-center justify-between gap-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}>
           <div>
-            <div className="text-[16px] font-semibold text-white">The preview shows findings. The trial is where the agent acts.</div>
-            <div className="text-[13px] text-white/[0.55] mt-1">{liveFound > 0 ? `Your first ${Math.min(3, liveFound)} task${Math.min(3, liveFound) === 1 ? "" : "s"} in the trial mirror what's above on live capabilities.` : "Live capabilities act in the trial; the rest queue for when they ship."} Free, no card, 5 days.</div>
+            <div className="text-[16px] font-semibold text-white">The preview shows findings. Your agent is where they get done.</div>
+            <div className="text-[13px] text-white/[0.55] mt-1">Create your account and your agent starts from exactly what you see above. Price shown after it builds itself.</div>
           </div>
-          <Link href={`/start${scanParam}`} onClick={() => trackMarketingEvent("trial_signup_start", { from: "first_7_days", domain: s.meta?.domain })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Start free — put the agent to work →</Link>
+          <Link href={`/start${scanParam}`} onClick={() => trackMarketingEvent("funnel_start_click", { from: "first_7_days", domain: s.meta?.domain })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Get started — put the agent to work →</Link>
         </div>
       )}
     </div>

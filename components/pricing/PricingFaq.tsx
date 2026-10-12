@@ -27,7 +27,7 @@ export default function PricingFaq() {
             );
           })}
         </div>
-        <p className="mt-6 text-[13px] text-white/[0.45]">Still unsure? <Link href="/start" className="text-white underline underline-offset-4 decoration-white/[0.25]">Start free</Link> — $0, no card, 5 days.</p>
+        <p className="mt-6 text-[13px] text-white/[0.45]">Still unsure? Book a demo call and we'll walk you through it live.</p>
       </div>
     </section>
   );

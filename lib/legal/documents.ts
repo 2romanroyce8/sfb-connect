@@ -50,7 +50,6 @@ export type LegalDoc = {
 
 const solo = TIERS.find((t) => t.key === "solo")!;
 const agency = TIERS.find((t) => t.key === "agency")!;
-const trial = TIERS.find((t) => t.key === "trial")!;
 
 export const PRIVACY: LegalDoc = {
   slug: "privacy",
@@ -67,7 +66,7 @@ export const PRIVACY: LegalDoc = {
       blocks: [
         { kind: "h3", text: "You give us directly" },
         { kind: "ul", items: [
-          "Contact details: name, company name, email address, phone number (e.g., when you start the free trial or request an AI audit).",
+          "Contact details: name, company name, email address, phone number (e.g., when you create an account or request an AI audit).",
           "Business information: details about your business that you provide during onboarding, audits, or when configuring the SFB Agent (industry, services, locations, existing listings, competitors).",
           "Billing information: payment details are processed by our payment provider (Stripe). We do not store your full card number on our servers.",
           "Account credentials: login information for your SFB Connect account.",
@@ -86,7 +85,7 @@ export const PRIVACY: LegalDoc = {
       blocks: [
         { kind: "ul", items: [
           "Provide and operate the service: run your AI agent's tasks, maintain your AI Presence score, and keep your credit ledger.",
-          "Onboarding and support: set up your trial, answer questions, and troubleshoot.",
+          "Onboarding and support: set up your account, answer questions, and troubleshoot.",
           "Billing: process plan subscriptions, credit purchases, and refunds.",
           "Product improvement: analyze aggregate, de-identified usage to improve the agent (we do not sell your data).",
           "Legal and safety: prevent fraud, abuse, and violations of our Terms of Service.",
@@ -177,7 +176,7 @@ export const TERMS: LegalDoc = {
   lastUpdated: "2026-10-09",
   draftedBy: "Atlas (Muse), final copy pack, October 9, 2026",
   intro: [
-    { kind: "p", text: "These Terms form a contract between you and {{entity}} (\"we,\" \"us,\" \"our\"), operator of https://sfbconnect.com. By creating an account, starting a trial, or paying for the service, you agree to these Terms and to our Privacy Policy." },
+    { kind: "p", text: "These Terms form a contract between you and {{entity}} (\"we,\" \"us,\" \"our\"), operator of https://sfbconnect.com. By creating an account or paying for the service, you agree to these Terms and to our Privacy Policy." },
   ],
   sections: [
     {
@@ -195,7 +194,6 @@ export const TERMS: LegalDoc = {
       blocks: [
         { kind: "p", text: "Plans. Subscription plans are billed in advance at the rates shown on our pricing page (monthly or yearly)." },
         { kind: "ul", items: [
-          `Trial: Free. ${trial.credits} one-time credits on demo business data. No payment details required; no charge at the end of the trial. No real integrations or outbound sends.`,
           `Solo: ${fmtUsd(solo.monthlyUsd)}/month${solo.onboardingUsd ? ` plus a one-time ${fmtUsd(solo.onboardingUsd)} onboarding fee` : ""}. ${solo.credits} credits per month. One real business, all eight capabilities.`,
           `Agency: ${fmtUsd(agency.monthlyUsd)}/month${agency.onboardingUsd ? ` plus a one-time ${fmtUsd(agency.onboardingUsd)} onboarding fee` : ""}. ${agency.credits} credits per month, pooled across five white-labeled client spaces.`,
         ] },

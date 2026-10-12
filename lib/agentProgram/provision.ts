@@ -9,7 +9,7 @@ import { tier, CAPABILITY_KEYS } from "./config";
 export async function provisionAgentCustomer(service: SupabaseClient, session: Stripe.Checkout.Session, eventId: string) {
   const orderId = session.metadata?.order_id;
   const t = tier(session.metadata?.plan_key);
-  if (!orderId || !t || t.monthlyUsd === 0) { console.error("agent_plan checkout without order/tier metadata", session.id); return; }
+  if (!orderId || !t) { console.error("agent_plan checkout without order/tier metadata", session.id); return; }
   const { data: order } = await service.from("agent_plan_orders").select("*").eq("id", orderId).single();
   if (!order) { console.error("agent_plan checkout for unknown order", orderId); return; }
   if (order.status === "provisioned") return;
@@ -20,8 +20,13 @@ export async function provisionAgentCustomer(service: SupabaseClient, session: S
   await service.from("agent_plan_orders").update({ status: "paid", paid_at: new Date().toISOString(), stripe_customer_id: stripeCustomerId, stripe_subscription_id: stripeSubscriptionId, amount_total_cents: session.amount_total ?? order.amount_total_cents }).eq("id", orderId);
 
   try {
+    // Gated funnel (2026-10-12): the order carries the verified signup; the owner already exists and the
+    // business is built from the profile the agent extracted and the owner confirmed. Legacy orders
+    // (no signup) keep the invite path.
+    const { data: signup } = order.signup_id ? await service.from("funnel_signups").select("user_id, profile, domain").eq("id", order.signup_id).maybeSingle() : { data: null };
+    const prof = (signup?.profile ?? null) as null | { businessName: string; contactName: string; website: string; domain: string; category: string | null; nicheTags?: string[]; city: string | null; state: string | null; phone: string; services: string[]; offerLine: string; socials: Record<string, string>; logoUrl: string | null; toneNotes: string[] };
     const { data: existingUser } = await service.from("users").select("id").eq("email", email).maybeSingle();
-    let ownerId = existingUser?.id ?? null; let invited = false;
+    let ownerId = (signup?.user_id as string | undefined) ?? existingUser?.id ?? null; let invited = false;
     if (!ownerId) {
       const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.sfbconnect.com";
       const { data: inv, error } = await service.auth.admin.inviteUserByEmail(email, { redirectTo: `${siteUrl}/login` });
@@ -29,21 +34,22 @@ export async function provisionAgentCustomer(service: SupabaseClient, session: S
       ownerId = inv.user.id; invited = true;
     }
     const now = new Date().toISOString();
-    const fields = { plan_key: t.key, stripe_customer_id: stripeCustomerId, monthly_credit_allotment: t.credits, credits_cycle_started_at: now, is_sandbox: false, stock_profile_key: null, trial_expires_at: null, work_paused_reason: null, updated_at: now };
+    const profileFields = prof ? { website: prof.website, primary_category: prof.category, niche_tags: prof.nicheTags ?? [], city: prof.city, state: prof.state, phone: prof.phone, services: prof.services, social_links: prof.socials, brand_logo_url: prof.logoUrl, tone_notes: prof.toneNotes.join(" · ") || null, outbound_offer_line: prof.offerLine, analyzer_scan_domain: prof.domain } : {};
+    const fields = { plan_key: t.key, stripe_customer_id: stripeCustomerId, monthly_credit_allotment: t.credits, credits_cycle_started_at: now, is_sandbox: false, work_paused_reason: null, updated_at: now, ...profileFields };
     const { data: existingBiz } = await service.from("businesses").select("id").eq("owner_id", ownerId).maybeSingle();
     let businessId = existingBiz?.id ?? null;
     if (businessId) {
-      const { error } = await service.from("businesses").update({ ...fields, legal_name: order.business_name ?? undefined }).eq("id", businessId);
+      const { error } = await service.from("businesses").update({ ...fields, legal_name: prof?.businessName ?? order.business_name ?? undefined }).eq("id", businessId);
       if (error) throw new Error(error.message);
     } else {
-      const { data: biz, error } = await service.from("businesses").insert({ owner_id: ownerId, legal_name: order.business_name, ...fields }).select("id").single();
+      const { data: biz, error } = await service.from("businesses").insert({ owner_id: ownerId, legal_name: prof?.businessName ?? order.business_name, ...fields }).select("id").single();
       if (error || !biz) throw new Error(error?.message || "Could not create business.");
       businessId = biz.id;
     }
     await service.from("business_capabilities").upsert(CAPABILITY_KEYS.map((k) => ({ business_id: businessId, capability_key: k, enabled: true, updated_at: now })));
     await appendCreditTransaction(service, { businessId, type: "PURCHASE", amount: t.credits, source: "sfb_agent_plan", description: `${t.name} plan — monthly credits`, idempotencyKey: `stripe_event:${eventId}` });
     await service.from("agent_plan_orders").update({ status: "provisioned", provisioned_at: now, business_id: businessId }).eq("id", orderId);
-    await service.from("billing_audit_log").insert({ business_id: businessId, action: "agent_plan_provisioned", detail: { order_id: orderId, plan_key: t.key, invited, stripe_subscription_id: stripeSubscriptionId, stripe_event_id: eventId } });
+    await service.from("billing_audit_log").insert({ business_id: businessId, action: "agent_plan_provisioned", detail: { order_id: orderId, plan_key: t.key, invited, from_signup: !!signup, stripe_subscription_id: stripeSubscriptionId, stripe_event_id: eventId } });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await service.from("agent_plan_orders").update({ status: "failed", error: msg }).eq("id", orderId);

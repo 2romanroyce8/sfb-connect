@@ -29,7 +29,7 @@ test("every per-action price matches the spec exactly", () => {
 
 test("tiers, top-ups and planning math match the spec", () => {
   const t = (k: string) => TIERS.find((x) => x.key === k)!;
-  assert.equal(t("trial").credits, 128); assert.equal(t("solo").credits, 150); assert.equal(t("agency").credits, 500);
+  assert.equal(t("solo").credits, 150); assert.equal(t("agency").credits, 500);
   assert.deepEqual(TOP_UP_PACKS.map((p) => [p.credits, p.usd]), [[100, 149], [500, 599], [1000, 999]]);
   assert.equal(CREDITS_PER_BOOKED_CALL, 15); assert.equal(bookedCallsFor(150), 10); assert.equal(bookedCallsFor(500), 33);
   assert.equal(WARN_AT, 0.8);

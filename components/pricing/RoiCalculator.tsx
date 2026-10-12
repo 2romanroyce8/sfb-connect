@@ -56,7 +56,7 @@ export default function RoiCalculator() {
                 ≈ {result.calls} booked calls → ≈ {fmtCustomers(result.customers)} new customers → <span className="text-[#30D158]">≈ {fmtUsd(result.revenueUsd)}/mo</span>
               </div>
               <div className="mt-3 text-[13.5px] text-white/[0.6]">
-                On a {fmtUsd(result.costUsd)}/mo plan that is {result.netUsd >= 0 ? <>≈ <strong className="text-white">{fmtUsd(result.netUsd)}</strong> more than the agent costs each month.</> : <>≈ <strong className="text-white">{fmtUsd(-result.netUsd)}</strong> short of covering the plan — try a higher close rate or customer value, or start with the free trial.</>}
+                On a {fmtUsd(result.costUsd)}/mo plan that is {result.netUsd >= 0 ? <>≈ <strong className="text-white">{fmtUsd(result.netUsd)}</strong> more than the agent costs each month.</> : <>≈ <strong className="text-white">{fmtUsd(-result.netUsd)}</strong> short of covering the plan — try a higher close rate or customer value, or talk to us on a demo call.</>}
               </div>
               <div className="mt-2 text-[11.5px] text-white/[0.4]">Planning math, not a promise. Credits pay for work done, not outcomes.</div>
             </>

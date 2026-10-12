@@ -2,26 +2,33 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
-import DemoStart from "@/components/demo/DemoStart";
+import FunnelFlow from "@/components/funnel/FunnelFlow";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
-import { TRIAL_TIER } from "@/lib/agentProgram/config";
-import { cookies } from "next/headers";
-import { PENDING_COOKIE, readPending } from "@/lib/demo/verification";
+import { getSignup, markPricingSeen, stageFor } from "@/lib/funnel/signup";
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: `Hire your SFB Agent — free for ${TRIAL_TIER.trialDays} days`, description: `Paste your website. Your agent reads it, learns how you write, finds your dream clients and drafts outreach in your voice. Free for ${TRIAL_TIER.trialDays} days, no card. Nothing sends without your approval.` };
+export const metadata: Metadata = { title: "Get started — SFB Connect", description: "Create your account, verify your email, and watch your agent read your website and build its own profile of your business." };
 
-// Phase 2 slice (a): the hire flow (URL + work email → build show → review →
-// email code → dashboard). A signed-in customer goes straight to the dashboard.
-export default async function StartPage() {
+// The gated funnel. The server computes the stage from real state — session,
+// funnel_signups, and whether a business with a plan exists — so pricing
+// cannot be reached before verification + build show, and nothing is paid
+// twice. A paying customer goes straight to the dashboard.
+export default async function StartPage({ searchParams }: { searchParams: { scan?: string; url?: string } }) {
   const { data: { user } } = await createSupabaseServerClient().auth.getUser();
+  let stage: ReturnType<typeof stageFor> = "account"; let signup = null as Awaited<ReturnType<typeof getSignup>>;
   if (user) {
-    const { data: biz } = await createSupabaseServiceClient().from("businesses").select("id, email_verified_at, plan_key").eq("owner_id", user.id).not("plan_key", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    if (biz && (biz.email_verified_at || biz.plan_key !== "trial")) redirect("/dashboard/agent");
+    const db = createSupabaseServiceClient();
+    const [{ data: biz }, s] = await Promise.all([db.from("businesses").select("id").eq("owner_id", user.id).not("plan_key", "is", null).limit(1).maybeSingle(), getSignup(db, user.id)]);
+    signup = s; stage = stageFor(s, !!biz);
+    if (stage === "done") redirect("/dashboard/agent");
+    if (stage === "pricing") await markPricingSeen(db, user.id);
   }
+  const prefill = (searchParams.scan || searchParams.url || "").slice(0, 200) || null;
   return (
     <main className="bg-black text-white min-h-screen">
       <Navbar />
-      <section className="pt-[140px] pb-24 px-6"><div className="max-w-[760px] mx-auto"><DemoStart signedInEmail={user?.email ?? null} pendingEmail={readPending(cookies().get(PENDING_COOKIE)?.value)?.email ?? null} /></div></section>
+      <section className="pt-[130px] pb-24 px-6"><div className={`mx-auto ${stage === "pricing" ? "max-w-[1180px]" : "max-w-[760px]"}`}>
+        <FunnelFlow stage={stage as "account" | "verify" | "build" | "pricing"} email={signup?.email ?? user?.email ?? null} name={signup?.name ?? null} phone={signup?.phone ?? null} website={signup?.website ?? null} prefillSite={prefill} />
+      </div></section>
       <Footer />
     </main>
   );

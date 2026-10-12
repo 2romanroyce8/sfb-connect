@@ -6,7 +6,7 @@ import { fmtUsd, annualUsd, CREDITS_PAY_FOR_WORK } from "@/lib/agentProgram/conf
 
 // "Get your agent" -> a two-field sheet (email + business name) -> Stripe
 // Checkout. Amounts are display-only here; the server resolves them.
-export default function AgentCheckout({ plan, interval = "month" }: { plan: Tier; interval?: BillingInterval }) {
+export default function AgentCheckout({ plan, interval = "month", funnel = false }: { plan: Tier; interval?: BillingInterval; funnel?: boolean }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -16,13 +16,15 @@ export default function AgentCheckout({ plan, interval = "month" }: { plan: Tier
   const start = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setError(null);
     try {
-      const r = await fetch("/api/agent/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plan: plan.key, email, businessName, interval }) });
+      const r = await fetch("/api/agent/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(funnel ? { plan: plan.key, interval } : { plan: plan.key, email, businessName, interval }) });
       const j = await r.json();
       if (!r.ok || !j.checkoutUrl) throw new Error(j.error || "Could not start checkout.");
       window.location.href = j.checkoutUrl;
     } catch (err) { setError(err instanceof Error ? err.message : "Could not start checkout."); setBusy(false); }
   };
 
+  // Inside the gated funnel the account and business profile are already known: one click to Stripe.
+  if (funnel) return <form onSubmit={start} className="flex flex-col gap-2"><button type="submit" disabled={busy} className="w-full inline-flex justify-center items-center bg-white text-black h-[44px] px-5 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity disabled:opacity-50">{busy ? "Opening checkout…" : "Pay & unlock your dashboard →"}</button>{error && <div className="text-[12px] text-[#FF9F9A]">{error}</div>}</form>;
   if (!open) return <button onClick={() => setOpen(true)} className="w-full inline-flex justify-center items-center bg-white text-black h-[44px] px-5 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity">Get your agent →</button>;
 
   return (

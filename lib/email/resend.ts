@@ -4,7 +4,7 @@ import { Resend } from "resend";
  * SFB Connect's own transactional sender (system service — never a customer
  * connection). Configured iff RESEND_API_KEY is set; RESEND_FROM_EMAIL is the
  * verified sender. Every send is best-effort: failures are logged and never
- * break the calling flow (a trial must still start if the welcome email fails).
+ * break the calling flow (a signup must still complete if an email fails).
  */
 export const resendConfigured = (env: Record<string, string | undefined> = process.env) => !!(env.RESEND_API_KEY ?? "").trim();
 const FROM_DEFAULT = "SFB Connect <hello@sfbconnect.com>";
@@ -25,24 +25,6 @@ export async function sendEmail(msg: { to: string; subject: string; html: string
 }
 
 const shell = (title: string, body: string) => `<!doctype html><html><body style="margin:0;background:#000;color:#f5f5f7;font-family:Inter,Helvetica,Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:40px 24px"><div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#8a8a8f">SFB Connect</div><h1 style="font-size:22px;margin:16px 0 12px;letter-spacing:-.02em">${title}</h1><div style="font-size:15px;line-height:1.6;color:#c9c9ce">${body}</div><div style="margin-top:32px;font-size:12px;color:#6e6e73">You're receiving this because you have an SFB Connect account. Sign in: <a style="color:#f5f5f7" href="https://www.sfbconnect.com/login">sfbconnect.com/login</a></div></div></body></html>`;
-
-/** Trial welcome: what they got, how long it lasts, where to look. */
-export function trialWelcomeEmail(p: { name: string; credits: number; days: number; businessName: string }) {
-  return {
-    subject: `Your SFB Agent is running — ${p.credits} credits, ${p.days} days`,
-    html: shell(`Welcome, ${p.name}.`, `<p>Your agent is already working on <strong>${p.businessName}</strong> — a demo business on stock data, so nothing real is sent.</p><p>You have <strong>${p.credits} credits</strong> and <strong>${p.days} days</strong>. Every action and its credit receipt shows in your dashboard; the three capabilities you picked are the ones to watch.</p><p><a style="color:#f5f5f7" href="https://www.sfbconnect.com/dashboard/agent">Open your dashboard →</a></p>`),
-    text: `Welcome, ${p.name}. Your SFB Agent is running on ${p.businessName} (demo data, no real sends). ${p.credits} credits, ${p.days} days. Dashboard: https://www.sfbconnect.com/dashboard/agent`,
-  };
-}
-
-/** Demo welcome (the real thing: their business, their Gmail, their approval). */
-export function demoWelcomeEmail(p: { name: string; businessName: string; credits: number; days: number }) {
-  return {
-    subject: `Your agent is on the clock — ${p.days} days for ${p.businessName}`,
-    html: shell(`You just hired an SDR, ${p.name}.`, `<p>Your agent is set up for <strong>${p.businessName}</strong>. It works 24/7 for the next <strong>${p.days} days</strong> on <strong>${p.credits} credits</strong> of real work — real prospects, real emails from your own Gmail.</p><p>It never sends anything you haven't approved. Next step: connect Gmail so it can send as you, then approve its first three tasks.</p><p><a style="color:#f5f5f7" href="https://www.sfbconnect.com/dashboard/agent">Open your dashboard →</a></p>`),
-    text: `You just hired an SDR, ${p.name}. Your agent is set up for ${p.businessName}: ${p.days} days, ${p.credits} credits of real work. It never sends anything you haven't approved. Next: connect Gmail, then approve its first three tasks. https://www.sfbconnect.com/dashboard/agent`,
-  };
-}
 
 /** 80% usage warning (fires once per cycle, see guards.ts). */
 export function creditWarningEmail(p: { businessName: string; balance: number; allotment: number; usedPct: number }) {

@@ -29,7 +29,6 @@ export const capability = (key: string) => CAPABILITIES.find((c) => c.key === ke
 
 // ---- Tiers ----
 export const TIERS = [
-  { key: "trial", name: "Trial", monthlyUsd: 0, onboardingUsd: 0, credits: 128, creditsLabel: "128 one-time", businesses: 1, businessesLabel: "Your real business", capabilityLimit: 8, capabilitiesLabel: "All 8 · Outbound on from day one", integrations: "Gmail (required), Calendar", overseer: "—", priceListVisible: false, expiry: "0 credits or 5 days", trialDays: 5, trialUsd: 0 },
   { key: "solo", name: "Solo", monthlyUsd: 1497, onboardingUsd: 1497, credits: 150, creditsLabel: "150 / month", businesses: 1, businessesLabel: "1 real business", capabilityLimit: 8, capabilitiesLabel: "All 8", integrations: "GHL, Zapier, Calendar, Gmail, Meta, Stripe", overseer: "Shared", priceListVisible: true, expiry: "Monthly", featured: true },
   { key: "agency", name: "Agency", monthlyUsd: 4997, onboardingUsd: 4997, credits: 500, creditsLabel: "500 / month pooled", businesses: 5, businessesLabel: "5 white-labeled client spaces", capabilityLimit: 8, capabilitiesLabel: "All 8 per space", integrations: "Same per space", overseer: "Dedicated", priceListVisible: true, expiry: "Monthly" },
 ] as const;
@@ -37,9 +36,6 @@ export type Tier = (typeof TIERS)[number];
 export type TierKey = Tier["key"];
 export const tier = (key: string | null | undefined): Tier | null => TIERS.find((t) => t.key === key) ?? null;
 export const PAID_TIERS = TIERS.filter((t) => t.monthlyUsd > 0);
-/** The 5-day demo. `trialUsd` 0 = free, provisioned at signup (Roman, 2026-10-11 18:09 ET: "Free, no card"); a non-zero value routes signup through Stripe Checkout instead. */
-export const TRIAL_TIER = TIERS[0];
-export const TRIAL_IS_FREE = TRIAL_TIER.trialUsd === 0;
 
 // ---- Credit price list (one credit type) ----
 export type CreditAction = { key: string; label: string; credits: number; capability: CapabilityKey | "human" };
@@ -96,17 +92,8 @@ export const WARN_AT = 0.8;   // email + banner
 export const CRITICAL_AT = 0.95;
 export const CREDITS_PAY_FOR_WORK = "Credits pay for work done, not outcomes. Failed work costs 0.";
 
-// ---- Trial sandbox: stock business profiles (fake data, no real sends) ----
-export const STOCK_PROFILES = [
-  { key: "roofing_tampa", name: "Sample Roofing Co.", city: "Tampa", state: "FL", category: "Roofing Contractor", website: "https://sampleroofing.example", prospects: ["Bayshore Property Mgmt", "Westchase HOA", "Harbor Island Condos"], reviews: 4.6 },
-  { key: "dental_austin", name: "Bright Smile Dental", city: "Austin", state: "TX", category: "Dentist", website: "https://brightsmile.example", prospects: ["Mueller Family Clinic referral", "Domain Northside employers", "Travis County Teachers plan"], reviews: 4.8 },
-  { key: "hvac_denver", name: "Peak Comfort HVAC", city: "Denver", state: "CO", category: "HVAC Contractor", website: "https://peakcomfort.example", prospects: ["Cherry Creek Apartments", "RiNo Restaurant Group", "Stapleton Builders"], reviews: 4.5 },
-  { key: "medspa_scottsdale", name: "Glow Aesthetics Med Spa", city: "Scottsdale", state: "AZ", category: "Medical Spa", website: "https://glowaesthetics.example", prospects: ["Kierland Commons retailers", "Fashion Square concierge", "Gainey Ranch HOA"], reviews: 4.9 },
-] as const;
-export type StockProfile = (typeof STOCK_PROFILES)[number];
-export const stockProfile = (key: string | null | undefined) => STOCK_PROFILES.find((p) => p.key === key) ?? null;
 
-export const DEMO_HREF = "/start"; // the demo form left the homepage 2026-10-09; the trial is the demo
+export const DEMO_HREF = "/start"; // the gated funnel (account → verify → build show → pricing)
 export const PRICING_NOTE = "Pricing shown is for roofing. Clinics and private equity are priced by consultation.";
 // Whole dollars stay whole ($1,497); a fractional amount (annual per-month equivalent) shows cents ($1,247.50).
 export const fmtUsd = (n: number) => `$${Number.isInteger(n) ? n.toLocaleString("en-US") : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -148,7 +135,7 @@ export const VENDORS_TOTAL_MONTHLY_USD: number | null = null;
 export const AGENT_FAQ = [
   { q: "What's included in the monthly price?", a: "Your SFB Agent, all eight capabilities, your monthly credit allotment, your named human overseer, integrations with your tools, daily/weekly/monthly reports, and your dashboard. No seat fees, no contracts." },
   { q: "Do unused credits roll over?", a: "Monthly plan credits reset each billing cycle — they don't roll over. Top-up packs are different: purchased credits never expire while your membership is active." },
-  { q: "Is there really a free trial?", a: "Yes. Five days of your own agent, free — no card at signup, 128 credits, nothing billed at the end. You see every action the agent takes and approve anything that goes out. Upgrade whenever you're ready." },
+  { q: "Is there a free trial?", a: "No. You see exactly what your agent would do first: create your account, verify your email, and watch it read your website and build its own profile of your business. Then you pick a plan to finish onboarding and unlock the dashboard." },
   { q: "What happens when I run out of credits?", a: "You get a warning email at 80% usage. At zero, the agent pauses — never overcharges. Top up (100/$149, 500/$599, 1,000/$999) or wait for your monthly refill." },
   { q: "Do I pay for work that fails?", a: "No. Failed work — errors, bounces, no result — costs zero credits, always." },
   { q: "Can I get a refund?", a: "Months and credit packs are non-refundable — the work happened. Cancel anytime; your plan runs to the end of the paid period." },

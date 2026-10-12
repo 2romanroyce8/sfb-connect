@@ -38,7 +38,7 @@ Never paste a secret into chat, code, logs, or a task result.
 
 ## Runbooks
 - [client-projects.md](./client-projects.md) — client project graph (/team/projects; client mirror after Phase 2)
-- [demo-5-day.md](./demo-5-day.md) — Phase 2: the 5-day demo (build show, email gate, activation, first tasks)
+- [onboarding-funnel.md](./onboarding-funnel.md) — gated funnel: account → email code → build show → pricing → pay (no trial)
 - [agent-connector.md](./agent-connector.md) — OAuth tokens, 120 s refresh grace window, self-healing delegated sessions, audit log reading
 - [agent-task-queue.md](./agent-task-queue.md) — Atlas ↔ HyperAgent task queue
 - [agent-program.md](./agent-program.md) — tiers, 8 capabilities, trial sandbox, dashboard

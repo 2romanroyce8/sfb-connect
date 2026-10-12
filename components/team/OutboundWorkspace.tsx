@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-type Biz = { id: string; legal_name: string; is_sandbox: boolean; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string };
+type Biz = { id: string; legal_name: string; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string };
 type Prospect = { id: string; name: string; contact_name: string | null; website: string | null; email: string | null; email_source: string | null; phone_e164: string | null; city: string | null; state: string | null; category: string | null; status: string; enriched_at: string | null; last_contacted_at: string | null };
 type Msg = { id: string; prospect_id: string; direction: "out" | "in"; step: number; to_email: string | null; subject: string | null; body_text: string | null; template_key: string | null; status: string; approved_by: string | null; approved_at: string | null; sent_at: string | null; opened_at: string | null; replied_at: string | null; rejected_reason: string | null; error: string | null; created_at: string; created_by: string };
 type Ev = { id: string; kind: string; actor: string; payload: Record<string, unknown>; prospect_id: string | null; created_at: string };
@@ -51,7 +51,7 @@ export default function OutboundWorkspace() {
   };
 
   if (!s) return <div className="text-[12px] text-[#6E6E73]">{err ?? "Loading outbound…"}</div>;
-  if (!s.business) return <div className="rounded-[12px] p-5 text-[13px] text-[#A1A1A6]" style={card}>No business with a plan yet. Outbound runs per customer business (Solo/Agency, or a trial in simulated mode).</div>;
+  if (!s.business) return <div className="rounded-[12px] p-5 text-[13px] text-[#A1A1A6]" style={card}>No business with a plan yet. Outbound runs per customer business (Solo or Agency).</div>;
 
   const pending = s.messages.filter((m) => m.status === "pending_approval");
   const failed = s.messages.filter((m) => m.status === "failed" && m.approved_by);
@@ -63,7 +63,7 @@ export default function OutboundWorkspace() {
   return (
     <div className="flex flex-col gap-5 max-w-[1200px]">
       <div className="flex flex-wrap items-center gap-3">
-        <select value={biz ?? ""} onChange={(e) => void load(e.target.value)} className="h-[34px] rounded-[8px] px-2 text-[12.5px] bg-[#0F0F0F] text-[#F5F5F7]" style={ghostStyle}>{s.businesses.map((b) => <option key={b.id} value={b.id}>{b.legal_name}{b.is_sandbox ? " · trial (simulated sends)" : ""}</option>)}</select>
+        <select value={biz ?? ""} onChange={(e) => void load(e.target.value)} className="h-[34px] rounded-[8px] px-2 text-[12.5px] bg-[#0F0F0F] text-[#F5F5F7]" style={ghostStyle}>{s.businesses.map((b) => <option key={b.id} value={b.id}>{b.legal_name}</option>)}</select>
         {s.credits && <span className="text-[12px] text-[#A1A1A6]">Credits <span className="text-[#F5F5F7] font-semibold">{s.credits.monthly_remaining} / {s.credits.allotment}</span>{s.credits.topup_balance > 0 ? ` + ${s.credits.topup_balance} top-up` : ""}</span>}
         <span className="text-[12px] text-[#6E6E73]">· {sentCount} sent · {openedCount} opened · {repliedCount} replied · {s.bookings.length} booked</span>
         <button onClick={() => act({ action: "sync" }, "sync")} disabled={busy === "sync"} className={ghost} style={ghostStyle}>{busy === "sync" ? "Syncing…" : "Sync replies & steps"}</button>
@@ -97,13 +97,13 @@ export default function OutboundWorkspace() {
             ))}
           </div>
           <div className="rounded-[12px] p-5" style={card}>
-            {!open ? <div className="text-[13px] text-[#6E6E73]">Select a message to review. Approve sends it from the owner&apos;s Gmail (trial businesses: simulated). Every approval is a 5-credit human review pass.</div> : (
+            {!open ? <div className="text-[13px] text-[#6E6E73]">Select a message to review. Approve sends it from the owner&apos;s Gmail. Every approval is a 5-credit human review pass.</div> : (
               <>
                 <div className="text-[11px] uppercase tracking-wide text-[#6E6E73]">To</div><div className="text-[13px] text-[#F5F5F7]">{open.to_email}</div>
                 <div className="mt-3 text-[11px] uppercase tracking-wide text-[#6E6E73]">Subject</div><div className="text-[13px] text-[#F5F5F7]">{open.subject}</div>
                 <div className="mt-3 text-[11px] uppercase tracking-wide text-[#6E6E73]">Body</div><pre className="mt-1 whitespace-pre-wrap text-[13px] leading-[1.55] text-[#E5E5EA] font-sans">{open.body_text}</pre>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <button onClick={async () => { const r = await act({ action: "approve", message_id: open.id, and_send: true }, open.id); if (r) setOpen(null); }} disabled={busy === open.id} className={primary}>{busy === open.id ? "Sending…" : s.business.is_sandbox ? "Approve (simulate send)" : "Approve & send"}</button>
+                  <button onClick={async () => { const r = await act({ action: "approve", message_id: open.id, and_send: true }, open.id); if (r) setOpen(null); }} disabled={busy === open.id} className={primary}></button>
                   <button onClick={async () => { const reason = prompt("Why? (kept on the record)") ?? ""; if (!reason) return; const r = await act({ action: "reject", message_id: open.id, reason }, `rej-${open.id}`); if (r) setOpen(null); }} className={ghost} style={{ ...ghostStyle, color: "#FF6961" }}>Reject</button>
                 </div>
               </>

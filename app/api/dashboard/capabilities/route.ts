@@ -4,7 +4,7 @@ import { CAPABILITY_KEYS, tier } from "@/lib/agentProgram/config";
 export const dynamic = "force-dynamic";
 
 // Customer toggles a capability for their own business. Free (0 credits).
-// Trial accounts may keep at most `capabilityLimit` enabled; paid tiers all 8.
+// Every paid tier runs all eight capabilities; toggles are free.
 export async function PATCH(req: NextRequest) {
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();

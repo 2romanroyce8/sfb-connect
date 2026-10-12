@@ -5,12 +5,12 @@
 // numbers inside it substituted from config.
 // ============================================================
 import {
-  TIERS, TRIAL_TIER, TRIAL_IS_FREE, TOP_UP_PACKS, CREDITS_PER_BOOKED_CALL, ANNUAL_MONTHS_CHARGED, ANCHOR_WAS_USD, REPLACED_VENDORS, VENDORS_TOTAL_MONTHLY_USD,
+  TIERS, TOP_UP_PACKS, CREDITS_PER_BOOKED_CALL, ANNUAL_MONTHS_CHARGED, ANCHOR_WAS_USD, REPLACED_VENDORS, VENDORS_TOTAL_MONTHLY_USD,
   bookedCallsFor, annualUsd, annualPerMonthUsd, fmtUsd, tier, type Tier, type TierKey, type BillingInterval,
 } from "./config";
 
 const T = (key: TierKey): Tier => TIERS.find((t) => t.key === key)!;
-const trial = T("trial"); const solo = T("solo"); const agency = T("agency");
+const solo = T("solo"); const agency = T("agency");
 
 // ---- §1 How it works ----
 export const HOW_IT_WORKS_HEADLINE = "One build. One monthly. That's it.";
@@ -39,7 +39,6 @@ export type PriceDisplay = { headline: number; unit: string; billedLine: string 
 /** What the big number on a card says for the chosen interval. Setup is one-time and never discounted. */
 export function priceDisplay(t: Tier, interval: BillingInterval): PriceDisplay {
   const wasUsd = t.key === "solo" || t.key === "agency" ? ANCHOR_WAS_USD[t.key] : null;
-  if (t.monthlyUsd === 0) return TRIAL_IS_FREE ? { headline: 0, unit: "", billedLine: null, setupLine: `${t.credits} credits · no card · ${t.trialDays} days`, wasUsd: null } : { headline: TRIAL_TIER.trialUsd, unit: "one-time", billedLine: null, setupLine: `${t.credits} credits · ${t.trialDays} days of access`, wasUsd: null };
   const setupLine = `+ ${fmtUsd(t.onboardingUsd)} one-time setup`;
   if (interval === "year") {
     return { headline: annualPerMonthUsd(t.monthlyUsd), unit: "/mo", billedLine: `${fmtUsd(annualUsd(t.monthlyUsd))} billed yearly · ${12 - ANNUAL_MONTHS_CHARGED} months free`, setupLine, wasUsd: wasUsd === null ? null : annualPerMonthUsd(wasUsd) };
@@ -47,20 +46,12 @@ export function priceDisplay(t: Tier, interval: BillingInterval): PriceDisplay {
   return { headline: t.monthlyUsd, unit: "/mo", billedLine: "Billed monthly · cancel anytime", setupLine, wasUsd };
 }
 /** "150 credits ≈ 10 booked calls/mo" — concrete math on every card. */
-export const creditsMath = (t: Tier) => t.monthlyUsd === 0
-  ? `${t.credits} credits ≈ ${bookedCallsFor(t.credits)} booked calls of agent work`
-  : `${t.credits} credits ≈ ${bookedCallsFor(t.credits)} booked calls/mo`;
+export const creditsMath = (t: Tier) => `${t.credits} credits ≈ ${bookedCallsFor(t.credits)} booked calls/mo`;
 
 // ---- §3 THE OFFER (Roman's copy; numbers from config) ----
 export type Offer = { problem: string; time: string; money: string; makes: string; timeLabel: string; moneyLabel: string; makesLabel: string };
 const agencyResale = agency.businesses * solo.monthlyUsd;
 export const OFFERS: Record<TierKey, Offer> = {
-  trial: {
-    problem: "You don't believe an AI can run your marketing. Fair — don't take our word for it.",
-    timeLabel: "Time", time: "2 minutes: paste your website, confirm what the agent learned, verify your email. It starts working on your real business.",
-    moneyLabel: "Money", money: `Costs $0 for ${TRIAL_TIER.trialDays} days. If it can't impress you for free, it doesn't deserve your money.`,
-    makesLabel: "Makes money", makes: `${trial.credits} credits ≈ ${bookedCallsFor(trial.credits)} booked calls of real agent work — real prospects, real emails from your Gmail, your approval on every send. Then decide.`,
-  },
   solo: {
     problem: "Every week you lose jobs to competitors who answer faster, follow up relentlessly, and show up when customers ask AI who to hire. You're the bottleneck — there's only one of you.",
     timeLabel: "Saves TIME now", time: "Your agent works 24/7: finds prospects, writes outreach, follows up, books calls into your calendar, answers website chat, asks happy customers for reviews, keeps your listings correct. A marketer, an SDR, and an ops assistant that never sleeps, never quits, never calls in sick.",

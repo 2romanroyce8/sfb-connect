@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CAPABILITIES, CAPABILITY_KEYS, tier, stockProfile } from "@/lib/agentProgram/config";
+import { CAPABILITIES, CAPABILITY_KEYS, tier } from "@/lib/agentProgram/config";
 import { creditState, getCreditBreakdown } from "@/lib/billing/guards";
 
 export type LedgerRow = { id: string; type: string; amount: number; balance_after: number; description: string | null; capability_key: string | null; action_key: string | null; created_at: string };
@@ -7,7 +7,7 @@ export type LedgerRow = { id: string; type: string; amount: number; balance_afte
 /** Everything the customer agent surfaces need, read under the customer's own RLS. */
 export async function loadAgentState(supabase: SupabaseClient, businessId: string) {
   const [{ data: biz }, { data: caps }, { data: ledger }, breakdown] = await Promise.all([
-    supabase.from("businesses").select("plan_key, is_sandbox, stock_profile_key, trial_expires_at, monthly_credit_allotment, credits_cycle_started_at, work_paused_reason, agent_overseer_id").eq("id", businessId).single(),
+    supabase.from("businesses").select("plan_key, monthly_credit_allotment, credits_cycle_started_at, work_paused_reason, agent_overseer_id").eq("id", businessId).single(),
     supabase.from("business_capabilities").select("capability_key, enabled").eq("business_id", businessId),
     supabase.from("credit_transactions").select("id, type, amount, balance_after, description, capability_key, action_key, created_at").eq("business_id", businessId).order("created_at", { ascending: false }).limit(200),
     getCreditBreakdown(supabase, businessId),
@@ -22,10 +22,9 @@ export async function loadAgentState(supabase: SupabaseClient, businessId: strin
   const t = tier(biz?.plan_key);
   const allotment = biz?.monthly_credit_allotment ?? t?.credits ?? 0;
   const state = creditState(balance, allotment);
-  const trialExpired = !!biz?.trial_expires_at && new Date(biz.trial_expires_at) < new Date();
-  const agentStatus: "green" | "yellow" | "red" = balance <= 0 || trialExpired || biz?.work_paused_reason ? "red" : state.level === "ok" ? "green" : "yellow";
+  const agentStatus: "green" | "yellow" | "red" = balance <= 0 || biz?.work_paused_reason ? "red" : state.level === "ok" ? "green" : "yellow";
   return {
-    tier: t, isSandbox: !!biz?.is_sandbox, stock: stockProfile(biz?.stock_profile_key), trialExpiresAt: biz?.trial_expires_at ?? null, trialExpired,
+    tier: t,
     balance, allotment, creditLevel: state.level, usedPct: state.usedPct, agentStatus, workPausedReason: biz?.work_paused_reason ?? null,
     monthlyRemaining: breakdown.monthlyRemaining, monthlySpent: breakdown.monthlySpent, topupBalance: breakdown.topupBalance,
     nextRefill: cycleStart && t && t.monthlyUsd > 0 ? new Date(cycleStart.getTime() + 30 * 86400000).toISOString() : null,

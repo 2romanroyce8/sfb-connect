@@ -319,7 +319,7 @@ export default function BillingDashboard({
         </div>
       </section>
 
-      {/* INVOICES (real Stripe invoices; empty on trial / before Stripe is configured) */}
+      {/* INVOICES (real Stripe invoices; empty before Stripe is configured) */}
       <section>
         <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Invoices</div>
         <div className="rounded-[14px] overflow-hidden" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>

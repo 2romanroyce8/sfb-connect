@@ -17,17 +17,17 @@ import { trackMarketingEvent } from "@/lib/marketingEvents";
  * strikethrough + "Launch pricing" tag render ONLY once ANCHOR_WAS_USD is set.
  */
 const LADDER: { label: string; in: Record<TierKey, boolean | string> }[] = [
-  { label: "Public per-action price list", in: { trial: true, solo: true, agency: true } },
-  { label: "Receipt for every action", in: { trial: true, solo: true, agency: true } },
-  { label: "Human approval on customer-facing work", in: { trial: true, solo: true, agency: true } },
-  { label: "Dashboard & reports", in: { trial: true, solo: true, agency: true } },
-  { label: "All 8 capabilities", in: { trial: true, solo: true, agency: true } },
-  { label: "Your real business, real sends", in: { trial: true, solo: true, agency: true } },
-  { label: "Live integrations", in: { trial: "Gmail + Calendar", solo: true, agency: true } },
-  { label: "Monthly credit refill", in: { trial: false, solo: true, agency: true } },
-  { label: "Named human overseer", in: { trial: false, solo: "Shared", agency: "Dedicated" } },
-  { label: "5 white-labeled client spaces", in: { trial: false, solo: false, agency: true } },
-  { label: "Credits pooled across spaces", in: { trial: false, solo: false, agency: true } },
+  { label: "Public per-action price list", in: { solo: true, agency: true } },
+  { label: "Receipt for every action", in: { solo: true, agency: true } },
+  { label: "Human approval on customer-facing work", in: { solo: true, agency: true } },
+  { label: "Dashboard & reports", in: { solo: true, agency: true } },
+  { label: "All 8 capabilities", in: { solo: true, agency: true } },
+  { label: "Your real business, real sends", in: { solo: true, agency: true } },
+  { label: "Live integrations", in: { solo: true, agency: true } },
+  { label: "Monthly credit refill", in: { solo: true, agency: true } },
+  { label: "Named human overseer", in: { solo: "Shared", agency: "Dedicated" } },
+  { label: "5 white-labeled client spaces", in: { solo: false, agency: true } },
+  { label: "Credits pooled across spaces", in: { solo: false, agency: true } },
 ];
 
 function Toggle({ value, onChange }: { value: BillingInterval; onChange: (v: BillingInterval) => void }) {
@@ -66,7 +66,7 @@ function Offer({ k, open, onToggle }: { k: Tier["key"]; open: boolean; onToggle:
   );
 }
 
-export default function PricingTiers() {
+export default function PricingTiers({ funnel = false }: { funnel?: boolean }) {
   const [interval, setInterval] = useState<BillingInterval>("month");
   const [offersOpen, setOffersOpen] = useState(true);
   const change = (v: BillingInterval) => { setInterval(v); trackMarketingEvent("pricing_billing_toggle", { interval: v }); };
@@ -103,7 +103,7 @@ export default function PricingTiers() {
                     <div className="text-[30px] md:text-[34px] font-semibold tracking-[-0.03em] text-white" style={{ textShadow: featured ? "0 0 18px rgba(66,227,109,0.75), 0 0 42px rgba(66,227,109,0.35)" : "0 0 14px rgba(255,255,255,0.45)" }}>{t.name}</div>
                     <div className="mt-2 flex items-end justify-center gap-2 flex-wrap">
                       {pd.wasUsd !== null && <span className="text-[16px] text-white/[0.35] line-through mb-1">{fmtUsd(pd.wasUsd)}</span>}
-                      <span className="text-[30px] font-semibold tracking-[-0.03em] leading-none text-white">{pd.headline === 0 ? "Free" : fmtUsd(pd.headline)}</span>
+                      <span className="text-[30px] font-semibold tracking-[-0.03em] leading-none text-white">{fmtUsd(pd.headline)}</span>
                       {pd.unit && <span className="text-[14px] text-white/[0.5] mb-1">{pd.unit}</span>}
                     </div>
                     {pd.billedLine && <div className="mt-1.5 text-[11.5px] text-white/[0.45]">{pd.billedLine}</div>}
@@ -127,11 +127,7 @@ export default function PricingTiers() {
                   <Offer k={t.key} open={offersOpen} onToggle={() => setOffersOpen((o) => !o)} />
 
                   <div className="mt-8">
-                    {t.monthlyUsd === 0 ? (
-                      <Link href="/start" onClick={() => trackMarketingEvent("trial_signup_start", { from: "pricing_page" })} className="w-full inline-flex justify-center items-center h-[44px] rounded-full text-[13.5px] font-semibold text-white hover:bg-white/[0.06]" style={{ border: "1px solid rgba(255,255,255,0.2)" }}>Try it free — {TIERS[0].trialDays} days →</Link>
-                    ) : (
-                      <AgentCheckout plan={t} interval={interval} />
-                    )}
+                    <AgentCheckout plan={t} interval={interval} funnel={funnel} />
                   </div>
                 </div>
               );

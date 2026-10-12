@@ -1,7 +1,7 @@
 /**
  * Homepage "Ask anything else" answer bank. Pure, no backend, no AI: a fixed
  * list of answers matched by keywords. If nothing matches, the visitor is told
- * so and pointed to the trial — we never invent an answer.
+ * so and pointed to a demo call — we never invent an answer.
  *
  * Every number here must agree with lib/agentProgram/config.ts; the test in
  * tests/lib/faqAnswers.test.ts pins the ones that can drift.
@@ -10,16 +10,15 @@ import { CREDITS_PER_BOOKED_CALL, TIERS, TOP_UP_PACKS, fmtUsd } from "@/lib/agen
 
 const solo = TIERS.find((t) => t.key === "solo")!;
 const agency = TIERS.find((t) => t.key === "agency")!;
-const trial = TIERS.find((t) => t.key === "trial")!;
 const packs = TOP_UP_PACKS.map((p) => `${p.credits.toLocaleString("en-US")} for ${fmtUsd(p.usd)}`).join(", ");
 
 export type FaqAnswer = { key: string; title: string; keywords: string[]; answer: string };
 
 export const ANSWER_BANK: FaqAnswer[] = [
   { key: "price", title: "Pricing", keywords: ["price", "pricing", "cost", "how much", "monthly", "month", "annual", "yearly", "plan", "plans", "solo", "agency", "expensive", "cheap", "fee", "fees", "setup", "onboarding"],
-    answer: `Three tiers. Trial is free for ${trial.trialDays} days (${trial.credits} one-time credits, no card). Solo is ${fmtUsd(solo.monthlyUsd)}/month plus a one-time ${fmtUsd(solo.onboardingUsd)} onboarding fee, with ${solo.credits} credits a month for one real business. Agency is ${fmtUsd(agency.monthlyUsd)}/month plus a one-time ${fmtUsd(agency.onboardingUsd)} onboarding fee, with ${agency.credits} pooled credits a month across five client spaces. Month-to-month, no contracts.` },
+    answer: `Two plans. Solo is ${fmtUsd(solo.monthlyUsd)}/month plus a one-time ${fmtUsd(solo.onboardingUsd)} onboarding fee, with ${solo.credits} credits a month for one real business. Agency is ${fmtUsd(agency.monthlyUsd)}/month plus a one-time ${fmtUsd(agency.onboardingUsd)} onboarding fee, with ${agency.credits} pooled credits a month across five client spaces. Month-to-month, no contracts.` },
   { key: "trial", title: "Free trial", keywords: ["trial", "free", "demo", "try", "test", "sample", "card", "credit card", "no card", "start"],
-    answer: `Yes, the Trial is free: ${trial.trialDays} days, ${trial.credits} credits, no card at signup and nothing billed at the end. It runs on your real business — real prospects, real emails from your own Gmail, and nothing sends without your approval. You pick a sample business, choose three capabilities to watch, and see credits being spent as the agent works. No real integrations or real sends on the trial. Start at /start.` },
+    answer: "There is no free trial. Create your account, verify your email, and your agent reads your website and builds its own profile of your business before you see a price — then you pick a plan to finish onboarding. Or book a demo call and we'll walk you through it live." },
   { key: "credits", title: "How credits work", keywords: ["how do credits", "credits work", "what are credits", "ledger", "receipt", "receipts", "charge", "charged", "metered", "per action", "price list", "how many credits"],
     answer: `Your agent runs on credits. Every task has a public per-action price: simple tasks cost little, big builds cost more, and you always see the receipt. One listing fix is 1 credit, one ad creative is 5, and a fully worked booked-call motion is about ${CREDITS_PER_BOOKED_CALL}. Sending messages, viewing reports and toggling capabilities cost nothing. The full price list is on the SFB Agent page.` },
   { key: "zero", title: "Running out of credits", keywords: ["zero", "run out", "out of credits", "pause", "paused", "overage", "overcharge", "surprise", "80%", "warning", "refill", "top up", "top-up", "topup", "pack", "packs", "buy more"],
@@ -61,11 +60,11 @@ export const ANSWER_BANK: FaqAnswer[] = [
   { key: "agency_plan", title: "Agency plan", keywords: ["white label", "white-label", "white labeled", "client spaces", "clients", "resell", "resale", "multiple businesses", "locations", "multi"],
     answer: `Agency is ${fmtUsd(agency.monthlyUsd)}/month with ${agency.credits} pooled credits across five white-labeled client spaces, all eight capabilities per space, and a dedicated overseer. Reselling the service outside those spaces requires written permission.` },
   { key: "time", title: "Speed and timeline", keywords: ["how long", "how fast", "timeline", "when", "soon", "quick", "days", "weeks", "turnaround", "setup time", "onboard"],
-    answer: "The trial runs the moment you sign up. Paid onboarding starts with your overseer recommending a capability mix, connecting your tools and approving the first tasks; the agent works continuously from there and you see every action in the dashboard as it happens." },
+    answer: "Onboarding starts with your overseer recommending a capability mix, connecting your tools and approving the first tasks; the agent works continuously from there and you see every action in the dashboard as it happens." },
   { key: "security", title: "Data and security", keywords: ["data", "privacy", "secure", "security", "safe", "password", "access", "sell my data", "gdpr", "ccpa"],
     answer: "Your business data stays yours. We use it only to run the service, never sell it, and the agent only touches connected accounts within tasks you approve. Our Privacy Policy and Terms are linked in the footer." },
   { key: "support", title: "Support and contact", keywords: ["support", "contact", "help", "talk", "call", "phone", "email you", "reach", "speak", "sales"],
-    answer: "Every paid account has a named human overseer you can reach from your dashboard. Before you buy, the fastest way to see how it works is the free trial at /start; no sales call required." },
+    answer: "Every paid account has a named human overseer you can reach from your dashboard. Before you buy, the fastest way to see how it works is to create your account at /start and watch your agent build itself — or book a demo call." },
   { key: "login", title: "Signing in", keywords: ["login", "log in", "sign in", "dashboard", "account", "forgot password", "reset"],
     answer: "Customers sign in at /login (there is a Forgot password link there). Your dashboard shows your agent's activity, credit ledger, capability toggles and reports." },
   { key: "difference", title: "Agent vs. agency vs. software", keywords: ["different", "difference", "vs", "versus", "compared", "agency vs", "software", "saas", "tool", "replace", "employee", "hire"],
@@ -76,7 +75,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9%$ ]+/g, " ").repla
 
 export type AskResult = { matched: FaqAnswer | null; answer: string };
 
-export const NO_MATCH_ANSWER = "I don't have a set answer for that yet, so I won't guess. The fastest way to find out is the free 5-day trial at /start (no card, 128 credits), where a human overseer can answer anything specific to your business.";
+export const NO_MATCH_ANSWER = "I don't have a set answer for that yet, so I won't guess. The fastest way to find out is to book a demo call, or create your account at /start and watch your agent build itself.";
 
 /** Keyword scoring: longer, more specific keywords outweigh short ones; ties go to earlier (more important) entries. */
 export function answerQuestion(question: string): AskResult {
