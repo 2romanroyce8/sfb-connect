@@ -60,3 +60,15 @@ export function pickEmail(emails: string[], domain: string | null): { email: str
 }
 
 export const toE164 = (raw: string): string | null => { const d = raw.replace(/\D/g, ""); if (d.length === 10) return `+1${d}`; if (d.length === 11 && d.startsWith("1")) return `+${d}`; return null; };
+
+
+/** Domains where "from the same domain" means nothing (G7 domain-level reply match must skip them). */
+const FREEMAIL = new Set(["gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com", "outlook.com", "live.com", "msn.com", "aol.com", "icloud.com", "me.com", "mac.com", "protonmail.com", "proton.me", "comcast.net", "att.net", "verizon.net", "sbcglobal.net", "bellsouth.net", "cox.net", "charter.net", "mail.com", "zoho.com", "yandex.com", "gmx.com"]);
+export const isFreemailDomain = (domain: string | null | undefined) => !!domain && FREEMAIL.has(domain.toLowerCase().replace(/^www\./, ""));
+
+/** G10: a draft waiting longer than `hours` with no reminder yet is due one. */
+export const reminderDue = (approvalRequestedAt: string | null | undefined, now: Date, hours = 24) => !!approvalRequestedAt && now.getTime() - new Date(approvalRequestedAt).getTime() >= hours * 3600e3;
+
+/** G6: a failed send is eligible for an automatic retry when it was human-approved, failed at least `minAgeMs` ago, and is younger than `maxAgeDays`. */
+export const retryEligible = (m: { status: string; approved_by: string | null; approved_at: string | null; updated_at: string; created_at: string }, now: Date, minAgeMs = 3600e3, maxAgeDays = 14) =>
+  m.status === "failed" && !!m.approved_by && !!m.approved_at && now.getTime() - new Date(m.updated_at).getTime() >= minAgeMs && now.getTime() - new Date(m.created_at).getTime() <= maxAgeDays * 86400e3;

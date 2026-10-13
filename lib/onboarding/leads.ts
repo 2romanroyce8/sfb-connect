@@ -28,12 +28,13 @@ export function toCandidates(results: { title?: string | null; url: string; text
   return out;
 }
 
-export async function sourceCandidates(service: SupabaseClient, business: { id: string; website: string | null }, icp: Icp, opts: { limit?: number; fetchImpl?: typeof fetch } = {}): Promise<{ candidates: LeadCandidate[]; queries: string[]; error?: string }> {
+export async function sourceCandidates(service: SupabaseClient, business: { id: string; website: string | null }, icp: Icp, opts: { limit?: number; fetchImpl?: typeof fetch; excludeDomains?: string[] } = {}): Promise<{ candidates: LeadCandidate[]; queries: string[]; error?: string }> {
   const apiKey = process.env.EXA_API_KEY; const f = opts.fetchImpl ?? fetch; const limit = opts.limit ?? 25;
   if (!apiKey) return { candidates: [], queries: [], error: "Lead search isn't configured (EXA_API_KEY)." };
   const { data: existing } = await service.from("outbound_prospects").select("canonical_domain").eq("business_id", business.id);
   const exclude = new Set<string>((existing ?? []).map((p) => p.canonical_domain as string).filter(Boolean));
   const own = business.website ? domainOf(business.website) : null; if (own) exclude.add(own);
+  for (const d of opts.excludeDomains ?? []) exclude.add(d.toLowerCase()); // candidates the customer removed in an earlier review (G2, 2026-10-12)
   const queries = icpQueries(icp); const candidates: LeadCandidate[] = [];
   const perQuery = Math.max(4, Math.ceil(limit / Math.max(1, queries.length)));
   for (const query of queries) {

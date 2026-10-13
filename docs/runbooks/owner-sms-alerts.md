@@ -39,6 +39,7 @@ Roman, 2026-10-12: owners get alerts by **text** with no new paid service — th
 | `demo_booked` | every demo booking (`lib/demoCall/booking.ts notifyTeam`) |
 | `callback_sla` | demo booking with "Free for a call right now?" — time-critical |
 | `credits_warning` / `credits_exhausted` | `lib/billing/guards.ts notifyCreditThresholds` (customer email unchanged; team owners now also alerted) |
+| `system_health` | hourly sync errors (`runOutboundSync`), stalled sync watchdog (`/api/cron/plan-refill`), dead Gmail/Calendar token (`probeConnections`) → owners; configurable, coalesced to one text per hour (added 2026-10-12, G9/G12) |
 | `approval_pending` | `lib/outbound/engine.ts draftMessage` → owners + the business's assigned overseer. Live-fired 2026-10-12 20:17:59Z (draft via `/api/team/outbound`): SMS 1/1 sent to Roman's gateway + email (`unverified_sms`) + in-app; Muse (no phone) → email fallback + in-app. |
 | `sms_test` | Settings → "Send me a test text" |
 "Push" = the in-app bell (`crm_notifications`) + Slack; there is no browser push service.

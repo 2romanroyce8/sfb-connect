@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import crypto from "node:crypto";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { refillAnnualPlans } from "@/lib/agentProgram/provision";
+import { alertOwners } from "@/lib/notify/ownerAlerts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,8 +27,19 @@ export async function POST(req: NextRequest) {
   if (settings && (settings as { enabled: boolean }).enabled === false) return NextResponse.json({ skipped: "disabled" });
 
   const summary = await refillAnnualPlans(service);
+  // G12 watchdog (2026-10-12): the hourly outbound sync cannot report its own absence; this daily job checks it ran in the last 2 hours.
+  let outboundSync: "ok" | "stale" | "disabled" | "unknown" = "unknown";
+  try {
+    const { data: os } = await service.from("outbound_cron_settings").select("enabled, last_run_at").eq("id", 1).maybeSingle();
+    if (os && os.enabled === false) outboundSync = "disabled";
+    else if (os?.last_run_at && Date.now() - new Date(os.last_run_at as string).getTime() > 2 * 3600e3) {
+      outboundSync = "stale";
+      const since = new Date(os.last_run_at as string).toISOString();
+      await alertOwners(service, { trigger: "system_health", sms: `Hourly outbound sync has NOT run since ${since}. Replies and follow-ups are not being processed.`, email: { subject: "Hourly outbound sync has stalled", html: `<p>The hourly outbound sync last ran at <strong>${since}</strong>. Replies, follow-ups, retries and reminders are not being processed. Check <code>cron.job_run_details</code> for <code>outbound-sync-hourly</code> and the Vault token.</p>`, text: `Hourly outbound sync last ran ${since}. Check cron.job_run_details.` }, inApp: { type: "system", title: "Hourly outbound sync has stalled", body: `Last run ${since}`, actionUrl: "/team/outbound", actionLabel: "Outbound" }, detail: { last_run_at: since } });
+    } else if (os?.last_run_at) outboundSync = "ok";
+  } catch (e) { console.error("[plan-refill] outbound watchdog failed:", e instanceof Error ? e.message : e); }
   await service.from("billing_cron_settings").update({ last_run_at: new Date().toISOString(), last_result: summary, updated_at: new Date().toISOString() }).eq("id", 1);
-  return NextResponse.json(summary);
+  return NextResponse.json({ ...summary, outboundSync });
 }
 
 export async function GET() {

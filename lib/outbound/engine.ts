@@ -14,7 +14,10 @@ import { getBusyBlocks, createCalendarEvent } from "@/lib/crm/googleCalendar";
 import { emitIntegrationEvent } from "@/lib/integrations/events";
 import { alertOwners } from "@/lib/notify/ownerAlerts";
 import { appOrigin } from "@/lib/integrations/providers";
-import { canSend, dueSteps, pickEmail, proposeSlots, toE164, unsubscribeToken, type MessageStatus } from "./gate";
+import { canSend, dueSteps, pickEmail, proposeSlots, toE164, unsubscribeToken, isFreemailDomain, reminderDue, retryEligible, type MessageStatus } from "./gate";
+import { getAccessToken } from "@/lib/integrations/connections";
+import { probeCalendarConnection } from "@/lib/crm/googleCalendar";
+import { sendEmail } from "@/lib/email/resend";
 import { renderSource, unsubscribeFooter, DEFAULT_SEQUENCE_STEPS, type TemplateKey, type TemplateVars } from "./templates";
 
 export type Actor = { kind: "user" | "agent" | "system"; id: string | null; label: string };
@@ -237,12 +240,25 @@ export async function unsubscribe(service: SupabaseClient, messageId: string, to
 /** Replies: for every sent message with a Gmail thread, look for newer messages in that thread not from the owner. */
 export async function syncReplies(service: SupabaseClient, businessId: string): Promise<{ checked: number; replies: number }> {
   const b = await business(service, businessId);
-  const { data: sent } = await service.from("outbound_messages").select("id, prospect_id, to_email, gmail_thread_id, gmail_message_id, replied_at").eq("business_id", businessId).eq("status", "sent").not("gmail_thread_id", "is", null).is("replied_at", null).order("sent_at", { ascending: false }).limit(50);
+  const { data: sent } = await service.from("outbound_messages").select("id, prospect_id, to_email, gmail_thread_id, gmail_message_id, replied_at, sent_at").eq("business_id", businessId).eq("status", "sent").not("gmail_thread_id", "is", null).is("replied_at", null).order("sent_at", { ascending: false }).limit(50);
   let replies = 0;
+  const pids = Array.from(new Set((sent ?? []).map((m) => m.prospect_id as string)));
+  const { data: prows } = pids.length ? await service.from("outbound_prospects").select("id, canonical_domain").in("id", pids) : { data: [] as { id: string; canonical_domain: string | null }[] };
+  const domainOf = new Map((prows ?? []).map((p) => [p.id as string, p.canonical_domain as string | null]));
   for (const m of sent ?? []) {
     let inbox: Awaited<ReturnType<typeof listGmailMessages>> = [];
     try { inbox = await listGmailMessages(b.owner_id, { q: `from:${m.to_email} newer_than:30d`, max: 5 }); } catch { continue; }
-    const reply = inbox.find((x) => x.threadId === m.gmail_thread_id && x.id !== m.gmail_message_id);
+    let reply = inbox.find((x) => x.threadId === m.gmail_thread_id && x.id !== m.gmail_message_id);
+    let match: "thread" | "domain" = "thread";
+    // G7 (2026-10-12): a reply from a colleague or a fresh thread used to be missed. Second pass: anything from the prospect's own domain after our send (never for free-mail domains).
+    if (!reply) {
+      const dom = domainOf.get(m.prospect_id as string);
+      if (dom && !isFreemailDomain(dom)) {
+        const sentAt = (m as { sent_at?: string | null }).sent_at ? new Date((m as { sent_at: string }).sent_at) : null;
+        const after = sentAt ? `${sentAt.getUTCFullYear()}/${String(sentAt.getUTCMonth() + 1).padStart(2, "0")}/${String(sentAt.getUTCDate()).padStart(2, "0")}` : null;
+        try { const byDomain = await listGmailMessages(b.owner_id, { q: `from:${dom}${after ? ` after:${after}` : " newer_than:30d"}`, max: 5 }); reply = byDomain.find((x) => x.id !== m.gmail_message_id && x.from.toLowerCase().includes(`@${dom}`)); if (reply) match = "domain"; } catch { /* keep thread result */ }
+      }
+    }
     if (!reply) continue;
     let text = reply.snippet;
     try { text = (await getGmailMessage(b.owner_id, reply.id)).text || reply.snippet; } catch { /* snippet is fine */ }
@@ -252,7 +268,7 @@ export async function syncReplies(service: SupabaseClient, businessId: string): 
     }
     await service.from("outbound_messages").update({ replied_at: now(), updated_at: now() }).eq("id", m.id);
     await service.from("outbound_prospects").update({ status: "replied", updated_at: now() }).eq("id", m.prospect_id);
-    await event(service, { businessId, prospectId: m.prospect_id, messageId: m.id, kind: "replied", actor: { kind: "system", id: null, label: "gmail-sync" }, payload: { from: reply.from, snippet: reply.snippet.slice(0, 200) } });
+    await event(service, { businessId, prospectId: m.prospect_id, messageId: m.id, kind: "replied", actor: { kind: "system", id: null, label: "gmail-sync" }, payload: { from: reply.from, snippet: reply.snippet.slice(0, 200), match } });
     replies++;
   }
   return { checked: (sent ?? []).length, replies };
@@ -320,13 +336,92 @@ function tzOffsetMinutes(tz: string, at: Date): number {
 }
 
 // ---------- cron entry ----------
-export async function runOutboundSync(service: SupabaseClient): Promise<{ businesses: number; replies: number; drafted: number; errors: string[] }> {
+/** G6: retry human-approved sends that failed ≥ 1 h ago while the owner's Gmail connection is active. Cap 20 per business per run. */
+export async function retryFailedSends(service: SupabaseClient, businessId: string, nowDate = new Date()): Promise<{ retried: number; recovered: number }> {
+  const b = await business(service, businessId);
+  const { data: conn } = await service.from("integration_connections").select("status").eq("provider", "gmail").eq("owner_id", b.owner_id).maybeSingle();
+  if (conn?.status !== "active") return { retried: 0, recovered: 0 };
+  const { data: failed } = await service.from("outbound_messages").select("id, status, approved_by, approved_at, updated_at, created_at").eq("business_id", businessId).eq("status", "failed").order("updated_at", { ascending: true }).limit(20);
+  let retried = 0, recovered = 0;
+  for (const m of failed ?? []) {
+    if (!retryEligible(m as { status: string; approved_by: string | null; approved_at: string | null; updated_at: string; created_at: string }, nowDate)) continue;
+    retried++;
+    try { const r = await retryFailedSend(service, m.id as string, { kind: "system", id: null, label: "cron-retry" }); if (r?.status === "sent") recovered++; } catch { /* stays failed; the row's error is updated by sendApprovedMessage */ }
+  }
+  return { retried, recovered };
+}
+
+/** G10: one reminder per draft that has waited ≥ 24 h, bundled per business into a single owner alert. */
+export async function remindPendingApprovals(service: SupabaseClient, businessId: string, nowDate = new Date()): Promise<number> {
+  const b = await business(service, businessId);
+  const { data: pending } = await service.from("outbound_messages").select("id, approval_requested_at, prospect_id").eq("business_id", businessId).eq("status", "pending_approval");
+  const due = (pending ?? []).filter((m) => reminderDue(m.approval_requested_at as string | null, nowDate));
+  if (!due.length) return 0;
+  const { data: already } = await service.from("outbound_events").select("message_id").eq("business_id", businessId).eq("kind", "approval_reminder").in("message_id", due.map((m) => m.id as string));
+  const done = new Set((already ?? []).map((e) => e.message_id as string));
+  const fresh = due.filter((m) => !done.has(m.id as string));
+  if (!fresh.length) return 0;
+  const { data: ownerRows } = await service.from("users").select("id").eq("team_role", "owner");
+  const ids = Array.from(new Set([...(ownerRows ?? []).map((r) => r.id as string), ...(b.agent_overseer_id ? [b.agent_overseer_id] : [])]));
+  const total = (pending ?? []).length;
+  await alertOwners(service, {
+    trigger: "approval_pending", userIds: ids,
+    sms: `Still waiting: ${total} draft${total === 1 ? "" : "s"} for ${b.legal_name} have sat 24h+ in the approval queue. sfbconnect.com/team/outbound`,
+    email: { subject: `Still waiting: ${total} draft${total === 1 ? "" : "s"} for ${b.legal_name}`, html: `<p><strong>${total}</strong> outbound draft${total === 1 ? "" : "s"} for ${b.legal_name} ${total === 1 ? "has" : "have"} been waiting more than 24 hours. Nothing sends until someone approves.</p><p><a href="https://www.sfbconnect.com/team/outbound">Open the approval queue</a></p>`, text: `${total} drafts for ${b.legal_name} have waited 24h+ for approval: https://www.sfbconnect.com/team/outbound` },
+    inApp: { type: "approval_pending", title: `Still waiting: ${total} draft${total === 1 ? "" : "s"} (${b.legal_name})`, body: "24h+ in the approval queue", actionUrl: "/team/outbound", actionLabel: "Review" },
+    detail: { business_id: b.id, message_ids: fresh.map((m) => m.id) },
+  });
+  for (const m of fresh) await event(service, { businessId, prospectId: m.prospect_id as string, messageId: m.id as string, kind: "approval_reminder", actor: { kind: "system", id: null, label: "cron" }, payload: { waited_hours: Math.floor((nowDate.getTime() - new Date(m.approval_requested_at as string).getTime()) / 3600e3) } });
+  return fresh.length;
+}
+
+/** G9: probe the owner's Gmail + Calendar tokens; alert (once, on the transition to dead) and tell the business owner how to fix it. */
+export async function probeConnections(service: SupabaseClient, businessId: string): Promise<{ gmail: "ok" | "dead" | "none"; calendar: "ok" | "dead" | "none"; alerted: boolean }> {
+  const b = await business(service, businessId);
+  const res = { gmail: "none" as "ok" | "dead" | "none", calendar: "none" as "ok" | "dead" | "none", alerted: false };
+  const dead: string[] = [];
+  const { data: g } = await service.from("integration_connections").select("status").eq("provider", "gmail").eq("owner_id", b.owner_id).maybeSingle();
+  if (g) { try { await getAccessToken("gmail", b.owner_id); res.gmail = "ok"; } catch { res.gmail = "dead"; if (g.status !== "error") dead.push("Gmail"); } }
+  const { data: c } = await service.from("crm_calendar_connections").select("refresh_failed_at").eq("rep_id", b.owner_id).maybeSingle();
+  if (c) { try { await probeCalendarConnection(b.owner_id); res.calendar = "ok"; } catch { res.calendar = "dead"; if (!c.refresh_failed_at) dead.push("Google Calendar"); } }
+  if (dead.length) {
+    res.alerted = true;
+    const what = dead.join(" and ");
+    await alertOwners(service, {
+      trigger: "system_health",
+      sms: `${b.legal_name}: ${what} connection died (token refresh refused). Sends/bookings will fail until they reconnect in Integrations.`,
+      email: { subject: `${what} connection died — ${b.legal_name}`, html: `<p>Google refused to refresh the <strong>${what}</strong> token for <strong>${b.legal_name}</strong>. Their sends/bookings will fail until they reconnect in Integrations. The customer has been emailed.</p>`, text: `${what} connection died for ${b.legal_name}. Customer emailed to reconnect.` },
+      inApp: { type: "system", title: `${what} connection died: ${b.legal_name}`, body: "Customer emailed to reconnect", actionUrl: "/team/integrations", actionLabel: "Integrations" },
+      detail: { business_id: b.id, dead },
+    });
+    const { data: owner } = await service.from("users").select("email").eq("id", b.owner_id).maybeSingle();
+    if (owner?.email) void sendEmail({ to: owner.email as string, subject: `Your ${what} connection needs attention`, html: `<p>Google stopped accepting our access to your <strong>${what}</strong>. Nothing is lost — your agent just can't send or book until it's reconnected.</p><p><a href="https://www.sfbconnect.com/dashboard/integrations">Reconnect in Integrations</a> (one click, same account).</p>`, text: `Google stopped accepting our access to your ${what}. Reconnect at https://www.sfbconnect.com/dashboard/integrations` });
+  }
+  return res;
+}
+
+export async function runOutboundSync(service: SupabaseClient): Promise<{ businesses: number; replies: number; drafted: number; retried: number; recovered: number; reminders: number; deadConnections: number; errors: string[] }> {
   const { data: bizs } = await service.from("businesses").select("id").not("plan_key", "is", null);
-  const out = { businesses: 0, replies: 0, drafted: 0, errors: [] as string[] };
+  const out = { businesses: 0, replies: 0, drafted: 0, retried: 0, recovered: 0, reminders: 0, deadConnections: 0, errors: [] as string[] };
   for (const b of bizs ?? []) {
     out.businesses++;
+    try { const p = await probeConnections(service, b.id); if (p.alerted) out.deadConnections++; } catch (e) { out.errors.push(`${b.id}:probe:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
     try { const r = await syncReplies(service, b.id); out.replies += r.replies; } catch (e) { out.errors.push(`${b.id}:sync:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
     try { const a = await advanceSequences(service, b.id, { kind: "system", id: null, label: "cron" }); out.drafted += a.drafted; } catch (e) { out.errors.push(`${b.id}:advance:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
+    try { const r = await retryFailedSends(service, b.id); out.retried += r.retried; out.recovered += r.recovered; } catch (e) { out.errors.push(`${b.id}:retry:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
+    try { out.reminders += await remindPendingApprovals(service, b.id); } catch (e) { out.errors.push(`${b.id}:remind:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
+  }
+  // G12: errors used to sit silently in outbound_cron_settings.last_result. Owners now hear about them (coalesced to one text per hour).
+  if (out.errors.length) {
+    try {
+      await alertOwners(service, {
+        trigger: "system_health",
+        sms: `Outbound sync: ${out.errors.length} error${out.errors.length === 1 ? "" : "s"} this run. First: ${out.errors[0].slice(0, 90)}`,
+        email: { subject: `Outbound sync: ${out.errors.length} error${out.errors.length === 1 ? "" : "s"}`, html: `<p>The hourly outbound sync hit ${out.errors.length} error${out.errors.length === 1 ? "" : "s"}:</p><ul>${out.errors.slice(0, 10).map((e) => `<li>${e.replace(/</g, "&lt;")}</li>`).join("")}</ul><p>Full result: <code>outbound_cron_settings.last_result</code>.</p>`, text: `Outbound sync errors:\n${out.errors.slice(0, 10).join("\n")}` },
+        inApp: { type: "system", title: `Outbound sync: ${out.errors.length} error${out.errors.length === 1 ? "" : "s"}`, body: out.errors[0].slice(0, 120), actionUrl: "/team/outbound", actionLabel: "Outbound" },
+        detail: { errors: out.errors.slice(0, 20) },
+      });
+    } catch (e) { console.error("[outbound-sync] error alert failed:", e instanceof Error ? e.message : e); }
   }
   return out;
 }

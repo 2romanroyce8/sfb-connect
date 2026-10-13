@@ -127,6 +127,8 @@ async function handleCheckoutCompleted(service: ReturnType<typeof createSupabase
         description: "Action Credits purchased",
         idempotencyKey: `stripe_event:${eventId}`,
       });
+      // G8 (2026-10-12): a top-up that lifts the balance above zero un-pauses the agent; before this the dashboard kept saying "paused" until renewal.
+      if ((await getCreditBalance(service, businessId)) > 0) await service.from("businesses").update({ work_paused_reason: null, updated_at: new Date().toISOString() }).eq("id", businessId).eq("work_paused_reason", "out_of_credits");
     }
   } else if (purchase.purchase_type === "addon_recurring") {
     // The subscription itself is confirmed via customer.subscription.updated

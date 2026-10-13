@@ -43,3 +43,5 @@ Read-only receipts via the agent connector: `get_sfb_ai_presence`/business tools
 
 ## Emails
 80% warning and zero notice to the owner via Resend (once per cycle); at zero the assigned overseer (`businesses.agent_overseer_id`) is emailed too.
+
+- **Top-up un-pauses (G8, 2026-10-12):** the `credit_package` branch of the Stripe webhook clears `businesses.work_paused_reason` when the balance is above zero after the grant — before this the dashboard kept showing the agent paused until the next renewal.

@@ -146,6 +146,9 @@ async function callCalendarApi(repId: string, path: string, init: RequestInit = 
   return data;
 }
 
+/** Health probe (G9): refreshes the token if it is near expiry; throws GoogleNotConnectedError / GoogleAuthExpiredError. Marks refresh_failed_at like any other use. */
+export async function probeCalendarConnection(repId: string): Promise<void> { await getValidAccessToken(repId); }
+
 export async function connectGoogleCalendar(repId: string, code: string) {
   const tokens = await exchangeCodeForTokens(code);
   if (!tokens.refresh_token) {

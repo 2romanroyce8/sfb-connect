@@ -129,18 +129,23 @@ export async function POST(req: NextRequest) {
   if (body.action === "leads_source") {
     const { data: biz } = await service.from("businesses").select("id, website, icp").eq("id", who.businessId).single();
     if (!biz?.icp) return NextResponse.json({ error: "Set your ideal customer (step 6) first." }, { status: 409 });
-    const r = await sourceCandidates(service, { id: biz.id, website: biz.website }, biz.icp as Icp, { limit: 25 });
+    const { row: onb } = await loadOnboarding(service, who.businessId);
+    const prev = (onb.step_data?.["7"] as { excluded?: string[]; imports?: unknown[] } | undefined) ?? {};
+    const r = await sourceCandidates(service, { id: biz.id, website: biz.website }, biz.icp as Icp, { limit: 25, excludeDomains: prev.excluded ?? [] });
     if (r.error) return NextResponse.json({ error: r.error }, { status: 503 });
-    await saveStepData(service, who.businessId, 7, { candidates: r.candidates, queries: r.queries, sourcedAt: new Date().toISOString() });
+    await saveStepData(service, who.businessId, 7, { ...prev, candidates: r.candidates, queries: r.queries, sourcedAt: new Date().toISOString() });
     return NextResponse.json({ ok: true, candidates: r.candidates, queries: r.queries });
   }
 
   if (body.action === "leads_remove") {
     const id = typeof body.data?.id === "string" ? body.data.id : null;
     const { row } = await loadOnboarding(service, who.businessId);
-    const d = (row.step_data?.["7"] as { candidates?: LeadCandidate[] } | undefined) ?? {};
+    const d = (row.step_data?.["7"] as { candidates?: LeadCandidate[]; excluded?: string[] } | undefined) ?? {};
+    const removed = (d.candidates ?? []).find((c) => c.id === id);
     const candidates = (d.candidates ?? []).filter((c) => c.id !== id);
-    await saveStepData(service, who.businessId, 7, { ...d, candidates });
+    // Remember what the customer removed so the next search never re-offers it (G2). Capped at 500 domains.
+    const excluded = Array.from(new Set([...(d.excluded ?? []), ...(removed ? [removed.domain] : [])])).slice(-500);
+    await saveStepData(service, who.businessId, 7, { ...d, candidates, excluded });
     return NextResponse.json({ ok: true, candidates });
   }
 
