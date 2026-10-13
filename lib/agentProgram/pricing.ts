@@ -46,6 +46,16 @@ export function priceDisplay(t: Tier, interval: BillingInterval): PriceDisplay {
   return { headline: t.monthlyUsd, unit: "/mo", billedLine: "Billed monthly · cancel anytime", setupLine, wasUsd };
 }
 /** "150 credits ≈ 10 booked calls/mo" — concrete math on every card. */
+// ---- "Due today" (Roman, 2026-10-13): the amount actually collected at signup = first subscription period + the
+// one-time setup fee (never discounted, also on annual). Checkout already charges exactly this (two line items on one
+// Stripe session: recurring + one-time onboarding). Copy ships only after Roman reads it → SHOW_DUE_TODAY flips to true.
+export const SHOW_DUE_TODAY = false;
+export const dueTodayUsd = (t: Tier, interval: BillingInterval) => (interval === "year" ? annualUsd(t.monthlyUsd) : t.monthlyUsd) + t.onboardingUsd;
+export const dueTodayLine = (t: Tier, interval: BillingInterval) =>
+  interval === "year"
+    ? `Due today: ${fmtUsd(dueTodayUsd(t, interval))} — ${fmtUsd(annualUsd(t.monthlyUsd))} for the year + ${fmtUsd(t.onboardingUsd)} one-time setup. Then ${fmtUsd(annualUsd(t.monthlyUsd))}/yr.`
+    : `Due today: ${fmtUsd(dueTodayUsd(t, interval))} — ${fmtUsd(t.monthlyUsd)} first month + ${fmtUsd(t.onboardingUsd)} one-time setup. Then ${fmtUsd(t.monthlyUsd)}/mo.`;
+
 export const creditsMath = (t: Tier) => `${t.credits} credits ≈ ${bookedCallsFor(t.credits)} booked calls/mo`;
 
 // ---- §3 THE OFFER (Roman's copy; numbers from config) ----

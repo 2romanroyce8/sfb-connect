@@ -4,7 +4,7 @@ import {
   TIERS, TOP_UP_PACKS, ANNUAL_MONTHS_CHARGED, ANCHOR_WAS_USD, REPLACED_VENDORS, VENDORS_TOTAL_MONTHLY_USD, NICHES,
   annualUsd, annualPerMonthUsd, nicheUsd, bookedCallsFor, CREDITS_PER_BOOKED_CALL,
 } from "../../lib/agentProgram/config";
-import { priceDisplay, creditsMath, OFFERS, roiEstimate, fmtCustomers, vendorsTotalLine, HOW_IT_WORKS, HOW_IT_WORKS_SUBLINE, PRICING_FAQ } from "../../lib/agentProgram/pricing";
+import { priceDisplay, creditsMath, OFFERS, roiEstimate, fmtCustomers, vendorsTotalLine, HOW_IT_WORKS, HOW_IT_WORKS_SUBLINE, PRICING_FAQ, dueTodayUsd, dueTodayLine, SHOW_DUE_TODAY } from "../../lib/agentProgram/pricing";
 
 const t = (k: string) => TIERS.find((x) => x.key === k)!;
 
@@ -66,3 +66,17 @@ test("ROI calculator: empty or invalid inputs → nothing; valid → live math",
   assert.equal(a.calls, 33); assert.equal(a.customers, 8.3); assert.equal(a.revenueUsd, 8300); assert.equal(a.netUsd, 8300 - 4997);
   assert.equal(fmtCustomers(3), "3"); assert.equal(fmtCustomers(8.3), "8.3");
 });
+
+test("due today = first period + full setup fee on both intervals; the same numbers checkout sends to Stripe (recurring + one-time onboarding line)", () => {
+  assert.equal(dueTodayUsd(t("solo"), "month"), 1497 + 1497);
+  assert.equal(dueTodayUsd(t("agency"), "month"), 4997 + 4997);
+  assert.equal(dueTodayUsd(t("solo"), "year"), 14970 + 1497, "annual: setup fee is never discounted");
+  assert.equal(dueTodayUsd(t("agency"), "year"), 49970 + 4997);
+  assert.equal(dueTodayLine(t("solo"), "month"), "Due today: $2,994 — $1,497 first month + $1,497 one-time setup. Then $1,497/mo.");
+  assert.equal(dueTodayLine(t("solo"), "year"), "Due today: $16,467 — $14,970 for the year + $1,497 one-time setup. Then $14,970/yr.");
+  assert.equal(dueTodayLine(t("agency"), "month"), "Due today: $9,994 — $4,997 first month + $4,997 one-time setup. Then $4,997/mo.");
+  assert.equal(dueTodayLine(t("agency"), "year"), "Due today: $54,967 — $49,970 for the year + $4,997 one-time setup. Then $49,970/yr.");
+  // Copy is held until Roman has read it (2026-10-13). Flip SHOW_DUE_TODAY only on his word.
+  assert.equal(SHOW_DUE_TODAY, false);
+});
+

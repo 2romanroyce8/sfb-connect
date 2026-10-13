@@ -50,3 +50,9 @@ Nav + footer "Pricing" → `/pricing`; homepage `#pricing` keeps the glass cards
 
 ## Not yet
 Niche-priced checkout (clinics/PE are consultation-only by design), proration between intervals, plan changes.
+
+## 2026-10-13 — card alignment + setup fee (Roman)
+- **Layout:** both tier cards share one top baseline (the Solo `translateY(-40px)` lift is gone); two centred columns (`max-w-[760px]`) for the two tiers — the old 3-column grid left the right third empty. Feature rows are `flex items-start` with the check in a fixed 18px slot; multi-line labels wrap under their own text. Identical structure on both cards (`components/pricing/PricingTiers.tsx`).
+- **Setup fee is charged at checkout — and already was:** `app/api/agent/checkout/route.ts` puts two line items on one Stripe session — the recurring price (monthly or annual) and the one-time onboarding price from `ensureTierPrices` (`lib/agentProgram/stripe.ts`, lookup key `sfb_agent_<tier>_onboarding`, `unit_amount = onboardingUsd × 100`, no `recurring`). Same full fee on annual. `agent_plan_orders.amount_total_cents` = (recurring + onboarding) × 100 at creation and is overwritten with Stripe's `amount_total` on `checkout.session.completed`.
+- **"Due today" line:** `dueTodayLine(t, interval)` in `lib/agentProgram/pricing.ts` (e.g. "Due today: $2,994 — $1,497 first month + $1,497 one-time setup. Then $1,497/mo."). Rendered under the setup line only when `SHOW_DUE_TODAY` is true — **held false until Roman has read the words** (tests pin both the strings and the flag).
+

@@ -4,14 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, ChevronDown } from "lucide-react";
 import { TIERS, NICHES, LAUNCH_PRICING_TAG, PRICING_NOTE, fmtUsd, type BillingInterval, type Tier, type TierKey } from "@/lib/agentProgram/config";
-import { priceDisplay, creditsMath, OFFERS } from "@/lib/agentProgram/pricing";
+import { priceDisplay, creditsMath, OFFERS, SHOW_DUE_TODAY, dueTodayLine } from "@/lib/agentProgram/pricing";
 import AgentCheckout from "@/components/agent/AgentCheckout";
 import { trackMarketingEvent } from "@/lib/marketingEvents";
 
 /**
  * §2 + §3, merged (Roman, 2026-10-10): the glass UI from the homepage
- * (giant "Pricing" backdrop, three frosted cards, Solo elevated with a glow
- * halo, bright vs dimmed ladder rows) carrying the overhaul's offer content
+ * (giant "Pricing" backdrop, frosted cards with a glow halo on Solo, bright vs
+ * dimmed ladder rows; since 2026-10-13 both cards sit on one top baseline) carrying the overhaul's offer content
  * (Monthly | Annual toggle that moves BOTH paid cards, setup lines, green
  * concrete-math pills, THE OFFER blocks). Numbers: config only. The "was"
  * strikethrough + "Launch pricing" tag render ONLY once ANCHOR_WAS_USD is set.
@@ -85,7 +85,9 @@ export default function PricingTiers({ funnel = false }: { funnel?: boolean }) {
         <div className="relative mt-4">
           <h3 aria-hidden className="select-none text-center font-semibold leading-[0.82] tracking-[-0.06em]" style={{ fontSize: "clamp(104px, 22vw, 290px)", backgroundImage: "linear-gradient(180deg, #ffffff 0%, #d9d9d9 38%, rgba(120,120,120,0.55) 68%, rgba(0,0,0,0) 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>Pricing</h3>
 
-          <div className="relative -mt-[0.42em] lg:-mt-[0.5em] grid lg:grid-cols-3 gap-5 lg:gap-6 items-start" style={{ zIndex: 1 }}>
+          {/* Layout (Roman, 2026-10-13): both cards share one top baseline — no lift on the featured card — and the
+              pair is centred (two columns for two tiers; the old 3-column grid left the right third empty). */}
+          <div className="relative -mt-[0.42em] lg:-mt-[0.5em] grid lg:grid-cols-2 gap-5 lg:gap-6 items-start mx-auto w-full max-w-[760px]" style={{ zIndex: 1 }}>
             {TIERS.map((t) => {
               const featured = "featured" in t && t.featured;
               const pd = priceDisplay(t, interval);
@@ -93,7 +95,7 @@ export default function PricingTiers({ funnel = false }: { funnel?: boolean }) {
                 <div
                   key={t.key}
                   onClick={() => trackMarketingEvent("pricing_card_click", { tier: t.key, interval })}
-                  className={`sfb-glass relative rounded-[22px] px-6 pt-8 pb-7 flex flex-col ${featured ? "lg:-translate-y-10 lg:pb-9" : ""}`}
+                  className="sfb-glass relative rounded-[22px] px-6 pt-8 pb-7 flex flex-col"
                   style={{ borderColor: featured ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.13)", boxShadow: featured ? "inset 0 1px 0 rgba(255,255,255,0.14), 0 30px 80px rgba(0,0,0,0.55), 0 0 90px rgba(66,227,109,0.18)" : undefined }}
                 >
                   {pd.wasUsd !== null && (
@@ -108,17 +110,20 @@ export default function PricingTiers({ funnel = false }: { funnel?: boolean }) {
                     </div>
                     {pd.billedLine && <div className="mt-1.5 text-[11.5px] text-white/[0.45]">{pd.billedLine}</div>}
                     <div className="mt-1 text-[13px] text-white/[0.85] font-medium">{pd.setupLine}</div>
+                    {SHOW_DUE_TODAY && <div className="mt-2 text-[12.5px] text-white/[0.7]">{dueTodayLine(t, interval)}</div>}
                     <div className="mt-3 inline-flex items-center h-[26px] px-3 rounded-full text-[12px] font-medium" style={{ background: "rgba(48,209,88,0.12)", color: "#30D158", border: "1px solid rgba(48,209,88,0.25)" }}>{creditsMath(t)}</div>
                   </div>
 
-                  <ul className="mt-7 flex flex-col items-center gap-[11px] text-[13.5px]">
+                  {/* Feature rows: one flex row each, checkmark pinned left in a fixed 18px slot, text beside it;
+                      a two-line label wraps under its own text, never under the check. Same structure on both cards. */}
+                  <ul className="mt-7 flex flex-col gap-[11px] text-[13.5px] w-full max-w-[290px] mx-auto text-left">
                     {LADDER.map((r) => {
                       const v = r.in[t.key];
                       const on = v !== false;
                       return (
-                        <li key={r.label} className="flex items-center justify-center gap-2 text-center" style={{ color: on ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.26)" }}>
-                          {on && <Check size={13} strokeWidth={2.4} className="shrink-0" style={{ color: "rgba(255,255,255,0.7)" }} />}
-                          <span>{r.label}{typeof v === "string" && <span className="text-white/[0.45]"> · {v}</span>}</span>
+                        <li key={r.label} className="flex items-start gap-2.5" style={{ color: on ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.26)" }}>
+                          <span className="shrink-0 w-[18px] h-[20px] inline-flex items-center justify-center" aria-hidden>{on && <Check size={13} strokeWidth={2.4} style={{ color: "rgba(255,255,255,0.7)" }} />}</span>
+                          <span className="leading-[20px]">{r.label}{typeof v === "string" && <span className="text-white/[0.45]"> · {v}</span>}</span>
                         </li>
                       );
                     })}
