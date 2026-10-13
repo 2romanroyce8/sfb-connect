@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
+import { notifyTaskAssigned } from "@/lib/notify/taskAssigned";
 
 const EDITABLE = ["title", "description", "startDate", "endDate", "status", "visualVariant", "assignedTo", "rowIndex"];
 const FIELD_MAP: Record<string, string> = { startDate: "start_date", endDate: "end_date", visualVariant: "visual_variant", assignedTo: "assigned_to", rowIndex: "row_index" };
@@ -15,10 +16,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { data: caller } = await supabase.from("users").select("team_role").eq("id", user.id).single();
+  const { data: caller } = await supabase.from("users").select("team_role, full_name, email").eq("id", user.id).single();
   const isOwner = caller?.team_role === "owner";
 
   const body = await req.json();
+  // Previous assignee, so a reassignment notifies only the new person.
+  const { data: before } = isOwner && "assignedTo" in body ? await supabase.from("crm_work_plan_items").select("assigned_to, title").eq("id", params.itemId).eq("work_plan_id", params.id).maybeSingle() : { data: null };
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   const allowedKeys = isOwner ? EDITABLE : ["status"];
   for (const key of allowedKeys) {
@@ -28,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const { error } = await supabase.from("crm_work_plan_items").update(update).eq("id", params.itemId).eq("work_plan_id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (before && "assignedTo" in body) await notifyTaskAssigned(createSupabaseServiceClient(), { kind: "work_plan_item", id: params.itemId, title: (typeof body.title === "string" && body.title) || (before.title as string) || "", url: "/team/work-plan" }, [before.assigned_to as string | null], [body.assignedTo as string | null], { id: user.id, label: caller?.full_name || caller?.email || "a teammate" });
   return NextResponse.json({ ok: true });
 }
 

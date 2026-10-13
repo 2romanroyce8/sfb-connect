@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
+import { notifyTaskAssigned } from "@/lib/notify/taskAssigned";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const { data: caller } = await supabase.from("users").select("team_role").eq("id", user.id).single();
+  const { data: caller } = await supabase.from("users").select("team_role, full_name, email").eq("id", user.id).single();
   if (caller?.team_role !== "owner") return NextResponse.json({ error: "Only the owner can add work plan items." }, { status: 403 });
 
   const { title, description, startDate, endDate, rowIndex, visualVariant, assignedTo, relatedLeadId } = await req.json();
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .select("*")
     .single();
   if (error || !item) return NextResponse.json({ error: error?.message || "Could not add item." }, { status: 400 });
+
+  // Assignee notification (2026-10-12): text + email + in-app to a newly assigned teammate.
+  if (assignedTo) await notifyTaskAssigned(createSupabaseServiceClient(), { kind: "work_plan_item", id: item.id, title, url: "/team/work-plan" }, [], [assignedTo], { id: user.id, label: caller.full_name || caller.email || "a teammate" });
 
   return NextResponse.json(item);
 }

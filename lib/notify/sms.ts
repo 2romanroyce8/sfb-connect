@@ -68,7 +68,7 @@ export function splitSms(text: string, max = SMS_MAX): string[] {
   return raw.map((p, i) => `(${i + 1}/${n}) ${p}`);
 }
 
-export type Trigger = "lead_new" | "demo_booked" | "callback_sla" | "credits_warning" | "credits_exhausted" | "approval_pending" | "system_health" | "sms_test";
+export type Trigger = "lead_new" | "demo_booked" | "callback_sla" | "credits_warning" | "credits_exhausted" | "approval_pending" | "task_assigned" | "system_health" | "sms_test";
 /** Triggers the owner can switch off. callback_sla is a real ops commitment and always fires; sms_test is explicit. */
 export const CONFIGURABLE_TRIGGERS: { key: Exclude<Trigger, "callback_sla" | "sms_test">; label: string; hint: string }[] = [
   { key: "lead_new", label: "New lead", hint: "Website lead forms, service inquiries, verified signups." },
@@ -76,6 +76,7 @@ export const CONFIGURABLE_TRIGGERS: { key: Exclude<Trigger, "callback_sla" | "sm
   { key: "credits_warning", label: "Customer credits at 80%", hint: "A customer account is running low." },
   { key: "credits_exhausted", label: "Customer credits at zero", hint: "A customer's agent paused." },
   { key: "approval_pending", label: "Approval queue", hint: "An outbound draft is waiting for a human. Texts are coalesced to one per 10 minutes." },
+  { key: "task_assigned", label: "Tasks assigned to me", hint: "A work-plan item, project task or subtask was assigned to you — with who assigned it and a link." },
   { key: "system_health", label: "System health", hint: "Hourly sync errors, a stalled cron, or a customer's Gmail/Calendar connection that died. One text per hour at most." },
 ];
 
