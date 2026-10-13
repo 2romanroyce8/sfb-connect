@@ -66,5 +66,5 @@ Never paste a secret into chat, code, logs, or a task result.
 |---|---|---|
 | Support / contact email | `sfbconnectsupport@gmail.com` (`SUPPORT_EMAIL`) | every displayed address, legal pages, vCard, Resend `replyTo` default (From stays `hello@sfbconnect.com`, the verified domain) |
 | Legal entity / address / law | Six Figure Blueprints LLC (FL) · 1200 Brickell Ave, Miami, FL · Florida | `lib/legal/documents.ts` resolutions |
-| Callback owner / hours | Roman · 11:30 AM–9:45 PM ET | demo-call copy (`callbackPromise`, `callbackHint`) |
+| Hours (booking slots = callback window) | `SCHEDULE_ET`: Mon–Fri 8:00–8:45 AM & 11:30 AM–6:45 PM · Sat–Sun 8:00 AM–3:00 PM ET · callback owner Roman | `buildSlots`, `callbackWindowOpen`, `callbackPromise`, `callbackHint`, modal `HOURS_LABEL` |
 | Homepage walkthrough video | `site_settings.walkthrough_video_url` (+ poster), set at `/team/settings` → Homepage video; files in public bucket `site-media` | `components/home/AgentSection.tsx` — real `<video>` when set, honest "coming" state when not; `/api/team/site-settings` owner-only |

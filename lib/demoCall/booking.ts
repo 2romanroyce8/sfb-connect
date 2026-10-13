@@ -3,7 +3,7 @@ import { getBusyBlocks, createCalendarEvent } from "@/lib/crm/googleCalendar";
 import { getAccessToken } from "@/lib/integrations/connections";
 import { sendEmail } from "@/lib/email/resend";
 import { alertOwners } from "@/lib/notify/ownerAlerts";
-import { SUPPORT_EMAIL, callbackPromise } from "@/lib/site";
+import { SUPPORT_EMAIL, callbackPromise, slotFits } from "@/lib/site";
 
 // ============================================================
 // BOOK A DEMO CALL (Roman, 2026-10-12)
@@ -24,7 +24,7 @@ export const CALLBACK_PROMISE = callbackPromise;
 export const SLOT_MINUTES = 30;
 export const BOOKING_LEAD_MINUTES = 120;      // nothing sooner than 2 h from now
 export const BOOKING_DAYS = 10;               // look-ahead window (calendar days)
-export const ET_HOURS = { start: 9, end: 17 }; // 9:00 → last slot starts 16:30 ET
+// Bookable hours live in lib/site.ts SCHEDULE_ET (Roman, 2026-10-12): Mon–Fri 8:00–8:45 & 11:30–18:45, Sat–Sun 8:00–15:00 ET. A slot must fit entirely inside a window.
 
 /** Minutes to ADD to UTC to get Eastern wall-clock at `date` (−240 EDT / −300 EST). */
 export function etOffsetMinutes(date: Date): number {
@@ -40,7 +40,7 @@ export const fmtETTime = (iso: string) => new Date(iso).toLocaleTimeString("en-U
 export type Slot = { start: string; end: string };
 export type SlotDay = { date: string; label: string; slots: Slot[] };
 
-/** Pure: 30-minute weekday slots 9:00–16:30 ET for the next BOOKING_DAYS days, minus busy blocks and anything inside the lead time. */
+/** Pure: 30-minute slots inside the weekly schedule (lib/site.ts) for the next BOOKING_DAYS days, minus busy blocks and anything inside the lead time. */
 export function buildSlots(busy: Slot[], from: Date = new Date(), days = BOOKING_DAYS): SlotDay[] {
   const busyMs = busy.map((b) => [Date.parse(b.start), Date.parse(b.end)] as const);
   const earliest = from.getTime() + BOOKING_LEAD_MINUTES * 60_000;
@@ -48,9 +48,10 @@ export function buildSlots(busy: Slot[], from: Date = new Date(), days = BOOKING
   const startOffset = etOffsetMinutes(from); const etNow = new Date(from.getTime() + startOffset * 60_000);
   for (let d = 0; d <= days; d++) {
     const day = new Date(Date.UTC(etNow.getUTCFullYear(), etNow.getUTCMonth(), etNow.getUTCDate() + d));
-    const dow = day.getUTCDay(); if (dow === 0 || dow === 6) continue;
+    const dow = day.getUTCDay();
     const slots: Slot[] = [];
-    for (let m = ET_HOURS.start * 60; m < ET_HOURS.end * 60; m += SLOT_MINUTES) {
+    for (let m = 0; m < 24 * 60; m += SLOT_MINUTES) {
+      if (!slotFits(dow, m, SLOT_MINUTES)) continue;
       const wall = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), Math.floor(m / 60), m % 60);
       // Offset is evaluated at the slot itself so a DST change inside the window stays correct.
       const probe = new Date(wall - startOffset * 60_000); const off = etOffsetMinutes(probe);

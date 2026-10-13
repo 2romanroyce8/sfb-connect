@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { trackMarketingEvent } from "@/lib/marketingEvents";
-import { SUPPORT_EMAIL, callbackHint } from "@/lib/site";
+import { SUPPORT_EMAIL, callbackHint, HOURS_LABEL } from "@/lib/site";
 
 // "Book a demo call" — trigger + modal. Slots come from the live calendar
 // (all Eastern, labeled every time). On confirm: the event is on Rome's
@@ -54,7 +54,7 @@ function Modal({ source, prefill, onClose: close }: { source: string; prefill?: 
         <button type="button" onClick={onClose} className="absolute right-4 top-4 text-white/[0.5] hover:text-white text-[13px]">Close</button>
         {!booked ? (
           <form onSubmit={book} className="flex flex-col gap-4">
-            <div><div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158]">Book a demo call</div><h2 className="text-[24px] font-bold tracking-[-0.03em] mt-1">Pick a time. <span className="text-white/[0.5] font-normal text-[16px]">All times Eastern (ET).</span></h2></div>
+            <div><div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158]">Book a demo call</div><h2 className="text-[24px] font-bold tracking-[-0.03em] mt-1">Pick a time. <span className="text-white/[0.5] font-normal text-[16px]">All times Eastern (ET).</span></h2><div className="text-[12.5px] text-white/[0.5] mt-1.5">Hours: {HOURS_LABEL}.</div></div>
             {days === null ? <div className="text-[13px] text-white/[0.5]">Loading open times…</div> : !calendarConnected ? <div className="text-[13px] text-[#FF9F9A]">Our calendar isn&apos;t reachable right now. Email {SUPPORT_EMAIL} and we&apos;ll set a time by hand.</div> : days.length === 0 ? <div className="text-[13px] text-white/[0.5]">No open times in the next 10 days — email {SUPPORT_EMAIL}.</div> : (
               <>
                 <div className="flex gap-2 overflow-x-auto pb-1">{days.map((d) => <button key={d.date} type="button" onClick={() => { setDay(d.date); setSlot(null); }} className="shrink-0 h-[36px] px-3 rounded-full text-[12.5px]" style={{ border: `1px solid ${day === d.date ? "#30D158" : "rgba(255,255,255,0.14)"}`, color: day === d.date ? "#30D158" : "rgba(255,255,255,0.8)" }}>{d.label}</button>)}</div>

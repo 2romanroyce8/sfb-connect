@@ -1,6 +1,6 @@
-// Site-wide facts Roman supplied on 2026-10-12 (launch-list A-items). One
-// place, imported everywhere the public sees them. No imports here so legal
-// documents, emails and client components can all use it.
+// Site-wide facts Roman supplied on 2026-10-12 (launch-list A-items + hours
+// update 22:43 ET). One place, imported everywhere the public sees them. No
+// imports here so legal documents, emails and client components can all use it.
 
 /** The ONE support/contact address. Resend still sends FROM hello@sfbconnect.com (verified domain); replies go here. */
 export const SUPPORT_EMAIL = "sfbconnectsupport@gmail.com";
@@ -9,38 +9,53 @@ export const LEGAL_ENTITY = "Six Figure Blueprints LLC, a Florida limited liabil
 export const LEGAL_ADDRESS = "1200 Brickell Ave, Miami, FL"; // as given by Roman 2026-10-12 — no suite/ZIP supplied
 export const GOVERNING_LAW = "the State of Florida";
 
-/** Who carries the callback phone and when (Eastern). Roman, 2026-10-12. */
+// ---- Hours (Roman, 2026-10-12 22:43 ET): ONE weekly schedule drives both the
+// bookable demo slots and the "free for a call right now" callback window.
+// Minutes after midnight, Eastern wall clock. A window is [start, end).
+export type Window = { start: number; end: number };
+const t = (h: number, m = 0) => h * 60 + m;
+export const SCHEDULE_ET: { weekday: Window[]; weekend: Window[] } = {
+  weekday: [{ start: t(8), end: t(8, 45) }, { start: t(11, 30) , end: t(18, 45) }], // 9:00–11:00 blocked (and 8:45–11:30 has no slot that fits)
+  weekend: [{ start: t(8), end: t(15) }],
+};
+export const HOURS_LABEL = "Mon–Fri 8:00–8:45 AM & 11:30 AM–6:45 PM · Sat–Sun 8:00 AM–3:00 PM, Eastern";
 export const CALLBACK_OWNER = "Roman";
-export const CALLBACK_HOURS_ET = { start: { h: 11, m: 30 }, end: { h: 21, m: 45 } } as const;
-export const CALLBACK_HOURS_LABEL = "11:30 AM–9:45 PM Eastern";
+
+/** Windows for an Eastern day-of-week (0 = Sunday). */
+export const windowsFor = (dow: number): Window[] => (dow === 0 || dow === 6 ? SCHEDULE_ET.weekend : SCHEDULE_ET.weekday);
+
+/** Pure: does a slot of `slotMinutes` starting at `startMin` (ET minutes) sit entirely inside a window that day? */
+export const slotFits = (dow: number, startMin: number, slotMinutes: number): boolean =>
+  windowsFor(dow).some((w) => startMin >= w.start && startMin + slotMinutes <= w.end);
 
 const ET = "America/New_York";
-function etMinutes(now: Date): number {
-  const p = new Intl.DateTimeFormat("en-US", { timeZone: ET, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(now);
-  const g = (t: string) => Number(p.find((x) => x.type === t)?.value ?? 0);
-  return g("hour") * 60 + g("minute");
+function etNow(now: Date): { dow: number; minutes: number } {
+  const p = new Intl.DateTimeFormat("en-US", { timeZone: ET, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(now);
+  const g = (k: string) => p.find((x) => x.type === k)?.value ?? "";
+  const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(g("weekday"));
+  return { dow, minutes: Number(g("hour")) * 60 + Number(g("minute")) };
 }
 
-/** Pure: is the callback window open right now (Eastern wall clock)? Inclusive start, exclusive end. */
+/** Pure: is the callback window open right now (Eastern wall clock)? Same windows as booking. */
 export function callbackWindowOpen(now: Date = new Date()): boolean {
-  const m = etMinutes(now);
-  return m >= CALLBACK_HOURS_ET.start.h * 60 + CALLBACK_HOURS_ET.start.m && m < CALLBACK_HOURS_ET.end.h * 60 + CALLBACK_HOURS_ET.end.m;
+  const { dow, minutes } = etNow(now);
+  return windowsFor(dow).some((w) => minutes >= w.start && minutes < w.end);
 }
 
 /**
  * What we actually do when a prospect ticks "free for a call right now": the team is alerted the instant
- * the booking lands; inside the window Roman calls back; outside it the call happens when the window opens.
+ * the booking lands; inside the window Roman calls back; outside it the call happens when we next open.
  * Not a guarantee and never worded as one.
  */
 export function callbackPromise(now: Date = new Date()): string {
   return callbackWindowOpen(now)
     ? `${CALLBACK_OWNER} calls you back right away — usually within a few minutes. Keep your phone close.`
-    : `Our callback hours are ${CALLBACK_HOURS_LABEL}. ${CALLBACK_OWNER} will call you when they open; your demo slot stays booked either way.`;
+    : `We're outside our hours right now (${HOURS_LABEL}). ${CALLBACK_OWNER} will call you when we next open; your demo slot stays booked either way.`;
 }
 
 /** The checkbox hint in the booking modal. */
 export function callbackHint(now: Date = new Date()): string {
   return callbackWindowOpen(now)
-    ? `Tick this and ${CALLBACK_OWNER} calls you back right away — usually within a few minutes. Callback hours: ${CALLBACK_HOURS_LABEL}.`
-    : `Tick this and ${CALLBACK_OWNER} calls you first thing in our callback hours, ${CALLBACK_HOURS_LABEL}.`;
+    ? `Tick this and ${CALLBACK_OWNER} calls you back right away — usually within a few minutes. Hours: ${HOURS_LABEL}.`
+    : `Tick this and ${CALLBACK_OWNER} calls you first thing when we next open. Hours: ${HOURS_LABEL}.`;
 }

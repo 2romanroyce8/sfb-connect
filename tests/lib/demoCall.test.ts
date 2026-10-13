@@ -8,23 +8,29 @@ test("Eastern offset is DST-aware (EDT in October, EST in December)", () => {
   assert.match(fmtET("2026-10-14T18:00:00Z"), /Oct 14, 2:00 PM ET$/);
 });
 
-test("slots: weekdays only, 9:00–16:30 ET, 30 min, nothing inside the 2-hour lead, busy blocks removed, labeled in ET", () => {
+test("slots: follow the weekly schedule (Mon–Fri 8:00–8:45 & 11:30–18:45, Sat–Sun 8:00–15:00 ET), 30 min, fit inside a window, lead time + busy blocks honoured", () => {
   const from = new Date("2026-10-12T13:00:00Z"); // Mon 9:00 AM ET
-  const busy = [{ start: "2026-10-13T14:00:00Z", end: "2026-10-13T15:00:00Z" }]; // Tue 10:00–11:00 ET
+  const busy = [{ start: "2026-10-13T16:00:00Z", end: "2026-10-13T17:00:00Z" }]; // Tue 12:00–13:00 ET
   const days = buildSlots(busy, from, 7);
-  assert.ok(days.length >= 5);
-  for (const d of days) {
-    for (const s of d.slots) {
-      const local = new Date(Date.parse(s.start) + etOffsetMinutes(new Date(s.start)) * 60_000);
-      assert.ok(local.getUTCDay() >= 1 && local.getUTCDay() <= 5, "weekday"); assert.ok(local.getUTCHours() >= 9 && local.getUTCHours() <= 16, "business hours");
-      assert.equal(Date.parse(s.end) - Date.parse(s.start), SLOT_MINUTES * 60_000);
-      assert.ok(Date.parse(s.start) >= from.getTime() + 120 * 60_000, "lead time");
-    }
+  assert.ok(days.length >= 7, "weekends are bookable now");
+  const etMin = (iso: string) => { const d = new Date(Date.parse(iso) + etOffsetMinutes(new Date(iso)) * 60_000); return { dow: d.getUTCDay(), min: d.getUTCHours() * 60 + d.getUTCMinutes() }; };
+  for (const d of days) for (const s of d.slots) {
+    const { dow, min } = etMin(s.start);
+    if (dow === 0 || dow === 6) assert.ok(min >= 8 * 60 && min + 30 <= 15 * 60, `weekend slot ${s.start} outside 8:00–15:00`);
+    else assert.ok((min >= 8 * 60 && min + 30 <= 8 * 60 + 45) || (min >= 11 * 60 + 30 && min + 30 <= 18 * 60 + 45), `weekday slot ${s.start} outside the windows`);
+    assert.equal(Date.parse(s.end) - Date.parse(s.start), SLOT_MINUTES * 60_000);
+    assert.ok(Date.parse(s.start) >= from.getTime() + 120 * 60_000, "lead time");
   }
-  const mon = days.find((d) => d.date === "2026-10-12")!; assert.equal(mon.slots[0].start, "2026-10-12T15:00:00.000Z", "first Monday slot is 11:00 ET (9:00 + 2h lead)");
-  const tue = days.find((d) => d.date === "2026-10-13")!; assert.ok(!tue.slots.some((s) => s.start === "2026-10-13T14:00:00.000Z" || s.start === "2026-10-13T14:30:00.000Z"), "busy 10:00–11:00 ET removed");
-  assert.ok(tue.slots.some((s) => s.start === "2026-10-13T15:00:00.000Z"), "11:00 ET still open");
+  const mon = days.find((d) => d.date === "2026-10-12")!; assert.equal(mon.slots[0].start, "2026-10-12T15:30:00.000Z", "first Monday slot is 11:30 ET (8:00 is past, 9–11 blocked)");
+  const tue = days.find((d) => d.date === "2026-10-13")!;
+  assert.equal(tue.slots[0].start, "2026-10-13T12:00:00.000Z", "Tuesday opens with the 8:00 slot (8:30 would end at 9:00 > 8:45)");
+  assert.equal(tue.slots[1].start, "2026-10-13T15:30:00.000Z", "nothing between 8:30 and 11:30 ET");
+  assert.ok(!tue.slots.some((s) => s.start === "2026-10-13T16:00:00.000Z" || s.start === "2026-10-13T16:30:00.000Z"), "busy 12:00–13:00 ET removed");
+  assert.equal(tue.slots[tue.slots.length - 1].start, "2026-10-13T22:00:00.000Z", "last weekday slot starts 6:00 PM ET (6:30 would end 7:00 > 6:45)");
   assert.match(tue.label, /^Tue, Oct 13$/);
+  const sat = days.find((d) => d.date === "2026-10-17")!;
+  assert.equal(sat.slots[0].start, "2026-10-17T12:00:00.000Z", "Saturday 8:00 ET"); assert.equal(sat.slots[sat.slots.length - 1].start, "2026-10-17T18:30:00.000Z", "Saturday last slot 2:30 PM ET");
+  assert.equal(sat.slots.length, 14);
 });
 
 test("ics + vCard + add-to-calendar links are correct and escape safely", () => {
