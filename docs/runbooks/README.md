@@ -29,7 +29,8 @@ Everything here is written so Atlas (Muse) or any engineer can operate SFB Conne
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Vercel env (**live since 2026-10-11**) | checkout + webhook + $1 trial | rotate in Stripe → update Vercel → redeploy |
 | `EXA_API_KEY` | Vercel env | research discovery | Exa dashboard |
 | `GOOGLE_CLIENT_ID/SECRET` | Vercel env (**not yet set**) | Calendar + Meet | Google Cloud console |
-| AI provider keys (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`) | Vercel env (**not set**) | future Sales Assistant, AI visibility | provider dashboards |
+| `ANTHROPIC_API_KEY` | Vercel env (**not set** — post-launch activation) | editing help in the composer (`lib/outbound/assist.ts`); buttons hidden until set, every call logged in `outbound_assist_calls`, daily cap in `outbound_assist_settings` — see outbound.md | Anthropic console |
+| Other AI provider keys (`OPENAI_API_KEY` / `GEMINI_API_KEY`) | Vercel env (**not set**) | future Sales Assistant, AI visibility | provider dashboards |
 | Agent OAuth tokens | `agent_tokens` (SHA-256 hashes only) | connector | revoke in Settings → Connected Agents |
 Never paste a secret into chat, code, logs, or a task result.
 

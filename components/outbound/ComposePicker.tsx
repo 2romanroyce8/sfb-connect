@@ -6,7 +6,7 @@ import { renderSource, TEMPLATE_VARIABLES, validateSource } from "@/lib/outbound
 type Preview = { subject: string; body: string } | { error: string };
 type Item = { key: string; name: string; category: string; categoryLabel: string; tone: string; audience: string; description: string; subject: string; body: string; preview: Preview; saved: boolean; approved: boolean };
 type Library = { items: Item[]; categories: { key: string; label: string; hint: string }[]; variables: typeof TEMPLATE_VARIABLES; sample: { company: string; contact_name: string | null; city: string | null; category: string | null; placeholder: boolean }; introTemplate: string | null; recommendation: { key: string; reason: string }; offerLineMissing: boolean };
-type Assist = { configured: boolean; instructions: { key: string; label: string; prompt: string }[] };
+type Assist = { configured: boolean; capped: boolean; instructions: { key: string; label: string; prompt: string }[] };
 export type Compose = { mode: "agent" | "preset" | "custom"; template: string; custom: { subject: string; body: string } | null; label: string };
 
 type Props = {
@@ -49,7 +49,8 @@ export default function ComposePicker({ target, dark = false, onChange }: Props)
 
   const pickIntro = async (key: string | null) => { setBusy("pick"); setErr(null); try { await post("template_pick", { key }); await load(); setMsg(key ? "Saved — your sequences will use this intro." : "Back to the agent's recommendation."); } catch (e) { setErr(e instanceof Error ? e.message : "Could not save."); } finally { setBusy(null); } };
   const insertVar = (tok: string) => { const el = bodyRef.current; if (!el) { setBodyText((b) => b + tok); return; } const s = el.selectionStart ?? bodyText.length, e = el.selectionEnd ?? s; setBodyText(bodyText.slice(0, s) + tok + bodyText.slice(e)); requestAnimationFrame(() => { el.focus(); el.setSelectionRange(s + tok.length, s + tok.length); }); };
-  const help = async (instruction: string) => { setBusy(instruction); setErr(null); setMsg(null); try { const j = await post("template_assist", { subject, body: bodyText, instruction }); setSubject(j.edited.subject); setBodyText(j.edited.body); setMsg("Edited — read it over before you use it."); } catch (e) { setErr(e instanceof Error ? e.message : "Editing help failed."); } finally { setBusy(null); } };
+  // Editing help is only offered when the server says the provider is configured; a cap hit mid-session flips the buttons off without an error toast.
+  const help = async (instruction: string) => { setBusy(instruction); setErr(null); setMsg(null); try { const j = await post("template_assist", { subject, body: bodyText, instruction }); setSubject(j.edited.subject); setBodyText(j.edited.body); setMsg("Edited — read it over before you use it."); } catch (e) { const m = e instanceof Error ? e.message : "Editing help failed."; if (/spend limit/i.test(m)) setAssist((a) => (a ? { ...a, capped: true } : a)); else setErr(m); } finally { setBusy(null); } };
   const savePreset = async () => { setBusy("save"); setErr(null); try { await post("template_save", { name: saveName, subject, body: bodyText, category: "custom" }); setSaveName(""); await load(); setMsg("Saved to your library."); } catch (e) { setErr(e instanceof Error ? e.message : "Could not save."); } finally { setBusy(null); } };
 
   if (!lib) return <div className={`text-[13px] ${t.faint}`}>{err ?? "Loading templates…"}</div>;
@@ -102,11 +103,13 @@ export default function ComposePicker({ target, dark = false, onChange }: Props)
           <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject — e.g. A quick note from {{sender_name}}" className={`h-[40px] rounded-lg px-3 text-[13.5px] outline-none ${t.input}`} />
           <textarea ref={bodyRef} value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={9} placeholder={"Hi {{first_name}},\n\nWrite it the way you'd say it. Variables fill in per person.\n\n{{sender_name}}\n{{sender_company}}"} className={`rounded-lg px-3 py-2 text-[13.5px] outline-none leading-relaxed ${t.input}`} />
           <div className="flex gap-1.5 flex-wrap items-center"><span className={`text-[11.5px] ${t.faint}`}>Insert:</span>{lib.variables.map((v) => <button type="button" key={v.token} onClick={() => insertVar(v.token)} title={v.label} className={`h-[26px] px-2 rounded-md text-[11.5px] font-mono ${t.chip}`}>{v.token}</button>)}</div>
-          <div className="flex gap-1.5 flex-wrap items-center">
-            <span className={`text-[11.5px] ${t.faint}`}>Agent help:</span>
-            {(assist?.instructions ?? []).map((i) => <button type="button" key={i.key} onClick={() => void help(i.key)} disabled={!!busy || !subject.trim() || !bodyText.trim()} className={`h-[30px] px-3 rounded-full text-[12px] disabled:opacity-50 ${t.ghost}`}>{busy === i.key ? "Working…" : i.label}</button>)}
-            {assist && !assist.configured && <span className={`text-[11.5px] ${t.faint}`}>(editing help isn&apos;t switched on for this deployment yet — you can still edit by hand)</span>}
-          </div>
+          {assist?.configured && assist.instructions.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap items-center">
+              <span className={`text-[11.5px] ${t.faint}`}>Agent help:</span>
+              {assist.instructions.map((i) => <button type="button" key={i.key} onClick={() => void help(i.key)} disabled={!!busy || assist.capped || !subject.trim() || !bodyText.trim()} className={`h-[30px] px-3 rounded-full text-[12px] disabled:opacity-50 ${t.ghost}`}>{busy === i.key ? "Working…" : i.label}</button>)}
+              {assist.capped && <span className={`text-[11.5px] ${t.faint}`}>Paused until tomorrow — today&apos;s editing-help limit was reached. Hand edits still work.</span>}
+            </div>
+          )}
           <Prev p={customPreview} label="Preview with your info" />
           <div className="flex items-center gap-2 flex-wrap">
             <input value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="Name this preset to reuse it" className={`h-[34px] rounded-lg px-3 text-[12.5px] outline-none ${t.input}`} />

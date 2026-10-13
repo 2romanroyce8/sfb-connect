@@ -46,7 +46,7 @@ Subject headers with non-ASCII (em dash, curly quotes) are RFC 2047-encoded by `
 **Where:** step 10 ("What should the first email say?") and `/team/outbound` → Approval queue → "Compose & templates". Shared component `components/outbound/ComposePicker.tsx`; three modes.
 - **Have the agent draft** — uses the business's intro: `businesses.outbound_intro_template` if set, else the deterministic recommendation in `lib/outbound/presets.ts recommendIntro()` (consumer when >50 % of uncontacted prospects are people — uploaded rows with no website where the person is the prospect — or the ICP wording reads consumer: homeowner, patient, resident, tenant, parent, family…). The customer sees the recommendation with its reason, both intros side by side, and can override with one click (`template_pick`; null = back to the recommendation). Follow-ups swap to consumer wording when the intro is consumer (`resolveStepTemplate`).
 - **Pick a preset** — the library (`LIBRARY` in presets.ts + the business's `outbound_templates`), by category (intro to a business · intro to a person · follow-ups · re-engagement · booking nudge · review request · testimonial request · your saved presets), each previewed with the business's own info and its first uncontacted prospect (or a labelled sample). Any intro-type preset can also become the sequence intro.
-- **Write my own** — subject + body with the shared variables (`TEMPLATE_VARIABLES`; aliases like `{{first name}}`, `{{your company}}` accepted; unknown placeholders refused with the allowed list), live preview, **Agent help** (shorter / friendlier / more direct / more formal / fix grammar — `lib/outbound/assist.ts`, Anthropic `claude-sonnet-4-6`, needs `ANTHROPIC_API_KEY`; the guard `checkAssistResult` rejects any edit that drops/adds a placeholder; without a key the buttons say so and hand-editing still works), and **Save as preset**. A custom email is drafted per prospect through the same `draftMessage` (2 credits), lands in the same approval queue (5 credits to approve), sends the same way. Importing/saving templates costs 0.
+- **Write my own** — subject + body with the shared variables (`TEMPLATE_VARIABLES`; aliases like `{{first name}}`, `{{your company}}` accepted; unknown placeholders refused with the allowed list), live preview, **Agent help** (shorter / friendlier / more direct / more formal / fix grammar — `lib/outbound/assist.ts`, Anthropic `claude-sonnet-4-6`, needs `ANTHROPIC_API_KEY`; the guard `checkAssistResult` rejects any edit that drops/adds a placeholder; **without a key the buttons are not rendered at all** — see "Editing help: activation, spend log, daily cap" below), and **Save as preset**. A custom email is drafted per prospect through the same `draftMessage` (2 credits), lands in the same approval queue (5 credits to approve), sends the same way. Importing/saving templates costs 0.
 - **Save a sent email as a preset** — Decided list (step 10) and Activity (team): saves `outbound_messages.template_source` (the variable form), so the preset fills in per person next time, not one prospect's name.
 **Copy rule:** system presets ship only after Roman has read them (`approvedAt` in presets.ts); the first library version is being reviewed. `renderSource()` still refuses any placeholder we can't fill from a verified fact. Tests: `tests/lib/templateLibrary.test.ts`.
 
@@ -63,3 +63,24 @@ Customers (step 7, and later) and the team (`/team/outbound` → Prospects → "
 
 ## Not in Phase 1
 Customer-facing approval queue (Phase 2), LinkedIn channel, bounce webhooks (Gmail has none — bounces arrive as replies and are left to the human), reply classification / auto-drafted replies (agent drafts via `sfb_outbound_draft reply_thanks`).
+
+## Editing help: activation, spend log, daily cap (2026-10-12)
+Dark until the key exists; live the moment it does. No code change, no redeploy beyond Vercel's own env-change redeploy.
+| Piece | Where |
+|---|---|
+| Key | `ANTHROPIC_API_KEY` in Vercel env (never in source/chat). `assistConfigured()` reads it per request. |
+| Status the composer reads | `assistStatus(service)` (`lib/outbound/assistSpend.ts`) → `{ configured, capped, capCents, spentTodayCents, instructions }`. Not configured → `instructions: []` and `ComposePicker` renders no "Agent help" row. Configured + capped → buttons rendered **disabled** with "Paused until tomorrow". |
+| Entry point for edits | `assistEditLogged(service, who, draft, instruction)` — order: configured? → under cap? → model call → **log** → return. Routes: `POST /api/team/outbound action=template_assist`, `POST /api/dashboard/onboarding action=template_assist`. Errors are `OutboundError` codes `assist_off` (503), `assist_capped` (503), `assist_failed` (502). |
+| Spend log | `outbound_assist_calls` — one row per call: `business_id, user_id, actor_label, instruction, model, status (ok/error/capped), input_tokens, output_tokens, cost_cents, error, latency_ms, created_at`. Refused edits (guard tripped, provider error) are logged as `error` **with the tokens the provider billed**; cap refusals as `capped` with 0 tokens. View `outbound_assist_spend_by_business` sums per business. |
+| Cost | `estimateCostCents` from `MODEL_PRICE_USD_PER_MTOK` (list price USD/MTok, dated in the file — the only place to change when the price or model moves). |
+| Daily cap | `outbound_assist_settings.daily_cap_cents` (one row, id=1). Resets at **midnight America/New_York** (`dayStart`). Default **500 ($5.00) is a placeholder** until Roman sets it. `0` = no spend allowed. |
+| Tests | `tests/lib/assistSpend.test.ts` (cost, day window incl. DST, cap decision, raw call with a fake provider returning usage). |
+
+Operate:
+- Turn on: set `ANTHROPIC_API_KEY` in Vercel → redeploy happens → open Write my own → buttons appear. Turn off: remove the key. Nothing else to touch.
+- Set the cap: `update outbound_assist_settings set daily_cap_cents = <cents>, updated_at = now() where id = 1;`
+- Today's spend: `select count(*), sum(cost_cents) from outbound_assist_calls where created_at >= date_trunc('day', now() at time zone 'America/New_York') at time zone 'America/New_York';`
+- Per business: `select * from outbound_assist_spend_by_business order by cost_cents desc;`
+- "Buttons vanished": either the key is gone from Vercel (`configured:false`) or the cap was hit (`status='capped'` rows today). The composer never shows an error for either.
+- Migration: `supabase/migrations/20261012_assist_spend.sql`.
+

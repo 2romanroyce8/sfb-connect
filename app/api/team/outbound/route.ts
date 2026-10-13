@@ -3,7 +3,8 @@ import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/s
 import { addProspect, approveMessage, bookMeeting, draftMessage, enrichProspect, importFindings, OutboundError, proposeMeetingSlots, rejectMessage, sendApprovedMessage, retryFailedSend, startSequence, syncReplies, advanceSequences, InsufficientCreditsError } from "@/lib/outbound/engine";
 import type { TemplateKey } from "@/lib/outbound/templates";
 import { listLibrary, pickIntro, saveTemplate, archiveTemplate } from "@/lib/outbound/library";
-import { assistEdit, assistConfigured, ASSIST_INSTRUCTIONS, type AssistKey } from "@/lib/outbound/assist";
+import { ASSIST_INSTRUCTIONS, type AssistKey } from "@/lib/outbound/assist";
+import { assistStatus, assistEditLogged } from "@/lib/outbound/assistSpend";
 import { previewCsv, importProspects } from "@/lib/outbound/importProspects";
 import type { ImportField } from "@/lib/outbound/csvImport";
 
@@ -80,9 +81,9 @@ export async function POST(req: NextRequest) {
       case "start_sequence": return NextResponse.json({ message: await startSequence(service, s("prospect_id"), actor, s("template") ? { template: s("template"), custom: (body.custom as { subject: string; body: string } | undefined) ?? null } : null) });
       case "draft": return NextResponse.json({ message: await draftMessage(service, { prospectId: s("prospect_id"), template: (s("template") || "intro") as TemplateKey, custom: (body.custom as { subject: string; body: string } | undefined) ?? null, slots: s("slots") || null }, actor) });
       // Template library (2026-10-12)
-      case "template_library": return NextResponse.json({ ok: true, library: await listLibrary(service, b.id), assist: { configured: assistConfigured(), instructions: ASSIST_INSTRUCTIONS } });
+      case "template_library": { const [library, assist] = await Promise.all([listLibrary(service, b.id), assistStatus(service)]); return NextResponse.json({ ok: true, library, assist }); }
       case "template_pick": { const key = s("template") || null; await pickIntro(service, b.id, key); return NextResponse.json({ ok: true, key }); }
-      case "template_assist": { const ins = ASSIST_INSTRUCTIONS.some((i) => i.key === body.instruction) ? (body.instruction as AssistKey) : "shorter"; try { return NextResponse.json({ ok: true, edited: await assistEdit({ subject: s("subject"), body: typeof body.body === "string" ? body.body : "" }, ins) }); } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Editing help failed." }, { status: assistConfigured() ? 502 : 503 }); } }
+      case "template_assist": { const ins = ASSIST_INSTRUCTIONS.some((i) => i.key === body.instruction) ? (body.instruction as AssistKey) : "shorter"; try { return NextResponse.json({ ok: true, edited: await assistEditLogged(service, { businessId: b.id, userId: me.id, label: actor.label }, { subject: s("subject"), body: typeof body.body === "string" ? body.body : "" }, ins) }); } catch (e) { if (e instanceof OutboundError) return NextResponse.json({ error: e.message, code: e.code }, { status: e.status }); return NextResponse.json({ error: e instanceof Error ? e.message : "Editing help failed." }, { status: 502 }); } }
       case "template_save": return NextResponse.json({ ok: true, template: await saveTemplate(service, b.id, { name: s("name"), messageId: s("message_id") || null, subject: s("subject") || undefined, body: typeof body.body === "string" ? body.body : undefined, category: body.category === "saved" ? "saved" : "custom" }, { label: actor.label }) });
       case "template_archive": await archiveTemplate(service, b.id, s("template_id")); return NextResponse.json({ ok: true });
       case "approve": return NextResponse.json({ message: await approveMessage(service, s("message_id"), { id: me.id, label: actor.label }, { andSend: body.and_send !== false, note: s("note") || undefined }) });

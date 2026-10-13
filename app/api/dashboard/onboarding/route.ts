@@ -13,7 +13,8 @@ import { startDfyCheckout } from "@/lib/billing/dfy";
 import { campaignStatus, launchCampaign, approveCampaign, rejectCampaignMessage } from "@/lib/onboarding/campaignRun";
 import { listLibrary, pickIntro, saveTemplate, archiveTemplate, resolveSource, senderVarsFor, sampleProspect } from "@/lib/outbound/library";
 import { renderSource } from "@/lib/outbound/templates";
-import { assistEdit, assistConfigured, ASSIST_INSTRUCTIONS, type AssistKey } from "@/lib/outbound/assist";
+import { ASSIST_INSTRUCTIONS, type AssistKey } from "@/lib/outbound/assist";
+import { assistStatus, assistEditLogged } from "@/lib/outbound/assistSpend";
 import { OutboundError } from "@/lib/outbound/errors";
 import { appOrigin } from "@/lib/agent/auth";
 export const runtime = "nodejs";
@@ -214,7 +215,7 @@ export async function POST(req: NextRequest) {
   }
   if (body.action === "campaign_status") return NextResponse.json({ ok: true, status: await campaignStatus(service, await bizFull()) });
   // ---------- Template library + custom emails (2026-10-12) ----------
-  if (body.action === "template_library") return NextResponse.json({ ok: true, library: await listLibrary(service, who.businessId), assist: { configured: assistConfigured(), instructions: ASSIST_INSTRUCTIONS } });
+  if (body.action === "template_library") { const [library, assist] = await Promise.all([listLibrary(service, who.businessId), assistStatus(service)]); return NextResponse.json({ ok: true, library, assist }); }
   if (body.action === "template_pick") {
     const key = typeof body.data?.key === "string" && body.data.key ? body.data.key : null;
     try { await pickIntro(service, who.businessId, key); return NextResponse.json({ ok: true, key }); }
@@ -231,8 +232,8 @@ export async function POST(req: NextRequest) {
   if (body.action === "template_assist") {
     const d = body.data ?? {}; const draft = { subject: String(d.subject ?? ""), body: String(d.body ?? "") };
     const ins = ASSIST_INSTRUCTIONS.some((i) => i.key === d.instruction) ? (d.instruction as AssistKey) : "shorter";
-    try { return NextResponse.json({ ok: true, edited: await assistEdit(draft, ins) }); }
-    catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : "Editing help failed." }, { status: assistConfigured() ? 502 : 503 }); }
+    try { const me = await meLabel(); return NextResponse.json({ ok: true, edited: await assistEditLogged(service, { businessId: who.businessId, userId: me.id, label: me.label }, draft, ins) }); }
+    catch (e) { if (e instanceof OutboundError) return NextResponse.json({ error: e.message, code: e.code }, { status: e.status }); return NextResponse.json({ error: e instanceof Error ? e.message : "Editing help failed." }, { status: 502 }); }
   }
   if (body.action === "template_save") {
     const { data: { user } } = await createSupabaseServerClient().auth.getUser();
