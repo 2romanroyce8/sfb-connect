@@ -16,7 +16,10 @@ The trial's CTA is replaced by **Book a demo call** (Roman, 2026-10-12). Trigger
 - Cancel a booking (owner only): `DELETE /api/team/demo-calls/<id>` — removes the Google event (attendee gets Google's cancellation) and marks the row `canceled`.
 - Slack alert `not_in_channel` (found live 2026-10-12): the code now `conversations.join`s the channel once and retries; if it still fails, add the SFB Connect app to the channel by hand.
 - Who's booked: `select start_at at time zone 'America/New_York' as et, name, phone, email, call_now, call_now_notify_result from demo_calls order by start_at desc;`
-- Calendar unreachable (owner's Google token revoked): the modal says so honestly and points to hello@sfbconnect.com; reconnect Google in `/team/integrations`.
+- Calendar unreachable (owner's Google token revoked): the modal says so honestly and points to sfbconnectsupport@gmail.com (`SUPPORT_EMAIL`, lib/site.ts); reconnect Google in `/team/integrations`.
 - Slack alert says `not_connected` / `error:*`: check the Slack connection in `/team/integrations` (scope `chat:write`, channel from the incoming-webhook metadata).
 - Rate limit: 5 bookings / IP / day.
 - Tests: `tests/lib/demoCall.test.ts`.
+
+## Callback promise wording (Roman, 2026-10-12)
+Owner of the callback phone: **Roman**. Hours: **11:30 AM–9:45 PM Eastern** (`CALLBACK_HOURS_ET`, `lib/site.ts`). Prospect-facing copy is computed at request time by `callbackHint()` (modal checkbox) and `callbackPromise()` (confirmation email, API `promise`, booked state): inside the window — "Roman calls you back right away — usually within a few minutes"; outside — states the hours and that the slot stays booked. The word "guarantee" and the old "within 5 minutes or less" do not appear in prospect copy (test `tests/lib/site.test.ts`). The **internal** owner alert (SMS/Slack/email "call within 5 min") is unchanged — that is the ops instruction, not a promise to the prospect. The booking-slot window (`ET_HOURS` 9:00–16:30) is a separate setting and was not changed.

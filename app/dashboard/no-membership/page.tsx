@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL } from "@/lib/site";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -22,7 +23,7 @@ export default async function NoMembershipPage() {
         <p className="text-[14px] leading-relaxed text-neutral-500 mb-10">Your account exists, but onboarding isn&apos;t finished. Pick up where you left off — your details and anything your agent already learned are saved. If you just paid, your dashboard unlocks within a minute.</p>
         <div className="flex flex-col gap-3">
           <Link href="/start" className="w-full h-11 rounded-full bg-neutral-900 text-white text-[13.5px] font-medium flex items-center justify-center">Continue setup</Link>
-          <a href="mailto:support@sfbconnect.com" className="w-full h-11 rounded-full border border-neutral-200 text-neutral-700 text-[13.5px] font-medium flex items-center justify-center">Contact Support</a>
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="w-full h-11 rounded-full border border-neutral-200 text-neutral-700 text-[13.5px] font-medium flex items-center justify-center">Contact Support</a>
         </div>
       </div>
     </main>

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await createSupabaseServerClient().auth.getUser();
   try {
     const call = await bookDemoCall(createSupabaseServiceClient(), { ...parsed, signupUserId: user?.id ?? null }, appOrigin(req));
-    return NextResponse.json({ ok: true, call: { id: call.id, start_at: call.start_at, end_at: call.end_at, meet_url: call.meet_url, when: fmtET(call.start_at), call_now: call.call_now }, links: calendarLinks(call, appOrigin(req)), promise: call.call_now ? CALLBACK_PROMISE : null });
+    return NextResponse.json({ ok: true, call: { id: call.id, start_at: call.start_at, end_at: call.end_at, meet_url: call.meet_url, when: fmtET(call.start_at), call_now: call.call_now }, links: calendarLinks(call, appOrigin(req)), promise: call.call_now ? CALLBACK_PROMISE() : null });
   } catch (e) {
     if (e instanceof DemoCallError) return NextResponse.json({ error: e.message, code: e.code }, { status: e.status });
     console.error("[demo-call]", e instanceof Error ? e.message : e);

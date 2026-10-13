@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { trackMarketingEvent } from "@/lib/marketingEvents";
+import { SUPPORT_EMAIL, callbackHint } from "@/lib/site";
 
 // "Book a demo call" — trigger + modal. Slots come from the live calendar
 // (all Eastern, labeled every time). On confirm: the event is on Rome's
 // calendar with a Meet link, Google invites the prospect, we show add-to-
 // calendar links, the "save our number" card, and — if they're free right
-// now — the 5-minute promise with the team alerted instantly.
+// now — the team is alerted instantly and the copy states what happens next
+// (Roman's callback hours, lib/site.ts) — never a guarantee.
 type Slot = { start: string; end: string }; type Day = { date: string; label: string; slots: Slot[] };
 type Booked = { call: { id: string; start_at: string; end_at: string; meet_url: string | null; when: string; call_now: boolean }; links: { google: string; outlook: string; ics: string; vcard: string }; promise: string | null };
 const field: React.CSSProperties = { background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)", color: "#F5F5F7" };
@@ -53,7 +55,7 @@ function Modal({ source, prefill, onClose: close }: { source: string; prefill?: 
         {!booked ? (
           <form onSubmit={book} className="flex flex-col gap-4">
             <div><div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158]">Book a demo call</div><h2 className="text-[24px] font-bold tracking-[-0.03em] mt-1">Pick a time. <span className="text-white/[0.5] font-normal text-[16px]">All times Eastern (ET).</span></h2></div>
-            {days === null ? <div className="text-[13px] text-white/[0.5]">Loading open times…</div> : !calendarConnected ? <div className="text-[13px] text-[#FF9F9A]">Our calendar isn&apos;t reachable right now. Email hello@sfbconnect.com and we&apos;ll set a time by hand.</div> : days.length === 0 ? <div className="text-[13px] text-white/[0.5]">No open times in the next 10 days — email hello@sfbconnect.com.</div> : (
+            {days === null ? <div className="text-[13px] text-white/[0.5]">Loading open times…</div> : !calendarConnected ? <div className="text-[13px] text-[#FF9F9A]">Our calendar isn&apos;t reachable right now. Email {SUPPORT_EMAIL} and we&apos;ll set a time by hand.</div> : days.length === 0 ? <div className="text-[13px] text-white/[0.5]">No open times in the next 10 days — email {SUPPORT_EMAIL}.</div> : (
               <>
                 <div className="flex gap-2 overflow-x-auto pb-1">{days.map((d) => <button key={d.date} type="button" onClick={() => { setDay(d.date); setSlot(null); }} className="shrink-0 h-[36px] px-3 rounded-full text-[12.5px]" style={{ border: `1px solid ${day === d.date ? "#30D158" : "rgba(255,255,255,0.14)"}`, color: day === d.date ? "#30D158" : "rgba(255,255,255,0.8)" }}>{d.label}</button>)}</div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">{current?.slots.map((s) => <button key={s.start} type="button" onClick={() => setSlot(s)} className="h-[38px] rounded-[9px] text-[13px]" style={{ background: slot?.start === s.start ? "#30D158" : "#0F0F0F", color: slot?.start === s.start ? "#000" : "#F5F5F7", border: "1px solid rgba(255,255,255,0.12)" }}>{timeET(s.start)} <span className="opacity-60 text-[10px]">ET</span></button>)}</div>
@@ -67,7 +69,7 @@ function Modal({ source, prefill, onClose: close }: { source: string; prefill?: 
             </div>
             <label className="flex items-start gap-2.5 rounded-[10px] p-3 cursor-pointer" style={{ background: f.callNow ? "rgba(48,209,88,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${f.callNow ? "rgba(48,209,88,0.4)" : "rgba(255,255,255,0.1)"}` }}>
               <input type="checkbox" checked={f.callNow} onChange={(e) => set("callNow", e.target.checked)} className="mt-1" />
-              <span className="text-[13px]"><span className="font-semibold text-white">Free for a call right now?</span><span className="text-white/[0.55]"> Tick this and we&apos;ll get back to you within 5 minutes or less — keep your phone close.</span></span>
+              <span className="text-[13px]"><span className="font-semibold text-white">Free for a call right now?</span><span className="text-white/[0.55]"> {callbackHint()}</span></span>
             </label>
             {error && <div className="text-[12.5px] text-[#FF9F9A]">{error}</div>}
             <button type="submit" disabled={busy || !slot} className="h-[48px] rounded-full bg-white text-black text-[15px] font-semibold disabled:opacity-50">{busy ? "Booking…" : slot ? `Confirm ${timeET(slot.start)} ET →` : "Pick a time to continue"}</button>

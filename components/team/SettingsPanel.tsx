@@ -7,6 +7,7 @@ import ConnectedAgentsSection from "./ConnectedAgentsSection";
 import DangerZoneSection from "./DangerZoneSection";
 import AgentProgramSection from "./AgentProgramSection";
 import TextAlertsSection from "./TextAlertsSection";
+import HomepageVideoSection from "./HomepageVideoSection";
 
 type Profile = {
   full_name: string | null;
@@ -312,9 +313,14 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
       </Section>
 
       {profile.team_role === "owner" && (
-        <Section title="SFB Agent program — module statuses (owner only)" id="agent-program">
-          <AgentProgramSection />
-        </Section>
+        <>
+          <Section title="Homepage video — “Watch it work” (owner only)" id="homepage-video">
+            <HomepageVideoSection />
+          </Section>
+          <Section title="SFB Agent program — module statuses (owner only)" id="agent-program">
+            <AgentProgramSection />
+          </Section>
+        </>
       )}
 
       {profile.team_role === "owner" && (

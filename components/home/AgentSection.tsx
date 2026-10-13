@@ -4,14 +4,17 @@ import { CAPABILITIES } from "@/lib/agentProgram/config";
 import StatusBadge from "@/components/agent/StatusBadge";
 import IntegrationsStrip from "@/components/home/IntegrationsStrip";
 import CapabilityCardLink from "@/components/home/CapabilityCardLink";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 
 // #agent -- the 8 capability cards, the integrations row, the human band and
 // the demo-video slot. Statuses come from agent_program_modules (same rows
-// as /agent and every dashboard). No mockups: the video slot is an honest
-// placeholder until a real screen recording exists.
+// as /agent and every dashboard). No mockups: the video slot plays the real
+// walkthrough once an owner sets it in /team/settings → Homepage video
+// (site_settings.walkthrough_video_url); until then it says so, honestly.
 export default async function AgentSection() {
-  const modules = await fetchAgentModules();
+  const [modules, { data: site }] = await Promise.all([fetchAgentModules(), createSupabaseServiceClient().from("site_settings").select("walkthrough_video_url, walkthrough_poster_url").eq("id", 1).maybeSingle()]);
+  const videoUrl = (site?.walkthrough_video_url as string | null) ?? null; const posterUrl = (site?.walkthrough_poster_url as string | null) ?? null;
   const statusOf = (key: string) => modules.find((m) => m.key === key);
   return (
     <section id="agent" className="py-20 md:py-28 px-6 scroll-mt-24" style={{ background: "#000" }}>
@@ -35,9 +38,13 @@ export default async function AgentSection() {
           <div className="rounded-[16px] p-6 md:p-8 flex flex-col justify-between" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div>
               <div className="text-[11px] font-semibold tracking-[0.16em] uppercase text-white/[0.4] mb-3">Watch it work</div>
-              <div className="aspect-video rounded-[12px] flex items-center justify-center text-center p-6" style={{ background: "#050505", border: "1px dashed rgba(255,255,255,0.14)" }}>
-                <div><div className="text-[15px] font-semibold text-white/[0.85]">Demo recording coming</div><div className="text-[12.5px] text-white/[0.45] mt-1.5 max-w-[380px]">A real screen recording of the agent enriching a prospect, writing the message and booking the call — not a mockup. Until it exists, there&apos;s nothing to show you here.</div></div>
-              </div>
+              {videoUrl ? (
+                <video controls preload="metadata" playsInline poster={posterUrl ?? undefined} src={videoUrl} className="w-full aspect-video rounded-[12px] bg-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }} />
+              ) : (
+                <div className="aspect-video rounded-[12px] flex items-center justify-center text-center p-6" style={{ background: "#050505", border: "1px dashed rgba(255,255,255,0.14)" }}>
+                  <div><div className="text-[15px] font-semibold text-white/[0.85]">Walkthrough video coming</div><div className="text-[12.5px] text-white/[0.45] mt-1.5 max-w-[380px]">A real screen recording of the agent at work — not a mockup. It appears here the moment it&apos;s ready.</div></div>
+                </div>
+              )}
             </div>
           </div>
           <div className="rounded-[16px] p-6 md:p-8 flex flex-col justify-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}>

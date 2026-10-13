@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 /**
  * SFB Connect's own transactional sender (system service — never a customer
@@ -15,7 +16,8 @@ export async function sendEmail(msg: { to: string; subject: string; html?: strin
   if (!resendConfigured()) return { sent: false, skipped: "not_configured" };
   try {
     const resend = new Resend(process.env.RESEND_API_KEY!.trim());
-    const base = { from: (process.env.RESEND_FROM_EMAIL || FROM_DEFAULT).trim(), to: msg.to, subject: msg.subject, replyTo: msg.replyTo, attachments: msg.attachments };
+    // From stays the verified sfbconnect.com sender; replies go to the one monitored inbox (Roman, 2026-10-12) unless a caller sets its own reply-to.
+    const base = { from: (process.env.RESEND_FROM_EMAIL || FROM_DEFAULT).trim(), to: msg.to, subject: msg.subject, replyTo: msg.replyTo ?? SUPPORT_EMAIL, attachments: msg.attachments };
     // Resend's types want html OR text as required; gateway texts are text-only.
     const { data, error } = await resend.emails.send(msg.html ? { ...base, html: msg.html, text: msg.text } : { ...base, text: msg.text ?? "" });
     if (error) { console.error("[email] resend error:", error.message); return { sent: false, error: error.message }; }

@@ -9,6 +9,7 @@
  *
  * Publishing rule (Muse's own, enforced in code): a document is NOT shown on
  * the public site while any open item is unresolved. Until then the public
+ * (All items resolved 2026-10-12 from Roman's answers; values live in lib/site.ts.)
  * route renders the "being finalized" placeholder (noindex) and the full
  * draft is visible only inside /team/legal, with every open item highlighted.
  *
@@ -19,6 +20,7 @@
  * Text may reference an open item as {{item_id}}; in preview it renders as a
  * highlighted chip, in public mode as the resolution text.
  */
+import { SUPPORT_EMAIL, LEGAL_ENTITY, LEGAL_ADDRESS, GOVERNING_LAW } from "@/lib/site";
 import { TIERS, TOP_UP_PACKS, fmtUsd } from "@/lib/agentProgram/config";
 
 export type OpenItemKind = "confirm" | "decision";
@@ -54,8 +56,8 @@ const agency = TIERS.find((t) => t.key === "agency")!;
 export const PRIVACY: LegalDoc = {
   slug: "privacy",
   title: "Privacy Policy",
-  effectiveDate: "2026-10-09",
-  lastUpdated: "2026-10-09",
+  effectiveDate: "2026-10-12",
+  lastUpdated: "2026-10-12",
   draftedBy: "Atlas (Muse), final copy pack, October 9, 2026",
   intro: [
     { kind: "p", text: "SFB Connect (\"we,\" \"us,\" \"our\") is a brand of {{entity}}, operating at https://sfbconnect.com. This policy explains what information we collect, how we use it, and the choices you have." },
@@ -161,19 +163,19 @@ export const PRIVACY: LegalDoc = {
     },
   ],
   openItems: [
-    { id: "entity", kind: "confirm", prompt: "Confirm exact registered entity name and state of registration (Atlas: Six Figure Blueprints LLC, a Florida limited liability company, per your 10-08 confirmation).", workingDefault: "Six Figure Blueprints LLC, a Florida limited liability company, d/b/a SFB Connect", resolution: null },
-    { id: "support_email", kind: "confirm", prompt: "Support email (Privacy §7, security incidents).", resolution: null },
-    { id: "privacy_email", kind: "confirm", prompt: "Privacy-request contact email (Privacy §8; may equal the contact email).", resolution: null },
-    { id: "address", kind: "confirm", prompt: "Registered business address.", resolution: null },
-    { id: "contact_email", kind: "confirm", prompt: "General contact email for the Contact section.", resolution: null },
+    { id: "entity", kind: "confirm", prompt: "Confirm exact registered entity name and state of registration (Atlas: Six Figure Blueprints LLC, a Florida limited liability company, per your 10-08 confirmation).", workingDefault: "Six Figure Blueprints LLC, a Florida limited liability company, d/b/a SFB Connect", resolution: LEGAL_ENTITY },
+    { id: "support_email", kind: "confirm", prompt: "Support email (Privacy §7, security incidents).", resolution: SUPPORT_EMAIL },
+    { id: "privacy_email", kind: "confirm", prompt: "Privacy-request contact email (Privacy §8; may equal the contact email).", resolution: SUPPORT_EMAIL },
+    { id: "address", kind: "confirm", prompt: "Registered business address.", resolution: LEGAL_ADDRESS },
+    { id: "contact_email", kind: "confirm", prompt: "General contact email for the Contact section.", resolution: SUPPORT_EMAIL },
   ],
 };
 
 export const TERMS: LegalDoc = {
   slug: "terms",
   title: "Terms of Service",
-  effectiveDate: "2026-10-09",
-  lastUpdated: "2026-10-09",
+  effectiveDate: "2026-10-12",
+  lastUpdated: "2026-10-12",
   draftedBy: "Atlas (Muse), final copy pack, October 9, 2026",
   intro: [
     { kind: "p", text: "These Terms form a contract between you and {{entity}} (\"we,\" \"us,\" \"our\"), operator of https://sfbconnect.com. By creating an account or paying for the service, you agree to these Terms and to our Privacy Policy." },
@@ -281,10 +283,10 @@ export const TERMS: LegalDoc = {
     },
   ],
   openItems: [
-    { id: "entity", kind: "decision", prompt: "Confirm exact registered entity name and state of registration.", workingDefault: "Six Figure Blueprints LLC, a Florida limited liability company, d/b/a SFB Connect", resolution: null },
-    { id: "governing_law", kind: "decision", prompt: "Confirm governing law (venue is written as binding arbitration in Florida under AAA rules).", workingDefault: "the State of Florida", resolution: null },
-    { id: "address", kind: "decision", prompt: "Registered business address.", resolution: null },
-    { id: "contact_email", kind: "decision", prompt: "Contact email.", resolution: null },
+    { id: "entity", kind: "decision", prompt: "Confirm exact registered entity name and state of registration.", workingDefault: "Six Figure Blueprints LLC, a Florida limited liability company, d/b/a SFB Connect", resolution: LEGAL_ENTITY },
+    { id: "governing_law", kind: "decision", prompt: "Confirm governing law (venue is written as binding arbitration in Florida under AAA rules).", workingDefault: "the State of Florida", resolution: GOVERNING_LAW },
+    { id: "address", kind: "decision", prompt: "Registered business address.", resolution: LEGAL_ADDRESS },
+    { id: "contact_email", kind: "decision", prompt: "Contact email.", resolution: SUPPORT_EMAIL },
   ],
 };
 

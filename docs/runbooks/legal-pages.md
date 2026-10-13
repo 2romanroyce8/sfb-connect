@@ -19,7 +19,10 @@ Partial publishing is impossible by construction: `renderPublicText` throws on a
 ## Changing the text later
 Edit `documents.ts`, bump `lastUpdated` (and `effectiveDate` when the Terms change materially — §13 promises a notice period before material changes take effect). The pricing sentence in Terms §2 quotes numbers: when prices change, update the `price_table` resolution the same day.
 
-## Known decisions pending (as of 2026-10-09, after Atlas's final copy pack)
+## PUBLISHED 2026-10-12 (Roman's fill-ins, 21:41 ET)
+All nine open items resolved from `lib/site.ts`: entity **Six Figure Blueprints LLC, a Florida limited liability company**; address **1200 Brickell Ave, Miami, FL** (as given — no suite/ZIP supplied); governing law **the State of Florida**; support / privacy / contact email **sfbconnectsupport@gmail.com**. `effectiveDate`/`lastUpdated` = 2026-10-12. `/privacy` and `/terms` now render the full text and are indexable. Attorney review: **not stated by Roman as done or waived** — recorded here as an open point, not assumed.
+
+## Known decisions pending (as of 2026-10-09, after Atlas's final copy pack — superseded above)
 Atlas settled: retention (delete on request, billing records 7 yrs), refunds (non-refundable, cancel anytime), export window 30 days, notice period 14 days, venue (arbitration in Florida), credit expiry ("while membership remains active"), price table (now generated from config).
 Still open — Roman's [FILL]s: Privacy: entity, support email, privacy email, address, contact email. Terms: entity, governing law, address, contact email.
 Engineering flags for Atlas/Roman: (1) Terms §2 states the Solo/Agency one-time onboarding fees because config + checkout charge them — Atlas's draft omitted them; (2) pricing FAQ "no setup fees" removed for the same reason.

@@ -1,4 +1,5 @@
 "use client";
+import { SUPPORT_EMAIL } from "@/lib/site";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,7 +12,7 @@ export default function ProvisionPoller() {
   return (
     <div className="rounded-[12px] p-4 text-[14px]" style={{ background: "rgba(48,209,88,0.08)", border: "1px solid rgba(48,209,88,0.35)" }}>
       <div className="font-semibold">Setting up your account…</div>
-      <div className="text-white/[0.6] mt-1">Payment received. Your workspace unlocks the moment Stripe confirms it to us — usually within a minute.{ticks > 20 ? " Taking longer than usual? Email hello@sfbconnect.com and we'll finish it by hand." : ""}</div>
+      <div className="text-white/[0.6] mt-1">Payment received. Your workspace unlocks the moment Stripe confirms it to us — usually within a minute.{ticks > 20 ? " Taking longer than usual? Email {SUPPORT_EMAIL} and we'll finish it by hand." : ""}</div>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { SUPPORT_EMAIL } from "@/lib/site";
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -74,7 +76,7 @@ export default function AccountWorkspaceMenu({ name, email, role, avatarUrl, act
     <div className="fixed top-4 right-4 z-40" ref={menuRef}>
       <div className="flex items-center justify-end gap-2 mb-2">
         <a
-          href="mailto:support@sfbconnect.com"
+          href={`mailto:${SUPPORT_EMAIL}`}
           className="hidden md:flex items-center gap-2 h-[36px] px-3.5 rounded-[10px] text-[12.5px]"
           style={{ background: "#18181E", border: "1px solid rgba(255,255,255,0.08)", color: "#E7E7EA" }}
         >

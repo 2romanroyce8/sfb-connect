@@ -3,6 +3,7 @@ import { getBusyBlocks, createCalendarEvent } from "@/lib/crm/googleCalendar";
 import { getAccessToken } from "@/lib/integrations/connections";
 import { sendEmail } from "@/lib/email/resend";
 import { alertOwners } from "@/lib/notify/ownerAlerts";
+import { SUPPORT_EMAIL, callbackPromise } from "@/lib/site";
 
 // ============================================================
 // BOOK A DEMO CALL (Roman, 2026-10-12)
@@ -10,15 +11,16 @@ import { alertOwners } from "@/lib/notify/ownerAlerts";
 // Google Calendar with a Meet link and the prospect as attendee (Google
 // emails the invite), plus our own confirmation with .ics / Google / Outlook
 // links and the "save our number" card. "Free right now?" → the team is
-// told instantly (Slack + email + in-app) — the 5-minute promise is a real
-// ops commitment Roman confirmed, so the alert has to be real too.
+// told instantly (Slack + email + in-app). Prospect copy states Roman's callback
+// hours (lib/site.ts) and is never a guarantee; the owner alert is the real commitment.
 // ============================================================
 
 export const ET = "America/New_York";
 export const SFB_PHONE_E164 = "+12135231641";
 export const SFB_PHONE_DISPLAY = "213-523-1641";
 export const SFB_CONTACT_NAME = "SFB CONNECT";
-export const CALLBACK_PROMISE = "We'll get back to you within 5 minutes or less.";
+/** Prospect-facing wording for "free right now" — computed from Roman's callback hours at send time (lib/site.ts). Internal owner alerts keep their own "call within 5 min" instruction. */
+export const CALLBACK_PROMISE = callbackPromise;
 export const SLOT_MINUTES = 30;
 export const BOOKING_LEAD_MINUTES = 120;      // nothing sooner than 2 h from now
 export const BOOKING_DAYS = 10;               // look-ahead window (calendar days)
@@ -179,12 +181,12 @@ export function calendarLinks(call: Pick<DemoCall, "id" | "start_at" | "end_at" 
 
 /** vCard 3.0 — the "save our number" card. */
 export function vcard(): string {
-  return ["BEGIN:VCARD", "VERSION:3.0", `FN:${SFB_CONTACT_NAME}`, `N:${SFB_CONTACT_NAME};;;;`, `ORG:${SFB_CONTACT_NAME}`, `TEL;TYPE=CELL,VOICE:${SFB_PHONE_E164}`, "EMAIL;TYPE=INTERNET:hello@sfbconnect.com", "URL:https://www.sfbconnect.com", "NOTE:Save this so you know it's us when we call.", "END:VCARD"].join("\r\n") + "\r\n";
+  return ["BEGIN:VCARD", "VERSION:3.0", `FN:${SFB_CONTACT_NAME}`, `N:${SFB_CONTACT_NAME};;;;`, `ORG:${SFB_CONTACT_NAME}`, `TEL;TYPE=CELL,VOICE:${SFB_PHONE_E164}`, `EMAIL;TYPE=INTERNET:${SUPPORT_EMAIL}`, "URL:https://www.sfbconnect.com", "NOTE:Save this so you know it's us when we call.", "END:VCARD"].join("\r\n") + "\r\n";
 }
 
 function confirmationEmail(call: DemoCall, origin: string) {
   const l = calendarLinks(call, origin); const when = fmtET(call.start_at);
-  const html = `<!doctype html><html><body style="margin:0;background:#000;color:#f5f5f7;font-family:Inter,Helvetica,Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:40px 24px"><div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#8a8a8f">SFB Connect</div><h1 style="font-size:22px;margin:16px 0 12px;letter-spacing:-.02em">You're booked — ${esc(when)}</h1><div style="font-size:15px;line-height:1.6;color:#c9c9ce"><p>${call.call_now ? `<strong>${CALLBACK_PROMISE}</strong> Keep your phone close.</p><p>` : ""}Your demo call is on the calendar for <strong>${esc(when)}</strong> (all times Eastern).${call.meet_url ? ` Join here: <a style="color:#f5f5f7" href="${call.meet_url}">${call.meet_url}</a>` : ""}</p><p>Add it to your calendar: <a style="color:#f5f5f7" href="${l.google}">Google</a> · <a style="color:#f5f5f7" href="${l.ics}">Apple</a> · <a style="color:#f5f5f7" href="${l.outlook}">Outlook</a> (the .ics is attached too).</p><p><strong>Save ${SFB_PHONE_DISPLAY} as ${SFB_CONTACT_NAME}</strong> so you know it's us when we call — <a style="color:#f5f5f7" href="${l.vcard}">download the contact card</a>.</p></div></div></body></html>`;
-  const text = `You're booked: ${when} (Eastern).${call.call_now ? ` ${CALLBACK_PROMISE}` : ""}${call.meet_url ? ` Join: ${call.meet_url}.` : ""} Add to calendar: Google ${l.google} · Apple ${l.ics} · Outlook ${l.outlook}. Save ${SFB_PHONE_DISPLAY} as ${SFB_CONTACT_NAME}: ${l.vcard}`;
+  const html = `<!doctype html><html><body style="margin:0;background:#000;color:#f5f5f7;font-family:Inter,Helvetica,Arial,sans-serif"><div style="max-width:560px;margin:0 auto;padding:40px 24px"><div style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#8a8a8f">SFB Connect</div><h1 style="font-size:22px;margin:16px 0 12px;letter-spacing:-.02em">You're booked — ${esc(when)}</h1><div style="font-size:15px;line-height:1.6;color:#c9c9ce"><p>${call.call_now ? `<strong>${CALLBACK_PROMISE()}</strong></p><p>` : ""}Your demo call is on the calendar for <strong>${esc(when)}</strong> (all times Eastern).${call.meet_url ? ` Join here: <a style="color:#f5f5f7" href="${call.meet_url}">${call.meet_url}</a>` : ""}</p><p>Add it to your calendar: <a style="color:#f5f5f7" href="${l.google}">Google</a> · <a style="color:#f5f5f7" href="${l.ics}">Apple</a> · <a style="color:#f5f5f7" href="${l.outlook}">Outlook</a> (the .ics is attached too).</p><p><strong>Save ${SFB_PHONE_DISPLAY} as ${SFB_CONTACT_NAME}</strong> so you know it's us when we call — <a style="color:#f5f5f7" href="${l.vcard}">download the contact card</a>.</p></div></div></body></html>`;
+  const text = `You're booked: ${when} (Eastern).${call.call_now ? ` ${CALLBACK_PROMISE()}` : ""}${call.meet_url ? ` Join: ${call.meet_url}.` : ""} Add to calendar: Google ${l.google} · Apple ${l.ics} · Outlook ${l.outlook}. Save ${SFB_PHONE_DISPLAY} as ${SFB_CONTACT_NAME}: ${l.vcard}`;
   return { html, text };
 }

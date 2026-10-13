@@ -60,3 +60,11 @@ Never paste a secret into chat, code, logs, or a task result.
 - [integrations.md](./integrations.md) — registry, OAuth connect flows, Apple CalDAV, webhooks in/out, Zapier, Gmail
 - [research-adapters.md](./research-adapters.md) — nightly prospect feed (Exa + RSS → task queue), quality rules, scheduler
 - (next) research-adapters, security-watchdog, youtube-skill
+
+## Site facts (lib/site.ts — Roman, 2026-10-12)
+| Fact | Value | Used by |
+|---|---|---|
+| Support / contact email | `sfbconnectsupport@gmail.com` (`SUPPORT_EMAIL`) | every displayed address, legal pages, vCard, Resend `replyTo` default (From stays `hello@sfbconnect.com`, the verified domain) |
+| Legal entity / address / law | Six Figure Blueprints LLC (FL) · 1200 Brickell Ave, Miami, FL · Florida | `lib/legal/documents.ts` resolutions |
+| Callback owner / hours | Roman · 11:30 AM–9:45 PM ET | demo-call copy (`callbackPromise`, `callbackHint`) |
+| Homepage walkthrough video | `site_settings.walkthrough_video_url` (+ poster), set at `/team/settings` → Homepage video; files in public bucket `site-media` | `components/home/AgentSection.tsx` — real `<video>` when set, honest "coming" state when not; `/api/team/site-settings` owner-only |

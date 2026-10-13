@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL } from "@/lib/site";
 import Link from "next/link";
 import { CUSTOMER_DENIED_COPY } from "@/lib/google/gate";
 
@@ -16,7 +17,7 @@ export default function GoogleNotClearedPage() {
         <p className="text-[13px] text-neutral-500 mt-3">Nothing else is needed from you. You&apos;ll get an email the moment the connection is ready, and your setup progress is saved.</p>
         <div className="mt-6 flex items-center gap-3 flex-wrap">
           <Link href="/dashboard/onboarding" className="h-[42px] px-5 rounded-full bg-neutral-900 text-white text-[14px] font-semibold inline-flex items-center">Back to setup</Link>
-          <a href="mailto:hello@sfbconnect.com" className="text-[13px] text-neutral-600 underline underline-offset-2">Email us</a>
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[13px] text-neutral-600 underline underline-offset-2">Email us</a>
         </div>
       </div>
     </main>
