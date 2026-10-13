@@ -8,7 +8,7 @@ import { SUPPORT_EMAIL, callbackHint, HOURS_LABEL } from "@/lib/site";
 // (all Eastern, labeled every time). On confirm: the event is on Rome's
 // calendar with a Meet link, Google invites the prospect, we show add-to-
 // calendar links, the "save our number" card, and — if they're free right
-// now — the team is alerted instantly and the copy states what happens next
+// now — the team is alerted instantly and the copy states what happens next (15–30 min callback)
 // (Roman's callback hours, lib/site.ts) — never a guarantee.
 type Slot = { start: string; end: string }; type Day = { date: string; label: string; slots: Slot[] };
 type Booked = { call: { id: string; start_at: string; end_at: string; meet_url: string | null; when: string; call_now: boolean }; links: { google: string; outlook: string; ics: string; vcard: string }; promise: string | null };

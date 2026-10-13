@@ -40,7 +40,7 @@ export default function TextAlertsSection() {
     try { const j = await post({ action: "test" }); setTestMsg(j.lastEvent === "delivered" ? `Sent to ${j.gateway} — Resend reports delivered to the carrier gateway. Check your phone, then tap "I received it".` : j.lastEvent === "bounced" ? `Sent to ${j.gateway} — the gateway BOUNCED it. This carrier's email-to-text is not working for your line; alerts go to email for 7 days.` : `Sent to ${j.gateway} (Resend: ${j.lastEvent ?? "no delivery event yet"}). Check your phone, then tap "I received it".`); await load(); }
     catch (e) { setTestMsg(e instanceof Error ? e.message : "Test failed."); } finally { setTesting(false); }
   };
-  const verify = async () => { try { await post({ action: "verify" }); setTestMsg("Confirmed — alerts now go by text (the 5-minute call-now alert also always emails)."); await load(); } catch (e) { setTestMsg(e instanceof Error ? e.message : "Could not confirm."); } };
+  const verify = async () => { try { await post({ action: "verify" }); setTestMsg("Confirmed — alerts now go by text (the call-now alert also always emails)."); await load(); } catch (e) { setTestMsg(e instanceof Error ? e.message : "Could not confirm."); } };
 
   if (!data) return <div className="text-[12.5px] text-[#6E6E73]">Loading…</div>;
   const c = data.carriers.find((x) => x.key === carrierKey) ?? null; const s = data.settings;
@@ -61,7 +61,7 @@ export default function TextAlertsSection() {
       <div>
         <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-2">What to text me about</div>
         <div className="flex flex-col gap-2">
-          <label className="flex items-start gap-2.5 text-[13px] opacity-80"><input type="checkbox" checked readOnly disabled className="mt-0.5" /><span><span className="text-[#F5F5F7]">Call-now (5-minute callback promise)</span><span className="text-[#6E6E73]"> — always on: text + email + in-app, instantly.</span></span></label>
+          <label className="flex items-start gap-2.5 text-[13px] opacity-80"><input type="checkbox" checked readOnly disabled className="mt-0.5" /><span><span className="text-[#F5F5F7]">Call-now (15–30-minute callback promise)</span><span className="text-[#6E6E73]"> — always on: text + email + in-app, instantly.</span></span></label>
           {data.triggers.map((t) => <label key={t.key} className="flex items-start gap-2.5 text-[13px] cursor-pointer"><input type="checkbox" checked={prefs[t.key] ?? true} onChange={(e) => setPrefs((p) => ({ ...p, [t.key]: e.target.checked }))} className="mt-0.5" /><span><span className="text-[#F5F5F7]">{t.label}</span><span className="text-[#6E6E73]"> — {t.hint}</span></span></label>)}
         </div>
       </div>

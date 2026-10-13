@@ -26,6 +26,7 @@ test("callback copy states what we do, names the hours, and never says guarantee
   }
   assert.ok(callbackPromise(new Date("2026-10-13T14:00:00Z")).includes(HOURS_LABEL));
   assert.ok(callbackHint(new Date("2026-10-13T15:30:00Z")).includes(HOURS_LABEL));
+  assert.ok(callbackPromise(new Date("2026-10-13T15:30:00Z")).includes("within 15–30 minutes"), "inside the window: Roman calls back within 15–30 minutes (Roman, 2026-10-12)");
 });
 
 test("legal: every open item resolved from Roman's 2026-10-12 answers; both documents publishable; one support address", () => {

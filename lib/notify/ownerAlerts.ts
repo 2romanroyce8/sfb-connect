@@ -70,7 +70,7 @@ export async function sendGatewaySms(service: SupabaseClient, u: Pick<NotifyUser
 
 /**
  * Fan an alert out to the team owners (or the given users). Channels run in
- * parallel per recipient so the 5-minute SLA alert is not serialized behind
+ * parallel per recipient so the call-now SLA alert is not serialized behind
  * anything. Never throws.
  */
 export async function alertOwners(service: SupabaseClient, alert: OwnerAlert): Promise<DeliveryResult[]> {

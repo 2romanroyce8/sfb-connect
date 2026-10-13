@@ -3,7 +3,7 @@ import { getBusyBlocks, createCalendarEvent } from "@/lib/crm/googleCalendar";
 import { getAccessToken } from "@/lib/integrations/connections";
 import { sendEmail } from "@/lib/email/resend";
 import { alertOwners } from "@/lib/notify/ownerAlerts";
-import { SUPPORT_EMAIL, callbackPromise, slotFits } from "@/lib/site";
+import { SUPPORT_EMAIL, callbackPromise, slotFits, CALLBACK_WINDOW_MINUTES } from "@/lib/site";
 
 // ============================================================
 // BOOK A DEMO CALL (Roman, 2026-10-12)
@@ -19,7 +19,7 @@ export const ET = "America/New_York";
 export const SFB_PHONE_E164 = "+12135231641";
 export const SFB_PHONE_DISPLAY = "213-523-1641";
 export const SFB_CONTACT_NAME = "SFB CONNECT";
-/** Prospect-facing wording for "free right now" — computed from Roman's callback hours at send time (lib/site.ts). Internal owner alerts keep their own "call within 5 min" instruction. */
+/** Prospect-facing wording for "free right now" — computed from Roman's callback hours at send time (lib/site.ts). The internal owner alert quotes the same CALLBACK_WINDOW_MINUTES. */
 export const CALLBACK_PROMISE = callbackPromise;
 export const SLOT_MINUTES = 30;
 export const BOOKING_LEAD_MINUTES = 120;      // nothing sooner than 2 h from now
@@ -103,7 +103,7 @@ export async function bookDemoCall(service: SupabaseClient, input: DemoCallInput
   const whenET = fmtET(input.start);
   let ev: { eventId: string; htmlLink: string; meetUrl: string | null };
   try {
-    ev = await createCalendarEvent(ownerId, { summary: `SFB Connect demo — ${input.name}`, description: `Demo call booked from sfbconnect.com.\nName: ${input.name}\nEmail: ${input.email}\nPhone: ${input.phone}${input.website ? `\nWebsite: ${input.website}` : ""}${input.callNow ? "\n\n⚡ Asked to be called RIGHT NOW (5-minute promise)." : ""}`, startISO: new Date(startMs).toISOString(), endISO: new Date(endMs).toISOString(), timeZone: ET, attendees: [{ email: input.email, displayName: input.name }], sendUpdates: "all" });
+    ev = await createCalendarEvent(ownerId, { summary: `SFB Connect demo — ${input.name}`, description: `Demo call booked from sfbconnect.com.\nName: ${input.name}\nEmail: ${input.email}\nPhone: ${input.phone}${input.website ? `\nWebsite: ${input.website}` : ""}${input.callNow ? `\n\n⚡ Asked to be called RIGHT NOW (${CALLBACK_WINDOW_MINUTES}-minute callback).` : ""}`, startISO: new Date(startMs).toISOString(), endISO: new Date(endMs).toISOString(), timeZone: ET, attendees: [{ email: input.email, displayName: input.name }], sendUpdates: "all" });
   } catch (e) { throw new DemoCallError("calendar_failed", e instanceof Error ? e.message : "Calendar refused the event.", 502); }
   const { data, error } = await service.from("demo_calls").insert({ name: input.name, email: input.email, phone: input.phone, website: input.website, start_at: new Date(startMs).toISOString(), end_at: new Date(endMs).toISOString(), time_zone: ET, calendar_owner_id: ownerId, calendar_event_id: ev.eventId, html_link: ev.htmlLink, meet_url: ev.meetUrl, call_now: input.callNow, source: input.source, signup_user_id: input.signupUserId ?? null }).select("*").single();
   if (error || !data) throw new DemoCallError("db", error?.message ?? "Could not save the booking.", 500);
@@ -117,7 +117,7 @@ export async function bookDemoCall(service: SupabaseClient, input: DemoCallInput
 
 async function notifyTeam(service: SupabaseClient, call: DemoCall, origin: string) {
   const when = fmtET(call.start_at);
-  const line = `${call.call_now ? "⚡ CALL NOW (5-minute promise) — " : "📅 Demo booked — "}${call.name} · ${call.phone} · ${call.email}${call.website ? ` · ${call.website}` : ""} · ${when}${call.meet_url ? ` · ${call.meet_url}` : ""}`;
+  const line = `${call.call_now ? `⚡ CALL NOW (${CALLBACK_WINDOW_MINUTES}-minute callback) — ` : "📅 Demo booked — "}${call.name} · ${call.phone} · ${call.email}${call.website ? ` · ${call.website}` : ""} · ${when}${call.meet_url ? ` · ${call.meet_url}` : ""}`;
   const results: Record<string, string> = {};
   // Slack (call-now only): the connected workspace's incoming-webhook channel (#all-sfb-connect) via chat.postMessage. Runs in parallel with SMS/email.
   const slack = (async () => {
@@ -127,7 +127,7 @@ async function notifyTeam(service: SupabaseClient, call: DemoCall, origin: strin
       const channel = (sc?.metadata as { incoming_webhook?: { channel_id?: string } } | null)?.incoming_webhook?.channel_id;
       if (sc && channel) {
         const { token } = await getAccessToken("slack", sc.owner_id as string);
-        const post = async () => { const r = await fetch("https://slack.com/api/chat.postMessage", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify({ channel, text: `<!channel> ${line}\nCall them from ${SFB_PHONE_DISPLAY} within 5 minutes.` }) }); return (await r.json()) as { ok: boolean; error?: string }; };
+        const post = async () => { const r = await fetch("https://slack.com/api/chat.postMessage", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify({ channel, text: `<!channel> ${line}\nCall them from ${SFB_PHONE_DISPLAY} within ${CALLBACK_WINDOW_MINUTES} minutes.` }) }); return (await r.json()) as { ok: boolean; error?: string }; };
         let j = await post();
         // Live finding 2026-10-12: the bot is not a member of the webhook channel → not_in_channel. channels:join is granted, so join once and retry.
         if (!j.ok && j.error === "not_in_channel") {
@@ -141,8 +141,8 @@ async function notifyTeam(service: SupabaseClient, call: DemoCall, origin: strin
   // Owners: in-app + SMS (+ email: always for call-now; otherwise as fallback / until SMS verified).
   const owners = alertOwners(service, call.call_now ? {
     trigger: "callback_sla",
-    sms: `CALL NOW: ${call.name} is free right now. Call ${call.phone} from ${SFB_PHONE_DISPLAY} within 5 min. Slot ${when}.`,
-    email: { subject: `CALL NOW: ${call.name} is free right now (${call.phone})`, html: `<p><strong>${esc(call.name)}</strong> booked a demo and said they're free right now.</p><p>Call <strong>${esc(call.phone)}</strong> from ${SFB_PHONE_DISPLAY} within 5 minutes.</p><p>${esc(call.email)}${call.website ? ` · ${esc(call.website)}` : ""}<br/>Scheduled slot: ${when}${call.meet_url ? `<br/>Meet: ${call.meet_url}` : ""}</p>`, text: `${call.name} is free right now. Call ${call.phone} from ${SFB_PHONE_DISPLAY} within 5 minutes. ${call.email}. Slot ${when}.` },
+    sms: `CALL NOW: ${call.name} is free right now. Call ${call.phone} from ${SFB_PHONE_DISPLAY} within ${CALLBACK_WINDOW_MINUTES} min. Slot ${when}.`,
+    email: { subject: `CALL NOW: ${call.name} is free right now (${call.phone})`, html: `<p><strong>${esc(call.name)}</strong> booked a demo and said they're free right now.</p><p>Call <strong>${esc(call.phone)}</strong> from ${SFB_PHONE_DISPLAY} within ${CALLBACK_WINDOW_MINUTES} minutes.</p><p>${esc(call.email)}${call.website ? ` · ${esc(call.website)}` : ""}<br/>Scheduled slot: ${when}${call.meet_url ? `<br/>Meet: ${call.meet_url}` : ""}</p>`, text: `${call.name} is free right now. Call ${call.phone} from ${SFB_PHONE_DISPLAY} within ${CALLBACK_WINDOW_MINUTES} minutes. ${call.email}. Slot ${when}.` },
     inApp: { type: "callback_sla", title: `CALL NOW: ${call.name} is free right now`, body: line, actionUrl: call.html_link ?? `${origin}/team/calendar`, actionLabel: "Open event" },
     detail: { demo_call_id: call.id },
   } : {

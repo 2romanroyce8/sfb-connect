@@ -20,6 +20,8 @@ export const SCHEDULE_ET: { weekday: Window[]; weekend: Window[] } = {
 };
 export const HOURS_LABEL = "Mon–Fri 8:00–8:45 AM & 11:30 AM–6:45 PM · Sat–Sun 8:00 AM–3:00 PM, Eastern";
 export const CALLBACK_OWNER = "Roman";
+/** Roman, 2026-10-12 23:10 ET: inside the window he calls back within 15–30 minutes. One string, used by prospect copy AND the internal owner alert. */
+export const CALLBACK_WINDOW_MINUTES = "15–30";
 
 /** Windows for an Eastern day-of-week (0 = Sunday). */
 export const windowsFor = (dow: number): Window[] => (dow === 0 || dow === 6 ? SCHEDULE_ET.weekend : SCHEDULE_ET.weekday);
@@ -49,13 +51,13 @@ export function callbackWindowOpen(now: Date = new Date()): boolean {
  */
 export function callbackPromise(now: Date = new Date()): string {
   return callbackWindowOpen(now)
-    ? `${CALLBACK_OWNER} calls you back right away — usually within a few minutes. Keep your phone close.`
+    ? `${CALLBACK_OWNER} calls you back within ${CALLBACK_WINDOW_MINUTES} minutes. Keep your phone close.`
     : `We're outside our hours right now (${HOURS_LABEL}). ${CALLBACK_OWNER} will call you when we next open; your demo slot stays booked either way.`;
 }
 
 /** The checkbox hint in the booking modal. */
 export function callbackHint(now: Date = new Date()): string {
   return callbackWindowOpen(now)
-    ? `Tick this and ${CALLBACK_OWNER} calls you back right away — usually within a few minutes. Hours: ${HOURS_LABEL}.`
+    ? `Tick this and ${CALLBACK_OWNER} calls you back within ${CALLBACK_WINDOW_MINUTES} minutes. Hours: ${HOURS_LABEL}.`
     : `Tick this and ${CALLBACK_OWNER} calls you first thing when we next open. Hours: ${HOURS_LABEL}.`;
 }
