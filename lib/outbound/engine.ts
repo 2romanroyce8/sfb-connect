@@ -12,6 +12,7 @@ import { extractMailtoEmails, extractVisibleEmails, extractPhoneNumbers, extract
 import { sendGmail, listGmailMessages, getGmailMessage } from "@/lib/integrations/gmail";
 import { getBusyBlocks, createCalendarEvent } from "@/lib/crm/googleCalendar";
 import { emitIntegrationEvent } from "@/lib/integrations/events";
+import { retryFailedDeliveries } from "@/lib/notify/retry";
 import { alertOwners } from "@/lib/notify/ownerAlerts";
 import { appOrigin } from "@/lib/integrations/providers";
 import { canSend, dueSteps, pickEmail, proposeSlots, toE164, unsubscribeToken, isFreemailDomain, reminderDue, retryEligible, type MessageStatus } from "./gate";
@@ -400,9 +401,9 @@ export async function probeConnections(service: SupabaseClient, businessId: stri
   return res;
 }
 
-export async function runOutboundSync(service: SupabaseClient): Promise<{ businesses: number; replies: number; drafted: number; retried: number; recovered: number; reminders: number; deadConnections: number; errors: string[] }> {
+export async function runOutboundSync(service: SupabaseClient): Promise<{ businesses: number; replies: number; drafted: number; retried: number; recovered: number; reminders: number; deadConnections: number; alertRetries: { retried: number; recovered: number; exhausted: number }; errors: string[] }> {
   const { data: bizs } = await service.from("businesses").select("id").not("plan_key", "is", null);
-  const out = { businesses: 0, replies: 0, drafted: 0, retried: 0, recovered: 0, reminders: 0, deadConnections: 0, errors: [] as string[] };
+  const out = { businesses: 0, replies: 0, drafted: 0, retried: 0, recovered: 0, reminders: 0, deadConnections: 0, alertRetries: { retried: 0, recovered: 0, exhausted: 0 }, errors: [] as string[] };
   for (const b of bizs ?? []) {
     out.businesses++;
     try { const p = await probeConnections(service, b.id); if (p.alerted) out.deadConnections++; } catch (e) { out.errors.push(`${b.id}:probe:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
@@ -411,6 +412,8 @@ export async function runOutboundSync(service: SupabaseClient): Promise<{ busine
     try { const r = await retryFailedSends(service, b.id); out.retried += r.retried; out.recovered += r.recovered; } catch (e) { out.errors.push(`${b.id}:retry:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
     try { out.reminders += await remindPendingApprovals(service, b.id); } catch (e) { out.errors.push(`${b.id}:remind:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
   }
+  // G5: failed owner-alert deliveries (Resend) get another go — once per tick, not per business.
+  try { const r = await retryFailedDeliveries(service); out.alertRetries = { retried: r.retried, recovered: r.recovered, exhausted: r.exhausted }; } catch (e) { out.errors.push(`alerts:retry:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
   // G12: errors used to sit silently in outbound_cron_settings.last_result. Owners now hear about them (coalesced to one text per hour).
   if (out.errors.length) {
     try {

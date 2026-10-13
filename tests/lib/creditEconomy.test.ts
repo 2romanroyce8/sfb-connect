@@ -7,7 +7,7 @@ import { splitBalance, creditState } from "../../lib/billing/guards";
 // pricing page, dashboard and ledger all drift together, which is the P0.
 const EXPECTED: Record<string, number> = {
   "presence.listing_fix": 1, "presence.score_refresh": 2, "presence.content_brief": 5, "presence.competitor_analysis": 10, "presence.market_analysis": 15,
-  "outbound.prospect_sourced": 1, "outbound.prospect_enriched": 2, "outbound.message_written": 2, "outbound.reply_drafted": 2, "outbound.meeting_booked": 5, "outbound.sequence_built": 15,
+  "outbound.prospect_enriched": 2, "outbound.message_written": 2, "outbound.meeting_booked": 5,
   "ads.creative": 5, "ads.audience": 5, "ads.optimization_pass": 10, "ads.campaign_launch": 25,
   "website.tweak": 5, "website.landing_page": 15, "website.full_build": 100,
   "backend.automation": 10, "backend.pipeline_setup": 25, "backend.qa_pass": 5,
@@ -24,6 +24,9 @@ test("every per-action price matches the spec exactly", () => {
     assert.equal(p!.credits, credits, `${key} should cost ${credits}`);
   }
   assert.ok(CREDIT_PRICES.every((p) => Number.isInteger(p.credits) && p.credits >= 0), "no fractional or negative prices");
+  // G15 (2026-10-12): never charged anywhere in the code → not on the price list. If one of these comes back, it must come with a spend_credits call.
+  for (const gone of ["outbound.prospect_sourced", "outbound.sequence_built", "outbound.reply_drafted"]) assert.equal(CREDIT_PRICES.find((x) => x.key === gone), undefined, `${gone} is listed but never charged`);
+  assert.deepEqual(CREDIT_PRICES.map((p) => p.key).filter((k) => !(k in EXPECTED)), ["presence.location_optimization", "human.verification"], "only the known extras beyond the 2026-10-10 spec are listed");
   assert.deepEqual([...FREE_ACTIONS], ["Sends", "Report views", "Logins", "Capability toggles"]);
 });
 

@@ -39,6 +39,9 @@ export const PAID_TIERS = TIERS.filter((t) => t.monthlyUsd > 0);
 
 // ---- Credit price list (one credit type) ----
 export type CreditAction = { key: string; label: string; credits: number; capability: CapabilityKey | "human" };
+// G15 (Roman, 2026-10-12): lead sourcing, sequence build and reply drafting were listed here but never charged
+// (sourcing and CSV import are 0 credits; sequences are per-message; replies are read, not drafted). Removed so the
+// published table only shows what the ledger can actually bill. Re-add a line only together with a spend_credits call.
 export const CREDIT_PRICES: CreditAction[] = [
   { key: "presence.listing_fix", label: "Listing fix", credits: 1, capability: "ai_presence" },
   { key: "presence.score_refresh", label: "Score refresh", credits: 2, capability: "ai_presence" },
@@ -46,12 +49,9 @@ export const CREDIT_PRICES: CreditAction[] = [
   { key: "presence.competitor_analysis", label: "Competitor analysis", credits: 10, capability: "ai_presence" },
   { key: "presence.market_analysis", label: "Market analysis", credits: 15, capability: "ai_presence" },
   { key: "presence.location_optimization", label: "Location optimization", credits: 15, capability: "ai_presence" },
-  { key: "outbound.prospect_sourced", label: "Prospect sourced", credits: 1, capability: "outbound_gtm" },
   { key: "outbound.prospect_enriched", label: "Prospect enriched", credits: 2, capability: "outbound_gtm" },
   { key: "outbound.message_written", label: "Message written", credits: 2, capability: "outbound_gtm" },
-  { key: "outbound.reply_drafted", label: "Reply drafted", credits: 2, capability: "outbound_gtm" },
   { key: "outbound.meeting_booked", label: "Meeting booked", credits: 5, capability: "outbound_gtm" },
-  { key: "outbound.sequence_built", label: "Sequence built", credits: 15, capability: "outbound_gtm" },
   { key: "ads.creative", label: "Ad creative", credits: 5, capability: "meta_ads" },
   { key: "ads.audience", label: "Audience built", credits: 5, capability: "meta_ads" },
   { key: "ads.optimization_pass", label: "Optimization pass", credits: 10, capability: "meta_ads" },

@@ -30,6 +30,7 @@ Roman, 2026-10-12: owners get alerts by **text** with no new paid service — th
 - `callback_sla` → SMS **and** email **and** in-app, always, in parallel (plus Slack `<!channel>` from `lib/demoCall/booking.ts`).
 - `approval_pending` → one text per person per 10 minutes (`coalesced`), in-app every time.
 - Before each send, the previous gateway send is checked against Resend (`emails.get` → `last_event`); `bounced`/`complained` marks `notify_sms_last_bounce_at` → email for 7 days. Changing phone/carrier clears verification and bounce state.
+- **Retry (G5, 2026-10-12)** — a `failed` SMS or email row with `reason like 'send_failed:%'` is retried by the hourly outbound cron (`lib/notify/retry.ts retryFailedDeliveries`): after 10 min, within 24 h, max 3 attempts, 50 per run. The original is stamped `retried_at` (claimed once); the retry is a new row with `retry_of` = original and `attempts` + 1, status `sent` (`reason retry_N_ok`) or `failed`. Failed emails keep their payload in `detail.email` so the retry sends the same message; rows logged before 2026-10-12 have no payload and are skipped (`no_payload`). Skips/fallbacks (`no_phone`, `pref_off`, …) are decisions, never retried. In-app failures are DB errors and are not retried.
 - SMS body is forced to ASCII and split at word boundaries into `(i/n) ` parts ≤ 160 chars. Subject is empty (gateways prepend it).
 
 ## Triggers wired
@@ -47,7 +48,8 @@ Roman, 2026-10-12: owners get alerts by **text** with no new paid service — th
 
 ## Operate
 - Who gets texts: `select email, notify_phone, notify_carrier, notify_sms_verified_at, notify_sms_last_bounce_at from users where team_role='owner';`
-- What went out: `select created_at, trigger, channel, to_address, status, reason, provider_last_event from notification_deliveries order by created_at desc limit 50;`
+- What went out: `select created_at, trigger, channel, to_address, status, reason, provider_last_event, attempts, retry_of from notification_deliveries order by created_at desc limit 50;`
+- Retry chains: `select id, status, reason, attempts, retried_at, retry_of, created_at from notification_deliveries where retry_of is not null or retried_at is not null order by created_at desc;` — cron result carries `alertRetries {retried, recovered, exhausted}` in `outbound_cron_settings.last_result`.
 - A text "didn't arrive" but status is `sent`: look at `provider_last_event`. `delivered` = Resend handed it to the carrier gateway (the carrier may still filter); `bounced` = that gateway is dead for this line → the system already moved them to email for 7 days. `null` = Resend hasn't reported yet; the next alert for that person reconciles it.
 - Carrier shut down since this was written: set its `gateway: null, status: "shutdown"` in `CARRIERS` with the source in `note`.
 - Never add bulk/outreach sends to `sendGatewaySms`.

@@ -3,7 +3,8 @@
 // logged in notification_deliveries. Rules: notifications only (never
 // outreach); never fail silently — a channel that cannot go out is logged
 // with its reason and falls back to email; a gateway Resend reports as
-// bounced puts that person on email for 7 days (self-healing, no cron).
+// bounced puts that person on email for 7 days (self-healing, no cron). Failed
+// sends are retried by lib/notify/retry.ts on the hourly cron (G5).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendEmail, resendConfigured } from "@/lib/email/resend";
@@ -113,7 +114,8 @@ async function alertOne(service: SupabaseClient, u: NotifyUser, alert: OwnerAler
     if (sendMail && u.email) {
       const r = await sendEmail({ to: u.email, subject: alert.email.subject, html: alert.email.html, text: alert.email.text });
       res.email = r.sent ? `sent:${emailWhy}` : `failed:${r.error ?? r.skipped}`;
-      await log(service, { user_id: u.id, trigger: alert.trigger, channel: "email", to_address: u.email, body: alert.email.subject, status: r.sent ? "sent" : "failed", reason: r.sent ? emailWhy : `send_failed:${r.error ?? r.skipped ?? "unknown"}`, provider_id: r.id ?? null });
+      // G5: a failed email keeps its payload so the hourly retry can resend it verbatim.
+      await log(service, { user_id: u.id, trigger: alert.trigger, channel: "email", to_address: u.email, body: alert.email.subject, status: r.sent ? "sent" : "failed", reason: r.sent ? emailWhy : `send_failed:${r.error ?? r.skipped ?? "unknown"}`, provider_id: r.id ?? null, detail: r.sent ? null : { email: { subject: alert.email.subject, html: alert.email.html, text: alert.email.text ?? null } } });
     } else if (sendMail && !u.email) {
       res.email = "skipped:no_email";
       await log(service, { user_id: u.id, trigger: alert.trigger, channel: "email", status: "skipped", reason: "no_email", body: alert.email.subject });

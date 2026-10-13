@@ -267,7 +267,7 @@ Seven small gaps (G2, G6, G7, G8, G9, G10, G12) were fixed on 2026-10-12 and are
 | G2 | **FIXED 2026-10-12** — removed candidates kept in `step_data.7.excluded`, passed to `sourceCandidates` | §2 | — | done |
 | G3 | Dedup has no name+city key; same business under two domains = two leads; uploaded people without websites dedupe by email only | §2–3 | Add a normalised `name+city` soft-match warning at import/accept (not a hard key) | M |
 | G4 | Email is shape-checked only; no MX/deliverability check; no bounce detection (Gmail has no webhook) | §3, §4, §6 | MX lookup at import/enrich (free); parse Gmail "Delivery Status Notification" replies in `syncReplies` → mark `bounced` + suppress | M |
-| G5 | Resend failures are logged, never retried; if Resend is down, only in-app survives | §9 | Queue failed deliveries in `notification_deliveries` and retry on the hourly cron | M |
+| G5 | **FIXED 2026-10-12** — `retryFailedDeliveries` on the hourly cron: failed SMS/email rows retried after 10 min, ≤ 3 attempts, within 24 h; each retry is a new row (`retry_of`, `attempts`) | §9 | — | done |
 | G6 | **FIXED 2026-10-12** — `retryFailedSends` on the hourly cron (approved, failed ≥ 1 h, < 14 d, Gmail active, cap 20) | §6 | — | done |
 | G7 | **FIXED 2026-10-12** — second-pass domain match in `syncReplies` (never free-mail), `payload.match='domain'` | §7 | — | done |
 | G8 | **FIXED 2026-10-12** — webhook clears `work_paused_reason` after a top-up when balance > 0 | §8 | — | done |
@@ -277,7 +277,7 @@ Seven small gaps (G2, G6, G7, G8, G9, G10, G12) were fixed on 2026-10-12 and are
 | G12 | **FIXED 2026-10-12** — `system_health` alert on run errors; daily watchdog for a stalled hourly sync | §7 | — | done |
 | G13 | No automated end-to-end test of onboarding; all acceptance is human | §1 | Playwright smoke on a QA business after each deploy | L |
 | G14 | AI Presence engine is off; its price list exists; `score_refresh` at 2 credits would run at a loss on top-ups | — | See the unit-economics doc; price per weekly pass before enabling | S |
-| G15 | Lead sourcing, sequence build and reply drafting are in `CREDIT_PRICES` but never charged / not built | §2, §4 | Decide: charge them or remove the lines | S |
+| G15 | **FIXED 2026-10-12** — the three lines removed from `CREDIT_PRICES` (Roman: delete the uncharged lines); the published table now lists only what the ledger bills | §2, §4 | — | done |
 
 ---
 
