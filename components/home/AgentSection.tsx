@@ -1,18 +1,13 @@
 import Link from "next/link";
-import { fetchAgentModules, roadmapPosition } from "@/lib/agentProgram/modules";
 import { CAPABILITIES } from "@/lib/agentProgram/config";
-import StatusBadge from "@/components/agent/StatusBadge";
 import IntegrationsStrip from "@/components/home/IntegrationsStrip";
 import CapabilityCardLink from "@/components/home/CapabilityCardLink";
 
 
 // #agent -- the 8 capability cards, the human band and the integrations row.
-// Statuses come from agent_program_modules (same rows as /agent and every
-// dashboard). The walkthrough video lives ONLY in ShowcaseVideo at the top of
+// No statuses here (Roman, 2026-10-15); they live on /agent and the dashboards. The walkthrough video lives ONLY in ShowcaseVideo at the top of
 // the page (Roman, 2026-10-15: "don't need the video here anymore").
-export default async function AgentSection() {
-  const modules = await fetchAgentModules();
-  const statusOf = (key: string) => modules.find((m) => m.key === key);
+export default function AgentSection() {
   return (
     <section id="agent" className="py-20 md:py-28 px-6 scroll-mt-24" style={{ background: "#000" }}>
       <div className="max-w-[1180px] mx-auto">
@@ -22,13 +17,14 @@ export default async function AgentSection() {
           <p className="mt-5 text-[17px] leading-relaxed text-[#a3a3a8] max-w-[640px]">Your SFB Agent is assigned to your business on day one and plugs into the tools you already use — GoHighLevel, Zapier, Google Calendar, Gmail, Meta. Flip any capability on or off in one click: your plan sets your credits and human support, never which jobs your agent can do.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {CAPABILITIES.map((c, i) => { const m = statusOf(c.key); const pos = m ? roadmapPosition(modules, c.key) : null; return (
+          {/* Roman, 2026-10-15: no status pills or roadmap lines on the homepage cards — just the eight jobs. Statuses still show on /agent and in the dashboards. */}
+          {CAPABILITIES.map((c, i) => (
             <CapabilityCardLink key={c.key} capabilityKey={c.key}>
-              <div className="flex items-start justify-between gap-2"><div className="text-[12px] font-semibold text-white/[0.35]">{String(i + 1).padStart(2, "0")}</div>{m && <StatusBadge status={m.status} size="xs" />}</div>
+              <div className="text-[12px] font-semibold text-white/[0.35]">{String(i + 1).padStart(2, "0")}</div>
               <div className="text-[17px] font-semibold tracking-[-0.02em] mt-3">{c.name}</div>
               <p className="text-[13px] leading-[1.55] text-white/[0.55] mt-1.5">{c.short}</p>
-              {m && m.status !== "live" && pos && <div className="text-[11px] text-white/[0.35] mt-3">{pos === 1 ? "Next to unlock" : `#${pos} on the roadmap`}</div>}
-            </CapabilityCardLink>); })}
+            </CapabilityCardLink>
+          ))}
         </div>
 
         <div className="mt-10">
