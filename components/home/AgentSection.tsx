@@ -4,17 +4,14 @@ import { CAPABILITIES } from "@/lib/agentProgram/config";
 import StatusBadge from "@/components/agent/StatusBadge";
 import IntegrationsStrip from "@/components/home/IntegrationsStrip";
 import CapabilityCardLink from "@/components/home/CapabilityCardLink";
-import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 
-// #agent -- the 8 capability cards, the integrations row, the human band and
-// the demo-video slot. Statuses come from agent_program_modules (same rows
-// as /agent and every dashboard). No mockups: the video slot plays the real
-// walkthrough once an owner sets it in /team/settings → Homepage video
-// (site_settings.walkthrough_video_url); until then it says so, honestly.
+// #agent -- the 8 capability cards, the human band and the integrations row.
+// Statuses come from agent_program_modules (same rows as /agent and every
+// dashboard). The walkthrough video lives ONLY in ShowcaseVideo at the top of
+// the page (Roman, 2026-10-15: "don't need the video here anymore").
 export default async function AgentSection() {
-  const [modules, { data: site }] = await Promise.all([fetchAgentModules(), createSupabaseServiceClient().from("site_settings").select("walkthrough_video_url, walkthrough_poster_url").eq("id", 1).maybeSingle()]);
-  const videoUrl = (site?.walkthrough_video_url as string | null) ?? null; const posterUrl = (site?.walkthrough_poster_url as string | null) ?? null;
+  const modules = await fetchAgentModules();
   const statusOf = (key: string) => modules.find((m) => m.key === key);
   return (
     <section id="agent" className="py-20 md:py-28 px-6 scroll-mt-24" style={{ background: "#000" }}>
@@ -34,22 +31,7 @@ export default async function AgentSection() {
             </CapabilityCardLink>); })}
         </div>
 
-        <div className="mt-10 grid lg:grid-cols-[1.1fr_0.9fr] gap-4">
-          <div className="rounded-[16px] p-6 md:p-8 flex flex-col justify-between" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.16em] uppercase text-white/[0.4] mb-3">Watch it work</div>
-              {videoUrl ? (
-                // The video itself is the showcase at the top of the page (ShowcaseVideo); here, a still that jumps to it.
-                <a href="#showcase" className="block relative aspect-video rounded-[12px] overflow-hidden group" style={{ border: "1px solid rgba(255,255,255,0.08)", background: posterUrl ? `#050505 url(${JSON.stringify(posterUrl)}) center / cover no-repeat` : "#050505" }} aria-label="Watch the walkthrough">
-                  <span className="absolute inset-0 flex items-center justify-center"><span className="inline-flex items-center gap-2 h-[40px] px-5 rounded-full text-[13px] font-semibold text-black bg-white">▶ Watch the walkthrough</span></span>
-                </a>
-              ) : (
-                <div className="aspect-video rounded-[12px] flex items-center justify-center text-center p-6" style={{ background: "#050505", border: "1px dashed rgba(255,255,255,0.14)" }}>
-                  <div><div className="text-[15px] font-semibold text-white/[0.85]">Walkthrough video coming</div><div className="text-[12.5px] text-white/[0.45] mt-1.5 max-w-[380px]">A real screen recording of the agent at work — not a mockup. It appears here the moment it&apos;s ready.</div></div>
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="mt-10">
           <div className="rounded-[16px] p-6 md:p-8 flex flex-col justify-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}>
             <h3 className="text-[26px] md:text-[32px] font-bold tracking-[-0.03em] leading-[1.05]">Every agent has a human.</h3>
             <p className="mt-4 text-[14.5px] leading-[1.65] text-white/[0.6]">Don&apos;t trust AI with your business? Good — neither do we, unsupervised. A human expert reviews your agent&apos;s work, approves anything customer-facing, and signs every report.</p>
