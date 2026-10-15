@@ -39,7 +39,10 @@ export default async function AgentSection() {
             <div>
               <div className="text-[11px] font-semibold tracking-[0.16em] uppercase text-white/[0.4] mb-3">Watch it work</div>
               {videoUrl ? (
-                <video controls preload="metadata" playsInline poster={posterUrl ?? undefined} src={videoUrl} className="w-full aspect-video rounded-[12px] bg-black" style={{ border: "1px solid rgba(255,255,255,0.08)" }} />
+                // The video itself is the showcase at the top of the page (ShowcaseVideo); here, a still that jumps to it.
+                <a href="#showcase" className="block relative aspect-video rounded-[12px] overflow-hidden group" style={{ border: "1px solid rgba(255,255,255,0.08)", background: posterUrl ? `#050505 url(${JSON.stringify(posterUrl)}) center / cover no-repeat` : "#050505" }} aria-label="Watch the walkthrough">
+                  <span className="absolute inset-0 flex items-center justify-center"><span className="inline-flex items-center gap-2 h-[40px] px-5 rounded-full text-[13px] font-semibold text-black bg-white">▶ Watch the walkthrough</span></span>
+                </a>
               ) : (
                 <div className="aspect-video rounded-[12px] flex items-center justify-center text-center p-6" style={{ background: "#050505", border: "1px dashed rgba(255,255,255,0.14)" }}>
                   <div><div className="text-[15px] font-semibold text-white/[0.85]">Walkthrough video coming</div><div className="text-[12.5px] text-white/[0.45] mt-1.5 max-w-[380px]">A real screen recording of the agent at work — not a mockup. It appears here the moment it&apos;s ready.</div></div>
