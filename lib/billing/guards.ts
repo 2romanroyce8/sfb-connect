@@ -15,6 +15,22 @@ import { creditPrice, WARN_AT, CRITICAL_AT } from "@/lib/agentProgram/config";
 // ============================================================
 
 export type CreditLevel = "ok" | "warn" | "critical" | "empty";
+
+/**
+ * Free for the team (Rome, 2026-10-19): SFB Connect's own business
+ * (businesses.is_house_account) and any business owned by an owner or
+ * employee (users.team_role set) never spend credits and are never paused for
+ * credits. Charges still write a 0-credit receipt so the ledger and
+ * idempotency keys stay intact. Clients are billed exactly as before.
+ */
+export async function isTeamFree(service: SupabaseClient, businessId: string): Promise<boolean> {
+  const { data: b } = await service.from("businesses").select("owner_id, is_house_account").eq("id", businessId).maybeSingle();
+  if (!b) return false;
+  if ((b as { is_house_account?: boolean }).is_house_account) return true;
+  if (!b.owner_id) return false;
+  const { data: u } = await service.from("users").select("team_role").eq("id", b.owner_id).maybeSingle();
+  return !!u?.team_role;
+}
 export function creditState(balance: number, allotment: number): { level: CreditLevel; usedPct: number } {
   if (balance <= 0) return { level: "empty", usedPct: 100 };
   if (allotment <= 0) return { level: "ok", usedPct: 0 };
@@ -34,8 +50,9 @@ export class InsufficientCreditsError extends Error { constructor(public balance
 export async function chargeAction(service: SupabaseClient, input: { businessId: string; actionKey: string; outcome: "completed" | "failed"; description?: string; idempotencyKey: string; actorId?: string | null; resultRef?: string | null; approvedBy?: string | null }) {
   const price = creditPrice(input.actionKey);
   if (!price) throw new Error(`Unknown action ${input.actionKey}`);
-  const cost = input.outcome === "failed" ? 0 : price.credits;
-  const description = input.description ?? `${price.label}${input.outcome === "failed" ? " — didn't go through (0 credits)" : ""}`;
+  const free = await isTeamFree(service, input.businessId);
+  const cost = input.outcome === "failed" || free ? 0 : price.credits;
+  const description = (input.description ?? `${price.label}${input.outcome === "failed" ? " — didn't go through (0 credits)" : ""}`) + (free && input.outcome !== "failed" ? " — free (SFB Connect team)" : "");
   const { data, error } = await service.rpc("spend_credits", {
     p_business_id: input.businessId, p_capability: price.capability, p_action_key: price.key, p_cost: cost, p_idempotency_key: input.idempotencyKey,
     p_description: description, p_result_ref: input.resultRef ?? null, p_approved_by: input.approvedBy ?? null, p_actor_id: input.actorId ?? null,
@@ -51,7 +68,7 @@ export async function chargeAction(service: SupabaseClient, input: { businessId:
   }
   const row = data as { id: string; amount: number; balance_after: number; idempotency_key: string };
   emitIntegrationEvent("credits.charged", { business_id: input.businessId, action_key: input.actionKey, credits: cost, outcome: input.outcome, balance_after: row.balance_after });
-  void notifyCreditThresholds(service, input.businessId, row.balance_after);
+  if (!free) void notifyCreditThresholds(service, input.businessId, row.balance_after);
   return row;
 }
 
@@ -73,10 +90,12 @@ export function splitBalance(balance: number, allotment: number, spentThisCycle:
 
 /** Whether the agent may do paid work for this business right now. */
 export async function workAllowed(service: SupabaseClient, businessId: string): Promise<{ allowed: boolean; reason: string | null; balance: number }> {
-  const [{ data: b }, balance] = await Promise.all([
+  const [{ data: b }, balance, free] = await Promise.all([
     service.from("businesses").select("plan_key").eq("id", businessId).single(),
     getCreditBalance(service, businessId),
+    isTeamFree(service, businessId),
   ]);
+  if (free) return { allowed: true, reason: null, balance };
   if (!b?.plan_key) return { allowed: false, reason: "no_plan", balance };
   if (balance <= 0) return { allowed: false, reason: "out_of_credits", balance };
   return { allowed: true, reason: null, balance };
