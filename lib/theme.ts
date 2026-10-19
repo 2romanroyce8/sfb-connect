@@ -33,8 +33,10 @@ export function applyPreference(pref: ThemePreference) {
 
 export function readPreference(): ThemePreference {
   if (typeof document === "undefined") return DEFAULT_THEME;
+  // Storage first: the data-theme-pref attribute can be dropped by a React root re-render; storage is the truth.
+  try { const v = localStorage.getItem(THEME_KEY); if (isPreference(v)) return v; } catch { /* ignore */ }
+  const m = document.cookie.match(new RegExp(`(?:^|; )${THEME_KEY}=(light|dark|system)`)); if (m && isPreference(m[1])) return m[1];
   const attr = document.documentElement.getAttribute("data-theme-pref");
   if (isPreference(attr)) return attr;
-  try { const v = localStorage.getItem(THEME_KEY); if (isPreference(v)) return v; } catch { /* ignore */ }
   return DEFAULT_THEME;
 }

@@ -3,6 +3,7 @@ import { Inter, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import "./theme-tokens.css";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import ThemeSync from "@/components/ThemeSync";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -63,14 +64,15 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${mono.variable} ${instrumentSerif.variable}`}
-      data-theme="dark"
       suppressHydrationWarning
     >
       <head>
-        {/* Theme before first paint (lib/theme.ts): localStorage → cookie → default. Static pages stay static. */}
+        {/* Theme before first paint (lib/theme.ts): localStorage → cookie → default. No data-theme in the markup on purpose: the
+            stylesheet treats "no attribute" as dark, so a React root re-render after a hydration mismatch cannot force dark. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="font-sans">
+        <ThemeSync />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

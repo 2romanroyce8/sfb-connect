@@ -24,7 +24,9 @@ html[data-theme="dark"] [data-authored="light"] .theme-invert { filter: invert(1
 html[data-theme="light"] [data-authored="light"] .theme-invert,
 html[data-theme] [data-theme-lock="dark"] .theme-invert { filter: none; }
 /* The page background OUTSIDE any dark-locked subtree — lets a locked hero fade into whatever follows it. */
-html { --page-bg: rgb(var(--k)); } /* computed on <html>, so a dark-locked subtree still inherits the page's own color */
+html { --page-bg: rgb(var(--k)); }
+/* Inherited `color` is a resolved value, not a token — a locked subtree must restate its own foreground. */
+[data-theme-lock="dark"] { color: var(--hx-ffffff); } /* computed on <html>, so a dark-locked subtree still inherits the page's own color */
 
 body {
   background: var(--hx-000000);
