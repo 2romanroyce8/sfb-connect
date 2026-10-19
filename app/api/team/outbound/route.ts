@@ -6,6 +6,7 @@ import { listLibrary, pickIntro, saveTemplate, archiveTemplate } from "@/lib/out
 import { ASSIST_INSTRUCTIONS, type AssistKey } from "@/lib/outbound/assist";
 import { assistStatus, assistEditLogged } from "@/lib/outbound/assistSpend";
 import { previewCsv, importProspects } from "@/lib/outbound/importProspects";
+import { importCrmLeadsByTag } from "@/lib/outbound/fromCrm";
 import type { ImportField } from "@/lib/outbound/csvImport";
 
 export const runtime = "nodejs";
@@ -76,6 +77,12 @@ export async function POST(req: NextRequest) {
         const r = await importProspects(service, { businessId: b.id, filename: s("filename") || "upload.csv", csv: typeof body.csv === "string" ? body.csv : "", mapping: (body.mapping && typeof body.mapping === "object" ? body.mapping : {}) as Record<string, ImportField> }, { kind: "user", id: me.id, label: actor.label });
         if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
         return NextResponse.json({ ok: true, ...r });
+      }
+      // CRM leads → prospects by tag (team owners only). dry_run defaults to true.
+      case "import_crm_tag": {
+        if (me.team_role !== "owner") return NextResponse.json({ error: "Only a team owner can copy CRM leads." }, { status: 403 });
+        if (!s("tag")) return NextResponse.json({ error: "Pick a tag." }, { status: 400 });
+        return NextResponse.json({ ok: true, ...(await importCrmLeadsByTag(service, { businessId: b.id, tag: s("tag"), dryRun: body.dry_run !== false }, actor)) });
       }
       case "enrich": return NextResponse.json(await enrichProspect(service, s("prospect_id"), actor));
       case "start_sequence": return NextResponse.json({ message: await startSequence(service, s("prospect_id"), actor, s("template") ? { template: s("template"), custom: (body.custom as { subject: string; body: string } | undefined) ?? null } : null) });
