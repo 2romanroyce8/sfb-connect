@@ -27,9 +27,17 @@ const toHex = ([r, g, b]) => "#" + [r, g, b].map((v) => Math.max(0, Math.min(255
 function rgbToHsl([r, g, b]) { r /= 255; g /= 255; b /= 255; const max = Math.max(r, g, b), min = Math.min(r, g, b); const l = (max + min) / 2; if (max === min) return [0, 0, l]; const d = max - min; const s = l > 0.5 ? d / (2 - max - min) : d / (max + min); let h = 0; if (max === r) h = (g - b) / d + (g < b ? 6 : 0); else if (max === g) h = (b - r) / d + 2; else h = (r - g) / d + 4; return [h / 6, s, l]; }
 function hslToRgb([h, s, l]) { if (s === 0) return [l * 255, l * 255, l * 255]; const q = l < 0.5 ? l * (1 + s) : l + s - l * s; const p = 2 * l - q; const f = (t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; }; return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255]; }
 /** Inverted value: grays flip lightness exactly; chromatic accents move to the lightness band that reads on the opposite background. */
+/** Grays: dark SURFACES (black → the #1A card ladder) become white / near-white, not grey (Roman, 2026-10-19:
+ *  "white, not grey"). Factor ramps from 0.12 at L≤0.10 to 1.0 at L≥0.3 (surfaces only), so text greys invert exactly
+ *  and contrast is unchanged. L=0 → #FFFFFF, #0A0A0A → #FEFEFE, #151515 → #FDFDFD, #242426 → #F7F7F7, #333 → #EE. */
+function invertGrayLightness(l) {
+  if (l >= 0.3) return 1 - l; // text greys (#6E6E73, #A1A1A6…) invert exactly — contrast untouched
+  const f = l <= 0.1 ? 0.12 : 0.12 + ((l - 0.1) / 0.2) * 0.88;
+  return 1 - l * f;
+}
 function invert(hex) {
   const [h, s, l] = rgbToHsl(toRgb(hex));
-  if (s < 0.12) return toHex(hslToRgb([h, s, 1 - l]));
+  if (s < 0.12) return toHex(hslToRgb([h, s, invertGrayLightness(l)]));
   const l2 = l >= 0.5 ? 0.38 : 0.64; // light accent on dark → deep accent on light; dark accent on light → bright accent on dark
   return toHex(hslToRgb([h, Math.min(1, s), l2]));
 }
