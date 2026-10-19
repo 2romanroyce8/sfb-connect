@@ -45,6 +45,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, card: (await listCards(service, "queued")).find((c) => c.id === card.id) ?? card });
     }
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    // Bulk (multi-select): queued cards only — sent prompts are append-only history (DB trigger).
+    if (body.action === "bulk_delete" || body.action === "bulk_done") {
+      const ids = (Array.isArray(body.ids) ? (body.ids as string[]) : []).filter((x) => UUID.test(x)).slice(0, 200);
+      const { data: q } = await service.from("prompt_cards").select("id").eq("status", "queued").in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+      const qids = (q ?? []).map((x) => x.id as string);
+      if (body.action === "bulk_done") { for (const id of qids) await markSent(service, id); }
+      else if (qids.length) {
+        const { data: files } = await service.from("prompt_card_files").select("storage_path").in("card_id", qids);
+        if (files?.length) await service.storage.from(PROMPT_FILES_BUCKET).remove(files.map((f) => f.storage_path as string));
+        const { error } = await service.from("prompt_cards").delete().in("id", qids); if (error) throw new Error(error.message);
+      }
+      return NextResponse.json({ ok: true, count: qids.length, queue: await listCards(service, "queued"), sent: await listCards(service, "sent") });
+    }
     // Notify Muse: high-priority task for atlas + inbox message (no card id needed).
     if (body.action === "notify_muse") return NextResponse.json({ ok: true, ...(await notifyMuse(service, { label })) });
     const id = typeof body.id === "string" && UUID.test(body.id) ? body.id : null; if (!id) return NextResponse.json({ error: "Missing card id." }, { status: 400 });

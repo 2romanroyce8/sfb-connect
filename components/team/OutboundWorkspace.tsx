@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import CsvImport from "@/components/outbound/CsvImport";
 import ComposePicker, { type Compose } from "@/components/outbound/ComposePicker";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson, type BulkAction } from "@/components/ui/MultiSelect";
+import { chunk, plural } from "@/lib/ui/selection";
 
 type Biz = { id: string; legal_name: string; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string };
 type Prospect = { id: string; name: string; contact_name: string | null; website: string | null; email: string | null; email_source: string | null; phone_e164: string | null; city: string | null; state: string | null; category: string | null; status: string; enriched_at: string | null; last_contacted_at: string | null; source?: string | null; import_id?: string | null };
@@ -36,12 +38,13 @@ export default function OutboundWorkspace() {
   const [newP, setNewP] = useState({ name: "", website: "", email: "", contact_name: "" });
   const [offer, setOffer] = useState("");
   const [slots, setSlots] = useState<{ start: string; end: string }[] | null>(null);
+  const [cv, setCv] = useState<{ id: string; label: string }[]>([]);
   const [compose, setCompose] = useState<Compose | null>(null); const [saveFor, setSaveFor] = useState<{ id: string; name: string } | null>(null);
 
   const load = useCallback(async (b?: string | null) => {
     const r = await fetch(`/api/team/outbound${b ? `?business=${b}` : ""}`, { cache: "no-store" });
     if (!r.ok) { setErr("Could not load outbound."); return; }
-    const j = (await r.json()) as State; setS(j); setBiz(j.business?.id ?? null); setOffer(j.business?.outbound_offer_line ?? "");
+    const j = (await r.json()) as State & { campaignVariants?: { id: string; label: string }[] }; setS(j); setCv(j.campaignVariants ?? []); setBiz(j.business?.id ?? null); setOffer(j.business?.outbound_offer_line ?? "");
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -55,6 +58,32 @@ export default function OutboundWorkspace() {
       await load(biz); return j;
     } finally { setBusy(null); }
   };
+
+  // ---------- multi-select (2026-10-19) ----------
+  const pendingIds = (s?.messages ?? []).filter((m) => m.status === "pending_approval").map((m) => m.id);
+  const msQ = useMultiSelect(pendingIds);
+  const msP = useMultiSelect((s?.prospects ?? []).map((p) => p.id));
+  const msA = useMultiSelect((s?.messages ?? []).slice(0, 60).map((m) => m.id));
+  const bulk = (body: Record<string, unknown>) => postJson("/api/team/outbound", { business_id: biz, ...body });
+  const emails = (n: number) => plural(n, "email");
+  const delMsgs = (ms: typeof msQ): BulkAction => ({ label: "Delete", tone: "danger", confirm: (n) => `Delete ${emails(n)}?`, run: async (ids) => { const j = await bulk({ action: "bulk_delete_messages", message_ids: ids }); setOpen(null); await load(biz); return `${emails(j.deleted)} deleted`; } });
+  const queueActions: BulkAction[] = [
+    { label: "Approve All", tone: "primary", confirm: (n) => `Approve ${emails(n)}?`, run: async (ids) => {
+      let approved = 0, held = 0, sent = 0, sendFailed = 0; const errors: string[] = [];
+      for (const part of chunk(ids, 10)) { const j = await bulk({ action: "bulk_approve", message_ids: part }); approved += j.approved; held += j.held; sent += j.sent; sendFailed += j.sendFailed; errors.push(...j.errors); }
+      setOpen(null); await load(biz);
+      return [`${emails(approved)} approved`, held ? `${held} held for the send window` : "", sent ? `${sent} sent` : "", sendFailed ? `${sendFailed} failed to send (retry in queue)` : "", errors.length ? `${errors.length} not approved: ${errors[0]}` : ""].filter(Boolean).join(" · ");
+    } },
+    delMsgs(msQ),
+  ];
+  const prospectActions: BulkAction[] = [
+    ...(cv.length ? [{ label: "Add to campaign", options: cv.map((v) => ({ label: v.label, value: v.id })), confirm: (n: number) => `Draft the campaign email for ${plural(n, "prospect")}?`, run: async (ids: string[], v?: string) => {
+      let drafted = 0; const skipped: string[] = [];
+      for (const part of chunk(ids, 10)) { const j = await bulk({ action: "bulk_add_to_campaign", prospect_ids: part, variant_id: v }); drafted += j.drafted; skipped.push(...j.skipped); }
+      await load(biz); return `${emails(drafted)} drafted into the approval queue${skipped.length ? ` · ${skipped.length} skipped (${skipped[0]})` : ""}`;
+    } }] : []),
+    { label: "Delete", tone: "danger", confirm: (n) => `Delete ${plural(n, "prospect")}? Their emails go too.`, run: async (ids) => { const j = await bulk({ action: "bulk_delete_prospects", prospect_ids: ids }); await load(biz); return `${plural(j.deleted, "prospect")} deleted`; } },
+  ];
 
   if (!s) return <div className="text-[12px] text-[color:var(--hx-6e6e73)]">{err ?? "Loading outbound…"}</div>;
   if (!s.business) return <div className="rounded-[12px] p-5 text-[13px] text-[color:var(--hx-a1a1a6)]" style={card}>No business with a plan yet. Outbound runs per customer business (Solo or Agency).</div>;
@@ -83,7 +112,7 @@ export default function OutboundWorkspace() {
         <div className="mt-2 flex gap-2"><input value={offer} onChange={(e) => setOffer(e.target.value)} placeholder="e.g. We replace roofs for property managers in Oklahoma City with a 48-hour quote turnaround." className="flex-1 h-[36px] rounded-[8px] px-3 text-[13px] bg-[color:var(--hx-0f0f0f)] text-[color:var(--hx-f5f5f7)] outline-none" style={ghostStyle} /><button onClick={() => act({ action: "set_offer_line", offer_line: offer }, "offer")} disabled={busy === "offer"} className={primary}>Save</button></div>
       </div>
 
-      <div className="flex gap-2">{(["queue", "prospects", "activity"] as const).map((t) => <button key={t} onClick={() => setTab(t)} className={`${btn} ${tab === t ? "bg-white text-black" : "text-[color:var(--hx-a1a1a6)]"}`} style={tab === t ? undefined : ghostStyle}>{t === "queue" ? `Approval queue (${pending.length})` : t === "prospects" ? `Prospects (${s.prospects.length})` : "Activity"}</button>)}</div>
+      <div className="flex gap-2">{(["queue", "prospects", "activity"] as const).map((t) => <button key={t} onClick={() => { setTab(t); msQ.cancel(); msP.cancel(); msA.cancel(); }} className={`${btn} ${tab === t ? "bg-white text-black" : "text-[color:var(--hx-a1a1a6)]"}`} style={tab === t ? undefined : ghostStyle}>{t === "queue" ? `Approval queue (${pending.length})` : t === "prospects" ? `Prospects (${s.prospects.length})` : "Activity"}</button>)}</div>
 
       {tab === "queue" && (
         <div className="flex flex-col gap-4">
@@ -93,6 +122,7 @@ export default function OutboundWorkspace() {
         </details>
         <div className="grid lg:grid-cols-[1fr_1.2fr] gap-4">
           <div className="flex flex-col gap-2">
+            {pending.length > 0 && <div className="flex items-center justify-between"><span className="text-[12px] text-[color:var(--hx-6e6e73)]">{pending.length} waiting for approval</span><SelectToggle ms={msQ} total={pending.length} noun="emails" /></div>}
             {pending.length === 0 && <div className="rounded-[12px] p-5 text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>Nothing waiting. Drafts land here the moment the agent (or a sequence step) writes one.</div>}
             {failed.length > 0 && (
               <div className="rounded-[12px] p-4" style={{ ...card, borderColor: "rgba(255,69,58,0.3)" }}>
@@ -101,10 +131,13 @@ export default function OutboundWorkspace() {
               </div>
             )}
             {pending.map((m) => (
-              <button key={m.id} onClick={() => setOpen(m)} className="text-left rounded-[12px] p-4" style={{ ...card, borderColor: open?.id === m.id ? "rgb(var(--w) / 0.22)" : "rgb(var(--w) / 0.08)" }}>
+              <button key={m.id} onClick={() => setOpen(m)} className="text-left rounded-[12px] p-4 flex gap-2" style={{ ...card, borderColor: msQ.isSelected(m.id) ? "var(--hx-0a84ff)" : open?.id === m.id ? "rgb(var(--w) / 0.22)" : "rgb(var(--w) / 0.08)" }}>
+                {msQ.active && <SelectCircle checked={msQ.isSelected(m.id)} onToggle={() => msQ.toggle(m.id)} label={`Select email to ${m.to_email}`} />}
+                <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3"><div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)] truncate">{byId[m.prospect_id]?.name ?? "Prospect"} <span className="font-normal text-[color:var(--hx-6e6e73)]">· {m.to_email}</span></div><span className="text-[10.5px] uppercase tracking-wide" style={{ color: STATUS[m.status] }}>{m.template_key ?? `step ${m.step}`}</span></div>
                 <div className="text-[12px] text-[color:var(--hx-a1a1a6)] mt-1 truncate">{m.subject}</div>
                 <div className="text-[11px] text-[color:var(--hx-6e6e73)] mt-1">drafted {fmt(m.created_at)} by {m.created_by}</div>
+                </div>
               </button>
             ))}
           </div>
@@ -144,9 +177,11 @@ export default function OutboundWorkspace() {
             </details>
           )}
           <div className="rounded-[12px] overflow-x-auto" style={card}>
-            <table className="w-full text-[12.5px]"><thead><tr className="text-left text-[color:var(--hx-6e6e73)]"><th className="px-4 py-2 font-medium">Prospect</th><th className="px-4 py-2 font-medium">Contact</th><th className="px-4 py-2 font-medium">Status</th><th className="px-4 py-2 font-medium text-right">Actions</th></tr></thead><tbody>
+            <div className="flex items-center justify-between px-4 pt-3"><span className="text-[12px] text-[color:var(--hx-6e6e73)]">{s.prospects.length} prospects</span><SelectToggle ms={msP} total={s.prospects.length} noun="prospects" /></div>
+            <table className="w-full text-[12.5px]"><thead><tr className="text-left text-[color:var(--hx-6e6e73)]">{msP.active && <th className="w-[44px]" />}<th className="px-4 py-2 font-medium">Prospect</th><th className="px-4 py-2 font-medium">Contact</th><th className="px-4 py-2 font-medium">Status</th><th className="px-4 py-2 font-medium text-right">Actions</th></tr></thead><tbody>
               {s.prospects.length === 0 ? <tr><td colSpan={4} className="px-4 py-6 text-[color:var(--hx-6e6e73)]">No prospects yet. Add one above or import from the feed.</td></tr> : s.prospects.map((p) => (
-                <tr key={p.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
+                <tr key={p.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)", background: msP.isSelected(p.id) ? "rgba(10,132,255,0.08)" : undefined }}>
+                  {msP.active && <td className="pl-3 w-[44px]"><SelectCircle checked={msP.isSelected(p.id)} onToggle={() => msP.toggle(p.id)} label={`Select ${p.name}`} /></td>}
                   <td className="px-4 py-2.5"><div className="text-[color:var(--hx-f5f5f7)] font-medium">{p.name}{p.source === "upload" && <span className="ml-2 text-[10px] uppercase tracking-wide rounded-full px-1.5 py-0.5 align-middle" style={{ background: "rgba(10,132,255,0.15)", color: "var(--hx-6fb3ff)" }} title={(() => { const i = s.imports?.find((x) => x.id === p.import_id); return i ? `Uploaded · ${i.filename} · ${fmt(i.created_at)}` : "Uploaded"; })()}>Uploaded{(() => { const i = s.imports?.find((x) => x.id === p.import_id); return i ? ` · ${i.filename}` : ""; })()}</span>}</div><div className="text-[11px] text-[color:var(--hx-6e6e73)]">{p.contact_name && p.contact_name !== p.name ? `${p.contact_name} · ` : ""}{p.website ?? "no website"}{p.city ? ` · ${p.city}, ${p.state}` : ""}</div></td>
                   <td className="px-4 py-2.5 text-[color:var(--hx-a1a1a6)]">{p.email ? <span className="text-[color:var(--hx-f5f5f7)]">{p.email} <span className="text-[color:var(--hx-6e6e73)]">({p.email_source})</span></span> : <span className="text-[color:var(--hx-6e6e73)]">no email yet</span>}{p.phone_e164 ? <div className="text-[11px]">{p.phone_e164}</div> : null}</td>
                   <td className="px-4 py-2.5"><span className="text-[11px] uppercase tracking-wide" style={{ color: STATUS[p.status] ?? "var(--hx-a1a1a6)" }}>{p.status.replace("_", " ")}</span></td>
@@ -168,8 +203,8 @@ export default function OutboundWorkspace() {
 
       {tab === "activity" && (
         <div className="grid lg:grid-cols-2 gap-4">
-          <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[color:var(--hx-f5f5f7)]">Messages</div>
-            <ul className="divide-y divide-white/[0.06]">{s.messages.slice(0, 60).map((m) => <li key={m.id} className="px-4 py-2.5 text-[12.5px]"><div className="flex items-center justify-between gap-3"><span className="text-[color:var(--hx-f5f5f7)] truncate">{m.direction === "in" ? "↩ " : ""}{byId[m.prospect_id]?.name ?? "Prospect"} <span className="text-[color:var(--hx-6e6e73)]">· {m.subject}</span></span><span className="text-[10.5px] uppercase tracking-wide shrink-0" style={{ color: STATUS[m.status] ?? "var(--hx-a1a1a6)" }}>{m.status.replace("_", " ")}</span></div><div className="text-[11px] text-[color:var(--hx-6e6e73)]">{m.sent_at ? `sent ${fmt(m.sent_at)}` : fmt(m.created_at)}{m.opened_at ? ` · opened ${fmt(m.opened_at)}` : ""}{m.replied_at ? ` · replied ${fmt(m.replied_at)}` : ""}{m.rejected_reason ? ` · ${m.rejected_reason}` : ""}{m.error ? ` · ${m.error}` : ""}{m.template_key ? ` · ${m.template_key}` : ""}{m.direction === "out" && (m.status === "sent" || m.status === "approved") && !m.template_key?.startsWith("saved:") ? <> · <button onClick={() => setSaveFor({ id: m.id, name: "" })} className="underline text-[color:var(--hx-a1a1a6)]">save as preset</button></> : null}</div></li>)}</ul>
+          <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[color:var(--hx-f5f5f7)] flex items-center justify-between">Messages<SelectToggle ms={msA} total={Math.min(60, s.messages.length)} noun="emails" /></div>
+            <ul className="divide-y divide-white/[0.06]">{s.messages.slice(0, 60).map((m) => <li key={m.id} className="px-4 py-2.5 text-[12.5px] flex gap-2" style={{ background: msA.isSelected(m.id) ? "rgba(10,132,255,0.08)" : undefined }}>{msA.active && <SelectCircle checked={msA.isSelected(m.id)} onToggle={() => msA.toggle(m.id)} />}<div className="flex-1 min-w-0"><div className="flex items-center justify-between gap-3"><span className="text-[color:var(--hx-f5f5f7)] truncate">{m.direction === "in" ? "↩ " : ""}{byId[m.prospect_id]?.name ?? "Prospect"} <span className="text-[color:var(--hx-6e6e73)]">· {m.subject}</span></span><span className="text-[10.5px] uppercase tracking-wide shrink-0" style={{ color: STATUS[m.status] ?? "var(--hx-a1a1a6)" }}>{m.status.replace("_", " ")}</span></div><div className="text-[11px] text-[color:var(--hx-6e6e73)]">{m.sent_at ? `sent ${fmt(m.sent_at)}` : fmt(m.created_at)}{m.opened_at ? ` · opened ${fmt(m.opened_at)}` : ""}{m.replied_at ? ` · replied ${fmt(m.replied_at)}` : ""}{m.rejected_reason ? ` · ${m.rejected_reason}` : ""}{m.error ? ` · ${m.error}` : ""}{m.template_key ? ` · ${m.template_key}` : ""}{m.direction === "out" && (m.status === "sent" || m.status === "approved") && !m.template_key?.startsWith("saved:") ? <> · <button onClick={() => setSaveFor({ id: m.id, name: "" })} className="underline text-[color:var(--hx-a1a1a6)]">save as preset</button></> : null}</div></div></li>)}</ul>
             {saveFor && <div className="px-4 py-3 flex items-center gap-2 flex-wrap" style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}><input autoFocus value={saveFor.name} onChange={(e) => setSaveFor({ ...saveFor, name: e.target.value })} placeholder="Name this preset" className="h-[32px] rounded-[8px] px-3 text-[12.5px] bg-[color:var(--hx-0f0f0f)] text-[color:var(--hx-f5f5f7)] outline-none" style={ghostStyle} /><button onClick={async () => { const r = await act({ action: "template_save", name: saveFor.name, message_id: saveFor.id, category: "saved" }, "tsave"); if (r) setSaveFor(null); }} disabled={!saveFor.name.trim() || busy === "tsave"} className={primary}>{busy === "tsave" ? "Saving…" : "Save"}</button><button onClick={() => setSaveFor(null)} className={ghost} style={ghostStyle}>Cancel</button></div>}</div>
           <div className="flex flex-col gap-4">
             <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[color:var(--hx-f5f5f7)]">Bookings</div><ul className="divide-y divide-white/[0.06]">{s.bookings.length === 0 ? <li className="px-4 py-3 text-[12.5px] text-[color:var(--hx-6e6e73)]">None yet.</li> : s.bookings.map((b) => <li key={b.id} className="px-4 py-2.5 text-[12.5px] text-[color:var(--hx-f5f5f7)]">{byId[b.prospect_id]?.name ?? "Prospect"} · {fmt(b.start_at)}{b.meet_url ? <a href={b.meet_url} target="_blank" rel="noopener noreferrer" className="ml-2 underline text-[color:var(--hx-a1a1a6)]">Meet</a> : null}<span className="ml-2 text-[10.5px] uppercase text-[color:var(--hx-6e6e73)]">{b.status}</span></li>)}</ul></div>
@@ -177,6 +212,10 @@ export default function OutboundWorkspace() {
           </div>
         </div>
       )}
+      {tab === "queue" && <BulkBar ms={msQ} noun={emails} actions={queueActions} />}
+      {tab === "prospects" && <BulkBar ms={msP} noun={(n) => plural(n, "prospect")} actions={prospectActions} />}
+      {tab === "activity" && <BulkBar ms={msA} noun={emails} actions={[delMsgs(msA)]} />}
+      {(msQ.active || msP.active || msA.active) && <div className="h-[96px]" />}
     </div>
   );
 }

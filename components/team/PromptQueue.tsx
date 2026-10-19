@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Copy, Check, Download, Paperclip, Plus, ChevronDown, ChevronUp, Undo2, ArrowLeft, ArrowRight, BellRing, Clock } from "lucide-react";
 import { formatAge, queuedFor, waitedBeforeSend, POLL_MS } from "@/lib/crm/promptTiming";
 import type { PromptCard, Urgency } from "@/lib/crm/promptQueue";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson } from "@/components/ui/MultiSelect";
+import { plural } from "@/lib/ui/selection";
+
 
 // "Give HyperAgent" (Roman, 2026-10-18): the holding queue for everything Rome pastes into HyperAgent.
 // Cards left → right by send order (the only sort). Urgency is a label. Copy = raw text. Done = one click,
@@ -36,6 +39,12 @@ export default function PromptQueue() {
   const [adding, setAdding] = useState(false); const [form, setForm] = useState({ name: "", prompt_text: "", urgency: "medium" as Urgency, send_order: "" }); const [files, setFiles] = useState<File[]>([]); const [saving, setSaving] = useState(false);
   const [undo, setUndo] = useState<{ card: PromptCard; until: number } | null>(null); const undoTimer = useRef<number | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const ms = useMultiSelect(queue.map((c) => c.id));
+  const prompts = (n: number) => plural(n, "prompt");
+  const bulkActions = [
+    { label: "Mark done", tone: "primary" as const, confirm: (n: number) => `Mark ${prompts(n)} done?`, run: async (ids: string[]) => { const j = await postJson("/api/team/prompts", { action: "bulk_done", ids }); setQueue(j.queue); setSent(j.sent); return `${prompts(j.count)} moved to Sent Prompts`; } },
+    { label: "Delete", tone: "danger" as const, confirm: (n: number) => `Delete ${prompts(n)}?`, run: async (ids: string[]) => { const j = await postJson("/api/team/prompts", { action: "bulk_delete", ids }); setQueue(j.queue); return `${prompts(j.count)} deleted`; } },
+  ];
   const [notify, setNotify] = useState<{ state: "idle" | "busy" | "done"; at?: string; reused?: boolean }>({ state: "idle" });
   const [lastSync, setLastSync] = useState<number | null>(null);
 
@@ -74,7 +83,8 @@ export default function PromptQueue() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><h1 className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Give HyperAgent</h1><p className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Everything Rome needs to paste into HyperAgent, in send order. Copy grabs the exact text. Done moves a card to Sent Prompts (10-second undo).</p></div>
         <div className="flex items-center gap-2">
-          <div className="inline-flex p-1 rounded-full" style={{ background: "rgb(var(--w) / 0.06)", border: "1px solid rgb(var(--w) / 0.1)" }}>{(["queue", "sent"] as const).map((v) => <button key={v} type="button" onClick={() => setView(v)} className="h-[32px] px-3.5 rounded-full text-[12.5px] font-semibold" style={{ background: view === v ? "rgb(var(--w))" : "transparent", color: view === v ? "rgb(var(--k))" : "var(--hx-a1a1a6)" }}>{v === "queue" ? `Queue (${queue.length})` : `Sent Prompts (${sent.length})`}</button>)}</div>
+          <div className="inline-flex p-1 rounded-full" style={{ background: "rgb(var(--w) / 0.06)", border: "1px solid rgb(var(--w) / 0.1)" }}>{(["queue", "sent"] as const).map((v) => <button key={v} type="button" onClick={() => { setView(v); ms.cancel(); }} className="h-[32px] px-3.5 rounded-full text-[12.5px] font-semibold" style={{ background: view === v ? "rgb(var(--w))" : "transparent", color: view === v ? "rgb(var(--k))" : "var(--hx-a1a1a6)" }}>{v === "queue" ? `Queue (${queue.length})` : `Sent Prompts (${sent.length})`}</button>)}</div>
+          {view === "queue" && <SelectToggle ms={ms} total={queue.length} noun="prompts" />}
           <button type="button" onClick={() => setAdding((a) => !a)} className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-[8px] text-[13px] font-semibold" style={{ background: "rgb(var(--w))", color: "rgb(var(--k))" }}><Plus size={14} /> New card</button>
         </div>
       </div>
@@ -112,9 +122,9 @@ export default function PromptQueue() {
         !loaded ? <div className="text-[13px] text-[color:var(--hx-6e6e73)]">Loading…</div> : queue.length === 0 ? <div className="rounded-[12px] p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>Nothing queued. Add a card, or let Atlas add one through the agent API.</div> : (
           <div className="flex gap-4 overflow-x-auto pb-3 items-stretch" style={{ scrollSnapType: "x proximity" }}>
             {queue.map((c, i) => (
-              <article key={c.id} className="shrink-0 w-[400px] rounded-[14px] p-5 flex flex-col gap-3" style={{ ...card, scrollSnapAlign: "start" }}>
+              <article key={c.id} className="shrink-0 w-[400px] rounded-[14px] p-5 flex flex-col gap-3" style={{ ...card, scrollSnapAlign: "start", ...(ms.isSelected(c.id) ? { borderColor: "var(--hx-0a84ff)" } : {}) }}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0"><div className="text-[40px] font-semibold leading-none tracking-[-0.04em] text-[color:var(--hx-f5f5f7)]">{c.send_order}</div><div className="min-w-0"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)] truncate" title={c.name}>{c.name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">Added {fmt(c.created_at)} · {c.source === "agent" ? "by agent" : c.created_by_label}</div><QueueAge createdAt={c.created_at} /></div></div>
+                  <div className="flex items-center gap-3 min-w-0">{ms.active && <SelectCircle checked={ms.isSelected(c.id)} onToggle={() => ms.toggle(c.id)} label={`Select ${c.name}`} />}<div className="text-[40px] font-semibold leading-none tracking-[-0.04em] text-[color:var(--hx-f5f5f7)]">{c.send_order}</div><div className="min-w-0"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)] truncate" title={c.name}>{c.name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">Added {fmt(c.created_at)} · {c.source === "agent" ? "by agent" : c.created_by_label}</div><QueueAge createdAt={c.created_at} /></div></div>
                   <UrgencyBadge u={c.urgency} />
                 </div>
                 <pre className="flex-1 min-h-[200px] max-h-[320px] overflow-auto rounded-[10px] p-3 text-[12.5px] leading-relaxed font-mono whitespace-pre-wrap break-words text-[color:var(--hx-d0d0d0)]" style={{ background: "var(--hx-050505)", border: "1px solid rgb(var(--w) / 0.06)" }}>{c.prompt_text}</pre>
@@ -149,6 +159,8 @@ export default function PromptQueue() {
           </div>
         )
       )}
+      {view === "queue" && <BulkBar ms={ms} noun={prompts} actions={bulkActions} />}
+      {ms.active && <div className="h-[96px]" />}
     </div>
   );
 }

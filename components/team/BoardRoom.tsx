@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, ThumbsUp, Skull, Send, Lightbulb, Users, Archive, ClipboardList, RotateCcw } from "lucide-react";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson } from "@/components/ui/MultiSelect";
+import { plural } from "@/lib/ui/selection";
+
 
 // The Board Room (team-only): plan and brainstorm before anything goes live.
 // Idea → plan → Send to Campaigns → results come back here → scale / iterate / kill.
@@ -36,14 +39,22 @@ export default function BoardRoom() {
 
   const active = useMemo(() => (d?.ideas ?? []).filter((i) => i.status !== "killed"), [d]);
   const killed = useMemo(() => (d?.ideas ?? []).filter((i) => i.status === "killed"), [d]);
+  const visibleIdeas = tab === "ideas" ? [...active].sort((a, b) => b.votes - a.votes) : tab === "archive" ? killed : [];
+  const ms = useMultiSelect(visibleIdeas.map((i) => i.id));
+  const ideasN = (n: number) => plural(n, "idea");
+  const bulkActions = [
+    ...(tab === "ideas" ? [{ label: "Change status", options: [{ label: "Draft", value: "draft" }, { label: "Ready to test", value: "ready" }, { label: "Tested", value: "tested" }], confirm: (n: number) => `Change status of ${ideasN(n)}?`, run: async (ids: string[], v?: string) => { const j = await postJson("/api/team/board-room", { action: "bulk_status", ids, status: v }); await load(); return `${ideasN(j.count)} set to ${STATUS[v ?? ""]?.label ?? v}`; } }] : []),
+    { label: "Delete", tone: "danger" as const, confirm: (n: number) => `Delete ${ideasN(n)}?`, run: async (ids: string[]) => { const j = await postJson("/api/team/board-room", { action: "bulk_delete", ids }); await load(); return `${ideasN(j.count)} deleted`; } },
+  ];
   const sessionIdeas = (sid: string) => (d?.ideas ?? []).filter((i) => i.session_id === sid).sort((a, b) => b.votes - a.votes);
 
   const openPlan = (i: Idea) => { setPlanFor(i); setPlan(i.plan ?? { what: i.description ?? "", who: "", success: i.target_metric ?? "", duration_days: 7, channels: ["email"], audience_tag: null }); };
 
   const IdeaCard = ({ i }: { i: Idea }) => (
-    <article className="rounded-[12px] p-4 flex flex-col gap-2.5" style={card}>
+    <article className="rounded-[12px] p-4 flex flex-col gap-2.5" style={{ ...card, ...(ms.isSelected(i.id) ? { borderColor: "var(--hx-0a84ff)" } : {}) }}>
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)]">{i.title}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">{i.author} · {fmt(i.created_at)}{i.target_metric ? ` · target: ${i.target_metric}` : ""}</div></div>
+        {ms.active && <SelectCircle checked={ms.isSelected(i.id)} onToggle={() => ms.toggle(i.id)} label={`Select ${i.title}`} />}
+        <div className="min-w-0 flex-1"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)]">{i.title}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">{i.author} · {fmt(i.created_at)}{i.target_metric ? ` · target: ${i.target_metric}` : ""}</div></div>
         <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full" style={{ color: STATUS[i.status]?.color, border: `1px solid color-mix(in srgb, ${STATUS[i.status]?.color} 40%, transparent)` }}>{STATUS[i.status]?.label ?? i.status}</span>
       </div>
       {i.description && <div className="text-[12.5px] text-[color:var(--hx-a1a1a6)] whitespace-pre-wrap">{i.description}</div>}
@@ -67,10 +78,10 @@ export default function BoardRoom() {
     <div className="px-8 py-8 flex flex-col gap-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><h1 className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">The Board Room</h1><p className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Brainstorm, pick the best ideas, plan the test, then send it to <Link href="/team/campaigns" className="underline">Campaigns</Link>. Results come back to the idea card.</p></div>
-        <button type="button" onClick={() => setAdding((a) => !a)} className={btn} style={primary}><Plus size={14} /> New idea</button>
+        <div className="flex items-center gap-2">{tab !== "sessions" && <SelectToggle ms={ms} total={visibleIdeas.length} noun="ideas" />}<button type="button" onClick={() => setAdding((a) => !a)} className={btn} style={primary}><Plus size={14} /> New idea</button></div>
       </div>
       <div className="inline-flex gap-1 p-1 rounded-full self-start" style={{ background: "rgb(var(--w) / 0.06)", border: "1px solid rgb(var(--w) / 0.1)" }}>
-        {([["ideas", `Ideas (${active.length})`, Lightbulb], ["sessions", "Brainstorms", Users], ["archive", `Killed (${killed.length})`, Archive]] as const).map(([k, l, I]) => <button key={k} type="button" onClick={() => setTab(k)} className="inline-flex items-center gap-1.5 h-[32px] px-3.5 rounded-full text-[12.5px] font-semibold" style={{ background: tab === k ? "rgb(var(--w))" : "transparent", color: tab === k ? "rgb(var(--k))" : "var(--hx-a1a1a6)" }}><I size={13} />{l}</button>)}
+        {([["ideas", `Ideas (${active.length})`, Lightbulb], ["sessions", "Brainstorms", Users], ["archive", `Killed (${killed.length})`, Archive]] as const).map(([k, l, I]) => <button key={k} type="button" onClick={() => { setTab(k); ms.cancel(); }} className="inline-flex items-center gap-1.5 h-[32px] px-3.5 rounded-full text-[12.5px] font-semibold" style={{ background: tab === k ? "rgb(var(--w))" : "transparent", color: tab === k ? "rgb(var(--k))" : "var(--hx-a1a1a6)" }}><I size={13} />{l}</button>)}
       </div>
       {err && <div className="rounded-[10px] px-4 py-3 text-[13px] text-[color:var(--hx-ff453a)]" style={{ background: "rgba(255,69,58,0.08)" }}>{err}</div>}
       {note && <div className="rounded-[10px] px-4 py-3 text-[13px] text-[color:var(--hx-30d158)]" style={{ background: "rgba(48,209,88,0.08)" }}>{note} <Link href="/team/campaigns" className="underline">Go to Campaigns</Link></div>}
@@ -85,7 +96,7 @@ export default function BoardRoom() {
 
       {!d ? <div className="text-[13px] text-[color:var(--hx-6e6e73)]">Loading…</div> : d.setupNeeded ? <div className="rounded-[12px] p-5 text-[13px] text-[color:var(--hx-a1a1a6)]" style={card}>{d.message}</div> : (
         <>
-          {tab === "ideas" && (active.length === 0 ? <div className="rounded-[12px] p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>No ideas yet. Add one, or start a brainstorm.</div> : <div className="grid lg:grid-cols-2 gap-3">{active.sort((a, b) => b.votes - a.votes).map((i) => <IdeaCard key={i.id} i={i} />)}</div>)}
+          {tab === "ideas" && (active.length === 0 ? <div className="rounded-[12px] p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>No ideas yet. Add one, or start a brainstorm.</div> : <div className="grid lg:grid-cols-2 gap-3">{visibleIdeas.map((i) => <IdeaCard key={i.id} i={i} />)}</div>)}
 
           {tab === "sessions" && (
             <div className="flex flex-col gap-3">
@@ -114,8 +125,8 @@ export default function BoardRoom() {
 
           {tab === "archive" && (killed.length === 0 ? <div className="rounded-[12px] p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>Nothing killed yet.</div> : (
             <div className="flex flex-col gap-2">{killed.map((i) => (
-              <div key={i.id} className="rounded-[12px] p-4" style={card}>
-                <div className="flex items-center justify-between gap-3"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)] line-through decoration-[color:var(--hx-ff453a)]">{i.title}</div><button type="button" onClick={() => void post({ action: "revive_idea", id: i.id }, `r-${i.id}`)} className={btn} style={ghost}>Revive</button></div>
+              <div key={i.id} className="rounded-[12px] p-4" style={{ ...card, ...(ms.isSelected(i.id) ? { borderColor: "var(--hx-0a84ff)" } : {}) }}>
+                <div className="flex items-center justify-between gap-3">{ms.active && <SelectCircle checked={ms.isSelected(i.id)} onToggle={() => ms.toggle(i.id)} label={`Select ${i.title}`} />}<div className="flex-1 text-[14px] font-semibold text-[color:var(--hx-f5f5f7)] line-through decoration-[color:var(--hx-ff453a)]">{i.title}</div><button type="button" onClick={() => void post({ action: "revive_idea", id: i.id }, `r-${i.id}`)} className={btn} style={ghost}>Revive</button></div>
                 <div className="text-[12.5px] mt-1" style={{ color: "var(--hx-ff6961)" }}>Killed {fmt(i.killed_at)}: {i.kill_reason}</div>
                 {i.result_summary && <div className="text-[12px] mt-2 whitespace-pre-wrap text-[color:var(--hx-a1a1a6)]">{i.result_summary}</div>}
               </div>
@@ -147,6 +158,8 @@ export default function BoardRoom() {
           </form>
         </div>
       )}
+      {tab !== "sessions" && <BulkBar ms={ms} noun={ideasN} actions={bulkActions} />}
+      {ms.active && <div className="h-[96px]" />}
     </div>
   );
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson } from "@/components/ui/MultiSelect";
+import { plural } from "@/lib/ui/selection";
+
 
 type Task = { id: string; title: string; owner_agent: string; status: string; priority: string; due: string | null; context: string | null; result: string | null; evidence_links: string[]; requires_review: boolean; reviewer_agent: string | null; review_verdict: string | null; review_note: string | null; reviewed_by: string | null; created_by: string; claimed_by: string | null; created_at: string; updated_at: string; result_posted_at: string | null };
 type Msg = { id: string; from_agent: string; to_agent: string | null; body: string; created_at: string };
@@ -24,6 +27,13 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
   const [form, setForm] = useState({ title: "", owner_agent: "hyperagent", priority: "normal", context: "", requires_review: true });
   const [note, setNote] = useState("");
   const [chat, setChat] = useState("");
+  const ms = useMultiSelect(tasks.map((t) => t.id));
+  const tasksN = (n: number) => plural(n, "task");
+  const bulkActions = [
+    { label: "Mark done", tone: "primary" as const, confirm: (n: number) => `Close ${tasksN(n)} as done?`, run: async (ids: string[]) => { const j = await postJson("/api/team/tasks", { action: "bulk_close", ids }); await load(); return `${tasksN(j.count)} closed${j.errors?.length ? ` · ${j.errors.length} skipped (${j.errors[0]})` : ""}`; } },
+    { label: "Assign", options: AGENTS.map((a) => ({ label: a, value: a })), run: async (ids: string[], v?: string) => { const j = await postJson("/api/team/tasks", { action: "bulk_assign", ids, owner_agent: v }); await load(); return `${tasksN(j.count)} assigned to ${v}${j.errors?.length ? ` · ${j.errors.length} skipped` : ""}`; } },
+    { label: "Delete", tone: "danger" as const, confirm: (n: number) => `Delete ${tasksN(n)}?`, run: async (ids: string[]) => { const j = await postJson("/api/team/tasks", { action: "bulk_delete", ids }); setOpen(null); await load(); return `${tasksN(j.count)} deleted`; } },
+  ];
 
   const load = useCallback(async () => {
     const p = new URLSearchParams(); if (agent) p.set("owner_agent", agent); if (status) p.set("status", status);
@@ -49,7 +59,7 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
           <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Agent Tasks</div>
           <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Atlas and HyperAgent hand work to each other here. Anything touching production or customers needs the other agent&apos;s review before it counts as done.</div>
         </div>
-        {isOwner && <button onClick={() => setShowNew((v) => !v)} className="h-[34px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold shrink-0">{showNew ? "Close" : "New task"}</button>}
+        {isOwner && <span className="flex items-center gap-2 shrink-0"><SelectToggle ms={ms} total={tasks.length} noun="tasks" /><button onClick={() => setShowNew((v) => !v)} className="h-[34px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold shrink-0">{showNew ? "Close" : "New task"}</button></span>}
       </div>
 
       {showNew && isOwner && (
@@ -77,7 +87,7 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
           {tasks.length === 0 ? <div className="p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]">No tasks match. Agents create tasks through the connector; owners with the New task button.</div> : (
             <ul className="divide-y" style={{ borderColor: "rgb(var(--w) / 0.06)" }}>
               {tasks.map((t) => (
-                <li key={t.id}><button onClick={() => openTask(t)} className="w-full text-left px-4 py-3 hover:bg-white/[0.03] transition-colors" style={{ background: open?.id === t.id ? "var(--hx-121212)" : undefined }}>
+                <li key={t.id} className="flex items-center" style={{ background: ms.isSelected(t.id) ? "rgba(10,132,255,0.08)" : undefined }}>{ms.active && <span className="pl-3"><SelectCircle checked={ms.isSelected(t.id)} onToggle={() => ms.toggle(t.id)} label={`Select ${t.title}`} /></span>}<button onClick={() => openTask(t)} className="flex-1 min-w-0 text-left px-4 py-3 hover:bg-white/[0.03] transition-colors" style={{ background: open?.id === t.id ? "var(--hx-121212)" : undefined }}>
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-[13px] text-[color:var(--hx-f5f5f7)] truncate">{t.title}</div>
                     <span className="text-[10.5px] uppercase tracking-wide shrink-0" style={{ color: STATUS_COLOR[t.status] }}>{t.status.replace("_", " ")}</span>
@@ -122,6 +132,8 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
           )}
         </div>
       </div>
+      {isOwner && <BulkBar ms={ms} noun={tasksN} actions={bulkActions} />}
+      {ms.active && <div className="h-[96px]" />}
     </div>
   );
 }
