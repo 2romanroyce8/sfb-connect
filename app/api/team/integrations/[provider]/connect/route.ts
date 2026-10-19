@@ -30,6 +30,14 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
     }
   }
   if (!oauthConfigured(p)) { back.searchParams.set("error", `${p.name} isn't configured yet: add ${p.env.clientId} and ${p.env.clientSecret} in Vercel.`); return NextResponse.redirect(back); }
+  // Diagnostics (2026-10-19): ?debug=1 shows the exact authorize URL instead of redirecting — team owners only.
+  // Contains only public values (client_id, redirect_uri, scopes); never the secret; state is a placeholder.
+  if (req.nextUrl.searchParams.get("debug") === "1") {
+    const { data: me } = await supabase.from("users").select("team_role").eq("id", user.id).maybeSingle();
+    if (me?.team_role !== "owner") return NextResponse.json({ error: "Owner only." }, { status: 403 });
+    const url = new URL(buildAuthorizeUrl(p, "DEBUG_STATE"));
+    return NextResponse.json({ provider: p.key, authorize_url: url.toString(), client_id: url.searchParams.get(p.clientIdParam ?? "client_id"), redirect_uri: url.searchParams.get("redirect_uri"), redirect_host: new URL(url.searchParams.get("redirect_uri") ?? "https://x").host, scope: url.searchParams.get("scope"), app_url_env: process.env.NEXT_PUBLIC_APP_URL ?? null, request_host: req.headers.get("host") });
+  }
   const fromDashboard = ret === "dashboard" || ret === "onboarding";
   const state = crypto.randomBytes(24).toString("hex");
   const res = NextResponse.redirect(buildAuthorizeUrl(p, state));
