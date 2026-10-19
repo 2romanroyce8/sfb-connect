@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Copy, Check, Download, Paperclip, Plus, ChevronDown, ChevronUp, Undo2, ArrowLeft, ArrowRight, BellRing, Clock } from "lucide-react";
+import { Copy, Check, Download, Paperclip, Plus, ChevronDown, ChevronUp, Undo2, ArrowLeft, ArrowRight, BellRing, Clock, RefreshCw } from "lucide-react";
 import { formatAge, queuedFor, waitedBeforeSend, POLL_MS } from "@/lib/crm/promptTiming";
 import type { PromptCard, Urgency } from "@/lib/crm/promptQueue";
 import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson } from "@/components/ui/MultiSelect";
@@ -47,6 +47,8 @@ export default function PromptQueue() {
   ];
   const [notify, setNotify] = useState<{ state: "idle" | "busy" | "done"; at?: string; reused?: boolean }>({ state: "idle" });
   const [lastSync, setLastSync] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState<"idle" | "busy" | "done">("idle");
+  const refreshNow = async () => { setRefreshing("busy"); setErr(null); await load(); setRefreshing("done"); window.setTimeout(() => setRefreshing("idle"), 1500); };
 
   const load = useCallback(async () => { try { const r = await fetch("/api/team/prompts", { cache: "no-store" }); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Could not load."); setQueue(j.queue); setSent(j.sent); setLoaded(true); setLastSync(Date.now()); } catch (e) { setErr(e instanceof Error ? e.message : "Could not load."); } }, []);
   useEffect(() => { void load(); }, [load]);
@@ -84,6 +86,7 @@ export default function PromptQueue() {
         <div><h1 className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Give HyperAgent</h1><p className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Everything Rome needs to paste into HyperAgent, in send order. Copy grabs the exact text. Done moves a card to Sent Prompts (10-second undo).</p></div>
         <div className="flex items-center gap-2">
           <div className="inline-flex p-1 rounded-full" style={{ background: "rgb(var(--w) / 0.06)", border: "1px solid rgb(var(--w) / 0.1)" }}>{(["queue", "sent"] as const).map((v) => <button key={v} type="button" onClick={() => { setView(v); ms.cancel(); }} className="h-[32px] px-3.5 rounded-full text-[12.5px] font-semibold" style={{ background: view === v ? "rgb(var(--w))" : "transparent", color: view === v ? "rgb(var(--k))" : "var(--hx-a1a1a6)" }}>{v === "queue" ? `Queue (${queue.length})` : `Sent Prompts (${sent.length})`}</button>)}</div>
+          <button type="button" onClick={() => void refreshNow()} disabled={refreshing === "busy"} title="Reload the queue and Sent Prompts now" className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-[8px] text-[13px] font-semibold disabled:opacity-60" style={{ border: "1px solid rgb(var(--w) / 0.14)", color: "var(--hx-f5f5f7)" }} data-refresh-prompts>{refreshing === "done" ? <><Check size={14} /> Refreshed</> : <><RefreshCw size={14} className={refreshing === "busy" ? "animate-spin" : ""} /> Refresh</>}</button>
           {view === "queue" && <SelectToggle ms={ms} total={queue.length} noun="prompts" />}
           <button type="button" onClick={() => setAdding((a) => !a)} className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-[8px] text-[13px] font-semibold" style={{ background: "rgb(var(--w))", color: "rgb(var(--k))" }}><Plus size={14} /> New card</button>
         </div>
