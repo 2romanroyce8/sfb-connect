@@ -315,6 +315,11 @@ export default function CallWorkspace({
                 <div className="mt-1">
                   <ScheduleTimeZonePicker employeeTimezone={employeeTimezone} leadCity={lead.city} leadState={lead.state} onChange={setFollowupSchedule} />
                 </div>
+                {!followupSchedule && (
+                  <div className="mt-1.5 text-[11.5px] text-[color:var(--hx-6e6e73)]">
+                    Leave blank and a follow-up is set automatically for {outcome === "no_answer" || outcome === "voicemail" ? "2 days" : "3 days"} from now.
+                  </div>
+                )}
               </div>
             )}
 

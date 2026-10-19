@@ -8,7 +8,7 @@ import type { TemplateVars } from "./templates";
 export type PresetCategory = "intro_b2b" | "intro_b2c" | "follow_up" | "re_engagement" | "booking_nudge" | "review_request" | "testimonial_request" | "system";
 export type PresetTone = "direct" | "warm" | "formal" | "friendly" | "plain";
 export type PresetAudience = "business" | "consumer" | "any";
-export type Preset = { key: string; name: string; category: PresetCategory; tone: PresetTone; audience: PresetAudience; description: string; subject: string; body: string; requires: (keyof TemplateVars)[]; approvedAt: string | null };
+export type Preset = { key: string; name: string; category: PresetCategory; tone: PresetTone; audience: PresetAudience; description: string; subject: string; body: string; requires: (keyof TemplateVars)[]; approvedAt: string | null; /** SFB Connect's own outreach (Rome's name and pitch in the copy): offered only to businesses owned by a team owner, never to customers. */ teamOnly?: boolean };
 
 export const PRESET_CATEGORIES: { key: PresetCategory; label: string; hint: string }[] = [
   { key: "intro_b2b", label: "Intro — to a business", hint: "First note to a company you want to work with." },
@@ -38,6 +38,13 @@ export const PRESETS: Preset[] = [
     subject: "Introduction: {{sender_company}} for {{company}}",
     body: `{{greeting}}\n\nMy name is {{sender_name}} and I lead {{sender_company}}{{sender_category_phrase}}{{city_phrase}}. I'm writing because {{company}} is the kind of {{category_or_business}} we work with regularly, and I'd value a brief conversation.\n\n{{offer_line}}\n\nIf it would be helpful, I can hold fifteen minutes this week at your convenience — {{slots_or_reply}}.\n\nKind regards,\n${SIGN}`,
     requires: [...B2B_REQ, "offer_line"] },
+
+  // ---- SFB Connect's own outreach (team-only; Rome's exact words, approved 2026-10-19) ----
+  { key: "sfb_roofing_missed_calls", name: "SFB — Roofing missed calls (Rome)", category: "intro_b2b", tone: "direct", audience: "business", teamOnly: true,
+    description: "Rome's roofing pilot intro: missed calls while crews are on roofs → AI team answers, qualifies, books, asks for reviews. Needs the company's city; adds \"for X years\" only when a years-in-business column was uploaded.", approvedAt: "2026-10-19",
+    subject: "{{company}} + missed calls",
+    body: `Hi {{company}} team,\n\nSaw {{company}}'s been serving {{city}}{{years_phrase}} — solid reputation.\n\nQuick question: when your crews are on roofs, who picks up the calls your office misses?\n\nI'm Rome with SFB Connect. We set roofing companies up with an AI team that answers every missed call, qualifies the homeowner, and books the job straight to your calendar — plus automated review requests after every job.\n\nWorth 15 minutes next week? I'll show you exactly what it'd do for {{company}}.\n\nBest,\nRome Royce\nFounder, SFB Connect\nsfbconnect.com`,
+    requires: ["company", "city"] },
 
   // ---- Intro — consumer (the person is the prospect; {{company}} is their name, so it is never used) ----
   { key: "intro_b2c", name: "Consumer intro — plain", category: "intro_b2c", tone: "plain", audience: "consumer", description: "Person-to-person. Opt-out up front, one clear offer, one ask.", approvedAt: "2026-10-12",
@@ -111,6 +118,8 @@ export const PRESETS: Preset[] = [
 export const presetByKey = (key: string) => PRESETS.find((p) => p.key === key) ?? null;
 /** Presets the picker shows (system ones are engine-only). */
 export const LIBRARY = PRESETS.filter((p) => p.category !== "system");
+/** Presets every business sees (team-only SFB copy removed). */
+export const PUBLIC_LIBRARY = LIBRARY.filter((p) => !p.teamOnly);
 
 /** Follow-up steps swap to the consumer wording when the chosen intro is consumer-facing. */
 export function resolveStepTemplate(stepTemplate: string, introKey: string): string {
