@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 
 type Lead = {
   id: string;
@@ -58,6 +58,13 @@ export default function LeadsList({ leads, showArchived }: { leads: Lead[]; show
             style={{ border: "1px solid rgb(var(--w) / 0.10)" }}
           >
             {showArchived ? "Hide Archived" : "Show Archived"}
+          </Link>
+          <Link
+            href="/team/leads/import-csv"
+            className="h-[38px] px-3.5 inline-flex items-center gap-1.5 rounded-[8px] text-[12.5px] text-[color:var(--hx-f5f5f7)]"
+            style={{ border: "1px solid rgb(var(--w) / 0.14)" }}
+          >
+            <Upload size={14} /> Upload CSV
           </Link>
           <Link
             href="/team/leads/import"
