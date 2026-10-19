@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { refillAnnualPlans } from "@/lib/agentProgram/provision";
 import { alertOwners } from "@/lib/notify/ownerAlerts";
+import { refreshContentLab } from "@/lib/contentLab/refresh";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,10 @@ export async function POST(req: NextRequest) {
     } else if (os?.last_run_at) outboundSync = "ok";
   } catch (e) { console.error("[plan-refill] outbound watchdog failed:", e instanceof Error ? e.message : e); }
   await service.from("billing_cron_settings").update({ last_run_at: new Date().toISOString(), last_result: summary, updated_at: new Date().toISOString() }).eq("id", 1);
-  return NextResponse.json({ ...summary, outboundSync });
+  // Content Lab Trend Radar: daily refresh rides on this daily job (read-only Instagram pulls).
+  let contentLab: string = "skipped";
+  try { const r = await refreshContentLab(service); contentLab = `${r.status}:${r.fetched}`; } catch (e) { contentLab = `error:${e instanceof Error ? e.message.slice(0, 80) : "err"}`; }
+  return NextResponse.json({ ...summary, outboundSync, contentLab });
 }
 
 export async function GET() {
