@@ -85,7 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
   { label: "Owner", collapsible: true, items: [
     { href: "/team/content-lab", label: "Content Lab", icon: Clapperboard, ownerOnly: true },
     { href: "/team/prompts", label: "Give HyperAgent", icon: ClipboardPaste, ownerOnly: true },
-    { href: "/team/tasks", label: "Agent Tasks", icon: ListTodo, ownerOnly: true },
+    { href: "/team/tasks", label: "Tasks", icon: ListTodo, ownerOnly: true },
     { href: "/team/projects", label: "Client Projects", icon: FolderKanban, ownerOnly: true },
     { href: "/team/team", label: "Team", icon: UserCog, ownerOnly: true },
     { href: "/team/portfolio", label: "Portfolio", icon: Images, ownerOnly: true },

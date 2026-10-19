@@ -18,7 +18,6 @@ const field: React.CSSProperties = { background: "var(--hx-0a0a0a)", border: "1p
 /** Agent task board: what Atlas and HyperAgent are doing for each other. Owner can create, review, cancel, and message. */
 export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [agent, setAgent] = useState("");
   const [status, setStatus] = useState("");
   const [open, setOpen] = useState<Task | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -36,10 +35,10 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
   ];
 
   const load = useCallback(async () => {
-    const p = new URLSearchParams(); if (agent) p.set("owner_agent", agent); if (status) p.set("status", status);
+    const p = new URLSearchParams(); if (status) p.set("status", status);
     const r = await fetch(`/api/team/tasks?${p}`, { cache: "no-store" }); const j = await r.json();
     if (r.ok) setTasks(j.tasks); else setMsg(j.error);
-  }, [agent, status]);
+  }, [status]);
   useEffect(() => { void load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   const openTask = async (t: Task) => { setOpen(t); setNote(""); setChat(""); const r = await fetch(`/api/team/tasks?task_id=${t.id}`, { cache: "no-store" }); const j = await r.json(); if (r.ok) { setOpen(j.task); setMessages(j.messages); } };
@@ -56,7 +55,7 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
     <div className="px-8 py-8">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Agent Tasks</div>
+          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Tasks</div>
           <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Atlas and HyperAgent hand work to each other here. Anything touching production or customers needs the other agent&apos;s review before it counts as done.</div>
         </div>
         {isOwner && <span className="flex items-center gap-2 shrink-0"><SelectToggle ms={ms} total={tasks.length} noun="tasks" /><button onClick={() => setShowNew((v) => !v)} className="h-[34px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold shrink-0">{showNew ? "Close" : "New task"}</button></span>}
@@ -76,7 +75,6 @@ export default function TaskBoard({ isOwner }: { isOwner: boolean }) {
       )}
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <select value={agent} onChange={(e) => setAgent(e.target.value)} className="h-[32px] rounded-[8px] px-2 text-[12.5px] outline-none" style={field}><option value="">All agents</option>{AGENTS.map((a) => <option key={a} value={a}>{a}</option>)}</select>
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-[32px] rounded-[8px] px-2 text-[12.5px] outline-none" style={field}><option value="">All statuses</option>{STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}</select>
         <div className="flex flex-wrap gap-1.5 ml-1">{STATUSES.filter((s) => counts[s]).map((s) => <span key={s} className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: STATUS_COLOR[s], border: `1px solid ${STATUS_COLOR[s]}55` }}>{s.replace("_", " ")} {counts[s]}</span>)}</div>
       </div>
