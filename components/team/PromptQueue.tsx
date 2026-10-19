@@ -60,10 +60,9 @@ export default function PromptQueue() {
     return () => { window.clearInterval(t); document.removeEventListener("visibilitychange", tick); };
   }, [load]);
   const notifyMuse = async () => {
-    if (queue.length > 0 && !window.confirm(`${queue.length} card${queue.length === 1 ? " is" : "s are"} still in the queue. Tell Muse everything is sent anyway?`)) return;
     setErr(null); setNotify({ state: "busy" });
-    try { const j = await post({ action: "notify_muse" }); setNotify({ state: "done", at: j.notifiedAt, reused: j.reused }); window.setTimeout(() => setNotify((n) => (n.state === "done" ? { state: "idle" } : n)), 8000); }
-    catch (e) { setNotify({ state: "idle" }); setErr(e instanceof Error ? e.message : "Could not notify Muse."); }
+    try { const j = await post({ action: "notify_atlas" }); setNotify({ state: "done", at: j.notifiedAtLabel, reused: j.updated }); }
+    catch (e) { setNotify({ state: "idle" }); setErr(e instanceof Error ? e.message : "Could not notify Atlas."); }
   };
   const post = async (body: Record<string, unknown>) => { const r = await fetch("/api/team/prompts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Request failed."); return j; };
 
@@ -114,13 +113,14 @@ export default function PromptQueue() {
 
       {view === "queue" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] px-4 py-3" style={card}>
-          <div className="text-[12.5px] text-[color:var(--hx-a1a1a6)]">Sent everything? Tell Atlas (Muse) it&apos;s good to go — it gets a high-priority task to verify.{lastSync && <span className="ml-2 text-[color:var(--hx-6e6e73)]">· Auto-refreshes every 60s (last {new Date(lastSync).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })})</span>}</div>
+          <div className="text-[12.5px] text-[color:var(--hx-a1a1a6)]">Sent everything? Atlas gets a high-priority task listing the sent prompts to verify.{lastSync && <span className="ml-2 text-[color:var(--hx-6e6e73)]">· Auto-refreshes every 60s (last {new Date(lastSync).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })})</span>}</div>
           <button type="button" onClick={() => void notifyMuse()} disabled={notify.state === "busy"} className="inline-flex items-center gap-2 h-[40px] px-5 rounded-full text-[13.5px] font-semibold disabled:opacity-60" style={{ background: notify.state === "done" ? "var(--hx-30d158)" : "var(--hx-0a84ff)", color: "#fff" }} data-notify-muse>
-            {notify.state === "done" ? <><Check size={15} /> Muse notified{notify.reused ? " (again)" : ""}</> : notify.state === "busy" ? "Notifying…" : <><BellRing size={15} /> Notify Muse</>}
+            {notify.state === "busy" ? "Notifying…" : <><BellRing size={15} /> Notify Atlas</>}
           </button>
         </div>
       )}
 
+      {notify.state === "done" && <div role="status" className="rounded-[10px] px-4 py-2.5 text-[13px] font-semibold" style={{ background: "rgba(48,209,88,0.1)", color: "var(--hx-30d158)", border: "1px solid rgba(48,209,88,0.3)" }} data-notify-confirm>Notification sent to Atlas at {notify.at}{notify.reused ? " (updated the task from a few minutes ago)" : ""}.</div>}
       {view === "queue" && (
         !loaded ? <div className="text-[13px] text-[color:var(--hx-6e6e73)]">Loading…</div> : queue.length === 0 ? <div className="rounded-[12px] p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>Nothing queued. Add a card, or let Atlas add one through the agent API.</div> : (
           <div className="flex gap-4 overflow-x-auto pb-3 items-stretch" style={{ scrollSnapType: "x proximity" }}>

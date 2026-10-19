@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { listCards, createCard, reorder, markSent, undoSent, PROMPT_FILES_BUCKET, isUrgency } from "@/lib/crm/promptQueue";
-import { notifyMuse } from "@/lib/crm/notifyMuse";
+import { notifyAtlas } from "@/lib/crm/notifyAtlas";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ ok: true, count: qids.length, queue: await listCards(service, "queued"), sent: await listCards(service, "sent") });
     }
-    // Notify Muse: high-priority task for atlas + inbox message (no card id needed).
-    if (body.action === "notify_muse") return NextResponse.json({ ok: true, ...(await notifyMuse(service, { label })) });
+    // Notify Atlas: one high-priority atlas task (updated, not duplicated, within 5 min). "notify_muse" kept as an alias.
+    if (body.action === "notify_atlas" || body.action === "notify_muse") return NextResponse.json({ ok: true, ...(await notifyAtlas(service, { label })) });
     const id = typeof body.id === "string" && UUID.test(body.id) ? body.id : null; if (!id) return NextResponse.json({ error: "Missing card id." }, { status: 400 });
     switch (body.action) {
       case "reorder": await reorder(service, id, Number(body.to)); return NextResponse.json({ ok: true, queue: await listCards(service, "queued") });
