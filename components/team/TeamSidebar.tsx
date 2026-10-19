@@ -32,7 +32,7 @@ import {
   ChevronDown,
   Scale,
   Send,
-  FolderKanban, ClipboardPaste , Clapperboard } from "lucide-react";
+  FolderKanban, ClipboardPaste , Clapperboard , Presentation, FlaskConical } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import ClockControl from "./ClockControl";
 import SidebarSearch from "./SidebarSearch";
@@ -62,6 +62,10 @@ const NAV_GROUPS: NavGroup[] = [
     { href: "/team/meetings", label: "Meetings", icon: CalendarClock },
     { href: "/team/calendar", label: "Calendar", icon: Calendar },
     { href: "/team/outbound", label: "Outbound Email", icon: Send, ownerOnly: true },
+  ] },
+  { label: "Plan & Test", collapsible: true, items: [
+    { href: "/team/board-room", label: "Board Room", icon: Presentation },
+    { href: "/team/campaigns", label: "Campaigns", icon: FlaskConical },
   ] },
   { label: "Research", collapsible: true, items: [
     { href: "/team/research", label: "Research Queue", icon: FileSearch },
