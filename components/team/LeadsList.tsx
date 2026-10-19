@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, X } from "lucide-react";
+import LeadTags from "@/components/team/LeadTags";
 
 type Lead = {
   id: string;
@@ -15,6 +16,7 @@ type Lead = {
   recommended_offer: string | null;
   archived: boolean;
   created_at: string;
+  tags?: string[] | null;
 };
 
 const STAGE_LABEL: Record<string, string> = {
@@ -41,7 +43,8 @@ const STAGE_COLOR: Record<string, string> = {
   lost: "var(--hx-ff453a)",
 };
 
-export default function LeadsList({ leads, showArchived }: { leads: Lead[]; showArchived: boolean }) {
+export default function LeadsList({ leads, showArchived, activeTag = null }: { leads: Lead[]; showArchived: boolean; activeTag?: string | null }) {
+  const tagQuery = activeTag ? `tag=${encodeURIComponent(activeTag)}` : "";
   return (
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-6">
@@ -49,11 +52,20 @@ export default function LeadsList({ leads, showArchived }: { leads: Lead[]; show
           <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Leads</div>
           <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">
             {leads.length} lead{leads.length === 1 ? "" : "s"}
+            {activeTag && <> tagged <span className="text-[color:var(--hx-f5f5f7)] font-medium">{activeTag}</span></>}
           </div>
+          {activeTag && (
+            <Link
+              href={showArchived ? "/team/leads?archived=1" : "/team/leads"}
+              className="mt-2 inline-flex items-center gap-1 text-[12px] text-[color:var(--hx-a1a1a6)] hover:text-white"
+            >
+              <X size={12} /> Clear tag filter
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href={showArchived ? "/team/leads" : "/team/leads?archived=1"}
+            href={showArchived ? `/team/leads${tagQuery ? `?${tagQuery}` : ""}` : `/team/leads?archived=1${tagQuery ? `&${tagQuery}` : ""}`}
             className="h-[38px] px-3.5 inline-flex items-center rounded-[8px] text-[12.5px] text-[color:var(--hx-a1a1a6)] hover:text-white"
             style={{ border: "1px solid rgb(var(--w) / 0.10)" }}
           >
@@ -80,7 +92,7 @@ export default function LeadsList({ leads, showArchived }: { leads: Lead[]; show
           className="rounded-[14px] p-10 text-center"
           style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}
         >
-          <div className="text-[14px] text-[color:var(--hx-f5f5f7)] font-medium mb-1.5">No leads yet</div>
+          <div className="text-[14px] text-[color:var(--hx-f5f5f7)] font-medium mb-1.5">{activeTag ? `No leads tagged ${activeTag}` : "No leads yet"}</div>
           <div className="text-[13px] text-[color:var(--hx-6e6e73)] mb-5">
             Import a business by URL to start the research pipeline.
           </div>
@@ -117,6 +129,11 @@ export default function LeadsList({ leads, showArchived }: { leads: Lead[]; show
                       {l.archived && <span className="text-[10px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] px-1.5 py-0.5 rounded-[4px]" style={{ border: "1px solid rgb(var(--w) / 0.15)" }}>Archived</span>}
                     </div>
                     <div className="text-[color:var(--hx-6e6e73)] text-[12px]">{l.website?.replace(/^https?:\/\//, "") || "—"}</div>
+                    {l.tags && l.tags.length > 0 && (
+                      <div className="mt-1.5">
+                        <LeadTags tags={l.tags} linkTags activeTag={activeTag} />
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">
                     {[l.city, l.state].filter(Boolean).join(", ") || "—"}
