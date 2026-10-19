@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import LeadTags from "@/components/team/LeadTags";
 import {
   Phone,
   Globe,
@@ -65,6 +66,7 @@ type Lead = {
   last_researched_at: string | null;
   archived: boolean;
   assigned_rep: string | null;
+  tags?: string[] | null;
 };
 
 const STATUS_META: Record<StatusValue, { icon: React.ElementType; color: string; label: string }> = {
@@ -296,6 +298,11 @@ export default function LeadProfile({
             <div className="text-[22px] font-semibold text-[color:var(--hx-f5f5f7)]">{lead.business_name || "Unnamed lead"}</div>
             {lead.archived && <span className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] px-2 py-0.5 rounded-[5px]" style={{ border: "1px solid rgb(var(--w) / 0.15)" }}>Archived</span>}
           </div>
+          {lead.tags && lead.tags.length > 0 && (
+            <div className="mt-2">
+              <LeadTags tags={lead.tags} linkTags size="md" />
+            </div>
+          )}
           <div className="flex items-center gap-4 mt-2 text-[13px] text-[color:var(--hx-a1a1a6)] flex-wrap">
             {lead.website && (
               <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-white">

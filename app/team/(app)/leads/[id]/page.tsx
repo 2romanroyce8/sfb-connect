@@ -11,13 +11,15 @@ export default async function LeadProfilePage({ params }: { params: { id: string
   // Every query below runs on the session-scoped client, so RLS decides
   // whether this rep is even allowed to see this lead — a rep hitting
   // another rep's lead ID gets an empty result, not a leaked record.
-  const { data: lead } = await supabase
-    .from("crm_leads")
-    .select(
-      "id, business_name, website, phone, email, category, description, services, owner_name, city, state, source_urls, pipeline_stage, recommended_offer, research_completeness, research_completeness_breakdown, last_researched_at, archived, assigned_rep"
-    )
-    .eq("id", params.id)
-    .single();
+  const LEAD_COLUMNS =
+    "id, business_name, website, phone, email, category, description, services, owner_name, city, state, source_urls, pipeline_stage, recommended_offer, research_completeness, research_completeness_breakdown, last_researched_at, archived, assigned_rep";
+  // tags come from the CSV importer (crm_leads.tags). If that column is ever
+  // missing, retry without it so the profile still opens.
+  let { data: lead, error: leadError } = await supabase.from("crm_leads").select(`${LEAD_COLUMNS}, tags`).eq("id", params.id).maybeSingle();
+  if (leadError) {
+    console.error("[lead profile] tags query failed, falling back without tags:", leadError.message);
+    ({ data: lead } = await supabase.from("crm_leads").select(LEAD_COLUMNS).eq("id", params.id).maybeSingle());
+  }
   if (!lead) notFound();
 
   const { data: caller } = await supabase.from("users").select("team_role, home_timezone").eq("id", user!.id).single();
