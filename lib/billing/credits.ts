@@ -89,6 +89,10 @@ export async function reserveCredits(
   supabase: SupabaseClient,
   params: { businessId: string; actionCatalogId: string; credits: number; relatedEntityType?: string; relatedEntityId?: string }
 ): Promise<{ reservationId: string }> {
+  // Free for the team (2026-10-19): SFB Connect's house account and businesses owned by an owner/employee reserve 0 credits (see isTeamFree in guards.ts).
+  const { data: fb } = await supabase.from("businesses").select("owner_id, is_house_account").eq("id", params.businessId).maybeSingle();
+  const { data: fu } = fb?.owner_id && !fb.is_house_account ? await supabase.from("users").select("team_role").eq("id", fb.owner_id).maybeSingle() : { data: null };
+  if (fb?.is_house_account || fu?.team_role) params = { ...params, credits: 0 };
   const available = await getAvailableBalance(supabase, params.businessId);
   if (available < params.credits) throw new InsufficientCreditsError(available, params.credits);
 

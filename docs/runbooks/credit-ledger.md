@@ -45,3 +45,6 @@ Read-only receipts via the agent connector: `get_sfb_ai_presence`/business tools
 80% warning and zero notice to the owner via Resend (once per cycle); at zero the assigned overseer (`businesses.agent_overseer_id`) is emailed too.
 
 - **Top-up un-pauses (G8, 2026-10-12):** the `credit_package` branch of the Stripe webhook clears `businesses.work_paused_reason` when the balance is above zero after the grant — before this the dashboard kept showing the agent paused until the next renewal.
+
+## Free for the team (2026-10-19, Rome)
+SFB Connect's own business (`businesses.is_house_account`) and any business owned by an owner or employee (`users.team_role` set) never spend credits: `chargeAction` charges 0 and writes a 0-credit receipt ("— free (SFB Connect team)"), `workAllowed` never pauses them (no plan or zero balance is fine), `reserveCredits` reserves 0, and credit-threshold alerts are skipped. Check: `isTeamFree()` in `lib/billing/guards.ts`. Client businesses are billed exactly as before.
