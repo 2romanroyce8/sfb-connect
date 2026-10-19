@@ -80,7 +80,7 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderKey, OAuthProvider> = {
     key: "meta", name: "Meta",
     authorizeUrl: "https://www.facebook.com/v21.0/dialog/oauth",
     tokenUrl: "https://graph.facebook.com/v21.0/oauth/access_token",
-    scopes: ["ads_management", "ads_read", "business_management", "pages_show_list", "pages_read_engagement"],
+    scopes: ["ads_management", "ads_read", "business_management", "pages_show_list", "pages_read_engagement", "instagram_basic", "instagram_manage_insights"], // instagram_*: Content Lab trend reads (2026-10-19)
     scopeSeparator: ",",
     env: { clientId: "META_APP_ID", clientSecret: "META_APP_SECRET" },
     tokenAuth: "body", tokenMethod: "GET",

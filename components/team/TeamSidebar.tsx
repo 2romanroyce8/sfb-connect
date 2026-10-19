@@ -32,7 +32,7 @@ import {
   ChevronDown,
   Scale,
   Send,
-  FolderKanban, ClipboardPaste } from "lucide-react";
+  FolderKanban, ClipboardPaste , Clapperboard } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import ClockControl from "./ClockControl";
 import SidebarSearch from "./SidebarSearch";
@@ -79,6 +79,7 @@ const NAV_GROUPS: NavGroup[] = [
     { href: "/team/activity", label: "Activity", icon: Activity },
   ] },
   { label: "Owner", collapsible: true, items: [
+    { href: "/team/content-lab", label: "Content Lab", icon: Clapperboard, ownerOnly: true },
     { href: "/team/prompts", label: "Give HyperAgent", icon: ClipboardPaste, ownerOnly: true },
     { href: "/team/tasks", label: "Agent Tasks", icon: ListTodo, ownerOnly: true },
     { href: "/team/projects", label: "Client Projects", icon: FolderKanban, ownerOnly: true },
