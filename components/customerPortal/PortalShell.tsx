@@ -24,6 +24,7 @@ import {
   Plug,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import AssistantWidget from "@/components/assistant/AssistantWidget";
 
 type NavItem = {
   href: string;
@@ -218,6 +219,7 @@ export default function PortalShell({
 
       <main className="md:pl-[248px] pb-20 md:pb-0">
         <div className="max-w-[880px] mx-auto px-5 md:px-10 py-8 md:py-12">{children}</div>
+        <AssistantWidget endpoint="/api/dashboard/assistant" theme="light" title="Your SFB Assistant" />
       </main>
     </div>
     </TourProvider>
