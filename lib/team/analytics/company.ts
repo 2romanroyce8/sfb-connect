@@ -56,7 +56,8 @@ export async function getCompanyAnalytics(service: SupabaseClient, range: Analyt
     service.from("addon_purchases").select("amount_cents, completed_at, purchase_type").eq("status", "completed").not("completed_at", "is", null).gte("completed_at", iso(rangeStart)).lte("completed_at", iso(rangeEnd)),
     service.from("payments").select("amount_cents, created_at").eq("status", "confirmed").gte("created_at", iso(rangeStart)).lte("created_at", iso(rangeEnd)),
     service.from("revenue_events").select("amount, event_type, occurred_at").is("reversed_at", null).gte("occurred_at", iso(rangeStart)).lte("occurred_at", iso(rangeEnd)),
-    service.from("businesses").select("id, plan_key, created_at").not("plan_key", "is", null).eq("is_sandbox", false),
+    // is_house_account = SFB Connect's own business (the outbound sender) — not a client, never MRR (2026-10-19).
+    service.from("businesses").select("id, plan_key, created_at").not("plan_key", "is", null).eq("is_sandbox", false).eq("is_house_account", false),
     service.from("crm_leads").select("pipeline_stage, recommended_offer, updated_at").eq("archived", false),
     prev ? service.from("agent_plan_orders").select("amount_total_cents").in("status", ["paid", "provisioned"]).gte("paid_at", iso(prev.start)).lte("paid_at", iso(prev.end)) : Promise.resolve({ data: null }),
     prev ? service.from("addon_purchases").select("amount_cents").eq("status", "completed").gte("completed_at", iso(prev.start)).lte("completed_at", iso(prev.end)) : Promise.resolve({ data: null }),
