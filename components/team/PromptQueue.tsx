@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Copy, Check, Download, Paperclip, Plus, ChevronDown, ChevronUp, Undo2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Copy, Check, Download, Paperclip, Plus, ChevronDown, ChevronUp, Undo2, ArrowLeft, ArrowRight, BellRing, Clock } from "lucide-react";
+import { formatAge, queuedFor, waitedBeforeSend, POLL_MS } from "@/lib/crm/promptTiming";
 import type { PromptCard, Urgency } from "@/lib/crm/promptQueue";
 
 // "Give HyperAgent" (Roman, 2026-10-18): the holding queue for everything Rome pastes into HyperAgent.
@@ -21,15 +22,38 @@ function CopyButton({ text }: { text: string }) {
   return <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full text-[12.5px] font-semibold" style={{ background: ok ? "var(--hx-30d158)" : "rgb(var(--w))", color: "rgb(var(--k))" }}>{ok ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy prompt</>}</button>;
 }
 
+/** Re-renders every second so queue ages tick live. */
+function useNow(ms = 1000) { const [now, setNow] = useState(() => Date.now()); useEffect(() => { const t = window.setInterval(() => setNow(Date.now()), ms); return () => window.clearInterval(t); }, [ms]); return now; }
+
+function QueueAge({ createdAt }: { createdAt: string }) {
+  const now = useNow(1000);
+  return <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-[color:var(--hx-ffd60a)]" data-queue-age><Clock size={11} /> in queue for {formatAge(queuedFor(createdAt, now))}</span>;
+}
+
 export default function PromptQueue() {
   const [queue, setQueue] = useState<PromptCard[]>([]); const [sent, setSent] = useState<PromptCard[]>([]);
   const [view, setView] = useState<"queue" | "sent">("queue"); const [err, setErr] = useState<string | null>(null); const [loaded, setLoaded] = useState(false);
   const [adding, setAdding] = useState(false); const [form, setForm] = useState({ name: "", prompt_text: "", urgency: "medium" as Urgency, send_order: "" }); const [files, setFiles] = useState<File[]>([]); const [saving, setSaving] = useState(false);
   const [undo, setUndo] = useState<{ card: PromptCard; until: number } | null>(null); const undoTimer = useRef<number | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [notify, setNotify] = useState<{ state: "idle" | "busy" | "done"; at?: string; reused?: boolean }>({ state: "idle" });
+  const [lastSync, setLastSync] = useState<number | null>(null);
 
-  const load = useCallback(async () => { try { const r = await fetch("/api/team/prompts", { cache: "no-store" }); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Could not load."); setQueue(j.queue); setSent(j.sent); setLoaded(true); } catch (e) { setErr(e instanceof Error ? e.message : "Could not load."); } }, []);
+  const load = useCallback(async () => { try { const r = await fetch("/api/team/prompts", { cache: "no-store" }); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Could not load."); setQueue(j.queue); setSent(j.sent); setLoaded(true); setLastSync(Date.now()); } catch (e) { setErr(e instanceof Error ? e.message : "Could not load."); } }, []);
   useEffect(() => { void load(); }, [load]);
+  // Auto-refresh: poll every 60 s (and when the tab comes back into view) so new agent cards and status changes appear without a reload.
+  useEffect(() => {
+    const tick = () => { if (document.visibilityState === "visible") void load(); };
+    const t = window.setInterval(tick, POLL_MS);
+    document.addEventListener("visibilitychange", tick);
+    return () => { window.clearInterval(t); document.removeEventListener("visibilitychange", tick); };
+  }, [load]);
+  const notifyMuse = async () => {
+    if (queue.length > 0 && !window.confirm(`${queue.length} card${queue.length === 1 ? " is" : "s are"} still in the queue. Tell Muse everything is sent anyway?`)) return;
+    setErr(null); setNotify({ state: "busy" });
+    try { const j = await post({ action: "notify_muse" }); setNotify({ state: "done", at: j.notifiedAt, reused: j.reused }); window.setTimeout(() => setNotify((n) => (n.state === "done" ? { state: "idle" } : n)), 8000); }
+    catch (e) { setNotify({ state: "idle" }); setErr(e instanceof Error ? e.message : "Could not notify Muse."); }
+  };
   const post = async (body: Record<string, unknown>) => { const r = await fetch("/api/team/prompts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Request failed."); return j; };
 
   const create = async (e: React.FormEvent) => {
@@ -76,12 +100,21 @@ export default function PromptQueue() {
       )}
 
       {view === "queue" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] px-4 py-3" style={card}>
+          <div className="text-[12.5px] text-[color:var(--hx-a1a1a6)]">Sent everything? Tell Atlas (Muse) it&apos;s good to go — it gets a high-priority task to verify.{lastSync && <span className="ml-2 text-[color:var(--hx-6e6e73)]">· Auto-refreshes every 60s (last {new Date(lastSync).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })})</span>}</div>
+          <button type="button" onClick={() => void notifyMuse()} disabled={notify.state === "busy"} className="inline-flex items-center gap-2 h-[40px] px-5 rounded-full text-[13.5px] font-semibold disabled:opacity-60" style={{ background: notify.state === "done" ? "var(--hx-30d158)" : "var(--hx-0a84ff)", color: "#fff" }} data-notify-muse>
+            {notify.state === "done" ? <><Check size={15} /> Muse notified{notify.reused ? " (again)" : ""}</> : notify.state === "busy" ? "Notifying…" : <><BellRing size={15} /> Notify Muse</>}
+          </button>
+        </div>
+      )}
+
+      {view === "queue" && (
         !loaded ? <div className="text-[13px] text-[color:var(--hx-6e6e73)]">Loading…</div> : queue.length === 0 ? <div className="rounded-[12px] p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>Nothing queued. Add a card, or let Atlas add one through the agent API.</div> : (
           <div className="flex gap-4 overflow-x-auto pb-3 items-stretch" style={{ scrollSnapType: "x proximity" }}>
             {queue.map((c, i) => (
               <article key={c.id} className="shrink-0 w-[400px] rounded-[14px] p-5 flex flex-col gap-3" style={{ ...card, scrollSnapAlign: "start" }}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0"><div className="text-[40px] font-semibold leading-none tracking-[-0.04em] text-[color:var(--hx-f5f5f7)]">{c.send_order}</div><div className="min-w-0"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)] truncate" title={c.name}>{c.name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">Added {fmt(c.created_at)} · {c.source === "agent" ? "by agent" : c.created_by_label}</div></div></div>
+                  <div className="flex items-center gap-3 min-w-0"><div className="text-[40px] font-semibold leading-none tracking-[-0.04em] text-[color:var(--hx-f5f5f7)]">{c.send_order}</div><div className="min-w-0"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)] truncate" title={c.name}>{c.name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">Added {fmt(c.created_at)} · {c.source === "agent" ? "by agent" : c.created_by_label}</div><QueueAge createdAt={c.created_at} /></div></div>
                   <UrgencyBadge u={c.urgency} />
                 </div>
                 <pre className="flex-1 min-h-[200px] max-h-[320px] overflow-auto rounded-[10px] p-3 text-[12.5px] leading-relaxed font-mono whitespace-pre-wrap break-words text-[color:var(--hx-d0d0d0)]" style={{ background: "var(--hx-050505)", border: "1px solid rgb(var(--w) / 0.06)" }}>{c.prompt_text}</pre>
@@ -106,7 +139,7 @@ export default function PromptQueue() {
             {sent.map((c) => (
               <article key={c.id} className="rounded-[12px] p-4" style={card}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)]">{c.name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">Sent {fmt(c.sent_at)} · added {fmt(c.created_at)} · {c.source === "agent" ? "by agent" : c.created_by_label}</div></div>
+                  <div className="min-w-0"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)]">{c.name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">Sent {fmt(c.sent_at)}{waitedBeforeSend(c.created_at, c.sent_at) != null && <span className="text-[color:var(--hx-a1a1a6)]"> after {formatAge(waitedBeforeSend(c.created_at, c.sent_at)!)} in queue</span>} · added {fmt(c.created_at)} · {c.source === "agent" ? "by agent" : c.created_by_label}</div></div>
                   <div className="flex items-center gap-2"><UrgencyBadge u={c.urgency} /><CopyButton text={c.prompt_text} /><button type="button" onClick={() => setExpanded((x) => ({ ...x, [c.id]: !x[c.id] }))} className="inline-flex items-center gap-1 h-[34px] px-3 rounded-full text-[12.5px]" style={{ border: "1px solid rgb(var(--w) / 0.14)", color: "var(--hx-a1a1a6)" }}>{expanded[c.id] ? <><ChevronUp size={13} /> Hide</> : <><ChevronDown size={13} /> Full text</>}</button></div>
                 </div>
                 {expanded[c.id] && <pre className="mt-3 max-h-[420px] overflow-auto rounded-[10px] p-3 text-[12.5px] leading-relaxed font-mono whitespace-pre-wrap break-words text-[color:var(--hx-d0d0d0)]" style={{ background: "var(--hx-050505)", border: "1px solid rgb(var(--w) / 0.06)" }}>{c.prompt_text}</pre>}
