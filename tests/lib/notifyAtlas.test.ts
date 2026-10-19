@@ -11,3 +11,12 @@ test("brief: ET time, counts, sent names, call to action — all in the first 40
   assert.ok(head.includes(ATLAS_CALL_TO_ACTION));
   assert.equal(fmtEtShort(at), "3:05 PM");
 });
+
+test("19 long sent names still fit all four fields in 400 chars", () => {
+  const sent = Array.from({ length: 19 }, (_, i) => ({ name: `Fix Meta Connect invalid Instagram scopes number ${i}`, send_order: i + 1, sent_at: null }));
+  const b = atlasBrief(new Date("2026-10-19T20:12:46Z"), [], sent, "Roman Royce");
+  const head = b.slice(0, 400);
+  assert.ok(head.includes(ATLAS_CALL_TO_ACTION));
+  assert.match(head, /\(\+\d+ more, listed below\)/);
+  assert.match(b, /number 18/);
+});

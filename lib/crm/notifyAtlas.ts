@@ -12,12 +12,21 @@ export const DEDUPE_MS = 5 * 60_000;
 export const fmtEt = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit" }) + " ET";
 export const fmtEtShort = (d: Date) => d.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 
+/** Inline name list capped so all four headline lines fit in list_tasks' 400-char summary; full list is under Details. */
+export function inlineNames(names: string[], max = 170): string {
+  if (!names.length) return "(none)";
+  const out: string[] = []; let len = 0;
+  for (const n of names) { const add = (out.length ? 2 : 0) + n.length; if (len + add > max && out.length) break; out.push(n); len += add; }
+  const rest = names.length - out.length;
+  return out.join("; ") + (rest > 0 ? ` (+${rest} more, listed below)` : "");
+}
+
 /** Pure: the task brief. */
 export function atlasBrief(at: Date, queued: { name: string; send_order: number }[], sent: { name: string; send_order: number; sent_at: string | null }[], by: string): string {
   return [
     `Pressed: ${fmtEt(at)} by ${by}`,
     `Queue: ${queued.length} · Sent Prompts: ${sent.length}`,
-    `Sent prompts to verify: ${sent.length ? sent.map((c) => c.name).join("; ") : "(none)"}`,
+    `Sent prompts to verify: ${inlineNames(sent.map((c) => c.name))}`,
     ATLAS_CALL_TO_ACTION,
     "",
     "Details:",
