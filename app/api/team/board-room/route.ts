@@ -48,6 +48,13 @@ export async function POST(req: NextRequest) {
         await db.from("board_ideas").update({ status: "killed", kill_reason: s("reason"), killed_at: now, decision: b.from_results ? "kill" : null, updated_at: now }).eq("id", s("id")); return NextResponse.json({ ok: true });
       }
       case "revive_idea": await db.from("board_ideas").update({ status: "draft", updated_at: now }).eq("id", s("id")).eq("status", "killed"); return NextResponse.json({ ok: true });
+      case "bulk_delete": { const ids = (Array.isArray(b.ids) ? (b.ids as string[]) : []).slice(0, 500); const { data } = await db.from("board_ideas").delete().in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]).select("id"); return NextResponse.json({ ok: true, count: (data ?? []).length }); }
+      case "bulk_status": {
+        const st = s("status"); if (!["draft", "ready", "tested"].includes(st)) return NextResponse.json({ error: "Pick draft, ready or tested (killing needs a reason, one at a time)." }, { status: 400 });
+        const ids = (Array.isArray(b.ids) ? (b.ids as string[]) : []).slice(0, 500);
+        const { data } = await db.from("board_ideas").update({ status: st, updated_at: now }).in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]).neq("status", "killed").select("id");
+        return NextResponse.json({ ok: true, count: (data ?? []).length });
+      }
       case "vote": await db.from("board_votes").upsert({ idea_id: s("id"), user_id: me.id }); return NextResponse.json({ ok: true });
       case "unvote": await db.from("board_votes").delete().eq("idea_id", s("id")).eq("user_id", me.id); return NextResponse.json({ ok: true });
       case "start_session": {

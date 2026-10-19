@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import * as Q from "@/lib/agent/tasks/queue";
 export const dynamic = "force-dynamic";
 
@@ -44,6 +44,13 @@ export async function POST(req: NextRequest) {
     if (action === "create") return NextResponse.json({ task: await Q.createTask("roman", { title: String(b.title ?? ""), owner_agent: b.owner_agent as Q.AgentHandle, context: typeof b.context === "string" ? b.context : undefined, priority: (b.priority as Q.TaskPriority) || "normal", due: typeof b.due === "string" && b.due ? b.due : null, requires_review: b.requires_review !== false }) });
     if (action === "review") return NextResponse.json({ task: await Q.reviewTask("roman", String(b.task_id), b.verdict as "approved" | "changes_requested" | "rejected", typeof b.note === "string" ? b.note : undefined) });
     if (action === "cancel") return NextResponse.json({ task: await Q.cancelTask("roman", String(b.task_id), typeof b.reason === "string" ? b.reason : undefined) });
+    // Bulk (multi-select): "done" = close (a reviewed "done" needs review_task, enforced by the DB).
+    if (action === "bulk_close" || action === "bulk_assign" || action === "bulk_delete") {
+      const ids = (Array.isArray(b.ids) ? (b.ids as string[]) : []).slice(0, 200); let count = 0; const errors: string[] = [];
+      if (action === "bulk_delete") { const { data } = await createSupabaseServiceClient().from("agent_tasks").delete().in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]).select("id"); count = (data ?? []).length; }
+      else for (const id of ids) { try { if (action === "bulk_close") await Q.closeTask({ handle: "roman" }, id, "bulk close from the board"); else await Q.updateTask({ handle: "roman" }, id, { owner_agent: b.owner_agent as Q.AgentHandle }); count++; } catch (e) { errors.push(e instanceof Error ? e.message.slice(0, 100) : "failed"); } }
+      return NextResponse.json({ ok: true, count, errors });
+    }
     if (action === "message") return NextResponse.json({ message: await Q.sendMessage("roman", String(b.task_id), String(b.body ?? ""), (b.to_agent as Q.AgentHandle) || null) });
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e) {

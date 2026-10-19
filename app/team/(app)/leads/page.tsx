@@ -26,5 +26,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: { arch
     ({ data: leads } = await build(BASE_COLUMNS, false));
   }
 
-  return <LeadsList leads={(leads as any[]) ?? []} showArchived={showArchived} activeTag={activeTag} />;
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: me } = await supabase.from("users").select("team_role").eq("id", user!.id).single();
+  const isOwner = me?.team_role === "owner";
+  const { data: reps } = isOwner ? await supabase.from("users").select("id, full_name, email").not("team_role", "is", null).eq("team_status", "active") : { data: [] };
+  return <LeadsList leads={(leads as any[]) ?? []} showArchived={showArchived} activeTag={activeTag} isOwner={isOwner} reps={(reps ?? []).map((r) => ({ id: r.id as string, label: (r.full_name || r.email) as string }))} />;
 }

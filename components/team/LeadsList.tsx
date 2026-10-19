@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { STAGE_COLOR, stageLabel } from "@/lib/crm/stages";
+import { STAGE_COLOR, stageLabel, PIPELINE_STAGES } from "@/lib/crm/stages";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson } from "@/components/ui/MultiSelect";
+import { plural } from "@/lib/ui/selection";
 import { Plus, Upload, X } from "lucide-react";
 import LeadTags from "@/components/team/LeadTags";
 
@@ -23,8 +25,16 @@ type Lead = {
 
 
 
-export default function LeadsList({ leads, showArchived, activeTag = null }: { leads: Lead[]; showArchived: boolean; activeTag?: string | null }) {
+export default function LeadsList({ leads, showArchived, activeTag = null, isOwner = false, reps = [] }: { leads: Lead[]; showArchived: boolean; activeTag?: string | null; isOwner?: boolean; reps?: { id: string; label: string }[] }) {
   const router = useRouter();
+  const ms = useMultiSelect(leads.map((l) => l.id));
+  const noun = (n: number) => plural(n, "lead");
+  const bulk = async (body: Record<string, unknown>) => { const j = await postJson("/api/team/leads/bulk", body); router.refresh(); return j; };
+  const actions = [
+    { label: "Change stage", options: PIPELINE_STAGES.filter((s) => s.manual && s.value !== "won").map((s) => ({ label: s.label, value: s.value })), confirm: (n: number) => `Move ${noun(n)}?`, run: async (ids: string[], v?: string) => { const j = await bulk({ action: "stage", ids, stage: v }); return `${noun(j.count)} moved to ${stageLabel(v)}${j.unchanged ? ` · ${j.unchanged} already there` : ""}`; } },
+    ...(isOwner ? [{ label: "Assign", options: [...reps.map((r) => ({ label: r.label, value: r.id })), { label: "Unassigned", value: "" }], confirm: (n: number) => `Reassign ${noun(n)}?`, run: async (ids: string[], v?: string) => { const j = await bulk({ action: "assign", ids, rep_id: v || null }); return `${noun(j.count)} reassigned to ${reps.find((r) => r.id === v)?.label ?? "nobody"}`; } }] : []),
+    ...(!showArchived ? [{ label: "Archive", tone: "danger" as const, confirm: (n: number) => `Archive ${noun(n)}?`, run: async (ids: string[]) => { const j = await bulk({ action: "archive", ids }); return `${noun(j.count)} archived`; } }] : []),
+  ];
   const tagQuery = activeTag ? `tag=${encodeURIComponent(activeTag)}` : "";
   return (
     <div className="px-8 py-8">
@@ -45,6 +55,7 @@ export default function LeadsList({ leads, showArchived, activeTag = null }: { l
           )}
         </div>
         <div className="flex items-center gap-2">
+          <SelectToggle ms={ms} total={leads.length} noun="leads" />
           <Link
             href={showArchived ? `/team/leads${tagQuery ? `?${tagQuery}` : ""}` : `/team/leads?archived=1${tagQuery ? `&${tagQuery}` : ""}`}
             className="h-[38px] px-3.5 inline-flex items-center rounded-[8px] text-[12.5px] text-[color:var(--hx-a1a1a6)] hover:text-white"
@@ -89,6 +100,7 @@ export default function LeadsList({ leads, showArchived, activeTag = null }: { l
           <table className="w-full text-[13px]">
             <thead>
               <tr style={{ background: "var(--hx-0a0a0a)" }}>
+                {ms.active && <th className="w-[44px] pl-3" />}
                 {["Business", "Location", "Stage", "AI Score", "Recommended Offer", "Added"].map((h) => (
                   <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">
                     {h}
@@ -103,8 +115,10 @@ export default function LeadsList({ leads, showArchived, activeTag = null }: { l
                   style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}
                   className="hover:bg-[color:var(--hx-0a0a0a)] cursor-pointer"
                   onClick={() => router.push(`/team/leads/${l.id}`)}
+                  data-selected={ms.isSelected(l.id) || undefined}
                   onMouseEnter={() => router.prefetch(`/team/leads/${l.id}`)}
                 >
+                  {ms.active && <td className="pl-3 w-[44px]"><SelectCircle checked={ms.isSelected(l.id)} onToggle={() => ms.toggle(l.id)} label={`Select ${l.business_name ?? "lead"}`} /></td>}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[color:var(--hx-f5f5f7)] font-medium">{l.business_name || "Unnamed lead"}</span>
@@ -139,6 +153,8 @@ export default function LeadsList({ leads, showArchived, activeTag = null }: { l
           </table>
         </div>
       )}
+      <BulkBar ms={ms} noun={noun} actions={actions} />
+      {ms.active && <div className="h-[96px]" />}
     </div>
   );
 }

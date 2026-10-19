@@ -4,6 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Play, Pause, Flag, Plus, Trash2, Trophy, Save, Tags } from "lucide-react";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson } from "@/components/ui/MultiSelect";
+import { plural } from "@/lib/ui/selection";
+
 
 // Campaigns (team-only): where Board Room plans run as tests. Performance is read live from
 // outbound (sends/opens/replies by template) and the CRM (calls/meetings/deals by lead tag).
@@ -32,6 +35,13 @@ export default function Campaigns({ initialId }: { initialId: string | null }) {
   const [d, setD] = useState<Detail | null>(null); const [err, setErr] = useState<string | null>(null); const [busy, setBusy] = useState<string | null>(null); const [note, setNote] = useState<string | null>(null);
   const [edit, setEdit] = useState<Partial<Camp>>({}); const [src, setSrc] = useState({ source_tag: "", stage: "" });
   const [done, setDone] = useState<{ outcome: string; notes: string; winner: string } | null>(null);
+  const ms = useMultiSelect((list?.campaigns ?? []).map((c) => c.id));
+  const camps = (n: number) => plural(n, "campaign");
+  const listActions = [
+    { label: "Pause", run: async (ids: string[]) => { const j = await postJson("/api/team/campaigns", { action: "bulk_pause", ids }); await loadList(); return `${camps(j.count)} paused${j.skipped ? ` · ${j.skipped} weren't running` : ""}`; } },
+    { label: "Resume", tone: "primary" as const, run: async (ids: string[]) => { const j = await postJson("/api/team/campaigns", { action: "bulk_resume", ids }); await loadList(); return `${camps(j.count)} resumed${j.skipped ? ` · ${j.skipped} weren't paused` : ""}`; } },
+    { label: "Delete", tone: "danger" as const, confirm: (n: number) => `Delete ${camps(n)}?`, run: async (ids: string[]) => { const j = await postJson("/api/team/campaigns", { action: "bulk_delete", ids }); await loadList(); return `${camps(j.count)} deleted`; } },
+  ];
 
   const loadList = useCallback(async () => { const r = await fetch("/api/team/campaigns", { cache: "no-store" }); const j = await r.json(); if (!r.ok) setErr(j.error); else setList(j); }, []);
   const loadOne = useCallback(async (cid: string) => { const r = await fetch(`/api/team/campaigns?id=${cid}`, { cache: "no-store" }); const j = await r.json(); if (!r.ok) { setErr(j.error); return; } if (j.setupNeeded) { setList(j); return; } setD(j); setEdit({}); }, []);
@@ -41,17 +51,19 @@ export default function Campaigns({ initialId }: { initialId: string | null }) {
 
   if (!id) return (
     <div className="px-8 py-8 flex flex-col gap-5">
-      <div><h1 className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Campaigns</h1><p className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Plans from the <Link href="/team/board-room" className="underline">Board Room</Link> run here as tests. Finish one and its results go back to the idea card.</p></div>
+      <div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Campaigns</h1><p className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Plans from the <Link href="/team/board-room" className="underline">Board Room</Link> run here as tests. Finish one and its results go back to the idea card.</p></div>{!!list?.campaigns?.length && <SelectToggle ms={ms} total={list.campaigns.length} noun="campaigns" />}</div>
       {err && <div className="rounded-[10px] px-4 py-3 text-[13px] text-[color:var(--hx-ff453a)]" style={{ background: "rgba(255,69,58,0.08)" }}>{err}</div>}
       {!list ? <div className="text-[13px] text-[color:var(--hx-6e6e73)]">Loading…</div> : list.setupNeeded ? <div className="rounded-[12px] p-5 text-[13px] text-[color:var(--hx-a1a1a6)]" style={card}>{list.message}</div> : !list.campaigns?.length ? <div className="rounded-[12px] p-8 text-center text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>No campaigns yet. In the Board Room, build a plan on an idea and press <b>Send to Campaigns</b>.</div> : (
         <div className="flex flex-col gap-2">{list.campaigns.map((c) => (
-          <button key={c.id} type="button" onClick={() => open(c.id)} className="rounded-[12px] p-4 text-left flex flex-col gap-2 hover:opacity-90" style={card}>
-            <div className="flex items-center justify-between gap-3"><div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)]">{c.name}</div><span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: ST[c.status] }}>{c.status}{c.outcome ? ` · ${c.outcome}` : ""}</span></div>
+          <button key={c.id} type="button" onClick={() => open(c.id)} className="rounded-[12px] p-4 text-left flex flex-col gap-2 hover:opacity-90" style={{ ...card, ...(ms.isSelected(c.id) ? { borderColor: "var(--hx-0a84ff)" } : {}) }}>
+            <div className="flex items-center justify-between gap-3">{ms.active && <SelectCircle checked={ms.isSelected(c.id)} onToggle={() => ms.toggle(c.id)} label={`Select ${c.name}`} />}<div className="flex-1 text-[14px] font-semibold text-[color:var(--hx-f5f5f7)]">{c.name}</div><span className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: ST[c.status] }}>{c.status}{c.outcome ? ` · ${c.outcome}` : ""}</span></div>
             <div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">{c.idea_title ? `From idea: ${c.idea_title}` : "No linked idea"} · {c.start_date ?? "?"} → {c.end_date ?? "?"}</div>
             <MetricRow m={c.metrics ?? null} />
           </button>
         ))}</div>
       )}
+      <BulkBar ms={ms} noun={camps} actions={listActions} />
+      {ms.active && <div className="h-[96px]" />}
     </div>
   );
 

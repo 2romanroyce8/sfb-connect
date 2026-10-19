@@ -65,6 +65,12 @@ export async function POST(req: NextRequest) {
         await db.from("campaigns").update({ status: to, start_date: to === "running" && (!c.start_date || c.start_date > today) && c.status === "draft" ? today : c.start_date, updated_at: now }).eq("id", c.id);
         return NextResponse.json({ ok: true });
       }
+      case "bulk_delete": { const ids = (Array.isArray(b.ids) ? (b.ids as string[]) : []).slice(0, 500); const { data } = await db.from("campaigns").delete().in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]).select("id"); return NextResponse.json({ ok: true, count: (data ?? []).length }); }
+      case "bulk_pause": case "bulk_resume": {
+        const ids = (Array.isArray(b.ids) ? (b.ids as string[]) : []).slice(0, 500); const [from, to] = b.action === "bulk_pause" ? ["running", "paused"] : ["paused", "running"];
+        const { data } = await db.from("campaigns").update({ status: to, updated_at: now }).in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]).eq("status", from).select("id");
+        return NextResponse.json({ ok: true, count: (data ?? []).length, skipped: ids.length - (data ?? []).length });
+      }
       case "add_variant": { const { error } = await db.from("campaign_variants").insert({ campaign_id: s("id"), name: s("name", 80) || "New variant" }); return NextResponse.json(error ? { error: error.message } : { ok: true }); }
       case "update_variant": {
         const patch: Record<string, unknown> = {};
