@@ -10,7 +10,7 @@ export default async function ChartsPage() {
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Analytics</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Revenue</div>
         <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Sales by rep · company performance from our records · a read-only mirror of Stripe.</div>
       </div>
       <AnalyticsTabs initial={initial} isOwner={scope.isOwner} stripeConfigured={isStripeConfigured()} />

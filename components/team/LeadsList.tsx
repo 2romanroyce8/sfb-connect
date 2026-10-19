@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { STAGE_COLOR, stageLabel } from "@/lib/crm/stages";
 import { Plus, Upload, X } from "lucide-react";
 import LeadTags from "@/components/team/LeadTags";
 
@@ -19,31 +21,10 @@ type Lead = {
   tags?: string[] | null;
 };
 
-const STAGE_LABEL: Record<string, string> = {
-  demo_requested: "Book Demo (Pending)",
-  new: "New",
-  researching: "Researching",
-  ready_to_call: "Ready to Call",
-  contacted: "Contacted",
-  qualified: "Qualified",
-  proposal_sent: "Proposal Sent",
-  won: "Won",
-  lost: "Lost",
-};
 
-const STAGE_COLOR: Record<string, string> = {
-  demo_requested: "var(--hx-ffd60a)",
-  new: "var(--hx-6e6e73)",
-  researching: "var(--hx-ffd60a)",
-  ready_to_call: "var(--hx-0a84ff)",
-  contacted: "var(--hx-5e5ce6)",
-  qualified: "var(--hx-30d158)",
-  proposal_sent: "var(--hx-ff9f0a)",
-  won: "var(--hx-30d158)",
-  lost: "var(--hx-ff453a)",
-};
 
 export default function LeadsList({ leads, showArchived, activeTag = null }: { leads: Lead[]; showArchived: boolean; activeTag?: string | null }) {
+  const router = useRouter();
   const tagQuery = activeTag ? `tag=${encodeURIComponent(activeTag)}` : "";
   return (
     <div className="px-8 py-8">
@@ -121,7 +102,8 @@ export default function LeadsList({ leads, showArchived, activeTag = null }: { l
                   key={l.id}
                   style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}
                   className="hover:bg-[color:var(--hx-0a0a0a)] cursor-pointer"
-                  onClick={() => (window.location.href = `/team/leads/${l.id}`)}
+                  onClick={() => router.push(`/team/leads/${l.id}`)}
+                  onMouseEnter={() => router.prefetch(`/team/leads/${l.id}`)}
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
@@ -141,7 +123,7 @@ export default function LeadsList({ leads, showArchived, activeTag = null }: { l
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1.5">
                       <span className="w-[6px] h-[6px] rounded-full" style={{ background: STAGE_COLOR[l.pipeline_stage] || "var(--hx-6e6e73)" }} />
-                      <span className="text-[color:var(--hx-a1a1a6)]">{STAGE_LABEL[l.pipeline_stage] || l.pipeline_stage}</span>
+                      <span className="text-[color:var(--hx-a1a1a6)]">{stageLabel(l.pipeline_stage)}</span>
                     </span>
                   </td>
                   <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">

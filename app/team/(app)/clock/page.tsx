@@ -42,7 +42,7 @@ export default async function ClockPage() {
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Clock</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Timesheets</div>
         <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">
           Work-session accountability — not payroll. Today's total: {formatDuration(todayTotal)} · times shown in {timezoneLabel(tz)}
         </div>
