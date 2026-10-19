@@ -30,6 +30,7 @@ export default function OutboundWorkspace() {
   const [biz, setBiz] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"queue" | "prospects" | "activity">("queue");
   const [open, setOpen] = useState<Msg | null>(null);
   const [newP, setNewP] = useState({ name: "", website: "", email: "", contact_name: "" });
@@ -45,11 +46,12 @@ export default function OutboundWorkspace() {
   useEffect(() => { void load(); }, [load]);
 
   const act = async (payload: Record<string, unknown>, key: string) => {
-    setBusy(key); setErr(null);
+    setBusy(key); setErr(null); setNotice(null);
     try {
       const r = await fetch("/api/team/outbound", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ business_id: biz, ...payload }) });
       const j = await r.json();
       if (!r.ok) { setErr(j.error || "Failed."); return null; }
+      if (j.message?.held_until) setNotice(`Approved — held for the send window (${j.message.held_label}). It sends automatically inside the window.`);
       await load(biz); return j;
     } finally { setBusy(null); }
   };
@@ -72,6 +74,7 @@ export default function OutboundWorkspace() {
         <span className="text-[12px] text-[color:var(--hx-6e6e73)]">· {sentCount} sent · {openedCount} opened · {repliedCount} replied · {s.bookings.length} booked</span>
         <button onClick={() => act({ action: "sync" }, "sync")} disabled={busy === "sync"} className={ghost} style={ghostStyle}>{busy === "sync" ? "Syncing…" : "Sync replies & steps"}</button>
       </div>
+      {notice && <div className="rounded-[10px] p-3 text-[12.5px] text-[color:var(--hx-30d158)]" style={{ background: "rgba(48,209,88,0.08)" }}>{notice}</div>}
       {err && <div className="rounded-[10px] p-3 text-[12.5px] text-[color:var(--hx-ff6961)]" style={{ background: "rgba(255,69,58,0.08)" }}>{err}</div>}
 
       {/* Offer line: the one approved sentence every intro uses. Without it nothing can be drafted. */}

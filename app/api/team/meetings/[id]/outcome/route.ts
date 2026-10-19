@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { awardPointsForEvent, reversePointEvent } from "@/lib/team/competition/scoring";
+import { ruleDueAt, ruleReason, demoIsNoClose, hasUpcomingOpen } from "@/lib/crm/followupRules";
 
 const VALID = ["completed", "no_show", "cancelled", "rescheduled"];
 
@@ -44,6 +45,29 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { data: lead } = await supabase.from("crm_leads").select("pipeline_stage").eq("id", meeting.lead_id).single();
     await supabase.from("crm_leads").update({ pipeline_stage: "meeting_completed", updated_at: new Date().toISOString() }).eq("id", meeting.lead_id);
     await supabase.from("crm_pipeline_history").insert({ lead_id: meeting.lead_id, from_stage: lead?.pipeline_stage, to_stage: "meeting_completed", changed_by: user.id });
+
+    // Outcome rule: a demo completed without a close (lead not won) gets a
+    // follow-up in 3 days, unless one is already scheduled ahead.
+    if (!wasCompleted && demoIsNoClose(lead?.pipeline_stage)) {
+      try {
+        const service = createSupabaseServiceClient();
+        const nowDate = new Date();
+        const { data: openRows } = await service.from("crm_followups").select("status, due_at").eq("lead_id", meeting.lead_id).eq("status", "open");
+        if (!hasUpcomingOpen(openRows ?? [], nowDate)) {
+          const dueAt = ruleDueAt("demo_no_close", nowDate)!.toISOString();
+          const { data: fu } = await service
+            .from("crm_followups")
+            .insert({ lead_id: meeting.lead_id, rep_id: meeting.rep_id, created_by: user.id, followup_type: "CALL", due_at: dueAt, timezone: "America/New_York", creator_timezone: "America/New_York", reason: ruleReason("demo_no_close") })
+            .select("id")
+            .single();
+          if (fu) {
+            await service.from("crm_schedule_audit_log").insert({ entity_type: "followup", entity_id: fu.id, action: "created", new_scheduled_at: dueAt, business_timezone: null, employee_timezone: "America/New_York", actor_id: user.id, detail: "Auto-created by outcome rule: demo completed without close" });
+          }
+        }
+      } catch (e) {
+        console.error("[meeting outcome] auto follow-up failed:", e instanceof Error ? e.message : e);
+      }
+    }
   }
 
   await supabase.from("crm_activities").insert({

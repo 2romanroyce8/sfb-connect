@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { awardPointsForEvent } from "@/lib/team/competition/scoring";
+import { isRuleOutcome, ruleDueAt, ruleReason, hasUpcomingOpen } from "@/lib/crm/followupRules";
 
 const OUTCOME_STAGE: Record<string, string | null> = {
   booked_meeting: "meeting_booked",
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
   const body = await req.json();
   const outcome: string = body.outcome;
   const outcomeReason: string | undefined = body.outcomeReason;
-  const followup: { dueAt: string; reason?: string; businessTimezone?: string; creatorTimezone?: string; inputTimezone?: string; inputLocalDatetime?: string } | undefined = body.followup;
+  let followup: { dueAt: string; reason?: string; businessTimezone?: string; creatorTimezone?: string; inputTimezone?: string; inputLocalDatetime?: string } | undefined = body.followup;
   const meeting: { scheduledAt: string; contactName?: string; contactEmail?: string; contactPhone?: string; businessTimezone?: string; creatorTimezone?: string } | undefined = body.meeting;
 
   if (!VALID_OUTCOMES.includes(outcome)) {
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
     });
   }
 
+  // Follow-up: the rep's own time wins; when they leave it blank the outcome
+  // rule fills it (no answer / voicemail +2 days; interested / call back later +3 days).
+  let autoFollowup = false;
+  if (!followup?.dueAt && isRuleOutcome(outcome)) {
+    const { data: openRows } = await service.from("crm_followups").select("status, due_at").eq("lead_id", call.lead_id).eq("status", "open");
+    if (!hasUpcomingOpen(openRows ?? [], endedAt)) {
+      autoFollowup = true;
+      followup = { dueAt: ruleDueAt(outcome, endedAt)!.toISOString(), reason: ruleReason(outcome), creatorTimezone: "America/New_York" };
+    }
+  }
   if ((outcome === "call_back_later" || outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") && followup?.dueAt) {
     const { data: fu } = await service
       .from("crm_followups")
@@ -90,7 +101,8 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
       .select("id")
       .single();
     if (fu) {
-      await awardPointsForEvent({ userId: user.id, eventType: "followup_created", sourceType: "crm_followups", sourceId: fu.id });
+      // Points are for follow-ups a rep schedules; automatic ones earn none.
+      if (!autoFollowup) await awardPointsForEvent({ userId: user.id, eventType: "followup_created", sourceType: "crm_followups", sourceId: fu.id });
       await service.from("crm_schedule_audit_log").insert({
         entity_type: "followup",
         entity_id: fu.id,
@@ -99,7 +111,7 @@ export async function POST(req: NextRequest, { params }: { params: { callId: str
         business_timezone: followup.businessTimezone || null,
         employee_timezone: followup.creatorTimezone || null,
         actor_id: user.id,
-        detail: `Created from call outcome: ${outcome}`,
+        detail: autoFollowup ? `Auto-created by outcome rule: ${outcome}` : `Created from call outcome: ${outcome}`,
       });
     }
   }

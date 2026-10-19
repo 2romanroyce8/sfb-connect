@@ -3,6 +3,14 @@
 // choice; saving a sent email (variable form) as a preset.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LIBRARY, PRESET_CATEGORIES, presetByKey, recommendIntro, type Preset } from "./presets";
+
+/** Team-only presets (SFB Connect's own outreach) are offered only to a business whose owner is a team owner. */
+export async function isTeamBusiness(service: SupabaseClient, businessId: string): Promise<boolean> {
+  const { data: b } = await service.from("businesses").select("owner_id").eq("id", businessId).maybeSingle();
+  if (!b?.owner_id) return false;
+  const { data: u } = await service.from("users").select("team_role").eq("id", b.owner_id).maybeSingle();
+  return u?.team_role === "owner";
+}
 import { renderSource, validateSource, TEMPLATE_VARIABLES, type TemplateVars, type TemplateSource } from "./templates";
 import { OutboundError } from "./errors";
 
@@ -36,20 +44,22 @@ export async function resolveSource(service: SupabaseClient, businessId: string,
     return { subject: t.subject as string, body: t.body as string, requires: ["sender_name", "sender_company"], label: `saved:${t.id}` };
   }
   const p = presetByKey(key); if (!p) throw new OutboundError("template_not_found", `Unknown template "${key}".`, 404);
+  if (p.teamOnly && !(await isTeamBusiness(service, businessId))) throw new OutboundError("template_not_found", `Unknown template "${key}".`, 404);
   return { subject: p.subject, body: p.body, requires: p.requires, label: p.key };
 }
 
 export async function listLibrary(service: SupabaseClient, businessId: string) {
-  const [sender, sample, { data: saved }, { data: prospects }] = await Promise.all([
+  const [sender, sample, { data: saved }, { data: prospects }, team] = await Promise.all([
     senderVarsFor(service, businessId), sampleProspect(service, businessId),
     service.from("outbound_templates").select("id, business_id, name, category, subject, body, created_by, created_at").eq("business_id", businessId).eq("archived", false).order("created_at", { ascending: false }),
     service.from("outbound_prospects").select("name, contact_name, website, source").eq("business_id", businessId).in("status", ["sourced", "enriched"]).limit(200),
+    isTeamBusiness(service, businessId),
   ]);
   const vars: TemplateVars = { company: sample.company, contact_name: sample.contact_name, city: sample.city, category: sample.category, sender_name: sender.sender_name, sender_company: sender.sender_company, sender_category: sender.sender_category, offer_line: sender.offer_line, slots: null };
   const preview = (src: TemplateSource) => { try { return renderSource(src, vars); } catch (e) { return { error: e instanceof Error ? e.message : "Can't preview yet." }; } };
   const cat = (k: string) => PRESET_CATEGORIES.find((c) => c.key === k)?.label ?? k;
   const items: LibraryItem[] = [
-    ...LIBRARY.map((p: Preset) => ({ key: p.key, name: p.name, category: p.category, categoryLabel: cat(p.category), tone: p.tone, audience: p.audience, description: p.description, subject: p.subject, body: p.body, preview: preview({ subject: p.subject, body: p.body, requires: p.requires, label: p.key }), saved: false, approved: !!p.approvedAt })),
+    ...LIBRARY.filter((p: Preset) => team || !p.teamOnly).map((p: Preset) => ({ key: p.key, name: p.name, category: p.category, categoryLabel: cat(p.category), tone: p.tone, audience: p.audience, description: p.description, subject: p.subject, body: p.body, preview: preview({ subject: p.subject, body: p.body, requires: p.requires, label: p.key }), saved: false, approved: !!p.approvedAt })),
     ...((saved ?? []) as SavedTemplate[]).map((t) => ({ key: `saved:${t.id}`, name: t.name, category: t.category, categoryLabel: t.category === "custom" ? "Your custom emails" : "Saved from sent", tone: "yours", audience: "any", description: `Saved ${new Date(t.created_at).toLocaleDateString()} by ${t.created_by}`, subject: t.subject, body: t.body, preview: preview({ subject: t.subject, body: t.body, requires: ["sender_name", "sender_company"], label: t.name }), saved: true, approved: true })),
   ];
   const recommendation = recommendIntro((prospects ?? []) as { source?: string | null; website?: string | null; contact_name?: string | null; name: string }[], sender.icp);

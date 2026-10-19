@@ -19,13 +19,14 @@ import { canSend, dueSteps, pickEmail, proposeSlots, toE164, unsubscribeToken, i
 import { getAccessToken } from "@/lib/integrations/connections";
 import { probeCalendarConnection } from "@/lib/crm/googleCalendar";
 import { sendEmail } from "@/lib/email/resend";
-import { renderSource, unsubscribeFooter, DEFAULT_SEQUENCE_STEPS, type TemplateKey, type TemplateVars } from "./templates";
+import { renderSource, unsubscribeFooter, DEFAULT_SEQUENCE_STEPS, yearsFromCustom, type TemplateKey, type TemplateVars } from "./templates";
 
 export type Actor = { kind: "user" | "agent" | "system"; id: string | null; label: string };
 import { OutboundError } from "./errors";
 export { OutboundError };
 import { resolveSource } from "./library";
 import { recommendIntro, resolveStepTemplate } from "./presets";
+import { sendWindowState, openWindowTemplateKeys, RELEASE_CAP_PER_TICK } from "./sendWindow";
 
 const now = () => new Date().toISOString();
 const secret = () => process.env.CALENDAR_TOKEN_ENCRYPTION_KEY || "sfb-outbound";
@@ -117,7 +118,7 @@ export async function draftMessage(service: SupabaseClient, input: { prospectId:
   if (!p.email) throw new OutboundError("no_email", "No email on file for this prospect — enrich it first or add one.");
   const { data: sup } = await service.from("outbound_suppressions").select("id").eq("business_id", b.id).eq("email", p.email.toLowerCase()).maybeSingle();
   if (sup) throw new OutboundError("suppressed", "This address unsubscribed or bounced — the agent won't write to it.");
-  const vars: TemplateVars = { company: p.name, contact_name: p.contact_name, city: p.city, category: p.category, ...(await senderVars(service, b)), slots: input.slots ?? null, booking_time: input.bookingTime ?? null, meet_url: input.meetUrl ?? null };
+  const vars: TemplateVars = { company: p.name, contact_name: p.contact_name, city: p.city, category: p.category, years_in_business: yearsFromCustom(p.custom_fields as Record<string, unknown> | null), ...(await senderVars(service, b)), slots: input.slots ?? null, booking_time: input.bookingTime ?? null, meet_url: input.meetUrl ?? null };
   // Source: a system preset, the business's saved preset ("saved:<id>") or the customer's own email ("custom"). Stored in variable form so it can be saved as a preset later.
   const src = await resolveSource(service, b.id, input.template, input.custom ?? null);
   let rendered: { subject: string; body: string };
@@ -199,6 +200,12 @@ export async function sendApprovedMessage(service: SupabaseClient, messageId: st
   const { data: sup } = m.to_email ? await service.from("outbound_suppressions").select("id").eq("business_id", b.id).eq("email", String(m.to_email).toLowerCase()).maybeSingle() : { data: null };
   const gate = canSend({ id: m.id, status: m.status as MessageStatus, approved_by: m.approved_by, approved_at: m.approved_at, to_email: m.to_email, direction: m.direction }, !!sup);
   if (!gate.ok) throw new OutboundError(`gate_${gate.reason}`, `Refused to send: ${gate.reason}.`, 409);
+  // Send window: before the campaign's window opens, an approved email is held (stays "approved") and the hourly sync sends it inside the window.
+  const win = sendWindowState(m.template_key as string | null, new Date());
+  if (win.state === "before") {
+    await event(service, { businessId: b.id, prospectId: m.prospect_id, messageId: m.id, kind: "send_held", actor, payload: { window: win.window.id, opens_at: win.window.startISO, label: win.window.label } });
+    return { ...m, held_until: win.window.startISO, held_label: win.window.label };
+  }
   await guard(service, b.id);
   const origin = appOrigin();
   const unsub = `${origin}/api/outbound/unsubscribe/${m.id}/${unsubscribeToken(m.id, b.id, secret())}`;
@@ -337,6 +344,18 @@ function tzOffsetMinutes(tz: string, at: Date): number {
 }
 
 // ---------- cron entry ----------
+/** Send window release: while a window is open, send this business's approved, held emails for that window's templates (oldest approval first, capped per tick). */
+export async function releaseSendWindow(service: SupabaseClient, businessId: string, nowDate = new Date()): Promise<{ released: number; failed: number }> {
+  const keys = openWindowTemplateKeys(nowDate);
+  if (!keys.length) return { released: 0, failed: 0 };
+  const { data: queued } = await service.from("outbound_messages").select("id").eq("business_id", businessId).eq("status", "approved").eq("direction", "out").in("template_key", keys).not("approved_by", "is", null).order("approved_at", { ascending: true }).limit(RELEASE_CAP_PER_TICK);
+  let released = 0, failed = 0;
+  for (const m of queued ?? []) {
+    try { const r = await sendApprovedMessage(service, m.id as string, { kind: "system", id: null, label: "send-window" }); if ((r as { status?: string })?.status === "sent") released++; } catch { failed++; }
+  }
+  return { released, failed };
+}
+
 /** G6: retry human-approved sends that failed ≥ 1 h ago while the owner's Gmail connection is active. Cap 20 per business per run. */
 export async function retryFailedSends(service: SupabaseClient, businessId: string, nowDate = new Date()): Promise<{ retried: number; recovered: number }> {
   const b = await business(service, businessId);
@@ -401,14 +420,15 @@ export async function probeConnections(service: SupabaseClient, businessId: stri
   return res;
 }
 
-export async function runOutboundSync(service: SupabaseClient): Promise<{ businesses: number; replies: number; drafted: number; retried: number; recovered: number; reminders: number; deadConnections: number; alertRetries: { retried: number; recovered: number; exhausted: number }; errors: string[] }> {
+export async function runOutboundSync(service: SupabaseClient): Promise<{ businesses: number; replies: number; drafted: number; released: number; retried: number; recovered: number; reminders: number; deadConnections: number; alertRetries: { retried: number; recovered: number; exhausted: number }; errors: string[] }> {
   const { data: bizs } = await service.from("businesses").select("id").not("plan_key", "is", null);
-  const out = { businesses: 0, replies: 0, drafted: 0, retried: 0, recovered: 0, reminders: 0, deadConnections: 0, alertRetries: { retried: 0, recovered: 0, exhausted: 0 }, errors: [] as string[] };
+  const out = { businesses: 0, replies: 0, drafted: 0, released: 0, retried: 0, recovered: 0, reminders: 0, deadConnections: 0, alertRetries: { retried: 0, recovered: 0, exhausted: 0 }, errors: [] as string[] };
   for (const b of bizs ?? []) {
     out.businesses++;
     try { const p = await probeConnections(service, b.id); if (p.alerted) out.deadConnections++; } catch (e) { out.errors.push(`${b.id}:probe:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
     try { const r = await syncReplies(service, b.id); out.replies += r.replies; } catch (e) { out.errors.push(`${b.id}:sync:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
     try { const a = await advanceSequences(service, b.id, { kind: "system", id: null, label: "cron" }); out.drafted += a.drafted; } catch (e) { out.errors.push(`${b.id}:advance:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
+    try { const r = await releaseSendWindow(service, b.id); out.released += r.released; if (r.failed) out.errors.push(`${b.id}:window:${r.failed} send(s) failed`); } catch (e) { out.errors.push(`${b.id}:window:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
     try { const r = await retryFailedSends(service, b.id); out.retried += r.retried; out.recovered += r.recovered; } catch (e) { out.errors.push(`${b.id}:retry:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
     try { out.reminders += await remindPendingApprovals(service, b.id); } catch (e) { out.errors.push(`${b.id}:remind:${e instanceof Error ? e.message.slice(0, 80) : "err"}`); }
   }

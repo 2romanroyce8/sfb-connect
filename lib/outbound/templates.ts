@@ -23,6 +23,7 @@ export type TemplateVars = {
   meet_url?: string | null;
   slots?: string | null;      // "Tue 10:00, Wed 2:00, Thu 9:30 (ET)"
   review_link?: string | null;
+  years_in_business?: number | null; // only from a verified fact (an uploaded "years in business" column); never guessed
 };
 
 export type Template = { key: TemplateKey; subject: string; body: string; requires: (keyof TemplateVars)[] };
@@ -70,10 +71,12 @@ function derived(v: TemplateVars): Record<string, string> {
     slots_or_reply_cap: v.slots ? `${v.slots} — or reply with a time that suits you` : "Reply with a time that suits you",
     meet_line: v.meet_url ? ` Video link: ${v.meet_url}` : "",
     review_link_line: v.review_link ? `Here's the link: ${v.review_link}` : "Reply to this email and I'll send the link.",
+    // Optional: " for 12 years" when we know it, otherwise nothing (the sentence still reads right).
+    years_phrase: v.years_in_business && v.years_in_business > 0 ? ` for ${v.years_in_business} year${v.years_in_business === 1 ? "" : "s"}` : "",
   };
 }
 
-export const KNOWN_PLACEHOLDERS = new Set<string>(["company", "contact_name", "city", "category", "sender_name", "sender_company", "sender_category", "offer_line", "booking_time", "meet_url", "slots", "review_link", "first_name", "greeting", "greeting_person", "greeting_any", "sender_category_phrase", "sender_category_or_business", "city_phrase", "category_or_business", "sender_category_or_this", "slots_or_reply", "slots_or_reply_cap", "meet_line", "review_link_line"]);
+export const KNOWN_PLACEHOLDERS = new Set<string>(["company", "contact_name", "city", "category", "sender_name", "sender_company", "sender_category", "offer_line", "booking_time", "meet_url", "slots", "review_link", "first_name", "greeting", "greeting_person", "greeting_any", "sender_category_phrase", "sender_category_or_business", "city_phrase", "category_or_business", "sender_category_or_this", "slots_or_reply", "slots_or_reply_cap", "meet_line", "review_link_line", "years_in_business", "years_phrase"]);
 
 /** Pure: unknown placeholders in a customer-written template (after alias normalisation). Empty = valid. */
 export function validateSource(src: { subject: string; body: string }): string[] {
@@ -111,3 +114,22 @@ export const DEFAULT_SEQUENCE_STEPS: { day: number; template: TemplateKey }[] = 
 
 /** Footer every outbound email carries. The unsubscribe link is real and one click. */
 export const unsubscribeFooter = (url: string) => `\n\n—\nIf you'd rather not hear from us, one click and you won't: ${url}`;
+
+/** Years in business from a prospect's uploaded custom columns ("Years in business", "years", "Founded"…). Null unless it is a clear number. */
+export function yearsFromCustom(custom: Record<string, unknown> | null | undefined, now: Date = new Date()): number | null {
+  if (!custom || typeof custom !== "object") return null;
+  for (const [k, raw] of Object.entries(custom)) {
+    const key = k.toLowerCase().replace(/[^a-z]/g, "");
+    const val = String(raw ?? "").trim();
+    if (!val) continue;
+    if (["yearsinbusiness", "years", "yearsinoperation", "yib"].includes(key)) {
+      const n = Number(val.replace(/[^0-9]/g, ""));
+      if (/^\d{1,3}\+?(\s*(years?|yrs?))?$/i.test(val) && n > 0 && n < 200) return n;
+    }
+    if (["founded", "yearfounded", "established", "since", "inbusinesssince"].includes(key) && /^\d{4}$/.test(val)) {
+      const n = now.getFullYear() - Number(val);
+      if (n > 0 && n < 200) return n;
+    }
+  }
+  return null;
+}
