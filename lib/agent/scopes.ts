@@ -19,6 +19,8 @@ export const READ_SCOPES = {
   // The agent task queue is the agents' own workspace (no customer or CRM
   // data): creating, claiming, resulting and reviewing tasks is allowed.
   "sfb:tasks": "Create, claim, complete and review tasks in the agent task queue; message other agents",
+  // The "Give HyperAgent" queue is Rome's own paste-list (no customer or CRM data) — Roman, 2026-10-18: Atlas may add cards.
+  "sfb:prompts:write": "Add and read prompt cards in the Give HyperAgent queue",
 } as const;
 
 export const WRITE_SCOPES = {
@@ -37,7 +39,7 @@ export type Scope = ReadScope | WriteScope;
 
 export const ALL_SCOPES: Scope[] = [...(Object.keys(READ_SCOPES) as ReadScope[]), ...(Object.keys(WRITE_SCOPES) as WriteScope[])];
 export const GRANTABLE_SCOPES: Scope[] = Object.keys(READ_SCOPES) as ReadScope[];
-export const DEFAULT_SCOPES: Scope[] = ["sfb:workspace:read", "sfb:team:read", "sfb:leads:read", "sfb:pipeline:read", "sfb:research:read", "sfb:audit:read", "sfb:ai_presence:read", "sfb:browser", "sfb:tasks"];
+export const DEFAULT_SCOPES: Scope[] = ["sfb:workspace:read", "sfb:team:read", "sfb:leads:read", "sfb:pipeline:read", "sfb:research:read", "sfb:audit:read", "sfb:ai_presence:read", "sfb:browser", "sfb:tasks", "sfb:prompts:write"];
 
 export function describeScope(scope: string): string {
   return (READ_SCOPES as Record<string, string>)[scope] ?? (WRITE_SCOPES as Record<string, string>)[scope] ?? scope;

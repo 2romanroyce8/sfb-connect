@@ -3,6 +3,8 @@ import { requireScope, AgentAuthError, appOrigin } from "./auth";
 import { audit, issueBrowserHandoff } from "./store";
 import type { NextRequest } from "next/server";
 import { toOrFilterValue } from "@/lib/postgrestFilter";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { createCard, listCards } from "@/lib/crm/promptQueue";
 
 // ============================================================
 // SEMANTIC TOOLS
@@ -282,6 +284,35 @@ TOOLS.push(
       const r = await q;
       fail(r.error, "load prospect findings");
       return { findings: r.data ?? [] };
+    },
+  },
+);
+
+TOOLS.push(
+  {
+    name: "add_sfb_prompt_card",
+    description: "Add a card to Rome's 'Give HyperAgent' queue (/team/prompts): something Rome needs to paste into HyperAgent. Provide the exact prompt text verbatim (stored and displayed as plain text, line breaks kept, never rendered as markdown). send_order is the paste order (1 = first); omit to append at the end. Urgency is a label only and never changes the order. Files cannot be attached through this tool — mention needed files in the text and Rome attaches them in the tab.",
+    scope: "sfb:prompts:write",
+    inputSchema: obj({ name: str("Short label, e.g. 'Blitz prompt #1 — bulk load'"), prompt_text: str("The full prompt, exactly as it should be pasted"), urgency: { type: "string", enum: ["high", "medium", "low"], description: "Label only (default medium)" }, send_order: int("Position in the queue; omit to append", 1, 999) }, ["name", "prompt_text"]),
+    outputSchema: obj({ card: obj({ id: str(""), name: str(""), urgency: str(""), send_order: { type: "integer" }, status: str(""), created_at: str("") }) }),
+    async run(ctx, a) {
+      const { data: me } = await ctx.user.from("users").select("full_name, email").eq("id", ctx.userId).maybeSingle();
+      try {
+        const card = await createCard(createSupabaseServiceClient(), { name: s(a.name), prompt_text: typeof a.prompt_text === "string" ? a.prompt_text : "", urgency: a.urgency, send_order: a.send_order, created_by: null, created_by_label: `${ctx.clientId} (agent, authorized by ${me?.full_name || me?.email || ctx.userId})`, source: "agent" });
+        return { card: { id: card.id, name: card.name, urgency: card.urgency, send_order: card.send_order, status: card.status, created_at: card.created_at } };
+      } catch (e) { throw new AgentAuthError(400, "invalid", e instanceof Error ? e.message : "Could not add the card."); }
+    },
+  },
+  {
+    name: "list_sfb_prompt_cards",
+    description: "List Rome's 'Give HyperAgent' queue (queued cards in send order) or the Sent Prompts history (newest first). Use to avoid adding a duplicate card or to check whether a prompt was already sent.",
+    scope: "sfb:prompts:write",
+    readOnly: true,
+    inputSchema: obj({ view: { type: "string", enum: ["queue", "sent"], description: "Default queue" } }),
+    outputSchema: obj({ cards: { type: "array", items: obj({ id: str(""), name: str(""), urgency: str(""), send_order: { type: "integer" }, status: str(""), sent_at: { type: ["string", "null"] }, created_at: str(""), prompt_text: str("") }) } }),
+    async run(_ctx, a) {
+      const cards = await listCards(createSupabaseServiceClient(), s(a.view) === "sent" ? "sent" : "queued");
+      return { cards: cards.map((c) => ({ id: c.id, name: c.name, urgency: c.urgency, send_order: c.send_order, status: c.status, sent_at: c.sent_at, created_at: c.created_at, prompt_text: c.prompt_text })) };
     },
   },
 );
