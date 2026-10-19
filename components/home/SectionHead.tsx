@@ -22,11 +22,11 @@ export default function SectionHead({
         {title}
       </h2>
       {subtitle && (
-        <p className={`mt-4 text-[15px] leading-relaxed text-[#a3a3a8] ${center ? "mx-auto" : ""}`}>{subtitle}</p>
+        <p className={`mt-4 text-[15px] leading-relaxed text-[color:var(--hx-a3a3a8)] ${center ? "mx-auto" : ""}`}>{subtitle}</p>
       )}
       {description && (
         <p
-          className={`mt-5 text-[17px] leading-relaxed text-[#a3a3a8] max-w-[640px] ${
+          className={`mt-5 text-[17px] leading-relaxed text-[color:var(--hx-a3a3a8)] max-w-[640px] ${
             center ? "mx-auto" : ""
           }`}
         >

@@ -30,17 +30,17 @@ const OFFER_LABEL: Record<string, string> = {
 };
 
 const OUTCOMES: { value: string; label: string; color: string }[] = [
-  { value: "booked_meeting", label: "Booked Meeting", color: "#30D158" },
-  { value: "interested", label: "Interested", color: "#30D158" },
-  { value: "call_back_later", label: "Call Back Later", color: "#FFD60A" },
-  { value: "no_answer", label: "No Answer", color: "#6E6E73" },
-  { value: "voicemail", label: "Voicemail", color: "#6E6E73" },
-  { value: "not_interested", label: "Not Interested", color: "#FF453A" },
-  { value: "wrong_number", label: "Wrong Number", color: "#FF9F0A" },
-  { value: "hung_up", label: "Hung Up", color: "#FF453A" },
-  { value: "bad_lead", label: "Bad Lead", color: "#FF453A" },
-  { value: "sale_closed", label: "Sale Closed", color: "#30D158" },
-  { value: "other", label: "Other", color: "#6E6E73" },
+  { value: "booked_meeting", label: "Booked Meeting", color: "var(--hx-30d158)" },
+  { value: "interested", label: "Interested", color: "var(--hx-30d158)" },
+  { value: "call_back_later", label: "Call Back Later", color: "var(--hx-ffd60a)" },
+  { value: "no_answer", label: "No Answer", color: "var(--hx-6e6e73)" },
+  { value: "voicemail", label: "Voicemail", color: "var(--hx-6e6e73)" },
+  { value: "not_interested", label: "Not Interested", color: "var(--hx-ff453a)" },
+  { value: "wrong_number", label: "Wrong Number", color: "var(--hx-ff9f0a)" },
+  { value: "hung_up", label: "Hung Up", color: "var(--hx-ff453a)" },
+  { value: "bad_lead", label: "Bad Lead", color: "var(--hx-ff453a)" },
+  { value: "sale_closed", label: "Sale Closed", color: "var(--hx-30d158)" },
+  { value: "other", label: "Other", color: "var(--hx-6e6e73)" },
 ];
 
 function formatDuration(seconds: number) {
@@ -153,21 +153,21 @@ export default function CallWorkspace({
 
   return (
     <div className="px-8 py-6">
-      <div className="flex items-center justify-between mb-6 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex items-center justify-between mb-6 pb-4" style={{ borderBottom: "1px solid rgb(var(--w) / 0.08)" }}>
         <div>
-          <div className="text-[18px] font-semibold text-[#F5F5F7]">{lead.business_name || "Unnamed lead"}</div>
-          <div className="text-[13px] text-[#A1A1A6] mt-0.5">{lead.phone || "No phone on file"}</div>
+          <div className="text-[18px] font-semibold text-[color:var(--hx-f5f5f7)]">{lead.business_name || "Unnamed lead"}</div>
+          <div className="text-[13px] text-[color:var(--hx-a1a1a6)] mt-0.5">{lead.phone || "No phone on file"}</div>
         </div>
         <div className="flex items-center gap-6">
           {opportunity && (
             <div className="text-right">
-              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Recommended Offer</div>
-              <div className="text-[13.5px] text-[#F5F5F7]">{OFFER_LABEL[opportunity.primary_offer]}</div>
+              <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Recommended Offer</div>
+              <div className="text-[13.5px] text-[color:var(--hx-f5f5f7)]">{OFFER_LABEL[opportunity.primary_offer]}</div>
             </div>
           )}
           <div className="text-right">
-            <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Verification</div>
-            <div className="text-[13.5px] text-[#F5F5F7]">{lead.phone ? "Phone on file" : "Unverified"}</div>
+            <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Verification</div>
+            <div className="text-[13.5px] text-[color:var(--hx-f5f5f7)]">{lead.phone ? "Phone on file" : "Unverified"}</div>
           </div>
         </div>
       </div>
@@ -175,31 +175,31 @@ export default function CallWorkspace({
       <div className="grid grid-cols-[240px_1fr_300px] gap-6">
         {/* LEFT: business intelligence */}
         <div className="flex flex-col gap-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">Business Intelligence</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Business Intelligence</div>
           <Info label="Contact" value={lead.phone || "Not found"} />
           <Info label="Category" value={lead.category || "Unknown"} />
           <Info label="Location" value={[lead.city, lead.state].filter(Boolean).join(", ") || "Unknown"} />
           {weakestCategory && <Info label="Key Weakness" value={weakestCategory.category.replace(/_/g, " ")} />}
           {strengths.length > 0 && (
             <div>
-              <div className="text-[10.5px] uppercase tracking-wide text-[#30D158] mb-1">Strongest Point</div>
-              <div className="text-[12px] text-[#A1A1A6]">{strengths[0]}</div>
+              <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-30d158)] mb-1">Strongest Point</div>
+              <div className="text-[12px] text-[color:var(--hx-a1a1a6)]">{strengths[0]}</div>
             </div>
           )}
           {struggles.length > 0 && (
             <div>
-              <div className="text-[10.5px] uppercase tracking-wide text-[#FFD60A] mb-1">Talking Points</div>
+              <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-ffd60a)] mb-1">Talking Points</div>
               {struggles.map((s, i) => (
-                <div key={i} className="text-[12px] text-[#A1A1A6] mb-1">• {s}</div>
+                <div key={i} className="text-[12px] text-[color:var(--hx-a1a1a6)] mb-1">• {s}</div>
               ))}
             </div>
           )}
         </div>
 
         {/* CENTER: script */}
-        <div className="rounded-[14px] p-6 flex flex-col gap-4 max-h-[70vh] overflow-y-auto" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[14px] p-6 flex flex-col gap-4 max-h-[70vh] overflow-y-auto" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           {!script ? (
-            <div className="text-[13px] text-[#6E6E73]">No script generated yet for this lead.</div>
+            <div className="text-[13px] text-[color:var(--hx-6e6e73)]">No script generated yet for this lead.</div>
           ) : (
             (
               [
@@ -215,8 +215,8 @@ export default function CallWorkspace({
               ] as [string, string][]
             ).map(([label, text]) => (
               <div key={label}>
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-1">{label}</div>
-                <p className="text-[14px] text-[#F5F5F7] leading-relaxed">{text}</p>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1">{label}</div>
+                <p className="text-[14px] text-[color:var(--hx-f5f5f7)] leading-relaxed">{text}</p>
               </div>
             ))
           )}
@@ -234,22 +234,22 @@ export default function CallWorkspace({
             </button>
           ) : (
             <>
-              <div className="rounded-[10px] p-4 text-center" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="text-[28px] font-mono font-semibold text-[#F5F5F7]">{formatDuration(elapsed)}</div>
-                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] mt-1">Device Call in progress</div>
+              <div className="rounded-[10px] p-4 text-center" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+                <div className="text-[28px] font-mono font-semibold text-[color:var(--hx-f5f5f7)]">{formatDuration(elapsed)}</div>
+                <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mt-1">Device Call in progress</div>
               </div>
               <button
                 onClick={() => setShowOutcome(true)}
                 className="h-[42px] rounded-[9px] text-[13.5px] font-semibold flex items-center justify-center gap-2"
-                style={{ background: "#FF453A", color: "white" }}
+                style={{ background: "var(--hx-ff453a)", color: "white" }}
               >
                 <PhoneOff size={15} /> End Call
               </button>
             </>
           )}
 
-          <div className="rounded-[12px] p-3 flex-1" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] mb-2">Notes</div>
+          <div className="rounded-[12px] p-3 flex-1" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+            <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-2">Notes</div>
             <textarea
               value={notes}
               onChange={(e) => {
@@ -259,14 +259,14 @@ export default function CallWorkspace({
               disabled={!call}
               placeholder={call ? "Type notes during the call — autosaves" : "Start a call to take notes"}
               className="w-full h-[220px] resize-none rounded-[8px] p-2.5 text-[12.5px] outline-none disabled:opacity-50"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             />
           </div>
         </div>
       </div>
 
       {showOutcome && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.7)" }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgb(var(--k) / 0.7)" }}>
           <div
             className="rounded-[14px] p-6"
             style={{
@@ -277,11 +277,11 @@ export default function CallWorkspace({
               width: outcome === "booked_meeting" ? "min(560px, calc(100vw - 32px))" : 420,
               maxHeight: outcome === "booked_meeting" ? "calc(100vh - 48px)" : undefined,
               overflowY: outcome === "booked_meeting" ? "auto" : undefined,
-              background: "#0A0A0A",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--hx-0a0a0a)",
+              border: "1px solid rgb(var(--w) / 0.1)",
             }}
           >
-            <div className="text-[16px] font-semibold text-[#F5F5F7] mb-4">What happened?</div>
+            <div className="text-[16px] font-semibold text-[color:var(--hx-f5f5f7)] mb-4">What happened?</div>
             <div className="grid grid-cols-2 gap-2 mb-4">
               {OUTCOMES.map((o) => (
                 <button
@@ -289,9 +289,9 @@ export default function CallWorkspace({
                   onClick={() => setOutcome(o.value)}
                   className="h-[38px] rounded-[8px] text-[12.5px] text-left px-3"
                   style={{
-                    background: outcome === o.value ? "#151515" : "transparent",
-                    border: `1px solid ${outcome === o.value ? o.color : "rgba(255,255,255,0.08)"}`,
-                    color: outcome === o.value ? "#F5F5F7" : "#A1A1A6",
+                    background: outcome === o.value ? "var(--hx-151515)" : "transparent",
+                    border: `1px solid ${outcome === o.value ? o.color : "rgb(var(--w) / 0.08)"}`,
+                    color: outcome === o.value ? "var(--hx-f5f5f7)" : "var(--hx-a1a1a6)",
                   }}
                 >
                   {o.label}
@@ -305,13 +305,13 @@ export default function CallWorkspace({
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Reason (optional)"
                 className="w-full h-[38px] rounded-[8px] px-3 text-[13px] outline-none mb-3"
-                style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+                style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
               />
             )}
 
             {(outcome === "call_back_later" || outcome === "interested" || outcome === "no_answer" || outcome === "voicemail") && (
               <div className="mb-3">
-                <label className="text-[11px] text-[#6E6E73] uppercase tracking-wide">Follow up on</label>
+                <label className="text-[11px] text-[color:var(--hx-6e6e73)] uppercase tracking-wide">Follow up on</label>
                 <div className="mt-1">
                   <ScheduleTimeZonePicker employeeTimezone={employeeTimezone} leadCity={lead.city} leadState={lead.state} onChange={setFollowupSchedule} />
                 </div>
@@ -345,8 +345,8 @@ export default function CallWorkspace({
                 </button>
                 <button
                   onClick={() => setShowOutcome(false)}
-                  className="h-[38px] px-4 rounded-[8px] text-[13px] text-[#A1A1A6]"
-                  style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+                  className="h-[38px] px-4 rounded-[8px] text-[13px] text-[color:var(--hx-a1a1a6)]"
+                  style={{ border: "1px solid rgb(var(--w) / 0.1)" }}
                 >
                   Cancel
                 </button>
@@ -362,8 +362,8 @@ export default function CallWorkspace({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{label}</div>
-      <div className="text-[13px] text-[#F5F5F7] capitalize">{value}</div>
+      <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{label}</div>
+      <div className="text-[13px] text-[color:var(--hx-f5f5f7)] capitalize">{value}</div>
     </div>
   );
 }

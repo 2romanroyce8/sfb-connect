@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import "./theme-tokens.css";
 import "./globals.css";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -61,7 +63,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${mono.variable} ${instrumentSerif.variable}`}
+      data-theme="dark"
+      suppressHydrationWarning
     >
+      <head>
+        {/* Theme before first paint (lib/theme.ts): localStorage → cookie → default. Static pages stay static. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="font-sans">
         <script
           type="application/ld+json"

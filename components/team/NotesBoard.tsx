@@ -69,8 +69,8 @@ export default function NotesBoard({
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-[20px] font-semibold text-[#F5F5F7]">Notes</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1">{notes.length} note{notes.length === 1 ? "" : "s"}</div>
+          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Notes</div>
+          <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">{notes.length} note{notes.length === 1 ? "" : "s"}</div>
         </div>
         <button
           onClick={() => setShowNew((v) => !v)}
@@ -81,12 +81,12 @@ export default function NotesBoard({
       </div>
 
       {showNew && (
-        <div className="rounded-[12px] p-4 mb-6 flex flex-col gap-3 max-w-[560px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[12px] p-4 mb-6 flex flex-col gap-3 max-w-[560px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           <select
             value={selectedLead}
             onChange={(e) => setSelectedLead(e.target.value)}
             className="h-[36px] rounded-[8px] px-3 text-[13px] outline-none"
-            style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+            style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
           >
             {myLeads.length === 0 && <option value="">No leads available</option>}
             {myLeads.map((l) => (
@@ -100,7 +100,7 @@ export default function NotesBoard({
             onChange={(e) => setContent(e.target.value)}
             placeholder="Write a note…"
             className="h-[90px] resize-none rounded-[8px] p-2.5 text-[13px] outline-none"
-            style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+            style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
           />
           <button
             onClick={submitNote}
@@ -118,14 +118,14 @@ export default function NotesBoard({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search notes or business…"
           className="h-[36px] w-[260px] rounded-[8px] px-3 text-[12.5px] outline-none"
-          style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
         />
         {isOwner && (
           <select
             value={authorFilter}
             onChange={(e) => setAuthorFilter(e.target.value)}
             className="h-[36px] rounded-[8px] px-3 text-[12.5px] outline-none"
-            style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+            style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
           >
             <option value="">All authors</option>
             {authorOptions.map((a) => (
@@ -138,25 +138,25 @@ export default function NotesBoard({
       </div>
 
       {sorted.length === 0 ? (
-        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           {notes.length === 0 ? (
             <>
-              <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No notes yet</div>
-              <p className="text-[13px] text-[#A1A1A6]">Notes you add to leads and calls show up here. Use New note to write the first one.</p>
+              <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No notes yet</div>
+              <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Notes you add to leads and calls show up here. Use New note to write the first one.</p>
             </>
           ) : (
             <>
-              <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No notes match these filters</div>
-              <p className="text-[13px] text-[#A1A1A6]">Clear the search{authorFilter ? " or author filter" : ""} to see all {notes.length} notes.</p>
+              <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No notes match these filters</div>
+              <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Clear the search{authorFilter ? " or author filter" : ""} to see all {notes.length} notes.</p>
             </>
           )}
         </div>
       ) : (
         <div className="flex flex-col gap-2 max-w-[720px]">
           {sorted.map((n) => (
-            <div key={n.id} className="p-4 rounded-[12px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div key={n.id} className="p-4 rounded-[12px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
               <div className="flex items-center justify-between mb-1.5">
-                <Link href={`/team/leads/${n.lead_id}`} className="text-[12.5px] text-[#F5F5F7] hover:underline">
+                <Link href={`/team/leads/${n.lead_id}`} className="text-[12.5px] text-[color:var(--hx-f5f5f7)] hover:underline">
                   {leadMap[n.lead_id] || "Unknown lead"}
                 </Link>
                 <button
@@ -167,13 +167,13 @@ export default function NotesBoard({
                       return next;
                     })
                   }
-                  className="text-[#6E6E73] hover:text-white"
+                  className="text-[color:var(--hx-6e6e73)] hover:text-white"
                 >
                   <Pin size={13} fill={pinned.has(n.id) ? "currentColor" : "none"} />
                 </button>
               </div>
-              <p className="text-[13.5px] text-[#F5F5F7] leading-relaxed mb-1.5">{n.note}</p>
-              <div className="text-[11px] text-[#6E6E73] capitalize">
+              <p className="text-[13.5px] text-[color:var(--hx-f5f5f7)] leading-relaxed mb-1.5">{n.note}</p>
+              <div className="text-[11px] text-[color:var(--hx-6e6e73)] capitalize">
                 {n.note_type} · {n.author_id ? authorMap[n.author_id] || "Unknown" : "System"} · {new Date(n.created_at).toLocaleString()}
               </div>
             </div>

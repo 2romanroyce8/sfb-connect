@@ -85,20 +85,20 @@ function TeamLoginForm() {
   return (
     <main
       className="w-full min-h-screen relative flex items-center justify-center overflow-hidden"
-      style={{ background: "#050505", fontFamily: "Inter, SF Pro Display, Helvetica Neue, Arial, sans-serif" }}
+      style={{ background: "var(--hx-050505)", fontFamily: "Inter, SF Pro Display, Helvetica Neue, Arial, sans-serif" }}
     >
       {/* center glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle at 50% 47%, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.028) 22%, rgba(255,255,255,0.012) 40%, rgba(0,0,0,0) 64%), radial-gradient(circle at 50% 50%, rgba(25,25,25,0.42) 0%, rgba(12,12,12,0.34) 38%, rgba(0,0,0,0.80) 100%)",
+            "radial-gradient(circle at 50% 47%, rgb(var(--w) / 0.055) 0%, rgb(var(--w) / 0.028) 22%, rgb(var(--w) / 0.012) 40%, rgb(var(--k) / 0) 64%), radial-gradient(circle at 50% 50%, rgba(25,25,25,0.42) 0%, rgba(12,12,12,0.34) 38%, rgb(var(--k) / 0.80) 100%)",
         }}
       />
       {/* heavy vignette */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.22) 52%, rgba(0,0,0,0.82) 100%)" }}
+        style={{ background: "radial-gradient(ellipse at center, transparent 20%, rgb(var(--k) / 0.22) 52%, rgb(var(--k) / 0.82) 100%)" }}
       />
       {/* fine grain */}
       <div
@@ -123,26 +123,26 @@ function TeamLoginForm() {
               fontWeight: 400,
               letterSpacing: "0.22em",
               textTransform: "uppercase",
-              color: "#F2F2F2",
+              color: "var(--hx-f2f2f2)",
             }}
           >
             SFB Connect
           </span>
           <div className="flex items-center gap-[6px]" style={{ marginTop: 5, opacity: 0.38 }}>
             {Array.from({ length: 9 }).map((_, i) => (
-              <span key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "#F2F2F2" }} />
+              <span key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "var(--hx-f2f2f2)" }} />
             ))}
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col items-center">
           {notAuthorized && (
-            <p style={{ fontSize: 10, color: "#B96A6A", marginBottom: 14, textAlign: "center" }}>
+            <p style={{ fontSize: 10, color: "var(--hx-b96a6a)", marginBottom: 14, textAlign: "center" }}>
               That account doesn&apos;t have team access.
             </p>
           )}
           {agentError && (
-            <p style={{ fontSize: 10, color: "#B96A6A", marginBottom: 14, textAlign: "center" }}>
+            <p style={{ fontSize: 10, color: "var(--hx-b96a6a)", marginBottom: 14, textAlign: "center" }}>
               {agentError === "agent_revoked" ? "That agent's access has been revoked. Sign in yourself to continue." : agentError === "agent_link_invalid" ? "That agent sign-in link has expired or was already used." : "The agent session could not be opened."}
             </p>
           )}
@@ -152,13 +152,13 @@ function TeamLoginForm() {
               className="relative flex items-center w-full"
               style={{
                 height: 35,
-                background: "#242424",
-                border: "1px solid rgba(255,255,255,0.015)",
+                background: "var(--hx-242424)",
+                border: "1px solid rgb(var(--w) / 0.015)",
                 borderRadius: 7,
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.018), 0 4px 18px rgba(0,0,0,0.10)",
+                boxShadow: "inset 0 1px 0 rgb(var(--w) / 0.018), 0 4px 18px rgba(0,0,0,0.10)",
               }}
             >
-              <UserRound size={16} strokeWidth={2.4} className="absolute left-[18px]" style={{ color: "#050505", opacity: 0.95 }} />
+              <UserRound size={16} strokeWidth={2.4} className="absolute left-[18px]" style={{ color: "var(--hx-050505)", opacity: 0.95 }} />
               <input
                 type="email"
                 required
@@ -168,7 +168,7 @@ function TeamLoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="sfb-login-input w-full h-full outline-none"
-                style={{ padding: "0 18px 0 48px", background: "transparent", color: "#D8D8D8", fontSize: 13, fontWeight: 400, borderRadius: 7 }}
+                style={{ padding: "0 18px 0 48px", background: "transparent", color: "var(--hx-d8d8d8)", fontSize: 13, fontWeight: 400, borderRadius: 7 }}
               />
             </div>
 
@@ -176,13 +176,13 @@ function TeamLoginForm() {
               className="relative flex items-center w-full"
               style={{
                 height: 35,
-                background: "#242424",
-                border: "1px solid rgba(255,255,255,0.015)",
+                background: "var(--hx-242424)",
+                border: "1px solid rgb(var(--w) / 0.015)",
                 borderRadius: 7,
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.018), 0 4px 18px rgba(0,0,0,0.10)",
+                boxShadow: "inset 0 1px 0 rgb(var(--w) / 0.018), 0 4px 18px rgba(0,0,0,0.10)",
               }}
             >
-              <LockKeyhole size={16} strokeWidth={2.4} className="absolute left-[18px]" style={{ color: "#050505", opacity: 0.95 }} />
+              <LockKeyhole size={16} strokeWidth={2.4} className="absolute left-[18px]" style={{ color: "var(--hx-050505)", opacity: 0.95 }} />
               <input
                 type="password"
                 required
@@ -191,16 +191,16 @@ function TeamLoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="sfb-login-input w-full h-full outline-none"
-                style={{ padding: "0 18px 0 48px", background: "transparent", color: "#D8D8D8", fontSize: 13, fontWeight: 400, borderRadius: 7 }}
+                style={{ padding: "0 18px 0 48px", background: "transparent", color: "var(--hx-d8d8d8)", fontSize: 13, fontWeight: 400, borderRadius: 7 }}
               />
             </div>
           </div>
 
-          {error && <p style={{ fontSize: 10, fontWeight: 400, color: "#B96A6A", marginTop: 9, textAlign: "center" }}>{error}</p>}
+          {error && <p style={{ fontSize: 10, fontWeight: 400, color: "var(--hx-b96a6a)", marginTop: 9, textAlign: "center" }}>{error}</p>}
 
           <label
             className="flex items-center gap-2 select-none cursor-pointer"
-            style={{ marginTop: 18, fontSize: 10, fontWeight: 400, color: remember ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.3)", letterSpacing: "0.04em" }}
+            style={{ marginTop: 18, fontSize: 10, fontWeight: 400, color: remember ? "rgb(var(--w) / 0.55)" : "rgb(var(--w) / 0.3)", letterSpacing: "0.04em" }}
           >
             <span
               aria-hidden
@@ -208,15 +208,15 @@ function TeamLoginForm() {
                 width: 12,
                 height: 12,
                 borderRadius: 3,
-                border: "1px solid rgba(255,255,255,0.22)",
-                background: remember ? "#D8D8D8" : "transparent",
+                border: "1px solid rgb(var(--w) / 0.22)",
+                background: remember ? "var(--hx-d8d8d8)" : "transparent",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 transition: "background 120ms",
               }}
             >
-              {remember && <span style={{ width: 6, height: 6, borderRadius: 1, background: "#050505" }} />}
+              {remember && <span style={{ width: 6, height: 6, borderRadius: 1, background: "var(--hx-050505)" }} />}
             </span>
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="sr-only" aria-label="Stay signed in" />
             Stay signed in
@@ -233,11 +233,11 @@ function TeamLoginForm() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "#080808",
-                border: "1px solid rgba(255,255,255,0.025)",
+                background: "var(--hx-080808)",
+                border: "1px solid rgb(var(--w) / 0.025)",
                 borderRadius: 2,
                 boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
-                color: "#7B7B7B",
+                color: "var(--hx-7b7b7b)",
               }}
             >
               {loading ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" /> : <ArrowRight size={24} strokeWidth={1} />}
@@ -246,9 +246,9 @@ function TeamLoginForm() {
 
           <a
             href="/team/forgot-password"
-            style={{ marginTop: 18, fontSize: 9, fontWeight: 400, color: "rgba(255,255,255,0.24)", textDecoration: "none" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.24)")}
+            style={{ marginTop: 18, fontSize: 9, fontWeight: 400, color: "rgb(var(--w) / 0.24)", textDecoration: "none" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "rgb(var(--w) / 0.55)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "rgb(var(--w) / 0.24)")}
           >
             Forgot password?
           </a>
@@ -269,10 +269,10 @@ function TeamLoginForm() {
           appearance: none;
           box-sizing: border-box;
           border: none;
-          caret-color: #ffffff;
+          caret-color: var(--hx-ffffff);
         }
         .sfb-login-input:focus {
-          background: #272727 !important;
+          background: var(--hx-272727) !important;
           outline: none !important;
           box-shadow: none !important;
         }
@@ -280,10 +280,10 @@ function TeamLoginForm() {
         .sfb-login-input:-webkit-autofill:hover,
         .sfb-login-input:-webkit-autofill:focus,
         .sfb-login-input:-webkit-autofill:active {
-          -webkit-text-fill-color: #d8d8d8 !important;
-          -webkit-box-shadow: 0 0 0 1000px #242424 inset !important;
-          box-shadow: 0 0 0 1000px #242424 inset !important;
-          caret-color: #ffffff !important;
+          -webkit-text-fill-color: var(--hx-d8d8d8) !important;
+          -webkit-box-shadow: 0 0 0 1000px var(--hx-242424) inset !important;
+          box-shadow: 0 0 0 1000px var(--hx-242424) inset !important;
+          caret-color: var(--hx-ffffff) !important;
           transition: background-color 9999s ease-out 0s;
         }
       `}</style>

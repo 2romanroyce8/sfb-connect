@@ -1,5 +1,6 @@
 "use client";
 
+import ThemeToggle from "@/components/ThemeToggle";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -137,7 +138,7 @@ export default function TeamSidebar({
   return (
     <aside
       className="w-[260px] shrink-0 h-screen sticky top-0 flex flex-col"
-      style={{ background: "#0C0C0C", borderRight: "1px solid rgba(255,255,255,0.06)" }}
+      style={{ background: "var(--hx-0c0c0c)", borderRight: "1px solid rgb(var(--w) / 0.06)" }}
     >
       <div className="px-[18px] pt-[18px] pb-1 flex items-center gap-2" style={{ height: 44 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -146,11 +147,11 @@ export default function TeamSidebar({
           SFB CONNECT
         </span>
       </div>
-      <div className="px-[18px] pb-1 text-[10px] text-[#6E6E73] tracking-wide uppercase">Sales OS</div>
+      <div className="px-[18px] pb-1 text-[10px] text-[color:var(--hx-6e6e73)] tracking-wide uppercase">Sales OS</div>
 
       <SidebarSearch />
 
-      <div className="pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="pb-2" style={{ borderBottom: "1px solid rgb(var(--w) / 0.06)" }}>
         <ClockControl activeSession={activeSession} />
       </div>
 
@@ -164,7 +165,7 @@ export default function TeamSidebar({
               {group.label && (
                 <button
                   onClick={() => setCollapsed((c) => ({ ...c, [group.label!]: !c[group.label!] }))}
-                  className="w-full flex items-center justify-between px-2 mb-1 text-[10px] font-semibold tracking-[0.1em] uppercase text-[#6E6E73] hover:text-[#A1A1A6]"
+                  className="w-full flex items-center justify-between px-2 mb-1 text-[10px] font-semibold tracking-[0.1em] uppercase text-[color:var(--hx-6e6e73)] hover:text-[color:var(--hx-a1a1a6)]"
                 >
                   {group.label}
                   {group.collapsible && (
@@ -182,7 +183,7 @@ export default function TeamSidebar({
                         key={item.href}
                         href={item.href}
                         className="flex items-center gap-[11px] px-2.5 rounded-[5px] text-[14px] transition-colors"
-                        style={{ height: 36, background: active ? "#151515" : "transparent", color: active ? "#FFFFFF" : "#A1A1A6" }}
+                        style={{ height: 36, background: active ? "var(--hx-151515)" : "transparent", color: active ? "var(--hx-ffffff)" : "var(--hx-a1a1a6)" }}
                       >
                         <Icon size={16} strokeWidth={1.75} />
                         {item.label}
@@ -196,7 +197,7 @@ export default function TeamSidebar({
         })}
       </nav>
 
-      <div className="px-3 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="px-3 py-4" style={{ borderTop: "1px solid rgb(var(--w) / 0.08)" }}>
         <div className="flex items-center gap-2.5 px-2.5 py-2">
           <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden">
             {avatarUrl ? (
@@ -207,15 +208,16 @@ export default function TeamSidebar({
             )}
           </div>
           <div className="min-w-0">
-            <div className="text-[12.5px] text-[#F5F5F7] truncate">{name}</div>
-            <div className="text-[10.5px] text-[#6E6E73] capitalize">
+            <div className="text-[12.5px] text-[color:var(--hx-f5f5f7)] truncate">{name}</div>
+            <div className="text-[10.5px] text-[color:var(--hx-6e6e73)] capitalize">
               {role === "owner" ? "Owner" : "Sales Rep"}
             </div>
           </div>
         </div>
+        <div className="flex items-center justify-between px-2.5 py-[6px] mt-1 text-[12.5px] text-[color:var(--hx-a1a1a6)]"><span>Appearance</span><ThemeToggle compact className="!w-[30px] !h-[30px]" /></div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-[7px] mt-1 rounded-[8px] text-[13px] text-[#A1A1A6] hover:text-white hover:bg-[#151515] transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-[7px] mt-1 rounded-[8px] text-[13px] text-[color:var(--hx-a1a1a6)] hover:text-white hover:bg-[color:var(--hx-151515)] transition-colors"
         >
           <LogOut size={15} strokeWidth={1.75} />
           Log Out

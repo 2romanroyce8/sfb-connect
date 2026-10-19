@@ -28,20 +28,20 @@ export default function OverseerAssignments() {
   const name = (m: Member) => m.full_name || m.email;
   return (
     <div className="px-8 pb-10 max-w-[960px]">
-      <div className="rounded-[12px] p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="text-[13px] font-semibold text-[#F5F5F7] mb-1">Agent overseers (customers)</div>
-        <p className="text-[12px] text-[#A1A1A6] mb-3">Every customer&apos;s SFB Agent has one human overseer. Pick who it is here; the name and role appear on that customer&apos;s dashboard.</p>
-        {!loaded ? <div className="text-[12px] text-[#6E6E73]">Loading…</div> : businesses.length === 0 ? (
-          <div className="text-[12.5px] text-[#6E6E73]">No customer businesses yet. When a customer buys an SFB Agent plan (or a lead is marked Won), they appear here.</div>
+      <div className="rounded-[12px] p-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+        <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)] mb-1">Agent overseers (customers)</div>
+        <p className="text-[12px] text-[color:var(--hx-a1a1a6)] mb-3">Every customer&apos;s SFB Agent has one human overseer. Pick who it is here; the name and role appear on that customer&apos;s dashboard.</p>
+        {!loaded ? <div className="text-[12px] text-[color:var(--hx-6e6e73)]">Loading…</div> : businesses.length === 0 ? (
+          <div className="text-[12.5px] text-[color:var(--hx-6e6e73)]">No customer businesses yet. When a customer buys an SFB Agent plan (or a lead is marked Won), they appear here.</div>
         ) : (
           <ul className="flex flex-col gap-1.5">
             {businesses.map((b) => (
-              <li key={b.id} className="flex items-center justify-between gap-3 rounded-[10px] px-3 py-2" style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <li key={b.id} className="flex items-center justify-between gap-3 rounded-[10px] px-3 py-2" style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                 <div className="min-w-0">
-                  <div className="text-[13px] text-[#F5F5F7] truncate">{b.legal_name || "Unnamed business"}</div>
-                  <div className="text-[11px] text-[#6E6E73]">{b.plan_key ? b.plan_key.replace(/_/g, " ") : "no plan"}</div>
+                  <div className="text-[13px] text-[color:var(--hx-f5f5f7)] truncate">{b.legal_name || "Unnamed business"}</div>
+                  <div className="text-[11px] text-[color:var(--hx-6e6e73)]">{b.plan_key ? b.plan_key.replace(/_/g, " ") : "no plan"}</div>
                 </div>
-                <select value={b.agent_overseer_id ?? ""} disabled={busy === b.id} onChange={(e) => assign(b.id, e.target.value)} className="h-[30px] rounded-[7px] px-2 text-[12px] outline-none shrink-0" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F5F7" }}>
+                <select value={b.agent_overseer_id ?? ""} disabled={busy === b.id} onChange={(e) => assign(b.id, e.target.value)} className="h-[30px] rounded-[7px] px-2 text-[12px] outline-none shrink-0" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.1)", color: "var(--hx-f5f5f7)" }}>
                   <option value="">Unassigned</option>
                   {team.map((m) => <option key={m.id} value={m.id}>{name(m)}{m.team_role === "owner" ? " (owner)" : ""}</option>)}
                 </select>
@@ -49,7 +49,7 @@ export default function OverseerAssignments() {
             ))}
           </ul>
         )}
-        {msg && <div className="text-[12px] text-[#A1A1A6] mt-2">{msg}</div>}
+        {msg && <div className="text-[12px] text-[color:var(--hx-a1a1a6)] mt-2">{msg}</div>}
       </div>
     </div>
   );

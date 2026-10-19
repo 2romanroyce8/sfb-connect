@@ -83,25 +83,25 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
 const ENTITY_TYPE_LABEL: Record<string, string> = {
   PERSON: "Personal profile", BUSINESS: "Business", PERSON_OPERATING_BUSINESS: "Person operating a business", CREATOR: "Creator", ORGANIZATION: "Organization", UNKNOWN: "Business signals detected",
 };
-const CONFIDENCE_COLOR: Record<string, string> = { HIGH: "#30D158", MEDIUM: "#FFD60A", LOW: "#A1A1A6" };
+const CONFIDENCE_COLOR: Record<string, string> = { HIGH: "var(--hx-30d158)", MEDIUM: "var(--hx-ffd60a)", LOW: "var(--hx-a1a1a6)" };
 
 const IDENTITY_META: Record<string, { label: string; color: string; bg: string }> = {
-  confirmed: { label: "Identity confirmed", color: "#30D158", bg: "rgba(48,209,88,0.08)" },
-  uncertain: { label: "Identity uncertain", color: "#FFD60A", bg: "rgba(255,214,10,0.08)" },
-  conflict: { label: "Identity conflict", color: "#FF9F0A", bg: "rgba(255,159,10,0.1)" },
-  not_found: { label: "Identity not found", color: "#A1A1A6", bg: "rgba(110,110,115,0.12)" },
+  confirmed: { label: "Identity confirmed", color: "var(--hx-30d158)", bg: "rgba(48,209,88,0.08)" },
+  uncertain: { label: "Identity uncertain", color: "var(--hx-ffd60a)", bg: "rgba(255,214,10,0.08)" },
+  conflict: { label: "Identity conflict", color: "var(--hx-ff9f0a)", bg: "rgba(255,159,10,0.1)" },
+  not_found: { label: "Identity not found", color: "var(--hx-a1a1a6)", bg: "rgba(110,110,115,0.12)" },
 };
-const FIELD_STATUS_COLOR: Record<string, string> = { CONFIRMED: "#30D158", UNCERTAIN: "#FFD60A", CONFLICT: "#FF9F0A", NOT_FOUND: "#6E6E73", INACCESSIBLE: "#6E6E73", INFERRED: "#8E8E93" };
+const FIELD_STATUS_COLOR: Record<string, string> = { CONFIRMED: "var(--hx-30d158)", UNCERTAIN: "var(--hx-ffd60a)", CONFLICT: "var(--hx-ff9f0a)", NOT_FOUND: "var(--hx-6e6e73)", INACCESSIBLE: "var(--hx-6e6e73)", INFERRED: "var(--hx-8e8e93)" };
 const FETCH_LABEL: Record<string, string> = { fetched: "Read", indexed_public: "Public index", blocked_login_wall: "Login wall", unreachable: "Unreachable", skipped_priority: "Ignored", skipped_budget: "Skipped (budget)", generic_platform_shell: "Platform boilerplate", not_attempted: "Not attempted" };
 
 // Red is reserved for real errors/failures, never for ordinary missing
 // research data — that was the explicit complaint this fixes.
 const STATUS_META: Record<string, { icon: React.ElementType; color: string }> = {
-  verified: { icon: CheckCircle2, color: "#30D158" },
-  uncertain: { icon: CircleHelp, color: "#FFD60A" },
-  conflict: { icon: TriangleAlert, color: "#FF9F0A" },
-  not_found: { icon: Minus, color: "#6E6E73" },
-  source_unavailable: { icon: Lock, color: "#6E6E73" },
+  verified: { icon: CheckCircle2, color: "var(--hx-30d158)" },
+  uncertain: { icon: CircleHelp, color: "var(--hx-ffd60a)" },
+  conflict: { icon: TriangleAlert, color: "var(--hx-ff9f0a)" },
+  not_found: { icon: Minus, color: "var(--hx-6e6e73)" },
+  source_unavailable: { icon: Lock, color: "var(--hx-6e6e73)" },
 };
 
 const EDIT_FIELDS: { key: keyof Result; label: string }[] = [
@@ -276,7 +276,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
   return (
     <div className="px-8 py-8 max-w-[980px]">
       {result.status !== "pending" && (
-        <div className="mb-5 rounded-[10px] p-3 text-[13px]" style={{ background: result.status === "saved" ? "rgba(48,209,88,0.08)" : "rgba(110,110,115,0.1)", color: result.status === "saved" ? "#30D158" : "#A1A1A6" }}>
+        <div className="mb-5 rounded-[10px] p-3 text-[13px]" style={{ background: result.status === "saved" ? "rgba(48,209,88,0.08)" : "rgba(110,110,115,0.1)", color: result.status === "saved" ? "var(--hx-30d158)" : "var(--hx-a1a1a6)" }}>
           {result.status === "saved" ? (
             <>
               Already saved as a lead.{" "}
@@ -290,19 +290,19 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
         </div>
       )}
 
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6E6E73]">Research Results</div>
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[color:var(--hx-6e6e73)]">Research Results</div>
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
-          <div className="text-[22px] font-semibold text-[#F5F5F7]">{result.business_name || "Unidentified business"}</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="text-[22px] font-semibold text-[color:var(--hx-f5f5f7)]">{result.business_name || "Unidentified business"}</div>
+          <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>Not yet a lead — review before saving.</span>
             {ent && (
-              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "#8E8E93", background: "#151515" }}>
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "var(--hx-8e8e93)", background: "var(--hx-151515)" }}>
                 {SOURCE_TYPE_LABEL[ent.sourceType] ?? ent.sourceType}
               </span>
             )}
             {ent && (
-              <span className="px-2 py-0.5 rounded-[5px] text-[11px] font-semibold" style={{ color: ent.entityType === "PERSON" ? "#A1A1A6" : ent.entityType === "UNKNOWN" ? "#FFD60A" : "#F5F5F7", background: "#151515" }}>
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px] font-semibold" style={{ color: ent.entityType === "PERSON" ? "var(--hx-a1a1a6)" : ent.entityType === "UNKNOWN" ? "var(--hx-ffd60a)" : "var(--hx-f5f5f7)", background: "var(--hx-151515)" }}>
                 {ENTITY_TYPE_LABEL[ent.entityType] ?? ent.entityType}
               </span>
             )}
@@ -312,25 +312,25 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
               </span>
             )}
             {result.research_status === "completed_with_limitations" && (
-              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "#FFD60A", background: "rgba(255,214,10,0.08)" }}>
+              <span className="px-2 py-0.5 rounded-[5px] text-[11px]" style={{ color: "var(--hx-ffd60a)", background: "rgba(255,214,10,0.08)" }}>
                 completed with limitations
               </span>
             )}
           </div>
           {profile?.seed && (
-            <div className="text-[11.5px] text-[#6E6E73] mt-2">
-              Seed: <span className="text-[#A1A1A6]">{profile.seed.platform}{profile.seed.platformId ? ` id ${profile.seed.platformId}` : profile.seed.username ? ` @${profile.seed.username.replace(/^@/, "")}` : ""}</span>
-              {profile.seed.displayName && <> · resolved as <span className="text-[#F5F5F7]">{profile.seed.displayName}</span> <span className="text-[#6E6E73]">({profile.seed.resolvedFrom})</span></>}
-              {!profile.seed.resolved && <span className="text-[#FFD60A]"> · seed identity not resolved</span>}
-              {profile.seed.resolved && profile.seed.entityHint === "business" && <span className="text-[#30D158]"> · locked</span>}
+            <div className="text-[11.5px] text-[color:var(--hx-6e6e73)] mt-2">
+              Seed: <span className="text-[color:var(--hx-a1a1a6)]">{profile.seed.platform}{profile.seed.platformId ? ` id ${profile.seed.platformId}` : profile.seed.username ? ` @${profile.seed.username.replace(/^@/, "")}` : ""}</span>
+              {profile.seed.displayName && <> · resolved as <span className="text-[color:var(--hx-f5f5f7)]">{profile.seed.displayName}</span> <span className="text-[color:var(--hx-6e6e73)]">({profile.seed.resolvedFrom})</span></>}
+              {!profile.seed.resolved && <span className="text-[color:var(--hx-ffd60a)]"> · seed identity not resolved</span>}
+              {profile.seed.resolved && profile.seed.entityHint === "business" && <span className="text-[color:var(--hx-30d158)]"> · locked</span>}
             </div>
           )}
           {profile && (
-            <div className="text-[12px] text-[#6E6E73] mt-2">
-              <span title="How much of the profile checklist was filled -- not how sure we are this is the right business (that is the identity label)">Profile completeness</span> <span className="text-[#F5F5F7] font-semibold">{result.research_confidence_pct}%</span>
-              <span className="mx-1.5 text-[#3A3A3C]">·</span>
+            <div className="text-[12px] text-[color:var(--hx-6e6e73)] mt-2">
+              <span title="How much of the profile checklist was filled -- not how sure we are this is the right business (that is the identity label)">Profile completeness</span> <span className="text-[color:var(--hx-f5f5f7)] font-semibold">{result.research_confidence_pct}%</span>
+              <span className="mx-1.5 text-[color:var(--hx-3a3a3c)]">·</span>
               {result.fields_verified}/{result.fields_total} fields verified
-              <span className="mx-1.5 text-[#3A3A3C]">·</span>
+              <span className="mx-1.5 text-[color:var(--hx-3a3a3c)]">·</span>
               {result.sources_fetched}/{result.sources_checked} sources read
             </div>
           )}
@@ -347,35 +347,35 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
         )}
       </div>
 
-      {error && <p className="text-[13px] text-[#FF453A] mb-4">{error}</p>}
+      {error && <p className="text-[13px] text-[color:var(--hx-ff453a)] mb-4">{error}</p>}
 
       {ent && (ent.person || ent.business || ent.businessStatus !== "BUSINESS") && (
-        <div className="mb-5 rounded-[12px] p-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-3">
+        <div className="mb-5 rounded-[12px] p-4" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-3">
             {ent.entityType === "PERSON_OPERATING_BUSINESS" ? "Business relationship detected" : ent.businessStatus === "PERSON_ASSOCIATED_WITH_BUSINESS" ? "Person associated with a business — not its operator" : ent.entityType === "PERSON" ? "Personal profile — no business identified" : ent.entityType === "UNKNOWN" ? "Business signals detected — identity uncertain" : ent.entityType === "ORGANIZATION" ? "Organization" : "Entity"}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[13px]">
             {ent.person && (
               <div>
-                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Person</div>
-                <div className="text-[#F5F5F7] mt-0.5">{ent.person.name}</div>
-                {ent.person.facebookUsername && <div className="text-[11px] text-[#6E6E73] truncate">{ent.person.facebookUsername}</div>}
+                <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Person</div>
+                <div className="text-[color:var(--hx-f5f5f7)] mt-0.5">{ent.person.name}</div>
+                {ent.person.facebookUsername && <div className="text-[11px] text-[color:var(--hx-6e6e73)] truncate">{ent.person.facebookUsername}</div>}
               </div>
             )}
             <div>
-              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Business</div>
+              <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Business</div>
               {ent.business?.name ? (
-                <div className="text-[#F5F5F7] mt-0.5">{ent.business.name}</div>
+                <div className="text-[color:var(--hx-f5f5f7)] mt-0.5">{ent.business.name}</div>
               ) : ent.business?.candidates[0] ? (
-                <div className="text-[#FFD60A] mt-0.5">Possible: {ent.business.candidates[0].value}</div>
+                <div className="text-[color:var(--hx-ffd60a)] mt-0.5">Possible: {ent.business.candidates[0].value}</div>
               ) : (
-                <div className="text-[#6E6E73] mt-0.5">No business identified</div>
+                <div className="text-[color:var(--hx-6e6e73)] mt-0.5">No business identified</div>
               )}
             </div>
             {ent.relationship && (
               <div>
-                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Relationship</div>
-                <div className="text-[#F5F5F7] mt-0.5 capitalize">
+                <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Relationship</div>
+                <div className="text-[color:var(--hx-f5f5f7)] mt-0.5 capitalize">
                   {ent.relationship.basis === "self_described" ? "Self-described " : ent.relationship.basis === "inferred" ? "Inferred " : ""}
                   {ent.relationship.relationshipType.toLowerCase()}
                 </div>
@@ -383,14 +383,14 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             )}
             {ent.relationship && (
               <div>
-                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Relationship confidence</div>
+                <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Relationship confidence</div>
                 <div className="mt-0.5 font-semibold" style={{ color: CONFIDENCE_COLOR[ent.relationship.confidence] }}>{ent.relationship.confidence}</div>
               </div>
             )}
           </div>
           {ent.relationship && ent.relationship.explanation.length > 0 && (
-            <div className="mt-3 text-[12px] text-[#A1A1A6]">
-              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] mb-1">Why</div>
+            <div className="mt-3 text-[12px] text-[color:var(--hx-a1a1a6)]">
+              <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1">Why</div>
               <ul className="list-disc pl-5 space-y-0.5">
                 {ent.relationship.explanation.map((x, i) => (
                   <li key={i}>{x}</li>
@@ -400,10 +400,10 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
           )}
           {ent.businessSignals.length > 0 && ent.entityType !== "BUSINESS" && (
             <div className="mt-3">
-              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] mb-1">Public business signals ({ent.businessSignals.length})</div>
+              <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1">Public business signals ({ent.businessSignals.length})</div>
               <div className="flex flex-wrap gap-1.5">
                 {ent.businessSignals.map((sg, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-[5px] text-[11px] text-[#A1A1A6]" style={{ background: "#101010" }} title={sg.detail}>
+                  <span key={i} className="px-2 py-0.5 rounded-[5px] text-[11px] text-[color:var(--hx-a1a1a6)]" style={{ background: "var(--hx-101010)" }} title={sg.detail}>
                     {sg.signal.replace(/_/g, " ")}
                   </span>
                 ))}
@@ -411,7 +411,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             </div>
           )}
           {ent.notes.length > 0 && (
-            <ul className="mt-3 text-[12px] text-[#8E8E93] list-disc pl-5 space-y-0.5">
+            <ul className="mt-3 text-[12px] text-[color:var(--hx-8e8e93)] list-disc pl-5 space-y-0.5">
               {ent.notes.map((n, i) => (
                 <li key={i}>{n}</li>
               ))}
@@ -422,33 +422,33 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
 
       {saveBlocked && result.status === "pending" && (
         <div className="mb-5 rounded-[10px] p-3.5 text-[13px]" style={{ background: "rgba(255,159,10,0.08)", border: "1px solid rgba(255,159,10,0.35)" }}>
-          <div className="font-semibold mb-1 flex items-center gap-1.5 text-[#FF9F0A]">
+          <div className="font-semibold mb-1 flex items-center gap-1.5 text-[color:var(--hx-ff9f0a)]">
             <TriangleAlert size={14} /> Identity conflict — saving is blocked
           </div>
-          <div className="text-[#A1A1A6]">First-party sources name different businesses for this account. Edit the business name or remove the wrong source, then save. See Conflicts below.</div>
+          <div className="text-[color:var(--hx-a1a1a6)]">First-party sources name different businesses for this account. Edit the business name or remove the wrong source, then save. See Conflicts below.</div>
         </div>
       )}
 
       {duplicates && (
         <div className="mb-5 rounded-[10px] p-3.5 text-[13px]" style={{ background: "rgba(255,159,10,0.08)", border: "1px solid rgba(255,159,10,0.35)" }}>
-          <div className="font-semibold mb-1.5 text-[#FF9F0A]">Possible duplicate</div>
-          <ul className="text-[#A1A1A6] space-y-1">
+          <div className="font-semibold mb-1.5 text-[color:var(--hx-ff9f0a)]">Possible duplicate</div>
+          <ul className="text-[color:var(--hx-a1a1a6)] space-y-1">
             {duplicates.map((d) => (
               <li key={d.id} className="flex items-center gap-2">
                 <span>{d.reason}:</span>
                 {d.kind === "lead" ? (
-                  <Link href={`/team/leads/${d.id}`} className="text-[#F5F5F7] underline">{d.name || "Unnamed lead"}</Link>
+                  <Link href={`/team/leads/${d.id}`} className="text-[color:var(--hx-f5f5f7)] underline">{d.name || "Unnamed lead"}</Link>
                 ) : (
-                  <Link href={`/team/research/${d.id}`} className="text-[#F5F5F7] underline">{d.name || "Pending research"}</Link>
+                  <Link href={`/team/research/${d.id}`} className="text-[color:var(--hx-f5f5f7)] underline">{d.name || "Pending research"}</Link>
                 )}
               </li>
             ))}
           </ul>
           <div className="flex gap-2 mt-3">
-            <button onClick={() => saveAsLead(true)} disabled={!!busy} className="h-[32px] px-3 rounded-[7px] text-[12px] font-semibold" style={{ background: "rgba(255,159,10,0.15)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.4)" }}>
+            <button onClick={() => saveAsLead(true)} disabled={!!busy} className="h-[32px] px-3 rounded-[7px] text-[12px] font-semibold" style={{ background: "rgba(255,159,10,0.15)", color: "var(--hx-ff9f0a)", border: "1px solid rgba(255,159,10,0.4)" }}>
               Save anyway — it's a different business
             </button>
-            <button onClick={() => setDuplicates(null)} className="h-[32px] px-3 rounded-[7px] text-[12px] text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+            <button onClick={() => setDuplicates(null)} className="h-[32px] px-3 rounded-[7px] text-[12px] text-[color:var(--hx-a1a1a6)]" style={{ border: "1px solid rgb(var(--w) / 0.1)" }}>
               Cancel
             </button>
           </div>
@@ -456,11 +456,11 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
       )}
 
       {/* Summary / Edit */}
-      <div className="rounded-[12px] p-5 mb-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-[12px] p-5 mb-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[13px] font-semibold text-[#F5F5F7]">Business Summary</div>
+          <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)]">Business Summary</div>
           {!editing && result.status === "pending" && (
-            <button onClick={() => setEditing(true)} className="text-[12px] text-[#6E6E73] hover:text-white flex items-center gap-1">
+            <button onClick={() => setEditing(true)} className="text-[12px] text-[color:var(--hx-6e6e73)] hover:text-white flex items-center gap-1">
               <Pencil size={12} /> Edit
             </button>
           )}
@@ -470,12 +470,12 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             <div className="grid grid-cols-2 gap-3">
               {EDIT_FIELDS.map((f) => (
                 <div key={f.key}>
-                  <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{f.label}</label>
+                  <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{f.label}</label>
                   <input
                     value={form[f.key] || ""}
                     onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                     className="w-full h-[34px] rounded-[7px] px-2.5 text-[12.5px] outline-none mt-1"
-                    style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+                    style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
                   />
                 </div>
               ))}
@@ -484,7 +484,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
               <button onClick={saveEdits} disabled={saving} className="h-[32px] px-3 rounded-[7px] bg-white text-black text-[12px] font-semibold disabled:opacity-60">
                 {saving ? "Saving…" : "Save Changes"}
               </button>
-              <button onClick={() => setEditing(false)} className="h-[32px] px-3 rounded-[7px] text-[12px] text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+              <button onClick={() => setEditing(false)} className="h-[32px] px-3 rounded-[7px] text-[12px] text-[color:var(--hx-a1a1a6)]" style={{ border: "1px solid rgb(var(--w) / 0.1)" }}>
                 Cancel
               </button>
             </div>
@@ -497,8 +497,8 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             <SummaryField icon={MapPin} label="Category" value={result.category} type="text" />
             {EDIT_FIELDS.filter((f) => !["website", "phone", "email", "category"].includes(f.key as string)).map((f) => (
               <div key={f.key}>
-                <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{f.label}</div>
-                <div className="text-[#F5F5F7] mt-0.5">{(result[f.key] as string) || "Not found"}</div>
+                <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{f.label}</div>
+                <div className="text-[color:var(--hx-f5f5f7)] mt-0.5">{(result[f.key] as string) || "Not found"}</div>
               </div>
             ))}
           </div>
@@ -509,7 +509,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             them into one "Not found" would be exactly the kind of silent
             gap this engine is built to avoid. */}
         {!result.website && result.graph_json?.websiteDiscovery && (
-          <div className="mt-3 text-[11.5px] text-[#6E6E73] flex items-start gap-1.5">
+          <div className="mt-3 text-[11.5px] text-[color:var(--hx-6e6e73)] flex items-start gap-1.5">
             <Globe size={13} className="mt-[1px] shrink-0" />
             {result.graph_json.websiteDiscovery.status === "discovery_unavailable" ? (
               <span>Website search could not run — {result.graph_json.websiteDiscovery.reason}</span>
@@ -532,10 +532,10 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
         />
         {serviceAreas.length > 0 && (
           <div className="px-4 py-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1.5">Service Areas ({serviceAreas.length})</div>
+            <div className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1.5">Service Areas ({serviceAreas.length})</div>
             <div className="flex flex-wrap gap-1.5">
               {serviceAreas.map((l, i) => (
-                <span key={i} className="px-2.5 py-1 rounded-[6px] text-[12px] text-[#A1A1A6]" style={{ background: "#101010" }}>
+                <span key={i} className="px-2.5 py-1 rounded-[6px] text-[12px] text-[color:var(--hx-a1a1a6)]" style={{ background: "var(--hx-101010)" }}>
                   {l.city || l.name}
                 </span>
               ))}
@@ -560,19 +560,19 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
       {profile && profile.conflicts.length > 0 && (
         <Section title={`Conflicts (${profile.conflicts.length})`}>
           {profile.conflicts.map((c, i) => (
-            <div key={i} className="px-4 py-3" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
-              <div className="text-[12.5px] font-semibold text-[#FF9F0A] capitalize mb-1 flex items-center gap-1.5"><TriangleAlert size={13} /> {c.field}</div>
+            <div key={i} className="px-4 py-3" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
+              <div className="text-[12.5px] font-semibold text-[color:var(--hx-ff9f0a)] capitalize mb-1 flex items-center gap-1.5"><TriangleAlert size={13} /> {c.field}</div>
               <div className="flex flex-col gap-1">
                 {c.values.map((v, vi) => (
-                  <div key={vi} className="text-[12.5px] text-[#F5F5F7] flex flex-wrap items-center gap-x-2">
+                  <div key={vi} className="text-[12.5px] text-[color:var(--hx-f5f5f7)] flex flex-wrap items-center gap-x-2">
                     <span>{v.value}</span>
                     {v.sources.map((src, si) => (
-                      <a key={si} href={src.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#6E6E73] hover:text-white underline truncate max-w-[280px]">{src.platform}: {src.url.replace(/^https?:\/\/(www\.)?/, "")}</a>
+                      <a key={si} href={src.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[color:var(--hx-6e6e73)] hover:text-white underline truncate max-w-[280px]">{src.platform}: {src.url.replace(/^https?:\/\/(www\.)?/, "")}</a>
                     ))}
                   </div>
                 ))}
               </div>
-              <div className="text-[11.5px] text-[#6E6E73] mt-1.5">{c.note}</div>
+              <div className="text-[11.5px] text-[color:var(--hx-6e6e73)] mt-1.5">{c.note}</div>
             </div>
           ))}
         </Section>
@@ -582,17 +582,17 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
         <Section title="Missing or Unverified">
           {missingFields.length > 0 && (
             <div className="px-4 py-3">
-              <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1.5">Not confirmed from public sources</div>
+              <div className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1.5">Not confirmed from public sources</div>
               <div className="flex flex-wrap gap-1.5">
                 {missingFields.map((m) => (
-                  <span key={m} className="px-2.5 py-1 rounded-[6px] text-[12px] text-[#A1A1A6]" style={{ background: "#101010" }}>{m}</span>
+                  <span key={m} className="px-2.5 py-1 rounded-[6px] text-[12px] text-[color:var(--hx-a1a1a6)]" style={{ background: "var(--hx-101010)" }}>{m}</span>
                 ))}
               </div>
             </div>
           )}
           {profile.limitations.map((l, i) => (
-            <div key={i} className="px-4 py-2.5 text-[12.5px] text-[#A1A1A6] flex items-start gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-              <Lock size={13} className="mt-[2px] shrink-0 text-[#6E6E73]" /> <span><span className="text-[#6E6E73]">{l.code.replace(/_/g, " ").toLowerCase()}</span> — {l.message}</span>
+            <div key={i} className="px-4 py-2.5 text-[12.5px] text-[color:var(--hx-a1a1a6)] flex items-start gap-2" style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
+              <Lock size={13} className="mt-[2px] shrink-0 text-[color:var(--hx-6e6e73)]" /> <span><span className="text-[color:var(--hx-6e6e73)]">{l.code.replace(/_/g, " ").toLowerCase()}</span> — {l.message}</span>
             </div>
           ))}
         </Section>
@@ -600,7 +600,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
 
       {profile && (
         <Section title="Sales Intelligence">
-          <div className="px-4 py-3 text-[13px] text-[#F5F5F7]">{profile.salesIntelligence.summary}</div>
+          <div className="px-4 py-3 text-[13px] text-[color:var(--hx-f5f5f7)]">{profile.salesIntelligence.summary}</div>
           <div className="grid grid-cols-2 gap-x-6 px-4 pb-3 text-[12.5px]">
             <IntelList title="How they sell" items={profile.salesIntelligence.howTheySell} empty="No confirmed channels" />
             <IntelList title="Contact methods" items={profile.salesIntelligence.contactMethods} empty="No first-party contact method found" />
@@ -608,16 +608,16 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             <IntelList title="Online weaknesses" items={profile.salesIntelligence.onlineWeaknesses} empty="None observed" color="#FFD60A" />
           </div>
           {profile.salesIntelligence.callPrep.length > 0 && (
-            <div className="px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1.5">Call prep{profile.salesIntelligence.bestContactChannel ? ` · best channel: ${profile.salesIntelligence.bestContactChannel}` : ""}</div>
-              <ul className="list-disc pl-5 text-[12.5px] text-[#A1A1A6] space-y-0.5">
+            <div className="px-4 py-3" style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
+              <div className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1.5">Call prep{profile.salesIntelligence.bestContactChannel ? ` · best channel: ${profile.salesIntelligence.bestContactChannel}` : ""}</div>
+              <ul className="list-disc pl-5 text-[12.5px] text-[color:var(--hx-a1a1a6)] space-y-0.5">
                 {profile.salesIntelligence.callPrep.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}
               </ul>
             </div>
           )}
-          <div className="px-4 py-2 text-[10.5px] text-[#3A3A3C]" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-4 py-2 text-[10.5px] text-[color:var(--hx-3a3a3c)]" style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
             Generated from verified facts only. Nothing here is inferred beyond what the sources above show.
           </div>
         </Section>
@@ -625,22 +625,22 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
 
       {profile && profile.sources.length > 0 && (
         <div className="mb-5">
-          <button onClick={() => setShowSources((v) => !v)} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] hover:text-white mb-2">
+          <button onClick={() => setShowSources((v) => !v)} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] hover:text-white mb-2">
             <ChevronDown size={12} style={{ transform: showSources ? "none" : "rotate(-90deg)", transition: "transform 120ms" }} />
             Sources ({profile.metrics.sourcesFetched} read · {profile.sources.filter((x) => x.isFirstParty).length} first-party · {profile.sources.length} total)
           </button>
           {showSources && (
-            <div className="rounded-[12px] overflow-hidden" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="rounded-[12px] overflow-hidden" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
               {[...profile.sources].sort((a, b) => (a.priority === 0 ? 9 : a.priority) - (b.priority === 0 ? 9 : b.priority) || a.ordinal - b.ordinal).map((src, i) => (
-                <div key={src.ordinal} className="flex items-center gap-2.5 px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, opacity: src.priority === 0 ? 0.5 : 1 }}>
-                  <span className="px-1.5 py-0.5 rounded-[4px] shrink-0 text-[10px] uppercase" style={{ background: src.isFirstParty ? "rgba(48,209,88,0.12)" : "#151515", color: src.isFirstParty ? "#30D158" : "#8E8E93" }}>
+                <div key={src.ordinal} className="flex items-center gap-2.5 px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined, opacity: src.priority === 0 ? 0.5 : 1 }}>
+                  <span className="px-1.5 py-0.5 rounded-[4px] shrink-0 text-[10px] uppercase" style={{ background: src.isFirstParty ? "rgba(48,209,88,0.12)" : "var(--hx-151515)", color: src.isFirstParty ? "var(--hx-30d158)" : "var(--hx-8e8e93)" }}>
                     {src.priority === 0 ? "ignored" : `P${src.priority} ${src.linkType.replace(/_/g, " ")}`}
                   </span>
-                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-[#D0D0D0] truncate flex-1 hover:underline">{src.url}</a>
-                  <span className="text-[10.5px] shrink-0" title={(src.entityMatchReasons ?? []).join(" ")} style={{ color: src.entityMatch === "MATCHED" ? "#30D158" : src.entityMatch === "PROBABLE_MATCH" ? "#A1A1A6" : src.entityMatch === "REJECTED" ? "#FF453A" : "#FFD60A" }}>
+                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-[color:var(--hx-d0d0d0)] truncate flex-1 hover:underline">{src.url}</a>
+                  <span className="text-[10.5px] shrink-0" title={(src.entityMatchReasons ?? []).join(" ")} style={{ color: src.entityMatch === "MATCHED" ? "var(--hx-30d158)" : src.entityMatch === "PROBABLE_MATCH" ? "var(--hx-a1a1a6)" : src.entityMatch === "REJECTED" ? "var(--hx-ff453a)" : "var(--hx-ffd60a)" }}>
                     {src.entityMatch ? src.entityMatch.replace(/_/g, " ").toLowerCase() : src.association.replace(/_/g, " ")}
                   </span>
-                  <span className="text-[10.5px] shrink-0" style={{ color: src.fetchStatus === "fetched" ? "#30D158" : "#6E6E73" }}>{FETCH_LABEL[src.fetchStatus] ?? src.fetchStatus}</span>
+                  <span className="text-[10.5px] shrink-0" style={{ color: src.fetchStatus === "fetched" ? "var(--hx-30d158)" : "var(--hx-6e6e73)" }}>{FETCH_LABEL[src.fetchStatus] ?? src.fetchStatus}</span>
                 </div>
               ))}
             </div>
@@ -651,15 +651,15 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
       {/* Sources checked (legacy reachability list) */}
       <Section title="Sources Checked">
         {(graph.sourceChecks || []).map((c, i) => (
-          <div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+          <div key={i} className="flex items-center justify-between px-4 py-2.5" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
             {c.reachable ? (
-              <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12.5px] text-[#F5F5F7] truncate hover:underline flex items-center gap-1.5">
-                {c.sourceUrl} <ExternalLink size={11} className="shrink-0 text-[#6E6E73]" />
+              <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12.5px] text-[color:var(--hx-f5f5f7)] truncate hover:underline flex items-center gap-1.5">
+                {c.sourceUrl} <ExternalLink size={11} className="shrink-0 text-[color:var(--hx-6e6e73)]" />
               </a>
             ) : (
-              <span className="text-[12.5px] text-[#A1A1A6] truncate">{c.sourceUrl}</span>
+              <span className="text-[12.5px] text-[color:var(--hx-a1a1a6)] truncate">{c.sourceUrl}</span>
             )}
-            <span className="text-[11.5px] shrink-0 ml-3" style={{ color: c.reachable ? "#30D158" : "#6E6E73" }}>
+            <span className="text-[11.5px] shrink-0 ml-3" style={{ color: c.reachable ? "var(--hx-30d158)" : "var(--hx-6e6e73)" }}>
               {c.reachable ? "Checked" : `Source Unavailable${c.reason ? ` — ${c.reason}` : ""}`}
             </span>
           </div>
@@ -672,47 +672,47 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
           silent gap. */}
       {(graph.sourceLog?.length > 0 || graph.qaResults?.length > 0) && (
         <div className="mb-5">
-          <button onClick={() => setShowLog((v) => !v)} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] hover:text-white mb-2">
+          <button onClick={() => setShowLog((v) => !v)} className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] hover:text-white mb-2">
             <ChevronDown size={12} style={{ transform: showLog ? "none" : "rotate(-90deg)", transition: "transform 120ms" }} />
             Research Log ({graph.sourceLog?.length || 0} sources · {graph.qaResults?.length || 0} QA checks)
           </button>
           {showLog && (
-            <div className="rounded-[12px] overflow-hidden" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="rounded-[12px] overflow-hidden" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]" style={{ borderBottom: "1px solid rgb(var(--w) / 0.06)" }}>
                 Discovery Graph
               </div>
               {(graph.sourceLog || []).map((s, i) => (
-                <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
-                  <span className="px-1.5 py-0.5 rounded-[4px] shrink-0 text-[10px] uppercase" style={{ background: "#151515", color: "#8E8E93" }}>
+                <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
+                  <span className="px-1.5 py-0.5 rounded-[4px] shrink-0 text-[10px] uppercase" style={{ background: "var(--hx-151515)", color: "var(--hx-8e8e93)" }}>
                     {s.sourceType}
                   </span>
-                  <span className="text-[#D0D0D0] truncate flex-1">{s.url}</span>
+                  <span className="text-[color:var(--hx-d0d0d0)] truncate flex-1">{s.url}</span>
                   {s.discoveredFrom && (
-                    <span className="text-[10.5px] text-[#6E6E73] shrink-0 flex items-center gap-1">
+                    <span className="text-[10.5px] text-[color:var(--hx-6e6e73)] shrink-0 flex items-center gap-1">
                       via {s.discoveryMethod.replace(/_/g, " ")} <ArrowRight size={9} />
                     </span>
                   )}
-                  <span className="text-[10.5px] shrink-0" style={{ color: s.fetchStatus === "ok" ? "#30D158" : "#6E6E73" }}>
+                  <span className="text-[10.5px] shrink-0" style={{ color: s.fetchStatus === "ok" ? "var(--hx-30d158)" : "var(--hx-6e6e73)" }}>
                     {s.fetchStatus === "ok" ? `P${s.primaryPassDone ? "✓" : "–"} V${s.verificationPassDone ? "✓" : "–"}` : s.blockedReason || "unavailable"}
                   </span>
                 </div>
               ))}
 
-              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]" style={{ borderTop: "1px solid rgb(var(--w) / 0.08)", borderBottom: "1px solid rgb(var(--w) / 0.06)" }}>
                 8 QA Passes
               </div>
               {(graph.qaResults || []).map((qa, i) => (
-                <div key={i} className="px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+                <div key={i} className="px-4 py-2.5 text-[12px]" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#D0D0D0]">
+                    <span className="text-[color:var(--hx-d0d0d0)]">
                       {qa.pass <= 8 ? `Pass ${qa.pass} — ${qa.name}` : qa.name}
                     </span>
-                    <span className="text-[10.5px]" style={{ color: qa.passed ? "#30D158" : "#FFD60A" }}>
+                    <span className="text-[10.5px]" style={{ color: qa.passed ? "var(--hx-30d158)" : "var(--hx-ffd60a)" }}>
                       {qa.newSourcesFound > 0 ? `+${qa.newSourcesFound} new source(s)` : qa.passed ? "Passed" : "Flagged"}
                     </span>
                   </div>
                   {qa.issues.length > 0 && (
-                    <ul className="mt-1 pl-3 text-[11px] text-[#6E6E73] list-disc">
+                    <ul className="mt-1 pl-3 text-[11px] text-[color:var(--hx-6e6e73)] list-disc">
                       {qa.issues.map((issue, ii) => (
                         <li key={ii}>{issue}</li>
                       ))}
@@ -742,7 +742,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
               value={assignedRep}
               onChange={(e) => setAssignedRep(e.target.value)}
               className="h-[40px] rounded-[8px] px-3 text-[13px] outline-none"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             >
               {reps.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -752,11 +752,11 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             </select>
           )}
           {saveBlocked && !isOwner ? (
-            <button disabled className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold opacity-50 cursor-not-allowed" style={{ background: "#1C1C1E", color: "#A1A1A6" }} title="Sources name different businesses — owner review required">
+            <button disabled className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold opacity-50 cursor-not-allowed" style={{ background: "var(--hx-1c1c1e)", color: "var(--hx-a1a1a6)" }} title="Sources name different businesses — owner review required">
               <Lock size={14} /> Save blocked — identity conflict
             </button>
           ) : saveBlocked && isOwner ? (
-            <button onClick={() => saveAsLead(true)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold disabled:opacity-60" style={{ background: "rgba(255,159,10,0.15)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.4)" }}>
+            <button onClick={() => saveAsLead(true)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] font-semibold disabled:opacity-60" style={{ background: "rgba(255,159,10,0.15)", color: "var(--hx-ff9f0a)", border: "1px solid rgba(255,159,10,0.4)" }}>
               {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <TriangleAlert size={14} />} Save anyway (owner override)
             </button>
           ) : (
@@ -764,10 +764,10 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
               {busy === "save" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {ent?.entityType === "PERSON" ? "Save as Person Record" : "Save as Lead"}
             </button>
           )}
-          <button onClick={() => setShowMore((v) => !v)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[#A1A1A6] hover:text-white" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+          <button onClick={() => setShowMore((v) => !v)} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[color:var(--hx-a1a1a6)] hover:text-white" style={{ border: "1px solid rgb(var(--w) / 0.1)" }}>
             <RefreshCw size={14} /> Research More
           </button>
-          <button onClick={discard} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[#FF453A]" style={{ border: "1px solid rgba(255,69,58,0.3)" }}>
+          <button onClick={discard} disabled={!!busy} className="h-[40px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[color:var(--hx-ff453a)]" style={{ border: "1px solid rgba(255,69,58,0.3)" }}>
             {busy === "discard" ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Discard
           </button>
         </div>
@@ -780,7 +780,7 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
             onChange={(e) => setMoreSource(e.target.value)}
             placeholder="Add another source URL"
             className="h-[38px] w-[320px] rounded-[8px] px-3 text-[13px] outline-none"
-            style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+            style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
           />
           <button onClick={researchMore} className="h-[38px] px-3.5 rounded-[8px] bg-white text-black text-[12.5px] font-semibold flex items-center gap-1.5">
             <Plus size={13} /> Research
@@ -794,14 +794,14 @@ export default function ResearchResultView({ result: initialResult, reps, isOwne
 function IntelList({ title, items, empty, color }: { title: string; items: string[]; empty: string; color?: string }) {
   return (
     <div className="py-2">
-      <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1">{title}</div>
+      <div className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1">{title}</div>
       {items.length === 0 ? (
-        <div className="text-[#6E6E73]">{empty}</div>
+        <div className="text-[color:var(--hx-6e6e73)]">{empty}</div>
       ) : (
         <ul className="space-y-0.5">
           {items.map((it, i) => (
-            <li key={i} className="flex items-start gap-1.5 text-[#D0D0D0]">
-              <span className="mt-[6px] w-1 h-1 rounded-full shrink-0" style={{ background: color ?? "#6E6E73" }} /> {it}
+            <li key={i} className="flex items-start gap-1.5 text-[color:var(--hx-d0d0d0)]">
+              <span className="mt-[6px] w-1 h-1 rounded-full shrink-0" style={{ background: color ?? "var(--hx-6e6e73)" }} /> {it}
             </li>
           ))}
         </ul>
@@ -813,8 +813,8 @@ function IntelList({ title, items, empty, color }: { title: string; items: strin
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-5">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-2">{title}</div>
-      <div className="rounded-[12px] overflow-hidden" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-2">{title}</div>
+      <div className="rounded-[12px] overflow-hidden" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
         {children}
       </div>
     </div>
@@ -832,7 +832,7 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="text-[#6E6E73] hover:text-white shrink-0"
+      className="text-[color:var(--hx-6e6e73)] hover:text-white shrink-0"
       title="Copy"
     >
       {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -845,35 +845,35 @@ function CopyButton({ text }: { text: string }) {
 function SummaryField({ icon: Icon, label, value, type }: { icon: React.ElementType; label: string; value: string | null; type: "website" | "phone" | "email" | "text" }) {
   return (
     <div>
-      <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] flex items-center gap-1.5">
+      <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] flex items-center gap-1.5">
         <Icon size={11} /> {label}
       </div>
       {!value ? (
-        <div className="text-[#6E6E73] mt-0.5">Not found</div>
+        <div className="text-[color:var(--hx-6e6e73)] mt-0.5">Not found</div>
       ) : type === "website" ? (
         <div className="flex items-center gap-1.5 mt-0.5">
-          <a href={value.startsWith("http") ? value : `https://${value}`} target="_blank" rel="noopener noreferrer" className="text-[#F5F5F7] hover:underline truncate">
+          <a href={value.startsWith("http") ? value : `https://${value}`} target="_blank" rel="noopener noreferrer" className="text-[color:var(--hx-f5f5f7)] hover:underline truncate">
             {value.replace(/^https?:\/\//, "")}
           </a>
-          <ExternalLink size={11} className="text-[#6E6E73] shrink-0" />
+          <ExternalLink size={11} className="text-[color:var(--hx-6e6e73)] shrink-0" />
           <CopyButton text={value} />
         </div>
       ) : type === "phone" ? (
         <div className="flex items-center gap-1.5 mt-0.5">
-          <a href={telHref(value)} className="text-[#F5F5F7] hover:underline">
+          <a href={telHref(value)} className="text-[color:var(--hx-f5f5f7)] hover:underline">
             {formatUsPhoneDisplay(value)}
           </a>
           <CopyButton text={value} />
         </div>
       ) : type === "email" ? (
         <div className="flex items-center gap-1.5 mt-0.5">
-          <a href={`mailto:${value}`} className="text-[#F5F5F7] hover:underline truncate">
+          <a href={`mailto:${value}`} className="text-[color:var(--hx-f5f5f7)] hover:underline truncate">
             {value}
           </a>
           <CopyButton text={value} />
         </div>
       ) : (
-        <div className="text-[#F5F5F7] mt-0.5">{value}</div>
+        <div className="text-[color:var(--hx-f5f5f7)] mt-0.5">{value}</div>
       )}
     </div>
   );
@@ -884,18 +884,18 @@ function LocationRow({ label, value, status }: { label: string; value: string | 
   const Icon = meta.icon;
   const mapsUrl = value ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}` : null;
   return (
-    <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
       <div className="flex items-center gap-2.5">
         <Icon size={14} style={{ color: meta.color }} />
-        <span className="text-[11px] uppercase tracking-wide text-[#6E6E73] capitalize">{label}</span>
+        <span className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] capitalize">{label}</span>
       </div>
       {mapsUrl ? (
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#F5F5F7] truncate max-w-[400px] hover:underline flex items-center gap-1.5">
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[color:var(--hx-f5f5f7)] truncate max-w-[400px] hover:underline flex items-center gap-1.5">
           <span>{value}</span>
-          <ExternalLink size={11} className="text-[#6E6E73] shrink-0" aria-hidden="true" focusable="false" />
+          <ExternalLink size={11} className="text-[color:var(--hx-6e6e73)] shrink-0" aria-hidden="true" focusable="false" />
         </a>
       ) : (
-        <span className="text-[13px] text-[#F5F5F7] truncate max-w-[400px]">Not found</span>
+        <span className="text-[13px] text-[color:var(--hx-f5f5f7)] truncate max-w-[400px]">Not found</span>
       )}
     </div>
   );
@@ -906,18 +906,18 @@ function LinkRow({ label, value, status }: { label: string; value: string | null
   const Icon = meta.icon;
   const href = value && (value.startsWith("http") ? value : `https://${value}`);
   return (
-    <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
       <div className="flex items-center gap-2.5">
         <Icon size={14} style={{ color: meta.color }} />
-        <span className="text-[11px] uppercase tracking-wide text-[#6E6E73] capitalize">{label}</span>
+        <span className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] capitalize">{label}</span>
       </div>
       {href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[#F5F5F7] truncate max-w-[400px] hover:underline flex items-center gap-1.5">
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-[color:var(--hx-f5f5f7)] truncate max-w-[400px] hover:underline flex items-center gap-1.5">
           <span>{value}</span>
-          <ExternalLink size={11} className="text-[#6E6E73] shrink-0" aria-hidden="true" focusable="false" />
+          <ExternalLink size={11} className="text-[color:var(--hx-6e6e73)] shrink-0" aria-hidden="true" focusable="false" />
         </a>
       ) : (
-        <span className="text-[13px] text-[#6E6E73] truncate max-w-[400px]">Not found</span>
+        <span className="text-[13px] text-[color:var(--hx-6e6e73)] truncate max-w-[400px]">Not found</span>
       )}
     </div>
   );

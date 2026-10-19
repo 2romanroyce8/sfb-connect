@@ -9,7 +9,7 @@ import { CUSTOMER_DENIED_COPY } from "@/lib/google/gate";
  */
 export default function GoogleNotClearedPage() {
   return (
-    <main className="min-h-screen bg-white text-neutral-900 flex items-center justify-center px-6">
+    <main className="min-h-screen bg-white text-neutral-900 flex items-center justify-center px-6" data-authored="light">
       <div className="max-w-[520px] w-full border border-neutral-200 rounded-2xl p-8">
         <div className="text-[11px] uppercase tracking-[0.14em] text-neutral-500 mb-2">Google connection</div>
         <h1 className="text-[24px] font-semibold tracking-tight">Almost there.</h1>

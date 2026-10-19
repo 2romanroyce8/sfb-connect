@@ -27,7 +27,7 @@ export default function AgentPanel({ modules, creditBalance, receipts, overseer 
                   <div className="text-[12px] text-neutral-500 mt-0.5">{m.description}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium rounded-full px-2 py-0.5 border" style={{ color: locked ? "#525252" : "#047857", background: locked ? "#f5f5f5" : "#ecfdf5", borderColor: locked ? "#e5e5e5" : "#a7f3d0" }}>
+                  <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium rounded-full px-2 py-0.5 border" style={{ color: locked ? "var(--hx-525252)" : "var(--hx-047857)", background: locked ? "var(--hx-f5f5f5)" : "var(--hx-ecfdf5)", borderColor: locked ? "var(--hx-e5e5e5)" : "var(--hx-a7f3d0)" }}>
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLOR[m.status] }} />
                     {STATUS_LABEL[m.status]}
                   </span>

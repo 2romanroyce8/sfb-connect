@@ -11,10 +11,10 @@ export default function AgentFaq() {
       {AGENT_FAQ.map((f, i) => {
         const isOpen = open === i;
         return (
-          <div key={f.q} className="rounded-[11px] overflow-hidden border transition-colors" style={{ background: isOpen ? "#111111" : "#0c0c0c", borderColor: isOpen ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)" }}>
+          <div key={f.q} className="rounded-[11px] overflow-hidden border transition-colors" style={{ background: isOpen ? "var(--hx-111111)" : "var(--hx-0c0c0c)", borderColor: isOpen ? "rgb(var(--w) / 0.14)" : "rgb(var(--w) / 0.08)" }}>
             <button onClick={() => setOpen(isOpen ? null : i)} className="w-full min-h-[58px] px-[18px] flex items-center justify-between gap-4 text-left" aria-expanded={isOpen}>
               <span className="text-[14px] font-medium leading-[1.35] text-white">{f.q}</span>
-              <Plus size={18} strokeWidth={1.8} className="shrink-0 transition-transform duration-200" style={{ color: "#30D158", transform: isOpen ? "rotate(45deg)" : "none" }} />
+              <Plus size={18} strokeWidth={1.8} className="shrink-0 transition-transform duration-200" style={{ color: "var(--hx-30d158)", transform: isOpen ? "rotate(45deg)" : "none" }} />
             </button>
             {isOpen && <p className="px-[18px] pb-[18px] text-[12.5px] leading-[1.6] text-white/[0.5] max-w-[90%]">{f.a}</p>}
           </div>

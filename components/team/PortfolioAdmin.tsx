@@ -92,8 +92,8 @@ export default function PortfolioAdmin({
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-[20px] font-semibold text-[#F5F5F7]">Portfolio</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1">
+          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Portfolio</div>
+          <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">
             {projects.length} project{projects.length === 1 ? "" : "s"} — {projects.filter((p) => p.published).length} published
           </div>
         </div>
@@ -106,27 +106,27 @@ export default function PortfolioAdmin({
       </div>
 
       {sorted.length === 0 ? (
-        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No portfolio projects yet</div>
-          <p className="text-[13px] text-[#A1A1A6]">Add your first real client project — the public /portfolio page and homepage stay empty until you do.</p>
+        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No portfolio projects yet</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Add your first real client project — the public /portfolio page and homepage stay empty until you do.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
           {sorted.map((p, i) => (
-            <div key={p.id} className="flex items-center gap-4 rounded-[12px] p-3.5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="w-[64px] h-[48px] rounded-[7px] overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "#151515" }}>
-                {p.cover_image_url ? <img src={p.cover_image_url} alt="" className="w-full h-full object-cover" /> : <ImageOff size={16} className="text-[#3A3A3A]" />}
+            <div key={p.id} className="flex items-center gap-4 rounded-[12px] p-3.5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+              <div className="w-[64px] h-[48px] rounded-[7px] overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--hx-151515)" }}>
+                {p.cover_image_url ? <img src={p.cover_image_url} alt="" className="w-full h-full object-cover" /> : <ImageOff size={16} className="text-[color:var(--hx-3a3a3a)]" />}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-medium text-[#F5F5F7] truncate">{p.business_name}</span>
-                  {p.featured && <Star size={12} className="text-[#FFD60A] fill-[#FFD60A] shrink-0" />}
+                  <span className="text-[14px] font-medium text-[color:var(--hx-f5f5f7)] truncate">{p.business_name}</span>
+                  {p.featured && <Star size={12} className="text-[color:var(--hx-ffd60a)] fill-[var(--hx-ffd60a)] shrink-0" />}
                 </div>
-                <div className="text-[12px] text-[#6E6E73] mt-0.5">{p.project_type.replace(/_/g, " ")} · {[p.industry, p.location].filter(Boolean).join(" · ") || "—"}</div>
+                <div className="text-[12px] text-[color:var(--hx-6e6e73)] mt-0.5">{p.project_type.replace(/_/g, " ")} · {[p.industry, p.location].filter(Boolean).join(" · ") || "—"}</div>
               </div>
               <span
                 className="text-[10.5px] px-2 py-1 rounded-full shrink-0"
-                style={{ background: p.published ? "rgba(48,209,88,0.1)" : "rgba(110,110,115,0.12)", color: p.published ? "#30D158" : "#A1A1A6" }}
+                style={{ background: p.published ? "rgba(48,209,88,0.1)" : "rgba(110,110,115,0.12)", color: p.published ? "var(--hx-30d158)" : "var(--hx-a1a1a6)" }}
               >
                 {p.published ? "Published" : "Draft"}
               </span>
@@ -143,7 +143,7 @@ export default function PortfolioAdmin({
                 <IconBtn onClick={() => toggleField(p, "published")} title={p.published ? "Unpublish" : "Publish"}>
                   {p.published ? <EyeOff size={13} /> : <Eye size={13} />}
                 </IconBtn>
-                <Link href={`/portfolio/${p.slug}`} target="_blank" className="p-1.5 rounded-[6px] text-[#6E6E73] hover:text-white hover:bg-[#151515]" title="Preview">
+                <Link href={`/portfolio/${p.slug}`} target="_blank" className="p-1.5 rounded-[6px] text-[color:var(--hx-6e6e73)] hover:text-white hover:bg-[color:var(--hx-151515)]" title="Preview">
                   <ExternalLink size={13} />
                 </Link>
                 <IconBtn onClick={() => setEditing(p)} title="Edit">
@@ -177,8 +177,8 @@ function IconBtn({ onClick, disabled, title, danger, children }: { onClick: () =
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className="p-1.5 rounded-[6px] disabled:opacity-30 hover:bg-[#151515]"
-      style={{ color: danger ? "#FF6B6B" : "#6E6E73" }}
+      className="p-1.5 rounded-[6px] disabled:opacity-30 hover:bg-[color:var(--hx-151515)]"
+      style={{ color: danger ? "var(--hx-ff6b6b)" : "var(--hx-6e6e73)" }}
     >
       {children}
     </button>
@@ -288,11 +288,11 @@ function ProjectDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgba(0,0,0,0.65)" }} onClick={onClose}>
-      <div className="h-full overflow-y-auto p-7" style={{ width: 520, background: "#111111", borderLeft: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgb(var(--k) / 0.65)" }} onClick={onClose}>
+      <div className="h-full overflow-y-auto p-7" style={{ width: 520, background: "var(--hx-111111)", borderLeft: "1px solid rgb(var(--w) / 0.08)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
-          <div className="text-[17px] font-semibold text-[#F5F5F7]">{current ? "Edit Project" : "Add Project"}</div>
-          <button onClick={onClose} className="text-[#6E6E73] hover:text-white">
+          <div className="text-[17px] font-semibold text-[color:var(--hx-f5f5f7)]">{current ? "Edit Project" : "Add Project"}</div>
+          <button onClick={onClose} className="text-[color:var(--hx-6e6e73)] hover:text-white">
             <X size={18} />
           </button>
         </div>
@@ -337,7 +337,7 @@ function ProjectDrawer({
           <Field label="Services">
             <div className="flex flex-wrap gap-1.5 mb-2">
               {serviceList.map((s, i) => (
-                <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11.5px]" style={{ background: "#1A1A1A", color: "#D0D0D0" }}>
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-d0d0d0)" }}>
                   {s}
                   <button onClick={() => setServiceList((prev) => prev.filter((_, idx) => idx !== i))}>
                     <X size={10} />
@@ -353,14 +353,14 @@ function ProjectDrawer({
                 placeholder="e.g. Website Rebuild"
                 className="pf-field flex-1"
               />
-              <button onClick={addService} type="button" className="h-[38px] px-3 rounded-[8px] text-[12.5px]" style={{ background: "#1A1A1A", color: "#D0D0D0" }}>
+              <button onClick={addService} type="button" className="h-[38px] px-3 rounded-[8px] text-[12.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-d0d0d0)" }}>
                 Add
               </button>
             </div>
           </Field>
 
           <div className="pt-2 border-t border-white/10">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-3">Case Study</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-3">Case Study</div>
             <div className="flex flex-col gap-3">
               <Field label="The Client">
                 <textarea value={client} onChange={(e) => setClient(e.target.value)} className="pf-field h-[54px] resize-none" />
@@ -385,10 +385,10 @@ function ProjectDrawer({
 
           {current ? (
             <div className="pt-2 border-t border-white/10">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-3">Media</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-3">Media</div>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {(["cover", "desktop", "mobile", "detail"] as const).map((type) => (
-                  <label key={type} className="h-[38px] rounded-[8px] flex items-center justify-center gap-1.5 text-[12px] cursor-pointer capitalize" style={{ background: "#1A1A1A", color: "#D0D0D0", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <label key={type} className="h-[38px] rounded-[8px] flex items-center justify-center gap-1.5 text-[12px] cursor-pointer capitalize" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-d0d0d0)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                     {uploading === type ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
                     {type}
                     <input
@@ -407,7 +407,7 @@ function ProjectDrawer({
               {mediaList.length > 0 && (
                 <div className="grid grid-cols-4 gap-2">
                   {mediaList.map((m) => (
-                    <div key={m.id} className="relative rounded-[6px] overflow-hidden aspect-square" style={{ background: "#0A0A0A" }}>
+                    <div key={m.id} className="relative rounded-[6px] overflow-hidden aspect-square" style={{ background: "var(--hx-0a0a0a)" }}>
                       <img src={m.url} alt="" className="w-full h-full object-cover" />
                       <button onClick={() => deleteMedia(m)} className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/70 text-white">
                         <X size={10} />
@@ -418,10 +418,10 @@ function ProjectDrawer({
               )}
             </div>
           ) : (
-            <p className="text-[11.5px] text-[#6E6E73]">Save the project first, then media upload becomes available.</p>
+            <p className="text-[11.5px] text-[color:var(--hx-6e6e73)]">Save the project first, then media upload becomes available.</p>
           )}
 
-          {error && <p className="text-[12.5px] text-[#FF453A]">{error}</p>}
+          {error && <p className="text-[12.5px] text-[color:var(--hx-ff453a)]">{error}</p>}
 
           <button onClick={save} disabled={saving} className="h-[44px] rounded-[8px] bg-white text-black text-[13.5px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60 mt-1">
             {saving ? <Loader2 size={14} className="animate-spin" /> : null} {saving ? "Saving…" : current ? "Save Changes" : "Create Project"}
@@ -436,9 +436,9 @@ function ProjectDrawer({
             padding: 0 10px;
             font-size: 13px;
             outline: none;
-            background: #0a0a0a;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #f5f5f7;
+            background: var(--hx-0a0a0a);
+            border: 1px solid rgb(var(--w) / 0.08);
+            color: var(--hx-f5f5f7);
           }
           textarea.pf-field {
             padding-top: 8px;
@@ -452,7 +452,7 @@ function ProjectDrawer({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{label}</label>
+      <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{label}</label>
       {children}
     </div>
   );

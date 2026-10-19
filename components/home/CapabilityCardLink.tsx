@@ -5,7 +5,7 @@ import { trackMarketingEvent } from "@/lib/marketingEvents";
 
 export default function CapabilityCardLink({ capabilityKey, children }: { capabilityKey: string; children: React.ReactNode }) {
   return (
-    <Link href="/agent#capabilities" onClick={() => trackMarketingEvent("capability_card_click", { capability: capabilityKey })} className="block rounded-[14px] p-5 hover:bg-white/[0.03] transition-colors" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <Link href="/agent#capabilities" onClick={() => trackMarketingEvent("capability_card_click", { capability: capabilityKey })} className="block rounded-[14px] p-5 hover:bg-white/[0.03] transition-colors" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
       {children}
     </Link>
   );

@@ -9,10 +9,10 @@ export default function CreditPriceList() {
   return (
     <section className="px-6 pt-4 pb-16 md:pb-20 scroll-mt-24" id="credits">
       {/* Visible expandable right after the ROI calculator (Roman, 2026-10-10): impossible to miss, closed by default so the calculator stays the hero. */}
-      <details className="max-w-[1100px] mx-auto group rounded-[22px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}>
+      <details className="max-w-[1100px] mx-auto group rounded-[22px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.1)" }}>
         <summary className="list-none cursor-pointer select-none p-6 md:p-7 flex items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
           <div>
-            <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-2">Every price, published</div>
+            <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[color:var(--hx-30d158)] mb-2">Every price, published</div>
             <div className="text-[22px] md:text-[28px] font-bold tracking-[-0.03em] leading-[1.1]">See the full per-action credit breakdown</div>
             <p className="mt-2 text-[13.5px] text-white/[0.55] max-w-[680px]">One credit type. The same list the agent is charged against — if a number changes here, it changed in the ledger too. 1 booked call ≈ {CREDITS_PER_BOOKED_CALL} credits.</p>
           </div>
@@ -22,7 +22,7 @@ export default function CreditPriceList() {
 
         <div className="mt-9 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {groups.map((g) => (
-            <div key={g.key} className="rounded-[16px] p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div key={g.key} className="rounded-[16px] p-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
               <div className="text-[13px] font-semibold text-white">{g.name}</div>
               <ul className="mt-3 flex flex-col gap-1.5">
                 {g.prices.map((p) => (
@@ -36,15 +36,15 @@ export default function CreditPriceList() {
             </div>
           ))}
           <div className="rounded-[16px] p-5" style={{ background: "rgba(48,209,88,0.06)", border: "1px solid rgba(48,209,88,0.2)" }}>
-            <div className="text-[13px] font-semibold text-[#30D158]">Free, always</div>
+            <div className="text-[13px] font-semibold text-[color:var(--hx-30d158)]">Free, always</div>
             <ul className="mt-3 flex flex-col gap-1.5">
-              {FREE_ACTIONS.map((f) => (<li key={f} className="flex items-baseline justify-between text-[13px]"><span className="text-white/[0.75]">{f}</span><span className="text-[#30D158]">0</span></li>))}
+              {FREE_ACTIONS.map((f) => (<li key={f} className="flex items-baseline justify-between text-[13px]"><span className="text-white/[0.75]">{f}</span><span className="text-[color:var(--hx-30d158)]">0</span></li>))}
             </ul>
           </div>
         </div>
 
         <div className="mt-8 grid md:grid-cols-2 gap-4">
-          <div className="rounded-[16px] p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-[16px] p-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
             <div className="text-[13px] font-semibold text-white">The guards</div>
             <ul className="mt-3 flex flex-col gap-2 text-[13.5px] text-white/[0.7] leading-[1.5]">
               <li>• Warning email and banner at {Math.round(WARN_AT * 100)}% of the month&apos;s credits.</li>
@@ -53,7 +53,7 @@ export default function CreditPriceList() {
               <li>• {CREDITS_PAY_FOR_WORK}</li>
             </ul>
           </div>
-          <div className="rounded-[16px] p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-[16px] p-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
             <div className="text-[13px] font-semibold text-white">Top-ups — never expire</div>
             <ul className="mt-3 flex flex-col gap-2">
               {TOP_UP_PACKS.map((p) => (

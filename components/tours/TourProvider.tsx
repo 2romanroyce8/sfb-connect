@@ -105,7 +105,7 @@ export default function TourProvider({ children }: { children: React.ReactNode }
       {children}
       {st && step && !st.waiting && st.rect && (
         <div className="fixed inset-0 z-[90] pointer-events-none" aria-live="polite">
-          <div className="absolute rounded-[10px] transition-all duration-200" style={{ top: st.rect.top - 6, left: st.rect.left - 6, width: st.rect.width + 12, height: st.rect.height + 12, boxShadow: "0 0 0 9999px rgba(10,10,10,0.55)", border: "2px solid rgba(255,255,255,0.9)" }} />
+          <div className="absolute rounded-[10px] transition-all duration-200" style={{ top: st.rect.top - 6, left: st.rect.left - 6, width: st.rect.width + 12, height: st.rect.height + 12, boxShadow: "0 0 0 9999px rgba(10,10,10,0.55)", border: "2px solid rgb(var(--w) / 0.9)" }} />
           <div role="dialog" aria-modal="false" aria-label={`${st.tour.name}: ${step.title}`} className={`pointer-events-auto bg-white text-neutral-900 shadow-2xl ${mobile ? "fixed left-0 right-0 bottom-0 rounded-t-[16px] p-5 pb-6" : "absolute rounded-[14px] p-4"}`} style={mobile ? undefined : { top: pos!.top, left: pos!.left, width: CARD_W }}>
             <div className="flex items-center justify-between gap-3 mb-1.5"><div className="text-[11px] uppercase tracking-[0.14em] text-neutral-500">{st.tour.name} · {progressLabel(st.index, st.tour.steps.length)}</div><button onClick={skip} className="text-[12px] text-neutral-500 hover:text-neutral-900">Skip</button></div>
             <div className="text-[15px] font-semibold leading-snug">{step.title}</div>

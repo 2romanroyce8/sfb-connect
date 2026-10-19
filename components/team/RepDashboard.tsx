@@ -49,9 +49,9 @@ export default function RepDashboard({
   const nextLead = readyToCall[0] || leads[0];
 
   return (
-    <div className="px-[30px] py-7 max-w-[1240px]" style={{ background: "#0B0B0B" }}>
-      <div className="text-[22px] font-semibold text-[#F5F5F7] mb-1">Dashboard</div>
-      <div className="text-[13px] text-[#6E6E73] mb-6">
+    <div className="px-[30px] py-7 max-w-[1240px]" style={{ background: "var(--hx-0b0b0b)" }}>
+      <div className="text-[22px] font-semibold text-[color:var(--hx-f5f5f7)] mb-1">Dashboard</div>
+      <div className="text-[13px] text-[color:var(--hx-6e6e73)] mb-6">
         Good day, {name} — {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
       </div>
 
@@ -65,12 +65,12 @@ export default function RepDashboard({
         <RevenueChart events={revenueEvents} />
       </div>
 
-      <div className="mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase text-[#6E6E73]">Next Action</div>
+      <div className="mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase text-[color:var(--hx-6e6e73)]">Next Action</div>
       {nextLead ? (
-        <div className="p-5 rounded-[8px] mb-[18px] flex items-center justify-between" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="p-5 rounded-[8px] mb-[18px] flex items-center justify-between" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}>
           <div>
-            <div className="text-[16px] font-semibold text-[#F5F5F7]">{nextLead.business_name || "Unnamed lead"}</div>
-            <div className="text-[12px] text-[#6E6E73] mt-1">
+            <div className="text-[16px] font-semibold text-[color:var(--hx-f5f5f7)]">{nextLead.business_name || "Unnamed lead"}</div>
+            <div className="text-[12px] text-[color:var(--hx-6e6e73)] mt-1">
               {nextLead.recommended_offer ? nextLead.recommended_offer.replace(/_/g, " ") : "Not yet analyzed"}
               {nextLead.ai_overall_score != null && ` · AI Presence ${nextLead.ai_overall_score}/100`}
             </div>
@@ -80,8 +80,8 @@ export default function RepDashboard({
           </Link>
         </div>
       ) : (
-        <div className="p-6 rounded-[8px] mb-[18px] text-center" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <p className="text-[13px] text-[#A1A1A6] mb-3">No leads assigned to you yet.</p>
+        <div className="p-6 rounded-[8px] mb-[18px] text-center" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)] mb-3">No leads assigned to you yet.</p>
           <Link href="/team/leads/import" className="inline-flex h-[36px] px-4 items-center rounded-[6px] bg-white text-black text-[12.5px] font-semibold">
             Research a Business
           </Link>
@@ -94,21 +94,21 @@ export default function RepDashboard({
 
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          <div className="mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase text-[#6E6E73] flex items-center gap-1.5">
+          <div className="mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase text-[color:var(--hx-6e6e73)] flex items-center gap-1.5">
             <Bell size={12} /> Follow-Ups
           </div>
           {followups.length === 0 ? (
-            <p className="text-[12.5px] text-[#6E6E73]">Nothing due.</p>
+            <p className="text-[12.5px] text-[color:var(--hx-6e6e73)]">Nothing due.</p>
           ) : (
             <div className="flex flex-col gap-2">
               {followups.map((f) => (
                 <Link
                   key={f.id}
                   href={`/team/follow-ups?focus=${f.id}`}
-                  className="block p-3 rounded-[8px] text-[12.5px] text-[#A1A1A6] hover:bg-[#161616] hover:text-white transition-colors"
-                  style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}
+                  className="block p-3 rounded-[8px] text-[12.5px] text-[color:var(--hx-a1a1a6)] hover:bg-[color:var(--hx-161616)] hover:text-white transition-colors"
+                  style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}
                 >
-                  <span className="text-[#F5F5F7]">{f.business_name || "Unknown lead"}</span> — {f.reason || "Follow up"} —{" "}
+                  <span className="text-[color:var(--hx-f5f5f7)]">{f.business_name || "Unknown lead"}</span> — {f.reason || "Follow up"} —{" "}
                   {new Date(f.due_at) < new Date() ? "overdue" : new Date(f.due_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
                 </Link>
               ))}
@@ -117,15 +117,15 @@ export default function RepDashboard({
         </div>
 
         <div>
-          <div className="mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase text-[#6E6E73] flex items-center gap-1.5">
+          <div className="mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase text-[color:var(--hx-6e6e73)] flex items-center gap-1.5">
             <CalendarCheck size={12} /> Meetings
           </div>
           {meetings.length === 0 ? (
-            <p className="text-[12.5px] text-[#6E6E73]">Nothing booked.</p>
+            <p className="text-[12.5px] text-[color:var(--hx-6e6e73)]">Nothing booked.</p>
           ) : (
             <div className="flex flex-col gap-2">
               {meetings.map((m) => (
-                <div key={m.id} className="p-3 rounded-[8px] text-[12.5px] text-[#A1A1A6]" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div key={m.id} className="p-3 rounded-[8px] text-[12.5px] text-[color:var(--hx-a1a1a6)]" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}>
                   {m.contact_name || "Meeting"} — {new Date(m.scheduled_at).toLocaleString()}
                 </div>
               ))}

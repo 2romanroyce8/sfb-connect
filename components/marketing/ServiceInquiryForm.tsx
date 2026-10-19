@@ -53,7 +53,7 @@ export default function ServiceInquiryForm({
     return (
       <div
         className="rounded-[14px] p-8 text-center"
-        style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}
+        style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.1)" }}
       >
         <div className="w-11 h-11 rounded-full bg-white text-black flex items-center justify-center mx-auto mb-4">
           <Check size={20} />
@@ -67,7 +67,7 @@ export default function ServiceInquiryForm({
   }
 
   return (
-    <form onSubmit={submit} className="rounded-[14px] p-7 flex flex-col gap-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.09)" }}>
+    <form onSubmit={submit} className="rounded-[14px] p-7 flex flex-col gap-4" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.09)" }}>
       <div className="text-[15px] font-medium text-white mb-1">{title}</div>
 
       <Field label="What are you interested in?">
@@ -106,7 +106,7 @@ export default function ServiceInquiryForm({
         <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="sfb-inquiry-field h-[80px] resize-none" />
       </Field>
 
-      {error && <p className="text-[12.5px] text-[#FF6B6B]">{error}</p>}
+      {error && <p className="text-[12.5px] text-[color:var(--hx-ff6b6b)]">{error}</p>}
 
       <button
         type="submit"
@@ -125,9 +125,9 @@ export default function ServiceInquiryForm({
           padding: 0 12px;
           font-size: 13.5px;
           outline: none;
-          background: #111111;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #f5f5f7;
+          background: var(--hx-111111);
+          border: 1px solid rgb(var(--w) / 0.1);
+          color: var(--hx-f5f5f7);
         }
         textarea.sfb-inquiry-field {
           height: 80px;

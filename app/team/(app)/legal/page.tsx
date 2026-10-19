@@ -15,21 +15,21 @@ export default function LegalPreviewPage({ searchParams }: { searchParams: { doc
       <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-[22px] font-semibold tracking-[-0.02em]">Legal drafts</h1>
-          <p className="text-[12.5px] text-[#A1A1A6] mt-1">Muse&apos;s drafts, as they will appear at <span className="font-mono text-[11.5px]">/privacy</span> and <span className="font-mono text-[11.5px]">/terms</span> once every open item is resolved.</p>
+          <p className="text-[12.5px] text-[color:var(--hx-a1a1a6)] mt-1">Muse&apos;s drafts, as they will appear at <span className="font-mono text-[11.5px]">/privacy</span> and <span className="font-mono text-[11.5px]">/terms</span> once every open item is resolved.</p>
         </div>
         <div className="flex gap-1.5">
           {(["privacy", "terms"] as const).map((s) => {
             const n = unresolvedItems(LEGAL_DOCS[s]).length;
             return (
-              <Link key={s} href={`/team/legal?doc=${s}`} className="h-[32px] px-3 inline-flex items-center gap-2 rounded-[8px] text-[12.5px]" style={{ background: s === slug ? "#F5F5F7" : "#101010", color: s === slug ? "#000" : "#F5F5F7", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <Link key={s} href={`/team/legal?doc=${s}`} className="h-[32px] px-3 inline-flex items-center gap-2 rounded-[8px] text-[12.5px]" style={{ background: s === slug ? "var(--hx-f5f5f7)" : "var(--hx-101010)", color: s === slug ? "var(--hx-000000)" : "var(--hx-f5f5f7)", border: "1px solid rgb(var(--w) / 0.1)" }}>
                 {LEGAL_DOCS[s].title}
-                <span className="text-[10.5px] px-1.5 py-0.5 rounded-full" style={{ background: n ? "rgba(255,214,10,0.2)" : "rgba(48,209,88,0.2)", color: n ? "#FFD60A" : "#30D158" }}>{n ? `${n} open` : "ready"}</span>
+                <span className="text-[10.5px] px-1.5 py-0.5 rounded-full" style={{ background: n ? "rgba(255,214,10,0.2)" : "rgba(48,209,88,0.2)", color: n ? "var(--hx-ffd60a)" : "var(--hx-30d158)" }}>{n ? `${n} open` : "ready"}</span>
               </Link>
             );
           })}
         </div>
       </div>
-      <div className="rounded-[14px] p-6 md:p-10" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-[14px] p-6 md:p-10" style={{ background: "var(--hx-050505)", border: "1px solid rgb(var(--w) / 0.08)" }}>
         <LegalDocument doc={doc} mode="preview" />
       </div>
     </div>

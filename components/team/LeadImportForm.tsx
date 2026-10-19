@@ -96,13 +96,13 @@ export default function LeadImportForm() {
   }
 
   return (
-    <div className="relative overflow-hidden" style={{ background: "#050505", minHeight: "calc(100vh - 1px)" }}>
+    <div className="relative overflow-hidden" style={{ background: "var(--hx-050505)", minHeight: "calc(100vh - 1px)" }}>
       {/* Atmosphere — soft, luxurious, not neon */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle at 70% 58%, rgba(90,160,40,0.045), transparent 26%), radial-gradient(circle at 50% 45%, rgba(255,255,255,0.018), transparent 42%), linear-gradient(to bottom, rgba(255,255,255,0.008), rgba(0,0,0,0.24))",
+            "radial-gradient(circle at 70% 58%, rgba(90,160,40,0.045), transparent 26%), radial-gradient(circle at 50% 45%, rgb(var(--w) / 0.018), transparent 42%), linear-gradient(to bottom, rgb(var(--w) / 0.008), rgb(var(--k) / 0.24))",
         }}
       />
 
@@ -137,17 +137,17 @@ export default function LeadImportForm() {
             {job.mode === "complete" && (job.identityConfidence || (job.possibleDuplicates && job.possibleDuplicates.length > 0)) && (
               <div className="mt-3 flex flex-col gap-2 text-[12.5px]">
                 {job.identityConfidence && job.identityConfidence !== "confirmed" && (
-                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,214,10,0.08)", color: "#FFD60A" }}>
+                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,214,10,0.08)", color: "var(--hx-ffd60a)" }}>
                     Identity {job.identityConfidence.replace("_", " ")} — review the result before saving it as a lead.
                   </div>
                 )}
                 {job.conflictsCount ? (
-                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A" }}>
+                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,159,10,0.08)", color: "var(--hx-ff9f0a)" }}>
                     {job.conflictsCount} field{job.conflictsCount > 1 ? "s" : ""} differ between sources.
                   </div>
                 ) : null}
                 {job.possibleDuplicates && job.possibleDuplicates.length > 0 && (
-                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A" }}>
+                  <div className="rounded-[8px] px-3 py-2" style={{ background: "rgba(255,159,10,0.08)", color: "var(--hx-ff9f0a)" }}>
                     Possible duplicate: {job.possibleDuplicates.map((d) => `${d.name || "Unnamed"} (${d.reason})`).join("; ")}
                   </div>
                 )}
@@ -156,7 +156,7 @@ export default function LeadImportForm() {
             {job.mode === "failed" && <ResearchProgressModule mode="failed" lastStage={job.lastStage} reason={job.reason} onRetry={retry} />}
 
             {job.mode !== "running" && (
-              <button onClick={() => setJob({ mode: "idle" })} className="mt-4 text-[12.5px] text-[#6E6E73] hover:text-white">
+              <button onClick={() => setJob({ mode: "idle" })} className="mt-4 text-[12.5px] text-[color:var(--hx-6e6e73)] hover:text-white">
                 ← Research another business
               </button>
             )}

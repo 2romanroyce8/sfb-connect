@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Linkedin, Twitter, Instagram, Menu, X } from "lucide-react";
 
 // Real profile URLs only. A null entry hides the icon -- a social button that
@@ -33,10 +34,10 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-14 py-5" style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(14px)" }}>
+    <nav className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-14 py-5" style={{ background: "rgb(var(--k) / 0.55)", backdropFilter: "blur(14px)" }}>
       <Link href="/" className="flex items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_SRC} alt="SFB Connect" className="w-7 h-auto shrink-0" />
+        <img src={LOGO_SRC} alt="SFB Connect" className="w-7 h-auto shrink-0 theme-invert" />
         <span className="font-extrabold tracking-tight text-[15px]">
           SFB <span className="text-medium-gray font-semibold">CONNECT</span>
         </span>
@@ -65,6 +66,7 @@ export default function Navbar() {
             </a>
           ))}
         </div>
+        <ThemeToggle compact className="hidden sm:inline-flex" />
         <Link href="/login" className="hidden sm:inline-flex text-[13.5px] text-medium-gray hover:text-white transition-colors whitespace-nowrap">
           Sign in
         </Link>
@@ -82,7 +84,7 @@ export default function Navbar() {
       {mobileOpen && (
         <div
           className="lg:hidden fixed top-[72px] left-0 right-0 z-[999] overflow-y-auto"
-          style={{ background: "#050505", borderTop: "1px solid rgba(255,255,255,0.08)", maxHeight: "calc(100vh - 72px)" }}
+          style={{ background: "var(--hx-050505)", borderTop: "1px solid rgb(var(--w) / 0.08)", maxHeight: "calc(100vh - 72px)" }}
         >
           <div className="px-6 py-6 flex flex-col gap-1">
             {PRIMARY_LINKS.map((l) => (
@@ -93,6 +95,7 @@ export default function Navbar() {
             <Link href="/login" onClick={() => setMobileOpen(false)} className="py-3 text-[15px] text-white/80 hover:text-white border-b border-white/[0.06]">
               Sign in
             </Link>
+            <div className="py-3 flex items-center justify-between text-[15px] text-white/80 border-b border-white/[0.06]"><span>Appearance</span><ThemeToggle /></div>
             <Link
               href="/start"
               onClick={() => setMobileOpen(false)}

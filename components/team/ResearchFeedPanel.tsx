@@ -8,7 +8,7 @@ type Finding = { id: string; business_name: string; website: string | null; phon
 type Status = { targets: Target[]; sources: { id: string; url: string; label: string; active: boolean }[]; runs: Run[]; findings: Finding[]; settings: { enabled: boolean; schedule: string; token_rotated_at: string | null } | null; exaConfigured: boolean };
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : "never");
-const LABEL_COLOR: Record<string, string> = { corroborated: "#30D158", name_only: "#FFD60A", unverified: "#A1A1A6" };
+const LABEL_COLOR: Record<string, string> = { corroborated: "var(--hx-30d158)", name_only: "var(--hx-ffd60a)", unverified: "var(--hx-a1a1a6)" };
 
 /** Nightly prospect feed — status, targets, last runs, recent findings, Run now (owner). */
 export default function ResearchFeedPanel({ isOwner }: { isOwner: boolean }) {
@@ -41,40 +41,40 @@ export default function ResearchFeedPanel({ isOwner }: { isOwner: boolean }) {
 
   const last = s?.runs[0] ?? null;
   return (
-    <div className="rounded-[12px] p-4 mb-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="rounded-[12px] p-4 mb-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <div className="text-[13px] font-semibold text-[#F5F5F7]">Nightly prospect feed <span className="ml-1.5 text-[10.5px] uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: s?.settings?.enabled === false ? "rgba(255,69,58,0.12)" : "rgba(48,209,88,0.12)", color: s?.settings?.enabled === false ? "#FF6961" : "#30D158" }}>{s ? (s.settings?.enabled === false ? "paused" : "on") : "…"}</span></div>
-          <div className="text-[11.5px] text-[#6E6E73] mt-0.5">
-            {s ? <>Exa {s.exaConfigured ? "configured" : <span className="text-[#FF9F0A]">not configured</span>} · {s.sources.filter((x) => x.active).length} RSS feed{s.sources.filter((x) => x.active).length === 1 ? "" : "s"} · {s.targets.filter((t) => t.active).length} target{s.targets.filter((t) => t.active).length === 1 ? "" : "s"} · schedule <span className="font-mono">{s.settings?.schedule ?? "—"}</span> UTC · last run {last ? <>{fmt(last.started_at)} — {last.accepted} accepted, {last.tasks_created} task{last.tasks_created === 1 ? "" : "s"}{last.errors?.length ? <span className="text-[#FF9F0A]"> · {last.errors.length} error{last.errors.length === 1 ? "" : "s"}</span> : null}</> : "never"}</> : "Loading…"}
+          <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)]">Nightly prospect feed <span className="ml-1.5 text-[10.5px] uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: s?.settings?.enabled === false ? "rgba(255,69,58,0.12)" : "rgba(48,209,88,0.12)", color: s?.settings?.enabled === false ? "var(--hx-ff6961)" : "var(--hx-30d158)" }}>{s ? (s.settings?.enabled === false ? "paused" : "on") : "…"}</span></div>
+          <div className="text-[11.5px] text-[color:var(--hx-6e6e73)] mt-0.5">
+            {s ? <>Exa {s.exaConfigured ? "configured" : <span className="text-[color:var(--hx-ff9f0a)]">not configured</span>} · {s.sources.filter((x) => x.active).length} RSS feed{s.sources.filter((x) => x.active).length === 1 ? "" : "s"} · {s.targets.filter((t) => t.active).length} target{s.targets.filter((t) => t.active).length === 1 ? "" : "s"} · schedule <span className="font-mono">{s.settings?.schedule ?? "—"}</span> UTC · last run {last ? <>{fmt(last.started_at)} — {last.accepted} accepted, {last.tasks_created} task{last.tasks_created === 1 ? "" : "s"}{last.errors?.length ? <span className="text-[color:var(--hx-ff9f0a)]"> · {last.errors.length} error{last.errors.length === 1 ? "" : "s"}</span> : null}</> : "never"}</> : "Loading…"}
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setOpen((v) => !v)} className="h-[30px] px-3 rounded-[8px] text-[12px] text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>{open ? "Hide" : "Details"}</button>
-          {isOwner && <button onClick={() => runNow(true)} disabled={busy} className="h-[30px] px-3 rounded-[8px] text-[12px] text-[#F5F5F7] disabled:opacity-60" style={{ border: "1px solid rgba(255,255,255,0.14)" }}>{busy ? "Running…" : "Dry run"}</button>}
+          <button onClick={() => setOpen((v) => !v)} className="h-[30px] px-3 rounded-[8px] text-[12px] text-[color:var(--hx-a1a1a6)]" style={{ border: "1px solid rgb(var(--w) / 0.1)" }}>{open ? "Hide" : "Details"}</button>
+          {isOwner && <button onClick={() => runNow(true)} disabled={busy} className="h-[30px] px-3 rounded-[8px] text-[12px] text-[color:var(--hx-f5f5f7)] disabled:opacity-60" style={{ border: "1px solid rgb(var(--w) / 0.14)" }}>{busy ? "Running…" : "Dry run"}</button>}
           {isOwner && <button onClick={() => runNow(false)} disabled={busy} className="h-[30px] px-3 rounded-[8px] text-[12px] font-semibold bg-white text-black disabled:opacity-60">{busy ? "Running…" : "Run now"}</button>}
         </div>
       </div>
-      {msg && <div className="mt-2 text-[12px] text-[#A1A1A6]">{msg}</div>}
+      {msg && <div className="mt-2 text-[12px] text-[color:var(--hx-a1a1a6)]">{msg}</div>}
       {open && s && (
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1.5">Targets</div>
+            <div className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1.5">Targets</div>
             <ul className="text-[12px] space-y-1">
-              {s.targets.map((t) => <li key={t.id} className="flex justify-between gap-2"><span className="text-[#F5F5F7]">{t.vertical} · {t.city}, {t.state}{!t.active && <span className="text-[#6E6E73]"> (off)</span>}</span><span className="text-[#6E6E73]">last {fmt(t.last_run_at)}</span></li>)}
+              {s.targets.map((t) => <li key={t.id} className="flex justify-between gap-2"><span className="text-[color:var(--hx-f5f5f7)]">{t.vertical} · {t.city}, {t.state}{!t.active && <span className="text-[color:var(--hx-6e6e73)]"> (off)</span>}</span><span className="text-[color:var(--hx-6e6e73)]">last {fmt(t.last_run_at)}</span></li>)}
             </ul>
-            <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mt-3 mb-1.5">RSS sources</div>
-            <ul className="text-[12px] space-y-1">{s.sources.map((x) => <li key={x.id} className="text-[#A1A1A6] truncate">{x.label} <span className="text-[#6E6E73]">— {x.url}</span></li>)}</ul>
-            <div className="text-[11px] text-[#6E6E73] mt-3">Targets and feeds are rows in research_feed_targets / research_feed_sources — edit there, no deploy needed. See docs/runbooks/research-adapters.md.</div>
+            <div className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mt-3 mb-1.5">RSS sources</div>
+            <ul className="text-[12px] space-y-1">{s.sources.map((x) => <li key={x.id} className="text-[color:var(--hx-a1a1a6)] truncate">{x.label} <span className="text-[color:var(--hx-6e6e73)]">— {x.url}</span></li>)}</ul>
+            <div className="text-[11px] text-[color:var(--hx-6e6e73)] mt-3">Targets and feeds are rows in research_feed_targets / research_feed_sources — edit there, no deploy needed. See docs/runbooks/research-adapters.md.</div>
           </div>
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6E6E73] mb-1.5">Recent findings</div>
-            {s.findings.length === 0 ? <div className="text-[12px] text-[#6E6E73]">No findings yet.</div> : (
+            <div className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1.5">Recent findings</div>
+            {s.findings.length === 0 ? <div className="text-[12px] text-[color:var(--hx-6e6e73)]">No findings yet.</div> : (
               <ul className="text-[12px] space-y-1 max-h-[320px] overflow-auto pr-1">
                 {s.findings.map((f) => (
                   <li key={f.id} className="flex items-start justify-between gap-2" style={{ opacity: f.accepted ? 1 : 0.55 }}>
-                    <span className="min-w-0"><span className="text-[#F5F5F7]">{f.business_name}</span> <span style={{ color: LABEL_COLOR[f.identity_label] ?? "#A1A1A6" }}>· {f.identity_label.replace("_", " ")}</span><span className="block text-[#6E6E73] truncate">{[f.website, f.phone_e164, [f.city, f.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}{!f.accepted && f.quality_flags.length ? ` · dropped: ${f.quality_flags.map((x) => x.replace(/_/g, " ")).join(", ")}` : ""}</span></span>
-                    {f.task_id && <a href="/team/tasks" className="shrink-0 text-[11px] text-[#0A84FF]">task</a>}
+                    <span className="min-w-0"><span className="text-[color:var(--hx-f5f5f7)]">{f.business_name}</span> <span style={{ color: LABEL_COLOR[f.identity_label] ?? "var(--hx-a1a1a6)" }}>· {f.identity_label.replace("_", " ")}</span><span className="block text-[color:var(--hx-6e6e73)] truncate">{[f.website, f.phone_e164, [f.city, f.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}{!f.accepted && f.quality_flags.length ? ` · dropped: ${f.quality_flags.map((x) => x.replace(/_/g, " ")).join(", ")}` : ""}</span></span>
+                    {f.task_id && <a href="/team/tasks" className="shrink-0 text-[11px] text-[color:var(--hx-0a84ff)]">task</a>}
                   </li>
                 ))}
               </ul>

@@ -13,8 +13,8 @@ export default function AgentCallbackPage({ searchParams }: { searchParams: Sear
   const loopback = !!url && ["127.0.0.1", "localhost", "[::1]", "::1"].includes(url.hostname);
   if (!url || !loopback) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-4" style={{ background: "#050505", color: "#F5F5F7" }}>
-        <div className="w-full max-w-[460px] rounded-[14px] p-6 text-[13px]" style={{ background: "#0D0D0D", border: "1px solid rgba(255,255,255,0.08)" }}>This page only completes agent connections that use a local callback address.</div>
+      <main className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--hx-050505)", color: "var(--hx-f5f5f7)" }}>
+        <div className="w-full max-w-[460px] rounded-[14px] p-6 text-[13px]" style={{ background: "var(--hx-0d0d0d)", border: "1px solid rgb(var(--w) / 0.08)" }}>This page only completes agent connections that use a local callback address.</div>
       </main>
     );
   }

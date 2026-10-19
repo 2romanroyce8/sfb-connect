@@ -119,14 +119,14 @@ export default function BillingDashboard({
   }, {});
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0B0B", color: "#F5F5F7" }} className="px-6 md:px-10 py-10 max-w-[1100px] mx-auto">
+    <div style={{ minHeight: "100vh", background: "var(--hx-0b0b0b)", color: "var(--hx-f5f5f7)" }} className="px-6 md:px-10 py-10 max-w-[1100px] mx-auto">
       <div className="mb-8">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/40 mb-1">SFB Connect</div>
         <div className="text-[26px] font-semibold">{businessName || "Your Account"}</div>
       </div>
 
       {error && (
-        <div className="mb-6 rounded-[10px] p-3 text-[13px]" style={{ background: "rgba(255,69,58,0.08)", color: "#FF6B6B", border: "1px solid rgba(255,69,58,0.2)" }}>
+        <div className="mb-6 rounded-[10px] p-3 text-[13px]" style={{ background: "rgba(255,69,58,0.08)", color: "var(--hx-ff6b6b)", border: "1px solid rgba(255,69,58,0.2)" }}>
           {error}
         </div>
       )}
@@ -134,7 +134,7 @@ export default function BillingDashboard({
       {/* YOUR PLAN */}
       <section className="mb-8">
         <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Your Plan</div>
-        <div className="rounded-[16px] p-5 flex items-center justify-between" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[16px] p-5 flex items-center justify-between" style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           <div>
             <div className="text-[18px] font-semibold">{planLabel}</div>
             {planPriceCents != null && <div className="text-[13px] text-white/50 mt-0.5">{money(planPriceCents)}/month</div>}
@@ -151,7 +151,7 @@ export default function BillingDashboard({
           checks are internal and never shown here. */}
       <section className="mb-8">
         <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Usage &amp; Allowances</div>
-        <div className="rounded-[16px] p-5" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[16px] p-5" style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
               <div className="text-[11px] text-white/40 mb-1">Tracked Queries</div>
@@ -176,7 +176,7 @@ export default function BillingDashboard({
           {trackedQueryUsage.atLimit && (() => {
             const expansion = allProducts.find((p) => p.key === "ai_visibility_expansion");
             return (
-              <div className="mt-4 rounded-[12px] p-4 flex items-center justify-between gap-3" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <div className="mt-4 rounded-[12px] p-4 flex items-center justify-between gap-3" style={{ background: "var(--hx-1a1a1a)", border: "1px solid rgb(var(--w) / 0.10)" }}>
                 <div>
                   <div className="text-[13px] font-medium">You&apos;ve reached your current monitoring allowance.</div>
                   {expansion && <div className="text-[11.5px] text-white/50 mt-0.5">{expansion.name} adds more tracked queries for {money(expansion.base_price_cents)}/mo.</div>}
@@ -196,7 +196,7 @@ export default function BillingDashboard({
       <div className="grid md:grid-cols-2 gap-5 mb-8">
         <section>
           <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Active Add-Ons</div>
-          <div className="rounded-[16px] p-5" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-[16px] p-5" style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.08)" }}>
             {activeAddons.length === 0 ? (
               <div className="text-[13.5px] text-white/50">No active add-ons yet.</div>
             ) : (
@@ -225,7 +225,7 @@ export default function BillingDashboard({
 
         <section>
           <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Action Credits</div>
-          <div className="rounded-[16px] p-5" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-[16px] p-5" style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.08)" }}>
             <div className="flex items-center gap-2 mb-3">
               <Zap size={16} color="#FFD60A" />
               <span className="text-[22px] font-semibold">{entitlements.creditBalance}</span>
@@ -238,7 +238,7 @@ export default function BillingDashboard({
                   onClick={() => buyCredits(pkg.id)}
                   disabled={busyId === pkg.id}
                   className="h-[42px] rounded-[9px] text-[12.5px] font-medium flex items-center justify-center gap-1.5 disabled:opacity-60"
-                  style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{ background: "var(--hx-1a1a1a)", border: "1px solid rgb(var(--w) / 0.08)" }}
                 >
                   {busyId === pkg.id ? <Loader2 size={12} className="animate-spin" /> : null}
                   {pkg.credits} for {money(pkg.price_cents)}
@@ -269,7 +269,7 @@ export default function BillingDashboard({
                       onClick={() => buyAddon(op.addon_products!.id)}
                       disabled={busyId === op.addon_products.id}
                       className="h-[36px] px-4 shrink-0 rounded-[8px] text-[12.5px] font-semibold"
-                      style={{ background: "#FFD60A", color: "#111111" }}
+                      style={{ background: "var(--hx-ffd60a)", color: "var(--hx-111111)" }}
                     >
                       Add — {money(op.addon_products.base_price_cents)}{op.addon_products.base_price_cents ? "/mo" : ""}
                     </button>
@@ -292,7 +292,7 @@ export default function BillingDashboard({
                 {products.map((p) => {
                   const alreadyActive = entitlements.activeAddonKeys.includes(p.key);
                   return (
-                    <div key={p.id} className="rounded-[14px] p-4" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <div key={p.id} className="rounded-[14px] p-4" style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="text-[14px] font-semibold">{p.name}</div>
                         <div className="text-[13px] text-white/50 shrink-0">
@@ -305,7 +305,7 @@ export default function BillingDashboard({
                         onClick={() => buyAddon(p.id)}
                         disabled={busyId === p.id}
                         className="w-full h-[36px] mt-3 rounded-[8px] text-[12.5px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60"
-                        style={{ background: alreadyActive ? "#1A1A1A" : "#F5F5F7", color: alreadyActive ? "#8E8E93" : "#111111", border: alreadyActive ? "1px solid rgba(255,255,255,0.08)" : "none" }}
+                        style={{ background: alreadyActive ? "var(--hx-1a1a1a)" : "var(--hx-f5f5f7)", color: alreadyActive ? "var(--hx-8e8e93)" : "var(--hx-111111)", border: alreadyActive ? "1px solid rgb(var(--w) / 0.08)" : "none" }}
                       >
                         {busyId === p.id ? <Loader2 size={12} className="animate-spin" /> : alreadyActive ? <CheckCircle2 size={12} /> : null}
                         {alreadyActive ? "Active" : p.billing_type === "recurring" ? "Add to Plan" : "Purchase"}
@@ -322,19 +322,19 @@ export default function BillingDashboard({
       {/* INVOICES (real Stripe invoices; empty before Stripe is configured) */}
       <section>
         <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Invoices</div>
-        <div className="rounded-[14px] overflow-hidden" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[14px] overflow-hidden" style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           {invoices.length === 0 ? (
             <div className="p-5 text-[13.5px] text-white/50">No invoices yet.</div>
           ) : (
             invoices.map((inv, i) => (
-              <div key={inv.id} className="flex items-center justify-between px-4 py-3 gap-3" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+              <div key={inv.id} className="flex items-center justify-between px-4 py-3 gap-3" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
                 <div className="min-w-0">
                   <div className="text-[13px] truncate">{inv.number ? `Invoice ${inv.number}` : "Invoice"}{inv.description ? <span className="text-white/40"> · {inv.description}</span> : null}</div>
                   <div className="text-[11.5px] text-white/40 mt-0.5">{new Date(inv.createdAt).toLocaleDateString()}</div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="text-[13px]">{money(inv.amountPaidCents)}</span>
-                  <span className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-[5px]" style={{ color: inv.status === "paid" ? "#30D158" : inv.status === "open" ? "#FFD60A" : "#8E8E93", border: "1px solid currentColor" }}>{inv.status}</span>
+                  <span className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-[5px]" style={{ color: inv.status === "paid" ? "var(--hx-30d158)" : inv.status === "open" ? "var(--hx-ffd60a)" : "var(--hx-8e8e93)", border: "1px solid currentColor" }}>{inv.status}</span>
                   {inv.hostedUrl && <a href={inv.hostedUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] underline text-white/70">View</a>}
                 </div>
               </div>
@@ -346,12 +346,12 @@ export default function BillingDashboard({
       {/* PURCHASE HISTORY (top-ups and add-ons) */}
       <section>
         <div className="text-[11px] uppercase tracking-wide text-white/40 mb-2">Purchase History</div>
-        <div className="rounded-[14px] overflow-hidden" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[14px] overflow-hidden" style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           {purchases.length === 0 ? (
             <div className="p-5 text-[13.5px] text-white/50">No purchases yet.</div>
           ) : (
             purchases.map((p, i) => (
-              <div key={p.id} className="flex items-center justify-between px-4 py-3" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+              <div key={p.id} className="flex items-center justify-between px-4 py-3" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
                 <div>
                   <div className="text-[13px]">{p.addon_products?.name || p.credit_packages?.name || p.purchase_type}</div>
                   <div className="text-[11.5px] text-white/40 mt-0.5">{new Date(p.created_at).toLocaleDateString()}</div>
@@ -360,7 +360,7 @@ export default function BillingDashboard({
                   <span className="text-[13px]">{money(p.amount_cents)}</span>
                   <span
                     className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-[5px]"
-                    style={{ color: p.status === "completed" ? "#30D158" : p.status === "failed" ? "#FF6B6B" : p.status === "refunded" ? "#FFD60A" : "#8E8E93", border: "1px solid currentColor" }}
+                    style={{ color: p.status === "completed" ? "var(--hx-30d158)" : p.status === "failed" ? "var(--hx-ff6b6b)" : p.status === "refunded" ? "var(--hx-ffd60a)" : "var(--hx-8e8e93)", border: "1px solid currentColor" }}
                   >
                     {p.status}
                   </span>

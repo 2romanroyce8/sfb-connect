@@ -20,9 +20,9 @@ type Milestone = { id: string; title: string; date: string; description: string 
 type Rep = { id: string; label: string };
 
 const VARIANT_STYLE: Record<string, { background: string; color: string }> = {
-  light: { background: "#F3F3F3", color: "#151515" },
-  dark: { background: "#29282F", color: "#F5F5F7" },
-  teal: { background: "linear-gradient(90deg, #1F8E84 0%, #005B57 100%)", color: "#F5F5F7" },
+  light: { background: "var(--hx-f3f3f3)", color: "var(--hx-151515)" },
+  dark: { background: "var(--hx-29282f)", color: "var(--hx-f5f5f7)" },
+  teal: { background: "linear-gradient(90deg, var(--hx-1f8e84) 0%, var(--hx-005b57) 100%)", color: "var(--hx-f5f5f7)" },
 };
 
 function daysBetween(a: string, b: string) {
@@ -61,18 +61,18 @@ export default function WorkPlanGantt({ plan, items, milestones, isOwner, reps }
   const rowCount = Math.max(1, ...items.map((i) => i.row_index + 1));
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ padding: 54, background: "radial-gradient(circle at 12% 20%, rgba(20,199,183,0.10), transparent 35%), radial-gradient(circle at 90% 75%, rgba(20,199,183,0.08), transparent 38%), #0A0A0A" }}>
-      <div style={{ width: "min(1120px, calc(100vw - 80px))", minHeight: 770, background: "#101010", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 34, padding: "48px 58px 54px", boxShadow: "0 34px 100px rgba(0,0,0,0.36)", position: "relative", overflow: "hidden" }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ padding: 54, background: "radial-gradient(circle at 12% 20%, rgba(20,199,183,0.10), transparent 35%), radial-gradient(circle at 90% 75%, rgba(20,199,183,0.08), transparent 38%), var(--hx-0a0a0a)" }}>
+      <div style={{ width: "min(1120px, calc(100vw - 80px))", minHeight: 770, background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.04)", borderRadius: 34, padding: "48px 58px 54px", boxShadow: "0 34px 100px rgba(0,0,0,0.36)", position: "relative", overflow: "hidden" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 42 }}>
           <div>
-            <div style={{ fontSize: 31, fontWeight: 600, letterSpacing: "-0.025em", color: "#F5F5F7" }}>{plan.name}</div>
-            {plan.description && <div style={{ fontSize: 13, color: "#767676", marginTop: 4 }}>{plan.description}</div>}
+            <div style={{ fontSize: 31, fontWeight: 600, letterSpacing: "-0.025em", color: "var(--hx-f5f5f7)" }}>{plan.name}</div>
+            {plan.description && <div style={{ fontSize: 13, color: "var(--hx-767676)", marginTop: 4 }}>{plan.description}</div>}
           </div>
           <div className="flex items-center gap-3">
-            <span style={{ fontSize: 20, fontWeight: 400, color: "#A7A7A7" }}>{durationLabel}</span>
+            <span style={{ fontSize: 20, fontWeight: 400, color: "var(--hx-a7a7a7)" }}>{durationLabel}</span>
             {isOwner && (
               <>
-                <button onClick={() => setShowAddMilestone(true)} className="h-[34px] px-3 rounded-[8px] text-[12.5px]" style={{ background: "#1B1B1B", color: "#E0E0E0", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <button onClick={() => setShowAddMilestone(true)} className="h-[34px] px-3 rounded-[8px] text-[12.5px]" style={{ background: "var(--hx-1b1b1b)", color: "var(--hx-e0e0e0)", border: "1px solid rgb(var(--w) / 0.1)" }}>
                   + Milestone
                 </button>
                 <button onClick={() => setShowAddTask(true)} className="h-[34px] px-3 inline-flex items-center gap-1.5 rounded-[8px] bg-white text-black text-[12.5px] font-semibold">
@@ -87,7 +87,7 @@ export default function WorkPlanGantt({ plan, items, milestones, isOwner, reps }
           {/* date axis */}
           <div className="relative" style={{ height: 30, marginBottom: 24 }}>
             {dateTicks.map((t, i) => (
-              <span key={i} className="absolute" style={{ left: `${t.leftPct}%`, fontSize: 13, color: "#A6A6A6", transform: i === dateTicks.length - 1 ? "translateX(-100%)" : undefined }}>
+              <span key={i} className="absolute" style={{ left: `${t.leftPct}%`, fontSize: 13, color: "var(--hx-a6a6a6)", transform: i === dateTicks.length - 1 ? "translateX(-100%)" : undefined }}>
                 {t.label}
               </span>
             ))}
@@ -96,8 +96,8 @@ export default function WorkPlanGantt({ plan, items, milestones, isOwner, reps }
           <div className="relative" style={{ height: rowCount * 66 + 40 }}>
             {/* now line */}
             {todayInRange && (
-              <div className="absolute top-0 bottom-0" style={{ left: `${todayPct}%`, width: 2, background: "linear-gradient(to bottom, rgba(32,199,183,0), #20C7B7 8%, #20C7B7 94%, rgba(32,199,183,0))", boxShadow: "0 0 16px rgba(32,199,183,0.30)" }}>
-                <span className="absolute" style={{ top: -26, left: "50%", transform: "translateX(-50%)", background: "#194E48", color: "#E9FFFC", borderRadius: 6, padding: "4px 8px", fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}>
+              <div className="absolute top-0 bottom-0" style={{ left: `${todayPct}%`, width: 2, background: "linear-gradient(to bottom, rgba(32,199,183,0), var(--hx-20c7b7) 8%, var(--hx-20c7b7) 94%, rgba(32,199,183,0))", boxShadow: "0 0 16px rgba(32,199,183,0.30)" }}>
+                <span className="absolute" style={{ top: -26, left: "50%", transform: "translateX(-50%)", background: "var(--hx-194e48)", color: "var(--hx-e9fffc)", borderRadius: 6, padding: "4px 8px", fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" }}>
                   Now
                 </span>
               </div>
@@ -105,7 +105,7 @@ export default function WorkPlanGantt({ plan, items, milestones, isOwner, reps }
 
             {/* task rows */}
             {items.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-[13px] text-[#6E6E73]">No tasks yet.</div>
+              <div className="flex items-center justify-center h-full text-[13px] text-[color:var(--hx-6e6e73)]">No tasks yet.</div>
             ) : (
               items.map((item) => {
                 const left = pct(item.start_date, plan.start_date, totalDays);
@@ -120,7 +120,7 @@ export default function WorkPlanGantt({ plan, items, milestones, isOwner, reps }
                     style={{ top: item.row_index * 66, left: `${left}%`, width: `${width}%`, height: 54, borderRadius: 12, padding: "0 16px 0 20px", fontSize: 15, fontWeight: 500, boxShadow: "0 8px 24px rgba(0,0,0,0.20)", ...style }}
                   >
                     <span className="truncate">{item.title}</span>
-                    <span className="shrink-0 ml-2" style={{ height: 25, padding: "0 10px", background: "#F4F4F4", color: "#151515", borderRadius: 6, display: "flex", alignItems: "center", fontSize: 12, fontWeight: 600 }}>
+                    <span className="shrink-0 ml-2" style={{ height: 25, padding: "0 10px", background: "var(--hx-f4f4f4)", color: "var(--hx-151515)", borderRadius: 6, display: "flex", alignItems: "center", fontSize: 12, fontWeight: 600 }}>
                       {days}d
                     </span>
                   </button>
@@ -134,7 +134,7 @@ export default function WorkPlanGantt({ plan, items, milestones, isOwner, reps }
               return (
                 <div key={m.id} className="absolute flex items-center" style={{ top: rowCount * 66 + 4, left: `${left}%`, transform: "translateX(-50%)" }}>
                   <Diamond size={18} fill="#29282F" color="#29282F" />
-                  <span style={{ fontSize: 13, color: "#F2F2F2", marginLeft: 10, whiteSpace: "nowrap" }}>{m.title}</span>
+                  <span style={{ fontSize: 13, color: "var(--hx-f2f2f2)", marginLeft: 10, whiteSpace: "nowrap" }}>{m.title}</span>
                 </div>
               );
             })}
@@ -206,7 +206,7 @@ function TaskDrawer({ planId, reps, onClose, onSaved }: { planId: string; reps: 
       <div className="grid grid-cols-2 gap-2">
         <FieldNumber label="Row" value={rowIndex} onChange={setRowIndex} />
         <div className="flex flex-col gap-1">
-          <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Style</label>
+          <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Style</label>
           <select value={visualVariant} onChange={(e) => setVisualVariant(e.target.value as any)} className="sfb-field">
             <option value="light">Light</option>
             <option value="dark">Dark</option>
@@ -216,7 +216,7 @@ function TaskDrawer({ planId, reps, onClose, onSaved }: { planId: string; reps: 
       </div>
       {reps.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Assign To</label>
+          <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Assign To</label>
           <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className="sfb-field">
             <option value="">Unassigned</option>
             {reps.map((r) => (
@@ -227,7 +227,7 @@ function TaskDrawer({ planId, reps, onClose, onSaved }: { planId: string; reps: 
           </select>
         </div>
       )}
-      {error && <p className="text-[12.5px] text-[#FF453A]">{error}</p>}
+      {error && <p className="text-[12.5px] text-[color:var(--hx-ff453a)]">{error}</p>}
       <button onClick={submit} disabled={saving} className="h-[40px] rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60 flex items-center justify-center gap-1.5">
         {saving ? <Loader2 size={14} className="animate-spin" /> : null} {saving ? "Adding…" : "Add Task"}
       </button>
@@ -270,7 +270,7 @@ function MilestoneDrawer({ planId, onClose, onSaved }: { planId: string; onClose
       <FieldInput label="Title" value={title} onChange={setTitle} />
       <FieldDate label="Date" value={date} onChange={setDate} />
       <FieldTextarea label="Description" value={description} onChange={setDescription} />
-      {error && <p className="text-[12.5px] text-[#FF453A]">{error}</p>}
+      {error && <p className="text-[12.5px] text-[color:var(--hx-ff453a)]">{error}</p>}
       <button onClick={submit} disabled={saving} className="h-[40px] rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60 flex items-center justify-center gap-1.5">
         {saving ? <Loader2 size={14} className="animate-spin" /> : null} {saving ? "Adding…" : "Add Milestone"}
       </button>
@@ -305,12 +305,12 @@ function ItemDetailDrawer({ planId, item, isOwner, reps, onClose, onChanged }: {
 
   return (
     <Drawer title={item.title} onClose={onClose}>
-      {item.description && <p className="text-[13px] text-[#A1A1A6] leading-relaxed">{item.description}</p>}
-      <div className="text-[12.5px] text-[#6E6E73]">
+      {item.description && <p className="text-[13px] text-[color:var(--hx-a1a1a6)] leading-relaxed">{item.description}</p>}
+      <div className="text-[12.5px] text-[color:var(--hx-6e6e73)]">
         {new Date(item.start_date).toLocaleDateString()} – {new Date(item.end_date).toLocaleDateString()} ({daysBetween(item.start_date, item.end_date)} days)
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Status</label>
+        <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Status</label>
         <select value={status} onChange={(e) => updateStatus(e.target.value)} disabled={saving} className="sfb-field">
           <option value="not_started">Not Started</option>
           <option value="in_progress">In Progress</option>
@@ -319,7 +319,7 @@ function ItemDetailDrawer({ planId, item, isOwner, reps, onClose, onChanged }: {
         </select>
       </div>
       {isOwner && (
-        <button onClick={deleteItem} className="h-[36px] rounded-[8px] text-[12.5px] text-[#FF453A]" style={{ border: "1px solid rgba(255,69,58,0.3)" }}>
+        <button onClick={deleteItem} className="h-[36px] rounded-[8px] text-[12.5px] text-[color:var(--hx-ff453a)]" style={{ border: "1px solid rgba(255,69,58,0.3)" }}>
           Delete Task
         </button>
       )}
@@ -329,11 +329,11 @@ function ItemDetailDrawer({ planId, item, isOwner, reps, onClose, onChanged }: {
 
 function Drawer({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
-      <div className="h-full overflow-y-auto p-6 flex flex-col gap-3" style={{ width: 420, background: "#151515", borderLeft: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgb(var(--k) / 0.6)" }} onClick={onClose}>
+      <div className="h-full overflow-y-auto p-6 flex flex-col gap-3" style={{ width: 420, background: "var(--hx-151515)", borderLeft: "1px solid rgb(var(--w) / 0.08)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-[16px] font-semibold text-[#F5F5F7]">{title}</div>
-          <button onClick={onClose} className="text-[#6E6E73] hover:text-white">
+          <div className="text-[16px] font-semibold text-[color:var(--hx-f5f5f7)]">{title}</div>
+          <button onClick={onClose} className="text-[color:var(--hx-6e6e73)] hover:text-white">
             <X size={16} />
           </button>
         </div>
@@ -346,9 +346,9 @@ function Drawer({ title, children, onClose }: { title: string; children: React.R
             padding: 0 10px;
             font-size: 13px;
             outline: none;
-            background: #0a0a0a;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #f5f5f7;
+            background: var(--hx-0a0a0a);
+            border: 1px solid rgb(var(--w) / 0.08);
+            color: var(--hx-f5f5f7);
           }
         `}</style>
       </div>
@@ -359,7 +359,7 @@ function Drawer({ title, children, onClose }: { title: string; children: React.R
 function FieldInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{label}</label>
+      <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{label}</label>
       <input value={value} onChange={(e) => onChange(e.target.value)} className="sfb-field" />
     </div>
   );
@@ -367,7 +367,7 @@ function FieldInput({ label, value, onChange }: { label: string; value: string; 
 function FieldTextarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{label}</label>
+      <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{label}</label>
       <textarea value={value} onChange={(e) => onChange(e.target.value)} className="sfb-field h-[70px] resize-none" />
     </div>
   );
@@ -375,7 +375,7 @@ function FieldTextarea({ label, value, onChange }: { label: string; value: strin
 function FieldDate({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{label}</label>
+      <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{label}</label>
       <input type="date" value={value} onChange={(e) => onChange(e.target.value)} className="sfb-field" />
     </div>
   );
@@ -383,7 +383,7 @@ function FieldDate({ label, value, onChange }: { label: string; value: string; o
 function FieldNumber({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{label}</label>
+      <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{label}</label>
       <input type="number" min={0} value={value} onChange={(e) => onChange(Number(e.target.value))} className="sfb-field" />
     </div>
   );

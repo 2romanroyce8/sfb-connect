@@ -49,29 +49,29 @@ export default async function AgentWelcomePage({ searchParams }: { searchParams:
     <main className="bg-black text-white min-h-screen">
       <Navbar />
       <section className="pt-[150px] pb-24 px-6">
-        <div className="max-w-[680px] mx-auto rounded-[18px] p-8 md:p-10" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="max-w-[680px] mx-auto rounded-[18px] p-8 md:p-10" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           {paymentState === "open" ? (
             <>
-              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#FF9F0A] mb-4">Payment not completed</div>
+              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[color:var(--hx-ff9f0a)] mb-4">Payment not completed</div>
               <h1 className="text-[32px] font-bold tracking-[-0.03em]">Stripe hasn&apos;t confirmed this payment.</h1>
               <p className="mt-4 text-[15px] text-white/[0.6]">If you closed checkout early, pick up where you left off.</p>
               <Link href="/start" className="mt-8 inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-[14px] font-semibold">Back to get started →</Link>
             </>
           ) : (
             <>
-              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-4">Thank you</div>
+              <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[color:var(--hx-30d158)] mb-4">Thank you</div>
               <h1 className="text-[34px] md:text-[42px] font-bold tracking-[-0.03em] leading-[1.05]">Thank you — you&apos;re in.</h1>
               <div className="mt-7 grid sm:grid-cols-3 gap-3">
-                <div className="rounded-[12px] p-4" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.08)" }}><div className="text-[11px] uppercase tracking-[0.14em] text-white/[0.45]">Plan</div><div className="text-[17px] font-semibold mt-1">{t ? `${t.name}${order?.billing_interval === "year" ? " · annual" : ""}` : "SFB Agent"}</div></div>
-                <div className="rounded-[12px] p-4" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.08)" }}><div className="text-[11px] uppercase tracking-[0.14em] text-white/[0.45]">Credits</div><div className="text-[17px] font-semibold mt-1">{t ? t.creditsLabel : "—"}</div></div>
-                <div className="rounded-[12px] p-4" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.08)" }}><div className="text-[11px] uppercase tracking-[0.14em] text-white/[0.45]">Receipt</div><div className="text-[17px] font-semibold mt-1">{money(paidCents) ?? "—"}</div>{receiptUrl ? <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] underline text-white/[0.7]">View receipt</a> : <div className="text-[12px] text-white/[0.45]">Emailed by Stripe</div>}</div>
+                <div className="rounded-[12px] p-4" style={{ background: "var(--hx-0f0f0f)", border: "1px solid rgb(var(--w) / 0.08)" }}><div className="text-[11px] uppercase tracking-[0.14em] text-white/[0.45]">Plan</div><div className="text-[17px] font-semibold mt-1">{t ? `${t.name}${order?.billing_interval === "year" ? " · annual" : ""}` : "SFB Agent"}</div></div>
+                <div className="rounded-[12px] p-4" style={{ background: "var(--hx-0f0f0f)", border: "1px solid rgb(var(--w) / 0.08)" }}><div className="text-[11px] uppercase tracking-[0.14em] text-white/[0.45]">Credits</div><div className="text-[17px] font-semibold mt-1">{t ? t.creditsLabel : "—"}</div></div>
+                <div className="rounded-[12px] p-4" style={{ background: "var(--hx-0f0f0f)", border: "1px solid rgb(var(--w) / 0.08)" }}><div className="text-[11px] uppercase tracking-[0.14em] text-white/[0.45]">Receipt</div><div className="text-[17px] font-semibold mt-1">{money(paidCents) ?? "—"}</div>{receiptUrl ? <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] underline text-white/[0.7]">View receipt</a> : <div className="text-[12px] text-white/[0.45]">Emailed by Stripe</div>}</div>
               </div>
               <div className="mt-8">
                 <div className="text-[17px] font-semibold">15 minutes from now your agent runs its first task.</div>
                 <ol className="mt-3 flex flex-col gap-2 text-[14.5px] text-white/[0.75]">
-                  <li className="flex gap-3"><span className="text-[#30D158] font-semibold">1</span><span><strong className="text-white">Connect</strong> — Gmail and Google Calendar. Your agent sends from your address and books onto your calendar.</span></li>
-                  <li className="flex gap-3"><span className="text-[#30D158] font-semibold">2</span><span><strong className="text-white">Configure</strong> — confirm your profile, pick who you want more of, switch on the capabilities you want.</span></li>
-                  <li className="flex gap-3"><span className="text-[#30D158] font-semibold">3</span><span><strong className="text-white">Launch</strong> — your agent drafts the first campaign; you approve; it goes.</span></li>
+                  <li className="flex gap-3"><span className="text-[color:var(--hx-30d158)] font-semibold">1</span><span><strong className="text-white">Connect</strong> — Gmail and Google Calendar. Your agent sends from your address and books onto your calendar.</span></li>
+                  <li className="flex gap-3"><span className="text-[color:var(--hx-30d158)] font-semibold">2</span><span><strong className="text-white">Configure</strong> — confirm your profile, pick who you want more of, switch on the capabilities you want.</span></li>
+                  <li className="flex gap-3"><span className="text-[color:var(--hx-30d158)] font-semibold">3</span><span><strong className="text-white">Launch</strong> — your agent drafts the first campaign; you approve; it goes.</span></li>
                 </ol>
               </div>
               {provisioned ? (

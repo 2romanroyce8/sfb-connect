@@ -29,14 +29,14 @@ export default async function ResearchQueuePage() {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const IDENTITY_COLOR: Record<string, string> = { confirmed: "#30D158", uncertain: "#FFD60A", conflict: "#FF9F0A", not_found: "#6E6E73" };
+  const IDENTITY_COLOR: Record<string, string> = { confirmed: "var(--hx-30d158)", uncertain: "var(--hx-ffd60a)", conflict: "var(--hx-ff9f0a)", not_found: "var(--hx-6e6e73)" };
 
   return (
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-[20px] font-semibold text-[#F5F5F7]">Research Queue</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1">
+          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Research Queue</div>
+          <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">
             {(results ?? []).length} pending — not yet saved as leads
           </div>
         </div>
@@ -51,16 +51,16 @@ export default async function ResearchQueuePage() {
 
       {failedJobs && failedJobs.length > 0 && (
         <div className="mb-6">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-2">Failed ({failedJobs.length}, last 7 days)</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-2">Failed ({failedJobs.length}, last 7 days)</div>
           <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,69,58,0.25)" }}>
             {failedJobs.map((j, i) => (
-              <div key={j.id} className="flex items-center gap-3 px-4 py-2.5 text-[12.5px]" style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined, background: "#0A0A0A" }}>
-                <span className="text-[#F5F5F7] truncate flex-1">{j.started_for || "Unknown source"}</span>
-                <span className="text-[#FF453A] shrink-0 text-[11.5px]">{j.error_code || "FAILED"}</span>
-                <span className="text-[#6E6E73] truncate max-w-[320px] text-[11.5px]">{j.error_message}</span>
-                <span className="text-[#6E6E73] shrink-0 text-[11.5px]">{new Date(j.created_at).toLocaleDateString()}</span>
+              <div key={j.id} className="flex items-center gap-3 px-4 py-2.5 text-[12.5px]" style={{ borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined, background: "var(--hx-0a0a0a)" }}>
+                <span className="text-[color:var(--hx-f5f5f7)] truncate flex-1">{j.started_for || "Unknown source"}</span>
+                <span className="text-[color:var(--hx-ff453a)] shrink-0 text-[11.5px]">{j.error_code || "FAILED"}</span>
+                <span className="text-[color:var(--hx-6e6e73)] truncate max-w-[320px] text-[11.5px]">{j.error_message}</span>
+                <span className="text-[color:var(--hx-6e6e73)] shrink-0 text-[11.5px]">{new Date(j.created_at).toLocaleDateString()}</span>
                 {j.started_for && (
-                  <Link href={`/team/leads/import?source=${encodeURIComponent(j.started_for)}`} className="shrink-0 h-[28px] px-2.5 inline-flex items-center rounded-[6px] text-[11.5px] font-semibold" style={{ background: "#151515", color: "#F5F5F7", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <Link href={`/team/leads/import?source=${encodeURIComponent(j.started_for)}`} className="shrink-0 h-[28px] px-2.5 inline-flex items-center rounded-[6px] text-[11.5px] font-semibold" style={{ background: "var(--hx-151515)", color: "var(--hx-f5f5f7)", border: "1px solid rgb(var(--w) / 0.1)" }}>
                     Retry
                   </Link>
                 )}
@@ -71,17 +71,17 @@ export default async function ResearchQueuePage() {
       )}
 
       {!results || results.length === 0 ? (
-        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">Nothing pending</div>
-          <p className="text-[13px] text-[#A1A1A6]">Research a business — it'll wait here until you save it as a lead.</p>
+        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">Nothing pending</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Research a business — it'll wait here until you save it as a lead.</p>
         </div>
       ) : (
-        <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
           <table className="w-full text-[13px]">
             <thead>
-              <tr style={{ background: "#0A0A0A" }}>
+              <tr style={{ background: "var(--hx-0a0a0a)" }}>
                 {["Business", "Entity", "Identity", "Completeness", "Verified", "Conflicts", "Website", "Phone", "Researched"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
+                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">
                     {h}
                   </th>
                 ))}
@@ -89,45 +89,45 @@ export default async function ResearchQueuePage() {
             </thead>
             <tbody>
               {results.map((r) => (
-                <tr key={r.id} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} className="hover:bg-[#0A0A0A] cursor-pointer">
+                <tr key={r.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }} className="hover:bg-[color:var(--hx-0a0a0a)] cursor-pointer">
                   <td className="px-4 py-3">
-                    <Link href={`/team/research/${r.id}`} className="text-[#F5F5F7] hover:underline">
+                    <Link href={`/team/research/${r.id}`} className="text-[color:var(--hx-f5f5f7)] hover:underline">
                       {r.business_name || "Unidentified business"}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-[12px]">
                     {r.entity_type === "PERSON_OPERATING_BUSINESS" ? (
-                      <span className="text-[#F5F5F7]">{r.person_name} <span className="text-[#6E6E73]">· {r.relationship_basis === "self_described" ? "self-described " : ""}{(r.relationship_type || "operator").toLowerCase()}</span></span>
+                      <span className="text-[color:var(--hx-f5f5f7)]">{r.person_name} <span className="text-[color:var(--hx-6e6e73)]">· {r.relationship_basis === "self_described" ? "self-described " : ""}{(r.relationship_type || "operator").toLowerCase()}</span></span>
                     ) : r.entity_type === "PERSON" && r.relationship_type ? (
-                      <span className="text-[#A1A1A6]">{r.person_name} · {r.relationship_type.toLowerCase()} (not operator)</span>
+                      <span className="text-[color:var(--hx-a1a1a6)]">{r.person_name} · {r.relationship_type.toLowerCase()} (not operator)</span>
                     ) : r.entity_type === "PERSON" ? (
-                      <span className="text-[#A1A1A6]">Person · no business</span>
+                      <span className="text-[color:var(--hx-a1a1a6)]">Person · no business</span>
                     ) : r.entity_type === "UNKNOWN" ? (
-                      <span className="text-[#FFD60A]">Signals · uncertain</span>
+                      <span className="text-[color:var(--hx-ffd60a)]">Signals · uncertain</span>
                     ) : r.entity_type ? (
-                      <span className="text-[#A1A1A6]">{r.entity_type.toLowerCase()}</span>
+                      <span className="text-[color:var(--hx-a1a1a6)]">{r.entity_type.toLowerCase()}</span>
                     ) : (
-                      <span className="text-[#6E6E73]">—</span>
+                      <span className="text-[color:var(--hx-6e6e73)]">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {r.identity_confidence && r.research_confidence_pct != null ? (
-                      <span className="text-[12px] font-semibold" style={{ color: IDENTITY_COLOR[r.identity_confidence] ?? "#A1A1A6" }}>
+                      <span className="text-[12px] font-semibold" style={{ color: IDENTITY_COLOR[r.identity_confidence] ?? "var(--hx-a1a1a6)" }}>
                         <span title="Whether the researched sources are the business named by the seed — separate from how complete the profile is">Identity {r.identity_confidence.replace("_", " ")}</span>
                       </span>
                     ) : (
-                      <span className="text-[#6E6E73]" title="Researched before the identity layer existed — open to see a derived profile">legacy</span>
+                      <span className="text-[color:var(--hx-6e6e73)]" title="Researched before the identity layer existed — open to see a derived profile">legacy</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">
                     {r.research_confidence_pct != null ? `${r.research_confidence_pct}%` : r.research_completeness != null ? `${r.research_completeness}% (old)` : "—"}
-                    {r.research_status === "completed_with_limitations" && <span className="ml-1 text-[10.5px] text-[#FFD60A]">limited</span>}
+                    {r.research_status === "completed_with_limitations" && <span className="ml-1 text-[10.5px] text-[color:var(--hx-ffd60a)]">limited</span>}
                   </td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{r.fields_verified != null ? `${r.fields_verified}/${r.fields_total}` : "—"}</td>
-                  <td className="px-4 py-3">{Array.isArray(r.conflicts) && r.conflicts.length > 0 ? <span className="text-[#FF9F0A]">{r.conflicts.length}</span> : <span className="text-[#6E6E73]">—</span>}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{r.website?.replace(/^https?:\/\//, "") || "—"}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{r.phone || "—"}</td>
-                  <td className="px-4 py-3 text-[#6E6E73]">{new Date(r.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{r.fields_verified != null ? `${r.fields_verified}/${r.fields_total}` : "—"}</td>
+                  <td className="px-4 py-3">{Array.isArray(r.conflicts) && r.conflicts.length > 0 ? <span className="text-[color:var(--hx-ff9f0a)]">{r.conflicts.length}</span> : <span className="text-[color:var(--hx-6e6e73)]">—</span>}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{r.website?.replace(/^https?:\/\//, "") || "—"}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{r.phone || "—"}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-6e6e73)]">{new Date(r.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/agent" },
   openGraph: { title: "Meet your SFB Agent", description: "One agent. Eight jobs. You decide what it does.", url: "/agent" },
 };
-const card: React.CSSProperties = { background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" };
+const card: React.CSSProperties = { background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" };
 
 export default async function AgentPage() {
   const modules = await fetchAgentModules();
@@ -29,7 +29,7 @@ export default async function AgentPage() {
       <Navbar />
       <section className="pt-[150px] md:pt-[180px] pb-20 md:pb-28 px-6">
         <div className="max-w-[1100px] mx-auto">
-          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-5">Meet your SFB Agent</div>
+          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[color:var(--hx-30d158)] mb-5">Meet your SFB Agent</div>
           <h1 className="text-[44px] sm:text-[60px] md:text-[80px] font-bold leading-[0.95] tracking-[-0.045em] max-w-[980px]">One agent. Eight jobs.{" "}<span className="font-serif-accent italic font-normal text-white/[0.86]">You decide what it does.</span></h1>
           <p className="mt-7 text-[17px] md:text-[20px] leading-[1.5] text-white/[0.6] max-w-[720px]">One AI agent assigned to your business. Toggle the eight things it can do. A human expert checks everything customer-facing. It runs on credits, and you always see the receipt.</p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -78,7 +78,7 @@ export default async function AgentPage() {
           </div>
           <div className="rounded-[12px] overflow-hidden" style={card}>
             {byCap.map(({ cap, prices }) => (
-              <div key={cap.key} className="px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div key={cap.key} className="px-5 py-3" style={{ borderBottom: "1px solid rgb(var(--w) / 0.06)" }}>
                 <div className="text-[12px] font-semibold text-white/[0.8] mb-1.5">{cap.name}</div>
                 <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-0.5">{prices.map((p) => <li key={p.key} className="flex justify-between text-[12.5px]"><span className="text-white/[0.55]">{p.label}</span><span className="tabular-nums text-white/[0.85]">{p.credits}</span></li>)}</ul>
               </div>
@@ -91,14 +91,14 @@ export default async function AgentPage() {
         </div>
       </div></section>
 
-      <section className="py-20 md:py-24 px-6"><div className="max-w-[1100px] mx-auto rounded-[18px] p-8 md:p-12 grid md:grid-cols-[1fr_1.2fr] gap-8 items-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}>
+      <section className="py-20 md:py-24 px-6"><div className="max-w-[1100px] mx-auto rounded-[18px] p-8 md:p-12 grid md:grid-cols-[1fr_1.2fr] gap-8 items-center" style={{ background: "var(--hx-050505)", border: "1px solid rgb(var(--w) / 0.06)" }}>
         <h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.03em] leading-[1.05]">Every agent has a human.</h2>
         <p className="text-[15px] md:text-[16px] leading-[1.65] text-white/[0.6]">Don&apos;t trust AI with your business? Good — neither do we, unsupervised. A human expert reviews your agent&apos;s work, approves anything customer-facing, and signs every report. The agent does the work; the human makes sure it&apos;s right.</p>
       </div></section>
 
 
       <section className="py-20 md:py-24 px-6"><div className="max-w-[1100px] mx-auto grid md:grid-cols-[0.8fr_1.2fr] gap-10"><h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.03em]">Questions</h2><AgentFaq /></div></section>
-      <section className="pb-24 px-6"><div className="max-w-[1100px] mx-auto rounded-[18px] p-10 text-center" style={{ background: "#050505", border: "1px solid rgba(255,255,255,0.06)" }}><h2 className="text-[28px] md:text-[36px] font-bold tracking-[-0.03em]">Get your agent.</h2><p className="mt-3 text-[14px] text-white/[0.5]">Create your account and watch your agent build itself.</p><Link href="/start" className="mt-6 inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85">Get started →</Link></div></section>
+      <section className="pb-24 px-6"><div className="max-w-[1100px] mx-auto rounded-[18px] p-10 text-center" style={{ background: "var(--hx-050505)", border: "1px solid rgb(var(--w) / 0.06)" }}><h2 className="text-[28px] md:text-[36px] font-bold tracking-[-0.03em]">Get your agent.</h2><p className="mt-3 text-[14px] text-white/[0.5]">Create your account and watch your agent build itself.</p><Link href="/start" className="mt-6 inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85">Get started →</Link></div></section>
       <Footer />
     </main>
   );

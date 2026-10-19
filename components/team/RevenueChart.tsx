@@ -48,18 +48,18 @@ export default function RevenueChart({ events }: { events: RevenueEvent[] }) {
   const hasData = totalRevenue > 0;
 
   return (
-    <div className="rounded-[8px] p-7" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
+    <div className="rounded-[8px] p-7" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}>
       <div className="flex items-start justify-between mb-1">
         <div>
-          <div className="text-[15px] text-[#D6D6D6]">Revenue</div>
-          <div className="text-[34px] font-semibold text-[#F5F5F7] mt-2 leading-none">{formatMoney(totalRevenue)}</div>
-          <div className="text-[12.5px] text-[#6E6E73] mt-1.5">Closed revenue in range — deals marked Won, not verified cash collected</div>
+          <div className="text-[15px] text-[color:var(--hx-d6d6d6)]">Revenue</div>
+          <div className="text-[34px] font-semibold text-[color:var(--hx-f5f5f7)] mt-2 leading-none">{formatMoney(totalRevenue)}</div>
+          <div className="text-[12.5px] text-[color:var(--hx-6e6e73)] mt-1.5">Closed revenue in range — deals marked Won, not verified cash collected</div>
         </div>
         <select
           value={range}
           onChange={(e) => setRange(e.target.value)}
           className="h-[38px] rounded-[6px] px-3.5 text-[12.5px] outline-none"
-          style={{ background: "#191919", border: "1px solid rgba(255,255,255,0.04)", color: "#D0D0D0" }}
+          style={{ background: "var(--hx-191919)", border: "1px solid rgb(var(--w) / 0.04)", color: "var(--hx-d0d0d0)" }}
         >
           {RANGES.map((r) => (
             <option key={r.key} value={r.key}>
@@ -70,7 +70,7 @@ export default function RevenueChart({ events }: { events: RevenueEvent[] }) {
       </div>
 
       {!hasData ? (
-        <div className="h-[280px] flex items-center justify-center text-[13px] text-[#6E6E73]">
+        <div className="h-[280px] flex items-center justify-center text-[13px] text-[color:var(--hx-6e6e73)]">
           No revenue recorded in this range yet.
         </div>
       ) : (
@@ -83,26 +83,26 @@ export default function RevenueChart({ events }: { events: RevenueEvent[] }) {
                   <stop offset="100%" stopColor="#30D158" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="1 8" stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <CartesianGrid strokeDasharray="1 8" stroke="rgb(var(--w) / 0.08)" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fill: "#666666", fontSize: 12 }}
+                tick={{ fill: "var(--hx-666666)", fontSize: 12 }}
                 axisLine={false}
                 tickLine={false}
                 minTickGap={24}
                 interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fill: "#666666", fontSize: 12 }}
+                tick={{ fill: "var(--hx-666666)", fontSize: 12 }}
                 axisLine={false}
                 tickLine={false}
                 width={48}
                 tickFormatter={(v) => `$${Intl.NumberFormat("en", { notation: "compact" }).format(v)}`}
               />
               <Tooltip
-                contentStyle={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "10px 12px" }}
-                labelStyle={{ color: "#F5F5F7", fontSize: 12 }}
-                itemStyle={{ color: "#D0D0D0", fontSize: 12 }}
+                contentStyle={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", borderRadius: 8, padding: "10px 12px" }}
+                labelStyle={{ color: "var(--hx-f5f5f7)", fontSize: 12 }}
+                itemStyle={{ color: "var(--hx-d0d0d0)", fontSize: 12 }}
                 formatter={(v) => [formatMoney(Number(v)), "Revenue"]}
               />
               <Area type="linear" dataKey="amount" name="Revenue" stroke="#30D158" strokeWidth={2} fill="url(#revenueFill)" />

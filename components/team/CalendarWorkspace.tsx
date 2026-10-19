@@ -272,7 +272,7 @@ export default function CalendarWorkspace({
   return (
     <div
       className="flex justify-center"
-      style={{ background: "#0B0B0B", padding: "28px 28px 36px", width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", overflowX: "hidden" }}
+      style={{ background: "var(--hx-0b0b0b)", padding: "28px 28px 36px", width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", overflowX: "hidden" }}
     >
       <div
         className="grid overflow-hidden"
@@ -282,29 +282,29 @@ export default function CalendarWorkspace({
           minWidth: 0,
           minHeight: 690,
           gridTemplateColumns: "minmax(260px, 0.85fr) minmax(0, 1.6fr) minmax(220px, 0.65fr)",
-          background: "#121212",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--hx-121212)",
+          border: "1px solid rgb(var(--w) / 0.07)",
           borderRadius: 10,
           boxShadow: "0 24px 70px rgba(0,0,0,0.25)",
           boxSizing: "border-box",
         }}
       >
         {/* LEFT: selected event details */}
-        <div className="flex flex-col overflow-hidden" style={{ background: "#141414", borderRight: "1px solid rgba(255,255,255,0.07)", padding: 32, minWidth: 0, wordBreak: "break-word" }}>
+        <div className="flex flex-col overflow-hidden" style={{ background: "var(--hx-141414)", borderRight: "1px solid rgb(var(--w) / 0.07)", padding: 32, minWidth: 0, wordBreak: "break-word" }}>
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-[12px] font-bold">
               {currentUser.name.slice(0, 1).toUpperCase()}
             </div>
-            <span className="text-[16px] font-medium text-[#B8B8B8]">{currentUser.name}</span>
+            <span className="text-[16px] font-medium text-[color:var(--hx-b8b8b8)]">{currentUser.name}</span>
           </div>
 
           {selectedEvent ? (
             <>
-              <div className="text-[29px] font-semibold text-[#F3F3F3] mb-1.5" style={{ lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+              <div className="text-[29px] font-semibold text-[color:var(--hx-f3f3f3)] mb-1.5" style={{ lineHeight: 1.1, letterSpacing: "-0.02em" }}>
                 {selectedEvent.title}
               </div>
-              <div className="text-[13px] text-[#A7A7A7] mb-4 capitalize">{selectedEvent.eventType.replace(/_/g, " ")} · SFB Connect</div>
-              {selectedEvent.description && <p className="text-[14px] text-[#C8C8C8] leading-[1.55] max-h-[190px] overflow-y-auto pr-2">{selectedEvent.description}</p>}
+              <div className="text-[13px] text-[color:var(--hx-a7a7a7)] mb-4 capitalize">{selectedEvent.eventType.replace(/_/g, " ")} · SFB Connect</div>
+              {selectedEvent.description && <p className="text-[14px] text-[color:var(--hx-c8c8c8)] leading-[1.55] max-h-[190px] overflow-y-auto pr-2">{selectedEvent.description}</p>}
 
               <div className="flex flex-col gap-[18px]" style={{ marginTop: 26 }}>
                 <MetaRow icon={Clock3} label="Duration" value={`${new Date(selectedEvent.startAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}${selectedEvent.endAt !== selectedEvent.startAt ? ` – ${new Date(selectedEvent.endAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}` : ""}`} />
@@ -316,19 +316,19 @@ export default function CalendarWorkspace({
               </div>
             </>
           ) : (
-            <div className="text-[14px] text-[#7C7C7C] mt-8">Select a day or event to see details here.</div>
+            <div className="text-[14px] text-[color:var(--hx-7c7c7c)] mt-8">Select a day or event to see details here.</div>
           )}
         </div>
 
         {/* CENTER: month grid */}
-        <div className="relative overflow-hidden" style={{ background: "#151515", padding: 28, minWidth: 0 }}>
+        <div className="relative overflow-hidden" style={{ background: "var(--hx-151515)", padding: 28, minWidth: 0 }}>
           <div className="flex items-center gap-1.5 mb-4 flex-wrap" style={{ maxWidth: "100%" }}>
             {MODE_TABS.filter((m) => m !== "TEAM" || isOwner).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className="h-[28px] px-2.5 rounded-[6px] text-[11px]"
-                style={{ background: mode === m ? "#F2F2F2" : "#101010", color: mode === m ? "#111111" : "#8B8B8B", border: "1px solid rgba(255,255,255,0.05)" }}
+                style={{ background: mode === m ? "var(--hx-f2f2f2)" : "var(--hx-101010)", color: mode === m ? "var(--hx-111111)" : "var(--hx-8b8b8b)", border: "1px solid rgb(var(--w) / 0.05)" }}
               >
                 {m}
               </button>
@@ -336,14 +336,14 @@ export default function CalendarWorkspace({
           </div>
 
           <div className="flex items-center justify-between gap-4" style={{ marginBottom: 28, minWidth: 0 }}>
-            <div className="text-[25px] font-semibold text-[#F5F5F7]" style={{ letterSpacing: "-0.02em" }}>
+            <div className="text-[25px] font-semibold text-[color:var(--hx-f5f5f7)]" style={{ letterSpacing: "-0.02em" }}>
               {monthLabel}
             </div>
             <div className="flex items-center gap-[18px]">
-              <button onClick={prevMonth} className="text-[#7B7B7B] hover:text-white">
+              <button onClick={prevMonth} className="text-[color:var(--hx-7b7b7b)] hover:text-white">
                 <ChevronLeft size={20} />
               </button>
-              <button onClick={nextMonth} className="text-[#7B7B7B] hover:text-white">
+              <button onClick={nextMonth} className="text-[color:var(--hx-7b7b7b)] hover:text-white">
                 <ChevronRight size={20} />
               </button>
             </div>
@@ -351,7 +351,7 @@ export default function CalendarWorkspace({
 
           <div className="grid gap-1" style={{ marginBottom: 22, gridTemplateColumns: "repeat(7, minmax(0, 1fr))", minWidth: 0 }}>
             {WEEKDAYS.map((w) => (
-              <div key={w} className="text-center text-[13px] font-semibold text-[#F0F0F0] truncate" style={{ letterSpacing: "0.12em" }}>
+              <div key={w} className="text-center text-[13px] font-semibold text-[color:var(--hx-f0f0f0)] truncate" style={{ letterSpacing: "0.12em" }}>
                 {w}
               </div>
             ))}
@@ -375,21 +375,21 @@ export default function CalendarWorkspace({
                     minWidth: 0,
                     aspectRatio: "1.08 / 1",
                     minHeight: 60,
-                    background: isSelected ? "#F1F1F1" : inMonth ? "#3D3D3D" : "#333333",
-                    border: isSelected ? "1px solid rgba(255,255,255,0.6)" : "1px solid rgba(255,255,255,0.025)",
+                    background: isSelected ? "var(--hx-f1f1f1)" : inMonth ? "var(--hx-3d3d3d)" : "var(--hx-333333)",
+                    border: isSelected ? "1px solid rgb(var(--w) / 0.6)" : "1px solid rgb(var(--w) / 0.025)",
                     borderRadius: 7,
-                    color: isSelected ? "#111111" : inMonth ? "#F0F0F0" : "#E0E0E0",
+                    color: isSelected ? "var(--hx-111111)" : inMonth ? "var(--hx-f0f0f0)" : "var(--hx-e0e0e0)",
                     opacity: inMonth ? 1 : 0.8,
                     fontSize: 17,
                     fontWeight: isSelected ? 600 : 500,
                   }}
                 >
-                  {isToday && !isSelected && <span className="absolute top-[7px] left-[8px] text-[9px] text-[#0A84FF]">TODAY</span>}
+                  {isToday && !isSelected && <span className="absolute top-[7px] left-[8px] text-[9px] text-[color:var(--hx-0a84ff)]">TODAY</span>}
                   {date.getDate()}
                   {dayEvents.length > 0 && (
                     <span
                       className="absolute rounded-full"
-                      style={{ bottom: 13, width: 5, height: 5, background: isSelected ? "#111111" : "#F0F0F0" }}
+                      style={{ bottom: 13, width: 5, height: 5, background: isSelected ? "var(--hx-111111)" : "var(--hx-f0f0f0)" }}
                     />
                   )}
                 </button>
@@ -399,13 +399,13 @@ export default function CalendarWorkspace({
         </div>
 
         {/* RIGHT: selected day agenda + actions */}
-        <div className="flex flex-col overflow-hidden" style={{ background: "#131313", borderLeft: "1px solid rgba(255,255,255,0.07)", padding: "28px 26px", minWidth: 0, boxSizing: "border-box" }}>
-          <div className="text-[25px] font-semibold text-[#F5F5F7]">{selectedDayLabel}</div>
-          <div className="text-[12px] text-[#8E8E93] mt-1">{selectedDayEvents.length} event{selectedDayEvents.length === 1 ? "" : "s"}</div>
+        <div className="flex flex-col overflow-hidden" style={{ background: "var(--hx-131313)", borderLeft: "1px solid rgb(var(--w) / 0.07)", padding: "28px 26px", minWidth: 0, boxSizing: "border-box" }}>
+          <div className="text-[25px] font-semibold text-[color:var(--hx-f5f5f7)]">{selectedDayLabel}</div>
+          <div className="text-[12px] text-[color:var(--hx-8e8e93)] mt-1">{selectedDayEvents.length} event{selectedDayEvents.length === 1 ? "" : "s"}</div>
 
           <div className="flex flex-col gap-[10px] mt-[18px] flex-1 overflow-y-auto">
             {selectedDayEvents.length === 0 ? (
-              <div className="text-[13px] text-[#747474] mt-2">No events on this day.</div>
+              <div className="text-[13px] text-[color:var(--hx-747474)] mt-2">No events on this day.</div>
             ) : (
               selectedDayEvents.map((e) => (
                 <button
@@ -415,9 +415,9 @@ export default function CalendarWorkspace({
                   style={{
                     height: 48,
                     padding: "0 12px",
-                    background: selectedEventId === e.id ? "#F1F1F1" : "#111111",
-                    color: selectedEventId === e.id ? "#111111" : "#F5F5F7",
-                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: selectedEventId === e.id ? "var(--hx-f1f1f1)" : "var(--hx-111111)",
+                    color: selectedEventId === e.id ? "var(--hx-111111)" : "var(--hx-f5f5f7)",
+                    border: "1px solid rgb(var(--w) / 0.12)",
                     borderRadius: 8,
                     fontSize: 13,
                     fontWeight: 500,
@@ -436,31 +436,31 @@ export default function CalendarWorkspace({
           {selectedEvent && (
             <div className="flex flex-col gap-1.5 mb-3">
               {selectedEvent.leadId && (
-                <Link href={`/team/leads/${selectedEvent.leadId}`} className="h-[36px] flex items-center justify-center gap-1.5 rounded-[7px] text-[12.5px]" style={{ background: "#1A1A1A", color: "#E8E8E8", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <Link href={`/team/leads/${selectedEvent.leadId}`} className="h-[36px] flex items-center justify-center gap-1.5 rounded-[7px] text-[12.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-e8e8e8)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                   <BriefcaseBusiness size={13} /> Open Lead
                 </Link>
               )}
               {selectedEvent.meetUrl && (
-                <a href={selectedEvent.meetUrl} target="_blank" rel="noopener noreferrer" className="h-[36px] flex items-center justify-center gap-1.5 rounded-[7px] text-[12.5px]" style={{ background: "#1A1A1A", color: "#E8E8E8", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <a href={selectedEvent.meetUrl} target="_blank" rel="noopener noreferrer" className="h-[36px] flex items-center justify-center gap-1.5 rounded-[7px] text-[12.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-e8e8e8)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                   <ExternalLink size={13} /> Join / Open
                 </a>
               )}
               <div className="flex gap-1.5">
-                <button onClick={() => shareEvent(selectedEvent)} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "#1A1A1A", color: "#D0D0D0", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <button onClick={() => shareEvent(selectedEvent)} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-d0d0d0)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                   <Download size={12} /> ICS
                 </button>
                 {selectedEvent.leadId && (
-                  <button onClick={() => copyLink(selectedEvent)} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "#1A1A1A", color: "#D0D0D0", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <button onClick={() => copyLink(selectedEvent)} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-d0d0d0)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                     <Copy size={12} /> Copy Link
                   </button>
                 )}
                 {selectedEvent.source === "meeting" && selectedEvent.status === "booked" && (
-                  <button onClick={() => cancelMeeting(selectedEvent)} disabled={busy} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "#1A1A1A", color: "#FF6B6B", border: "1px solid rgba(255,69,58,0.2)" }}>
+                  <button onClick={() => cancelMeeting(selectedEvent)} disabled={busy} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-ff6b6b)", border: "1px solid rgba(255,69,58,0.2)" }}>
                     <Trash2 size={12} /> Cancel
                   </button>
                 )}
                 {selectedEvent.source === "personal_work" && selectedEvent.raw.owner_id === currentUser.id && (
-                  <button onClick={() => deletePersonalEvent(selectedEvent)} disabled={busy} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "#1A1A1A", color: "#FF6B6B", border: "1px solid rgba(255,69,58,0.2)" }}>
+                  <button onClick={() => deletePersonalEvent(selectedEvent)} disabled={busy} className="flex-1 h-[32px] flex items-center justify-center gap-1.5 rounded-[7px] text-[11.5px]" style={{ background: "var(--hx-1a1a1a)", color: "var(--hx-ff6b6b)", border: "1px solid rgba(255,69,58,0.2)" }}>
                     <Trash2 size={12} /> Delete
                   </button>
                 )}
@@ -471,7 +471,7 @@ export default function CalendarWorkspace({
           <button
             onClick={() => setShowCreate(true)}
             className="h-[44px] rounded-[7px] font-semibold text-[13.5px] flex items-center justify-center gap-1.5 shrink-0"
-            style={{ background: "#F1F1F1", color: "#111111", width: "100%", maxWidth: "100%", boxSizing: "border-box", whiteSpace: "nowrap" }}
+            style={{ background: "var(--hx-f1f1f1)", color: "var(--hx-111111)", width: "100%", maxWidth: "100%", boxSizing: "border-box", whiteSpace: "nowrap" }}
           >
             <Plus size={14} /> Create Event
           </button>
@@ -486,9 +486,9 @@ export default function CalendarWorkspace({
 function MetaRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
   return (
     <div className="grid items-center gap-2.5" style={{ gridTemplateColumns: "22px 1fr" }}>
-      <Icon size={18} className="text-[#D0D0D0]" />
-      <span className="text-[14px] text-[#E2E2E2]">
-        <span className="text-[#8E8E93] mr-1.5">{label}:</span>
+      <Icon size={18} className="text-[color:var(--hx-d0d0d0)]" />
+      <span className="text-[14px] text-[color:var(--hx-e2e2e2)]">
+        <span className="text-[color:var(--hx-8e8e93)] mr-1.5">{label}:</span>
         {value}
       </span>
     </div>
@@ -536,11 +536,11 @@ function CreateEventDrawer({ defaultDate, onClose, onCreated }: { defaultDate: s
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
-      <div className="h-full overflow-y-auto p-6" style={{ width: 420, background: "#181818", borderLeft: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgb(var(--k) / 0.6)" }} onClick={onClose}>
+      <div className="h-full overflow-y-auto p-6" style={{ width: 420, background: "var(--hx-181818)", borderLeft: "1px solid rgb(var(--w) / 0.08)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <div className="text-[16px] font-semibold text-[#F5F5F7]">Create Event</div>
-          <button onClick={onClose} className="text-[#6E6E73] hover:text-white">
+          <div className="text-[16px] font-semibold text-[color:var(--hx-f5f5f7)]">Create Event</div>
+          <button onClick={onClose} className="text-[color:var(--hx-6e6e73)] hover:text-white">
             <X size={16} />
           </button>
         </div>
@@ -591,7 +591,7 @@ function CreateEventDrawer({ defaultDate, onClose, onCreated }: { defaultDate: s
               <option value="company">Company</option>
             </select>
           </Field>
-          {error && <p className="text-[12.5px] text-[#FF453A]">{error}</p>}
+          {error && <p className="text-[12.5px] text-[color:var(--hx-ff453a)]">{error}</p>}
           <button onClick={submit} disabled={saving} className="h-[42px] rounded-[8px] bg-white text-black text-[13px] font-semibold disabled:opacity-60 flex items-center justify-center gap-1.5">
             {saving ? <Loader2 size={14} className="animate-spin" /> : null} {saving ? "Saving…" : "Create Event"}
           </button>
@@ -604,9 +604,9 @@ function CreateEventDrawer({ defaultDate, onClose, onCreated }: { defaultDate: s
             padding: 0 10px;
             font-size: 13px;
             outline: none;
-            background: #101010;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #f5f5f7;
+            background: var(--hx-101010);
+            border: 1px solid rgb(var(--w) / 0.08);
+            color: var(--hx-f5f5f7);
           }
         `}</style>
       </div>
@@ -617,7 +617,7 @@ function CreateEventDrawer({ defaultDate, onClose, onCreated }: { defaultDate: s
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">{label}</label>
+      <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">{label}</label>
       {children}
     </div>
   );

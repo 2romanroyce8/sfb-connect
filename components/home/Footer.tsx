@@ -39,13 +39,13 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-2">
             {SOCIALS.map(({ label, href, Icon }) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={`SFB Connect on ${label}`} className="w-9 h-9 rounded-full flex items-center justify-center text-medium-gray hover:text-white transition-colors" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={`SFB Connect on ${label}`} className="w-9 h-9 rounded-full flex items-center justify-center text-medium-gray hover:text-white transition-colors" style={{ border: "1px solid rgb(var(--w) / 0.1)" }}>
                 <Icon className="w-4 h-4" />
               </a>
             ))}
           </div>
         </div>
-        <div className="flex justify-between flex-wrap gap-4 text-[12.5px] text-[#5c5c60] pt-8 border-t border-white/10">
+        <div className="flex justify-between flex-wrap gap-4 text-[12.5px] text-[color:var(--hx-5c5c60)] pt-8 border-t border-white/10">
           <div className="max-w-[640px] leading-relaxed">
             AI recommendations are dynamic and can vary based on platform,
             query, user, location, available sources and other factors. SFB
@@ -56,7 +56,7 @@ export default function Footer() {
           <div>© 2026 SFB Connect. All rights reserved.</div>
         </div>
         <div className="mt-6 pt-6 border-t border-white/10">
-          <p className="text-[12.5px] text-[#5c5c60] max-w-[640px] leading-relaxed">
+          <p className="text-[12.5px] text-[color:var(--hx-5c5c60)] max-w-[640px] leading-relaxed">
             SFB Connect is not affiliated with, certified by, or partnered
             with the platforms named above. Logos and names are shown to
             describe the discovery ecosystem this service addresses.

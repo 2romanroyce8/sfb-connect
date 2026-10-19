@@ -131,7 +131,7 @@ export default function ScoreRing() {
           <div className="flex flex-col gap-6">
             {subscores.map((s) => (
               <div key={s.name} className="flex items-center gap-5">
-                <span className="w-[170px] shrink-0 text-[14.5px] text-[#d4d4d8]">
+                <span className="w-[170px] shrink-0 text-[14.5px] text-[color:var(--hx-d4d4d8)]">
                   {s.name}
                 </span>
                 <div className="flex-1 h-1.5 rounded-md bg-white/[0.08] overflow-hidden">
@@ -179,7 +179,7 @@ export default function ScoreRing() {
               <div className="flex flex-col gap-2">
                 {selectedBusiness.strengths.map((s) => (
                   <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
-                    <Check size={13} className="text-[#30D158] mt-[2px] shrink-0" />
+                    <Check size={13} className="text-[color:var(--hx-30d158)] mt-[2px] shrink-0" />
                     {s}
                   </div>
                 ))}
@@ -192,7 +192,7 @@ export default function ScoreRing() {
               <div className="flex flex-col gap-2">
                 {selectedBusiness.gaps.map((s) => (
                   <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
-                    <AlertCircle size={13} className="text-[#FFD60A] mt-[2px] shrink-0" />
+                    <AlertCircle size={13} className="text-[color:var(--hx-ffd60a)] mt-[2px] shrink-0" />
                     {s}
                   </div>
                 ))}
@@ -205,7 +205,7 @@ export default function ScoreRing() {
               <div className="flex flex-col gap-2">
                 {selectedBusiness.missing.map((s) => (
                   <div key={s} className="flex items-start gap-2 text-[13px] text-white/75">
-                    <X size={13} className="text-[#FF453A] mt-[2px] shrink-0" />
+                    <X size={13} className="text-[color:var(--hx-ff453a)] mt-[2px] shrink-0" />
                     {s}
                   </div>
                 ))}
@@ -236,7 +236,7 @@ export default function ScoreRing() {
             {selectedBusiness.sources.map((s) => (
               <span
                 key={s}
-                className="text-[10px] px-2.5 py-1.5 rounded-full bg-[#151515] border border-white/[0.07] text-white/[0.48] capitalize"
+                className="text-[10px] px-2.5 py-1.5 rounded-full bg-[color:var(--hx-151515)] border border-white/[0.07] text-white/[0.48] capitalize"
               >
                 {s}
               </span>

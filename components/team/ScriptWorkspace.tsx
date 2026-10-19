@@ -117,7 +117,7 @@ export default function ScriptWorkspace({
   if (!hasAudit) {
     return (
       <div className="px-8 py-8 max-w-[640px]">
-        <div className="text-[13.5px] text-[#6E6E73] mb-4">
+        <div className="text-[13.5px] text-[color:var(--hx-6e6e73)] mb-4">
           Run the Business Readiness Audit for this lead before generating a call script — the script is built entirely
           from that audit's evidence.
         </div>
@@ -134,32 +134,32 @@ export default function ScriptWorkspace({
         {/* LEFT: business summary */}
         <div className="flex flex-col gap-4">
           <div>
-            <div className="text-[15px] font-semibold text-[#F5F5F7]">{lead.business_name || "Unnamed lead"}</div>
-            <div className="text-[12.5px] text-[#6E6E73] mt-0.5">{lead.website?.replace(/^https?:\/\//, "")}</div>
+            <div className="text-[15px] font-semibold text-[color:var(--hx-f5f5f7)]">{lead.business_name || "Unnamed lead"}</div>
+            <div className="text-[12.5px] text-[color:var(--hx-6e6e73)] mt-0.5">{lead.website?.replace(/^https?:\/\//, "")}</div>
           </div>
           {opportunity && (
-            <div className="rounded-[10px] p-3" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="text-[10.5px] uppercase tracking-wide text-[#6E6E73] mb-1">Recommended Pitch</div>
-              <div className="text-[14px] text-[#F5F5F7] font-medium">{OFFER_LABEL[opportunity.primary_offer]}</div>
-              <div className="text-[11.5px] text-[#A1A1A6] capitalize mt-0.5">Confidence: {opportunity.confidence}</div>
+            <div className="rounded-[10px] p-3" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+              <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1">Recommended Pitch</div>
+              <div className="text-[14px] text-[color:var(--hx-f5f5f7)] font-medium">{OFFER_LABEL[opportunity.primary_offer]}</div>
+              <div className="text-[11.5px] text-[color:var(--hx-a1a1a6)] capitalize mt-0.5">Confidence: {opportunity.confidence}</div>
             </div>
           )}
           {summary && (
             <>
-              <p className="text-[12.5px] text-[#A1A1A6] leading-relaxed">{summary.narrative}</p>
+              <p className="text-[12.5px] text-[color:var(--hx-a1a1a6)] leading-relaxed">{summary.narrative}</p>
               {summary.strong.length > 0 && (
                 <div>
-                  <div className="text-[10.5px] uppercase tracking-wide text-[#30D158] mb-1">Strong</div>
+                  <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-30d158)] mb-1">Strong</div>
                   {summary.strong.slice(0, 3).map((s, i) => (
-                    <div key={i} className="text-[12px] text-[#A1A1A6]">• {s}</div>
+                    <div key={i} className="text-[12px] text-[color:var(--hx-a1a1a6)]">• {s}</div>
                   ))}
                 </div>
               )}
               {summary.weak.length > 0 && (
                 <div>
-                  <div className="text-[10.5px] uppercase tracking-wide text-[#FF453A] mb-1">Weak</div>
+                  <div className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-ff453a)] mb-1">Weak</div>
                   {summary.weak.slice(0, 3).map((s, i) => (
-                    <div key={i} className="text-[12px] text-[#A1A1A6]">• {s}</div>
+                    <div key={i} className="text-[12px] text-[color:var(--hx-a1a1a6)]">• {s}</div>
                   ))}
                 </div>
               )}
@@ -170,22 +170,22 @@ export default function ScriptWorkspace({
         {/* CENTER: live script */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-[16px] font-semibold text-[#F5F5F7]">Call Script</div>
+            <div className="text-[16px] font-semibold text-[color:var(--hx-f5f5f7)]">Call Script</div>
             <div className="flex items-center gap-2">
               {["original", "shorter", "direct", "conversational"].map((v) => (
                 <button
                   key={v}
                   onClick={() => generate(v)}
                   disabled={loading}
-                  className="h-[30px] px-3 rounded-[7px] text-[11.5px] capitalize text-[#A1A1A6] hover:text-white disabled:opacity-50"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+                  className="h-[30px] px-3 rounded-[7px] text-[11.5px] capitalize text-[color:var(--hx-a1a1a6)] hover:text-white disabled:opacity-50"
+                  style={{ border: "1px solid rgb(var(--w) / 0.10)" }}
                 >
                   {loading ? <Loader2 size={12} className="animate-spin" /> : v}
                 </button>
               ))}
             </div>
           </div>
-          {error && <p className="text-[13px] text-[#FF453A] mb-3">{error}</p>}
+          {error && <p className="text-[13px] text-[color:var(--hx-ff453a)] mb-3">{error}</p>}
 
           {!script ? (
             <button
@@ -196,11 +196,11 @@ export default function ScriptWorkspace({
               <Sparkles size={15} /> Generate Script
             </button>
           ) : (
-            <div className="rounded-[14px] p-6 flex flex-col gap-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="rounded-[14px] p-6 flex flex-col gap-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
               {SECTION_ORDER.map(({ key, label }) => (
                 <div key={key}>
-                  <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-1">{label}</div>
-                  <p className="text-[14.5px] text-[#F5F5F7] leading-relaxed">{script[key] as string}</p>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-1">{label}</div>
+                  <p className="text-[14.5px] text-[color:var(--hx-f5f5f7)] leading-relaxed">{script[key] as string}</p>
                 </div>
               ))}
             </div>
@@ -217,12 +217,12 @@ export default function ScriptWorkspace({
           </Link>
 
           {script && (
-            <div className="rounded-[12px] p-4 flex flex-col gap-3" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">Objection Handling</div>
+            <div className="rounded-[12px] p-4 flex flex-col gap-3" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Objection Handling</div>
               {script.objections.map((o, i) => (
                 <div key={i} className="text-[12.5px]">
-                  <div className="text-[#A1A1A6] italic">"{o.objection}"</div>
-                  <div className="text-[#F5F5F7] mt-1 leading-snug">{o.response}</div>
+                  <div className="text-[color:var(--hx-a1a1a6)] italic">"{o.objection}"</div>
+                  <div className="text-[color:var(--hx-f5f5f7)] mt-1 leading-snug">{o.response}</div>
                 </div>
               ))}
               <div className="flex flex-col gap-1.5 mt-1">
@@ -231,13 +231,13 @@ export default function ScriptWorkspace({
                   onChange={(e) => setObjectionInput(e.target.value)}
                   placeholder="What did they say?"
                   className="h-[34px] rounded-[7px] px-2.5 text-[12.5px] outline-none"
-                  style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+                  style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
                 />
                 <button
                   onClick={askObjection}
                   disabled={objectionLoading}
-                  className="h-[32px] rounded-[7px] text-[12px] text-[#A1A1A6] hover:text-white disabled:opacity-50"
-                  style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+                  className="h-[32px] rounded-[7px] text-[12px] text-[color:var(--hx-a1a1a6)] hover:text-white disabled:opacity-50"
+                  style={{ border: "1px solid rgb(var(--w) / 0.10)" }}
                 >
                   {objectionLoading ? "Generating…" : "Generate Response"}
                 </button>

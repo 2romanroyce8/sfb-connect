@@ -69,23 +69,23 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Integrations</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">What goes live here is what the public site shows.</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Integrations</div>
+        <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">What goes live here is what the public site shows.</div>
       </div>
 
       {isOwner && (
-        <div className="mb-6 max-w-[900px] rounded-[12px] p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="mb-6 max-w-[900px] rounded-[12px] p-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           <GoogleGatePanel />
         </div>
       )}
 
       {searchParams.error && (
-        <div className="mb-4 max-w-[900px] rounded-[10px] p-3 text-[12.5px] text-[#FF453A]" style={{ background: "rgba(255,69,58,0.08)" }}>
+        <div className="mb-4 max-w-[900px] rounded-[10px] p-3 text-[12.5px] text-[color:var(--hx-ff453a)]" style={{ background: "rgba(255,69,58,0.08)" }}>
           {decodeURIComponent(searchParams.error)}
         </div>
       )}
       {searchParams.connected && (
-        <div className="mb-4 max-w-[900px] rounded-[10px] p-3 text-[12.5px] text-[#30D158]" style={{ background: "rgba(48,209,88,0.08)" }}>
+        <div className="mb-4 max-w-[900px] rounded-[10px] p-3 text-[12.5px] text-[color:var(--hx-30d158)]" style={{ background: "rgba(48,209,88,0.08)" }}>
           Connected as {decodeURIComponent(searchParams.connected)}.
         </div>
       )}
@@ -95,8 +95,8 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
       {manage && (
         <div id="manage" className="mt-8">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-[14px] font-semibold text-[#F5F5F7]">{registry.find((i) => i.key === manage)?.name} — details</div>
-            <Link href="/team/integrations" className="text-[12px] text-[#A1A1A6] underline underline-offset-2">Close</Link>
+            <div className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)]">{registry.find((i) => i.key === manage)?.name} — details</div>
+            <Link href="/team/integrations" className="text-[12px] text-[color:var(--hx-a1a1a6)] underline underline-offset-2">Close</Link>
           </div>
           {manage === "google_calendar" ? (
             <IntegrationControlDeck

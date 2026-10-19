@@ -61,25 +61,25 @@ export default function AddOnsAdmin({
   return (
     <div className="px-8 py-8 max-w-[1000px]">
       <div className="mb-2">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Add-Ons & Action Credits</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">Manage the catalog customers see at /dashboard/billing. Changes apply immediately, no deployment needed.</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Add-Ons & Action Credits</div>
+        <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Manage the catalog customers see at /dashboard/billing. Changes apply immediately, no deployment needed.</div>
       </div>
 
       {!stripeConfigured && (
-        <div className="my-4 rounded-[10px] p-3 text-[13px] flex items-center gap-2" style={{ background: "rgba(255,214,10,0.08)", color: "#FFD60A", border: "1px solid rgba(255,214,10,0.25)" }}>
+        <div className="my-4 rounded-[10px] p-3 text-[13px] flex items-center gap-2" style={{ background: "rgba(255,214,10,0.08)", color: "var(--hx-ffd60a)", border: "1px solid rgba(255,214,10,0.25)" }}>
           <AlertCircle size={15} />
           Stripe isn't connected yet (STRIPE_SECRET_KEY not set). Products/prices can be edited here, but "Sync to Stripe" and customer checkout won't work until it is.
         </div>
       )}
-      {msg && <div className="my-3 text-[13px] text-[#A1A1A6]">{msg}</div>}
+      {msg && <div className="my-3 text-[13px] text-[color:var(--hx-a1a1a6)]">{msg}</div>}
 
-      <div className="text-[13px] font-semibold text-[#F5F5F7] mt-6 mb-3">Add-On Products</div>
-      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)] mt-6 mb-3">Add-On Products</div>
+      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
         {products.map((p, i) => (
-          <div key={p.id} className="flex items-center gap-3 px-4 py-3" style={{ background: "#0A0A0A", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+          <div key={p.id} className="flex items-center gap-3 px-4 py-3" style={{ background: "var(--hx-0a0a0a)", borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] text-[#F5F5F7] truncate">{p.name}</div>
-              <div className="text-[11px] text-[#6E6E73] uppercase">
+              <div className="text-[13px] text-[color:var(--hx-f5f5f7)] truncate">{p.name}</div>
+              <div className="text-[11px] text-[color:var(--hx-6e6e73)] uppercase">
                 {p.category} · {p.billing_type === "recurring" ? "Recurring" : "One-Time"}
               </div>
             </div>
@@ -91,12 +91,12 @@ export default function AddOnsAdmin({
                 if (!isNaN(cents) && cents !== p.base_price_cents) patch("addon_products", p.id, { base_price_cents: cents });
               }}
               className="w-[90px] h-[32px] rounded-[7px] px-2 text-[12.5px] text-right outline-none"
-              style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             />
             <button
               onClick={() => patch("addon_products", p.id, { active: !p.active })}
               className="text-[11.5px] px-2.5 py-1 rounded-[6px]"
-              style={{ background: p.active ? "rgba(48,209,88,0.12)" : "rgba(255,69,58,0.1)", color: p.active ? "#30D158" : "#FF6B6B" }}
+              style={{ background: p.active ? "rgba(48,209,88,0.12)" : "rgba(255,69,58,0.1)", color: p.active ? "var(--hx-30d158)" : "var(--hx-ff6b6b)" }}
             >
               {p.active ? "Active" : "Inactive"}
             </button>
@@ -104,7 +104,7 @@ export default function AddOnsAdmin({
               onClick={() => syncStripe("addon_products", p.id)}
               disabled={busy === p.id}
               className="h-[32px] px-3 rounded-[7px] text-[11.5px] flex items-center gap-1.5 disabled:opacity-50"
-              style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.08)", color: "#A1A1A6" }}
+              style={{ background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-a1a1a6)" }}
             >
               {busy === p.id ? <Loader2 size={11} className="animate-spin" /> : p.stripe_price_id ? <CheckCircle2 size={11} color="#30D158" /> : <RefreshCw size={11} />}
               {p.stripe_price_id ? "Synced" : "Sync to Stripe"}
@@ -113,11 +113,11 @@ export default function AddOnsAdmin({
         ))}
       </div>
 
-      <div className="text-[13px] font-semibold text-[#F5F5F7] mt-8 mb-3">Credit Packages</div>
-      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)] mt-8 mb-3">Credit Packages</div>
+      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
         {packages.map((pkg, i) => (
-          <div key={pkg.id} className="flex items-center gap-3 px-4 py-3" style={{ background: "#0A0A0A", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
-            <div className="flex-1 min-w-0 text-[13px] text-[#F5F5F7]">
+          <div key={pkg.id} className="flex items-center gap-3 px-4 py-3" style={{ background: "var(--hx-0a0a0a)", borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
+            <div className="flex-1 min-w-0 text-[13px] text-[color:var(--hx-f5f5f7)]">
               {pkg.credits} credits — {pkg.name}
             </div>
             <input
@@ -128,13 +128,13 @@ export default function AddOnsAdmin({
                 if (!isNaN(cents) && cents !== pkg.price_cents) patch("credit_packages", pkg.id, { price_cents: cents });
               }}
               className="w-[90px] h-[32px] rounded-[7px] px-2 text-[12.5px] text-right outline-none"
-              style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             />
             <button
               onClick={() => syncStripe("credit_packages", pkg.id)}
               disabled={busy === pkg.id}
               className="h-[32px] px-3 rounded-[7px] text-[11.5px] flex items-center gap-1.5 disabled:opacity-50"
-              style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.08)", color: "#A1A1A6" }}
+              style={{ background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-a1a1a6)" }}
             >
               {busy === pkg.id ? <Loader2 size={11} className="animate-spin" /> : pkg.stripe_price_id ? <CheckCircle2 size={11} color="#30D158" /> : <RefreshCw size={11} />}
               {pkg.stripe_price_id ? "Synced" : "Sync to Stripe"}
@@ -143,11 +143,11 @@ export default function AddOnsAdmin({
         ))}
       </div>
 
-      <div className="text-[13px] font-semibold text-[#F5F5F7] mt-8 mb-3">Action Credit Costs</div>
-      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)] mt-8 mb-3">Action Credit Costs</div>
+      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
         {actions.map((a, i) => (
-          <div key={a.id} className="flex items-center gap-3 px-4 py-3" style={{ background: "#0A0A0A", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
-            <div className="flex-1 min-w-0 text-[13px] text-[#F5F5F7]">{a.name}</div>
+          <div key={a.id} className="flex items-center gap-3 px-4 py-3" style={{ background: "var(--hx-0a0a0a)", borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
+            <div className="flex-1 min-w-0 text-[13px] text-[color:var(--hx-f5f5f7)]">{a.name}</div>
             <input
               type="number"
               defaultValue={a.credit_cost}
@@ -156,9 +156,9 @@ export default function AddOnsAdmin({
                 if (!isNaN(cost) && cost !== a.credit_cost) patch("action_catalog", a.id, { credit_cost: cost });
               }}
               className="w-[70px] h-[32px] rounded-[7px] px-2 text-[12.5px] text-right outline-none"
-              style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             />
-            <span className="text-[11.5px] text-[#6E6E73] w-[45px]">credits</span>
+            <span className="text-[11.5px] text-[color:var(--hx-6e6e73)] w-[45px]">credits</span>
           </div>
         ))}
       </div>

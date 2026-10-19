@@ -37,7 +37,7 @@ export default function LegalDocument({ doc, mode }: { doc: LegalDoc; mode: "pub
     <article className="max-w-[720px] mx-auto">
       {mode === "preview" && (
         <div className="mb-6 rounded-[12px] p-4" style={{ background: isPublishable(doc) ? "rgba(48,209,88,0.1)" : "rgba(255,214,10,0.1)", border: `1px solid ${isPublishable(doc) ? "rgba(48,209,88,0.35)" : "rgba(255,214,10,0.35)"}` }}>
-          <div className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: isPublishable(doc) ? "#30D158" : "#FFD60A" }}>
+          <div className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: isPublishable(doc) ? "var(--hx-30d158)" : "var(--hx-ffd60a)" }}>
             {isPublishable(doc) ? "Ready to publish — every open item is resolved" : `Draft — ${open.length} open item${open.length === 1 ? "" : "s"} · not shown on the public site`}
           </div>
           <div className="mt-1 text-[12.5px] text-white/[0.6]">Drafted by {doc.draftedBy}. Working draft, not legal advice — have a business attorney review before publishing. Resolve items in <span className="font-mono text-[11.5px] text-white/[0.8]">lib/legal/documents.ts</span>; the public page flips automatically on deploy.</div>
@@ -45,13 +45,13 @@ export default function LegalDocument({ doc, mode }: { doc: LegalDoc; mode: "pub
             <ol className="mt-3 space-y-2">
               {doc.openItems.map((it) => (
                 <li key={it.id} className="text-[12.5px] flex gap-2">
-                  <span className="shrink-0 mt-[2px] w-[14px] h-[14px] rounded-[3px] inline-flex items-center justify-center text-[9px] font-bold" style={{ background: it.resolution ? "#30D158" : "transparent", border: `1px solid ${it.resolution ? "#30D158" : "rgba(255,214,10,0.7)"}`, color: "#000" }}>{it.resolution ? "✓" : ""}</span>
+                  <span className="shrink-0 mt-[2px] w-[14px] h-[14px] rounded-[3px] inline-flex items-center justify-center text-[9px] font-bold" style={{ background: it.resolution ? "var(--hx-30d158)" : "transparent", border: `1px solid ${it.resolution ? "var(--hx-30d158)" : "rgba(255,214,10,0.7)"}`, color: "var(--hx-000000)" }}>{it.resolution ? "✓" : ""}</span>
                   <span>
                     <span className="font-mono text-[11px] text-white/[0.5] mr-1.5">[{it.kind === "confirm" ? "TO CONFIRM" : "DECISION"} · {it.id}]</span>
                     <span className="text-white/[0.85]">{it.prompt}</span>
                     {it.workingDefault && <span className="block text-white/[0.5]">Working default: “{it.workingDefault}”</span>}
-                    {it.note && <span className="block text-[#FFD60A]/80">Engineering note: {it.note}</span>}
-                    {it.resolution && <span className="block text-[#30D158]">Resolved: “{it.resolution}”</span>}
+                    {it.note && <span className="block text-[color:rgb(var(--hx-ffd60ac)/0.8)]">Engineering note: {it.note}</span>}
+                    {it.resolution && <span className="block text-[color:var(--hx-30d158)]">Resolved: “{it.resolution}”</span>}
                   </span>
                 </li>
               ))}
@@ -78,7 +78,7 @@ function ItemChip({ item }: { item: OpenItem }) {
     <mark
       title={`${item.kind === "confirm" ? "TO CONFIRM" : "DECISION"}: ${item.prompt}`}
       className="rounded px-1 py-[1px] text-[13px] font-medium"
-      style={{ background: resolved ? "rgba(48,209,88,0.18)" : "rgba(255,214,10,0.2)", color: resolved ? "#30D158" : "#FFD60A" }}
+      style={{ background: resolved ? "rgba(48,209,88,0.18)" : "rgba(255,214,10,0.2)", color: resolved ? "var(--hx-30d158)" : "var(--hx-ffd60a)" }}
     >
       {resolved ? item.resolution : `[${item.kind === "confirm" ? "TO CONFIRM" : "DECISION"}: ${item.workingDefault ?? item.prompt}]`}
     </mark>

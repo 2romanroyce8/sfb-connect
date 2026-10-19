@@ -52,17 +52,17 @@ export default function ClockControl({ activeSession }: { activeSession: { id: s
         onClick={toggle}
         disabled={loading}
         className="w-full flex items-center justify-between px-2.5 py-2 rounded-[8px] text-[12px] disabled:opacity-60"
-        style={{ background: session ? "rgba(48,209,88,0.1)" : "#101010", border: `1px solid ${session ? "rgba(48,209,88,0.3)" : "rgba(255,255,255,0.08)"}` }}
+        style={{ background: session ? "rgba(48,209,88,0.1)" : "var(--hx-101010)", border: `1px solid ${session ? "rgba(48,209,88,0.3)" : "rgb(var(--w) / 0.08)"}` }}
       >
         <span className="flex items-center gap-1.5">
           {loading ? (
-            <Loader2 size={10} className="animate-spin text-[#6E6E73]" />
+            <Loader2 size={10} className="animate-spin text-[color:var(--hx-6e6e73)]" />
           ) : (
-            <Circle size={8} fill={session ? "#30D158" : "#6E6E73"} className={session ? "text-[#30D158]" : "text-[#6E6E73]"} />
+            <Circle size={8} fill={session ? "var(--hx-30d158)" : "var(--hx-6e6e73)"} className={session ? "text-[color:var(--hx-30d158)]" : "text-[color:var(--hx-6e6e73)]"} />
           )}
-          <span style={{ color: session ? "#30D158" : "#A1A1A6" }}>{session ? "Work Mode" : "Personal Mode"}</span>
+          <span style={{ color: session ? "var(--hx-30d158)" : "var(--hx-a1a1a6)" }}>{session ? "Work Mode" : "Personal Mode"}</span>
         </span>
-        <span className="text-[#6E6E73]">{session ? formatDuration(elapsed) : "Clock In"}</span>
+        <span className="text-[color:var(--hx-6e6e73)]">{session ? formatDuration(elapsed) : "Clock In"}</span>
       </button>
     </div>
   );

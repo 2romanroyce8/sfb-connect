@@ -12,9 +12,9 @@ import { runNicheRanking, type RankingOutcome } from "@/lib/runNicheRanking";
 // holds among those results, never forced into the top five.
 
 const CONFIDENCE_COLOR: Record<string, string> = {
-  HIGH: "#30D158",
-  MEDIUM: "#FFD60A",
-  LOW: "#A1A1A6",
+  HIGH: "var(--hx-30d158)",
+  MEDIUM: "var(--hx-ffd60a)",
+  LOW: "var(--hx-a1a1a6)",
 };
 
 export default function MarketPositionPanel({ business }: { business: LookupResult }) {
@@ -105,7 +105,7 @@ export default function MarketPositionPanel({ business }: { business: LookupResu
           <div
             key={c.domain}
             className="grid gap-3.5 items-center px-5 py-3.5 border-b border-white/[0.05] last:border-b-0"
-            style={{ gridTemplateColumns: "28px minmax(0,1fr) auto", background: c.isYourBusiness ? "rgba(255,255,255,0.035)" : "transparent" }}
+            style={{ gridTemplateColumns: "28px minmax(0,1fr) auto", background: c.isYourBusiness ? "rgb(var(--w) / 0.035)" : "transparent" }}
           >
             <span className="text-[16px] font-semibold text-white/80">#{c.rank}</span>
             <div className="min-w-0">

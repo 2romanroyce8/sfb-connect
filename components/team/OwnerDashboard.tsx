@@ -52,11 +52,11 @@ export default function OwnerDashboard({
   recentLeads: RecentLead[];
 }) {
   return (
-    <div className="px-[30px] py-7 max-w-[1240px]" style={{ background: "#0B0B0B" }}>
+    <div className="px-[30px] py-7 max-w-[1240px]" style={{ background: "var(--hx-0b0b0b)" }}>
       <div className="flex items-center gap-2.5 mb-6">
-        <div className="text-[22px] font-semibold text-[#F5F5F7]">Dashboard</div>
+        <div className="text-[22px] font-semibold text-[color:var(--hx-f5f5f7)]">Dashboard</div>
       </div>
-      <div className="mb-6 -mt-4 text-[13px] text-[#6E6E73]">Good day, {name} — company command center</div>
+      <div className="mb-6 -mt-4 text-[13px] text-[color:var(--hx-6e6e73)]">Good day, {name} — company command center</div>
 
       {/* three primary metric cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[14px] mb-4">
@@ -83,8 +83,8 @@ export default function OwnerDashboard({
           {Object.entries(callStats.outcomesToday).map(([outcome, count]) => (
             <div
               key={outcome}
-              className="px-3 py-1.5 rounded-[6px] text-[12px] text-[#A1A1A6] capitalize"
-              style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}
+              className="px-3 py-1.5 rounded-[6px] text-[12px] text-[color:var(--hx-a1a1a6)] capitalize"
+              style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}
             >
               {outcome.replace(/_/g, " ")}: {count}
             </div>
@@ -98,32 +98,32 @@ export default function OwnerDashboard({
       </div>
 
       {/* team */}
-      <div className="mb-2 text-[15px] font-medium text-[#F5F5F7]">Team</div>
+      <div className="mb-2 text-[15px] font-medium text-[color:var(--hx-f5f5f7)]">Team</div>
       {reps.length === 0 ? (
-        <div className="rounded-[8px] p-8 text-center" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No sales reps yet</div>
-          <p className="text-[13px] text-[#A1A1A6] mb-5">Invite your first sales rep to start tracking team performance.</p>
+        <div className="rounded-[8px] p-8 text-center" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No sales reps yet</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)] mb-5">Invite your first sales rep to start tracking team performance.</p>
           <Link href="/team/team" className="inline-flex h-[38px] px-4 items-center rounded-[6px] bg-white text-black text-[12.5px] font-semibold">
             Invite Team Member
           </Link>
         </div>
       ) : (
-        <div className="rounded-[8px] overflow-hidden mb-8" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="rounded-[8px] overflow-hidden mb-8" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}>
           {reps.map((rep, i) => {
             const activity = repActivity.find((r) => r.id === rep.id);
             return (
               <div
                 key={rep.id}
                 className="flex items-center justify-between px-6"
-                style={{ height: 52, borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined }}
+                style={{ height: 52, borderTop: i > 0 ? "1px solid rgb(var(--w) / 0.04)" : undefined }}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center text-[11px] font-bold">
                     {(rep.full_name || rep.email).slice(0, 1).toUpperCase()}
                   </div>
-                  <span className="text-[13px] text-[#D8D8D8]">{rep.full_name || rep.email}</span>
+                  <span className="text-[13px] text-[color:var(--hx-d8d8d8)]">{rep.full_name || rep.email}</span>
                 </div>
-                <span className="text-[12.5px] text-[#A1A1A6]">
+                <span className="text-[12.5px] text-[color:var(--hx-a1a1a6)]">
                   {activity ? `${activity.callsToday} calls today · ${formatDuration(activity.talkTimeToday)} talk time` : "No activity today"}
                 </span>
               </div>
@@ -136,7 +136,7 @@ export default function OwnerDashboard({
         <Link href="/team/leads/import" className="h-[38px] px-4 inline-flex items-center rounded-[6px] bg-white text-black text-[13px] font-semibold">
           Research a Business
         </Link>
-        <Link href="/team/leads" className="h-[38px] px-4 inline-flex items-center rounded-[6px] text-[13px] text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+        <Link href="/team/leads" className="h-[38px] px-4 inline-flex items-center rounded-[6px] text-[13px] text-[color:var(--hx-a1a1a6)]" style={{ border: "1px solid rgb(var(--w) / 0.12)" }}>
           View All Leads
         </Link>
       </div>

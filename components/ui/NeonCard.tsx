@@ -33,7 +33,7 @@ export default function NeonCard({
         <Icon className="neon-card__logo" strokeWidth={1.75} />
         <div className="neon-card__title">{title}</div>
         <div className="neon-card__description">{description}</div>
-        {action && <div className="neon-card__action" style={{ color: actionLive ? "#30D158" : "rgba(255,255,255,0.55)" }}>→ {action}</div>}
+        {action && <div className="neon-card__action" style={{ color: actionLive ? "var(--hx-30d158)" : "rgb(var(--w) / 0.55)" }}>→ {action}</div>}
       </div>
     </div>
   );

@@ -45,7 +45,7 @@ function Avatar({ url, name, size }: { url: string | null; name: string; size: n
   return (
     <div
       className="rounded-full overflow-hidden flex items-center justify-center shrink-0 font-semibold"
-      style={{ width: size, height: size, background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.1)", fontSize: size * 0.36, color: "#F5F5F7" }}
+      style={{ width: size, height: size, background: "var(--hx-1c1c1e)", border: "1px solid rgb(var(--w) / 0.1)", fontSize: size * 0.36, color: "var(--hx-f5f5f7)" }}
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -94,21 +94,21 @@ export default function CompetitionLeaderboard({
   return (
     <div className="flex flex-col gap-6 max-w-[1000px]">
       <div>
-        <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#6E6E73] mb-1">Team</div>
-        <div className="text-[26px] font-semibold text-[#F5F5F7]">SFB Sales Leaderboard</div>
-        <p className="text-[13px] text-[#6E6E73] mt-1">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[color:var(--hx-6e6e73)] mb-1">Team</div>
+        <div className="text-[26px] font-semibold text-[color:var(--hx-f5f5f7)]">SFB Sales Leaderboard</div>
+        <p className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">
           Ranked by real, verified Sales OS activity — calls, qualified conversations, booked and attended demos, and closed
           revenue. Points come from a permanent ledger; nothing here can be hand-typed.
         </p>
       </div>
 
-      <div className="inline-flex items-center gap-0.5 p-[3px] rounded-[10px] self-start" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="inline-flex items-center gap-0.5 p-[3px] rounded-[10px] self-start" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.06)" }}>
         {PERIODS.map((p) => (
           <button
             key={p.key}
             onClick={() => setPeriod(p.key)}
             className="h-8 px-4 rounded-[7px] text-[11.5px] font-semibold tracking-wide transition-colors"
-            style={period === p.key ? { background: "#F5F5F7", color: "#090909" } : { color: "#A1A1A6" }}
+            style={period === p.key ? { background: "var(--hx-f5f5f7)", color: "var(--hx-090909)" } : { color: "var(--hx-a1a1a6)" }}
           >
             {p.label}
           </button>
@@ -116,10 +116,10 @@ export default function CompetitionLeaderboard({
       </div>
 
       {rows.length === 0 || rows.every((r) => r.points === 0) ? (
-        <div className="rounded-[12px] p-10 text-center" style={{ background: "#0E0E0F", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <Trophy size={22} className="mx-auto text-[#6E6E73] mb-3" />
-          <div className="text-[14px] text-[#F5F5F7] mb-1">No points on the board yet</div>
-          <p className="text-[12.5px] text-[#6E6E73] max-w-[420px] mx-auto">
+        <div className="rounded-[12px] p-10 text-center" style={{ background: "var(--hx-0e0e0f)", border: "1px solid rgb(var(--w) / 0.07)" }}>
+          <Trophy size={22} className="mx-auto text-[color:var(--hx-6e6e73)] mb-3" />
+          <div className="text-[14px] text-[color:var(--hx-f5f5f7)] mb-1">No points on the board yet</div>
+          <p className="text-[12.5px] text-[color:var(--hx-6e6e73)] max-w-[420px] mx-auto">
             Rankings appear here the moment real calls, demos, and sales start happening — nothing is shown until it's real.
           </p>
         </div>
@@ -138,19 +138,19 @@ export default function CompetitionLeaderboard({
 
           {/* Rest of rankings */}
           {rest.length > 0 && (
-            <div className="rounded-[12px] overflow-hidden" style={{ background: "#0E0E0F", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="rounded-[12px] overflow-hidden" style={{ background: "var(--hx-0e0e0f)", border: "1px solid rgb(var(--w) / 0.07)" }}>
               {rest.map((r) => (
                 <div
                   key={r.userId}
                   className="flex items-center gap-4 px-5 py-3.5"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                  style={{ borderTop: "1px solid rgb(var(--w) / 0.05)" }}
                 >
-                  <span className="text-[13px] font-semibold text-[#6E6E73] w-6">{r.rank}</span>
+                  <span className="text-[13px] font-semibold text-[color:var(--hx-6e6e73)] w-6">{r.rank}</span>
                   <Avatar url={r.avatarUrl} name={r.displayName} size={32} />
-                  <span className="text-[13.5px] text-[#F5F5F7] flex-1">{r.displayName}</span>
+                  <span className="text-[13.5px] text-[color:var(--hx-f5f5f7)] flex-1">{r.displayName}</span>
                   <StatChip icon={CalendarCheck} value={r.meetingsAttended} />
                   <StatChip icon={DollarSign} value={r.dealsWon} />
-                  <span className="text-[14px] font-semibold text-[#F5F5F7] w-20 text-right">{r.points.toLocaleString()} pts</span>
+                  <span className="text-[14px] font-semibold text-[color:var(--hx-f5f5f7)] w-20 text-right">{r.points.toLocaleString()} pts</span>
                 </div>
               ))}
             </div>
@@ -158,21 +158,21 @@ export default function CompetitionLeaderboard({
         </>
       )}
 
-      {loading && <div className="text-[11px] text-[#6E6E73]">Updating…</div>}
+      {loading && <div className="text-[11px] text-[color:var(--hx-6e6e73)]">Updating…</div>}
 
       {me && (
-        <div className="rounded-[12px] p-5" style={{ background: "#0E0E0F", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6E6E73] mb-3">Your recent point activity</div>
+        <div className="rounded-[12px] p-5" style={{ background: "var(--hx-0e0e0f)", border: "1px solid rgb(var(--w) / 0.07)" }}>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--hx-6e6e73)] mb-3">Your recent point activity</div>
           {recentEvents.length === 0 ? (
-            <p className="text-[12.5px] text-[#6E6E73]">No point events yet.</p>
+            <p className="text-[12.5px] text-[color:var(--hx-6e6e73)]">No point events yet.</p>
           ) : (
             <div className="flex flex-col gap-2">
               {recentEvents.map((e) => (
                 <div key={e.id} className="flex items-center justify-between text-[12.5px]">
-                  <span className={e.reversed ? "text-[#6E6E73] line-through" : "text-[#D0D0D0]"}>
+                  <span className={e.reversed ? "text-[color:var(--hx-6e6e73)] line-through" : "text-[color:var(--hx-d0d0d0)]"}>
                     {e.description || EVENT_LABELS[e.event_type] || e.event_type}
                   </span>
-                  <span className={e.reversed ? "text-[#6E6E73]" : "text-[#42E36D]"}>
+                  <span className={e.reversed ? "text-[color:var(--hx-6e6e73)]" : "text-[color:var(--hx-42e36d)]"}>
                     {e.reversed ? "reversed" : `+${e.points}`}
                   </span>
                 </div>
@@ -187,7 +187,7 @@ export default function CompetitionLeaderboard({
 
 function StatChip({ icon: Icon, value }: { icon: React.ElementType; value: number }) {
   return (
-    <span className="flex items-center gap-1 text-[11.5px] text-[#6E6E73] w-10">
+    <span className="flex items-center gap-1 text-[11.5px] text-[color:var(--hx-6e6e73)] w-10">
       <Icon size={12} /> {value}
     </span>
   );
@@ -196,15 +196,15 @@ function StatChip({ icon: Icon, value }: { icon: React.ElementType; value: numbe
 function PodiumCard({ row, place }: { row: Row; place: 1 | 2 | 3 }) {
   const heights: Record<1 | 2 | 3, number> = { 1: 220, 2: 180, 3: 160 };
   const labels: Record<1 | 2 | 3, string> = { 1: "1ST", 2: "2ND", 3: "3RD" };
-  const accents: Record<1 | 2 | 3, string> = { 1: "#FFD60A", 2: "#C7CBD1", 3: "#C98A4B" };
+  const accents: Record<1 | 2 | 3, string> = { 1: "var(--hx-ffd60a)", 2: "var(--hx-c7cbd1)", 3: "var(--hx-c98a4b)" };
   return (
     <div
       className="rounded-[14px] p-5 flex flex-col items-center text-center"
       style={{
         height: heights[place],
         justifyContent: "flex-end",
-        background: place === 1 ? "linear-gradient(180deg, rgba(255,214,10,0.08) 0%, #0E0E0F 60%)" : "#0E0E0F",
-        border: `1px solid ${place === 1 ? "rgba(255,214,10,0.28)" : "rgba(255,255,255,0.07)"}`,
+        background: place === 1 ? "linear-gradient(180deg, rgba(255,214,10,0.08) 0%, var(--hx-0e0e0f) 60%)" : "var(--hx-0e0e0f)",
+        border: `1px solid ${place === 1 ? "rgba(255,214,10,0.28)" : "rgb(var(--w) / 0.07)"}`,
       }}
     >
       <span
@@ -214,8 +214,8 @@ function PodiumCard({ row, place }: { row: Row; place: 1 | 2 | 3 }) {
         {labels[place]}
       </span>
       <Avatar url={row.avatarUrl} name={row.displayName} size={place === 1 ? 56 : 44} />
-      <div className="text-[13.5px] font-medium text-[#F5F5F7] mt-2">{row.displayName}</div>
-      <div className="text-[18px] font-semibold text-[#F5F5F7] mt-0.5">{row.points.toLocaleString()} <span className="text-[11px] text-[#6E6E73] font-normal">PTS</span></div>
+      <div className="text-[13.5px] font-medium text-[color:var(--hx-f5f5f7)] mt-2">{row.displayName}</div>
+      <div className="text-[18px] font-semibold text-[color:var(--hx-f5f5f7)] mt-0.5">{row.points.toLocaleString()} <span className="text-[11px] text-[color:var(--hx-6e6e73)] font-normal">PTS</span></div>
     </div>
   );
 }

@@ -134,9 +134,9 @@ export default function NotificationsPanel() {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen((v) => !v)} className="relative w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ background: "#18181E", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <button onClick={() => setOpen((v) => !v)} className="relative w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ background: "var(--hx-18181e)", border: "1px solid rgb(var(--w) / 0.08)" }}>
         <Bell size={19} color="#AFAFAF" />
-        {unreadCount > 0 && <span className="absolute rounded-full" style={{ top: -2, right: -2, width: 9, height: 9, background: "#FF375F", border: "2px solid #0C0C0C" }} />}
+        {unreadCount > 0 && <span className="absolute rounded-full" style={{ top: -2, right: -2, width: 9, height: 9, background: "var(--hx-ff375f)", border: "2px solid var(--hx-0c0c0c)" }} />}
       </button>
 
       {open && (
@@ -148,43 +148,43 @@ export default function NotificationsPanel() {
             width: 452,
             maxWidth: "calc(100vw - 32px)",
             maxHeight: 690,
-            background: "#171918",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--hx-171918)",
+            border: "1px solid rgb(var(--w) / 0.08)",
             borderRadius: 14,
-            boxShadow: "0 28px 70px rgba(0,0,0,0.48), 0 0 0 1px rgba(255,255,255,0.01) inset",
+            boxShadow: "0 28px 70px rgba(0,0,0,0.48), 0 0 0 1px rgb(var(--w) / 0.01) inset",
             overflow: "hidden",
             zIndex: 1000,
-            color: "#F5F5F7",
+            color: "var(--hx-f5f5f7)",
           }}
         >
           <div className="flex items-center justify-between shrink-0" style={{ height: 74, padding: "0 26px" }}>
-            <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: "#F4F4F4" }}>Notifications</span>
-            <button onClick={() => router.push("/team/settings")} style={{ color: "#B2B2B2" }}>
+            <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--hx-f4f4f4)" }}>Notifications</span>
+            <button onClick={() => router.push("/team/settings")} style={{ color: "var(--hx-b2b2b2)" }}>
               <Settings size={19} />
             </button>
           </div>
 
-          <div className="flex items-center justify-between shrink-0" style={{ height: 48, padding: "0 26px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center justify-between shrink-0" style={{ height: 48, padding: "0 26px", borderBottom: "1px solid rgb(var(--w) / 0.06)" }}>
             <div className="flex items-center" style={{ gap: 24 }}>
               {(["all", "unread"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
                   className="relative capitalize"
-                  style={{ height: 48, fontSize: 14, color: tab === t ? "#F5F5F7" : "#A6A6A6" }}
+                  style={{ height: 48, fontSize: 14, color: tab === t ? "var(--hx-f5f5f7)" : "var(--hx-a6a6a6)" }}
                 >
                   {t}
                   {t === "unread" && unreadCount > 0 && (
-                    <span className="inline-flex items-center justify-center ml-1.5" style={{ height: 20, minWidth: 20, padding: "0 6px", borderRadius: 999, background: "#2A2C2B", color: "#AFAFAF", fontSize: 11 }}>
+                    <span className="inline-flex items-center justify-center ml-1.5" style={{ height: 20, minWidth: 20, padding: "0 6px", borderRadius: 999, background: "var(--hx-2a2c2b)", color: "var(--hx-afafaf)", fontSize: 11 }}>
                       {unreadCount}
                     </span>
                   )}
-                  {tab === t && <span className="absolute rounded-full" style={{ width: 18, height: 2, background: "#F2F2F2", bottom: 0, left: 0 }} />}
+                  {tab === t && <span className="absolute rounded-full" style={{ width: 18, height: 2, background: "var(--hx-f2f2f2)", bottom: 0, left: 0 }} />}
                 </button>
               ))}
             </div>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} style={{ fontSize: 13, color: "#B6B6B6" }}>
+              <button onClick={markAllRead} style={{ fontSize: 13, color: "var(--hx-b6b6b6)" }}>
                 Mark all as read
               </button>
             )}
@@ -194,8 +194,8 @@ export default function NotificationsPanel() {
             {!loading && visible.length === 0 ? (
               <div className="flex flex-col items-center text-center" style={{ padding: "56px 24px" }}>
                 <BellOff size={26} color="#777777" className="mb-3" />
-                <div style={{ fontSize: 14, color: "#F1F1F1", fontWeight: 500 }}>You're all caught up</div>
-                <div style={{ fontSize: 12.5, color: "#777777", marginTop: 4 }}>No notifications right now.</div>
+                <div style={{ fontSize: 14, color: "var(--hx-f1f1f1)", fontWeight: 500 }}>You're all caught up</div>
+                <div style={{ fontSize: 12.5, color: "var(--hx-777777)", marginTop: 4 }}>No notifications right now.</div>
               </div>
             ) : (
               visible.map((n) => {
@@ -204,23 +204,23 @@ export default function NotificationsPanel() {
                   <div
                     key={n.id}
                     onClick={() => handleClick(n)}
-                    className="grid cursor-pointer hover:bg-[#1B1D1C]"
-                    style={{ gridTemplateColumns: "36px 1fr", gap: 12, padding: "16px 26px", borderBottom: "1px solid rgba(255,255,255,0.025)", background: !n.is_read ? "rgba(255,255,255,0.008)" : "transparent" }}
+                    className="grid cursor-pointer hover:bg-[color:var(--hx-1b1d1c)]"
+                    style={{ gridTemplateColumns: "36px 1fr", gap: 12, padding: "16px 26px", borderBottom: "1px solid rgb(var(--w) / 0.025)", background: !n.is_read ? "rgb(var(--w) / 0.008)" : "transparent" }}
                   >
-                    <div className="relative flex items-center justify-center rounded-[9px]" style={{ width: 34, height: 34, background: "#2A2C2B" }}>
+                    <div className="relative flex items-center justify-center rounded-[9px]" style={{ width: 34, height: 34, background: "var(--hx-2a2c2b)" }}>
                       <Icon size={17} color="#BDBDBD" />
-                      {!n.is_read && <span className="absolute rounded-full" style={{ top: -1, right: -1, width: 8, height: 8, background: "#30D158", border: "2px solid #171918" }} />}
+                      {!n.is_read && <span className="absolute rounded-full" style={{ top: -1, right: -1, width: 8, height: 8, background: "var(--hx-30d158)", border: "2px solid var(--hx-171918)" }} />}
                     </div>
                     <div className="min-w-0">
-                      <div style={{ fontSize: 14.5, fontWeight: 500, color: "#F1F1F1", lineHeight: 1.35 }}>{n.title}</div>
-                      {n.body && <div style={{ fontSize: 13, color: "#D4D4D4", marginTop: 2 }}>{n.body}</div>}
-                      <div style={{ fontSize: 11.5, color: "#868686", marginTop: 5 }}>{timeAgo(n.created_at)}</div>
+                      <div style={{ fontSize: 14.5, fontWeight: 500, color: "var(--hx-f1f1f1)", lineHeight: 1.35 }}>{n.title}</div>
+                      {n.body && <div style={{ fontSize: 13, color: "var(--hx-d4d4d4)", marginTop: 2 }}>{n.body}</div>}
+                      <div style={{ fontSize: 11.5, color: "var(--hx-868686)", marginTop: 5 }}>{timeAgo(n.created_at)}</div>
                       {(n.action_label || n.secondary_action_label) && (
                         <div className="flex items-center" style={{ gap: 9, marginTop: 12 }}>
                           {n.action_label && (
                             <button
                               className="font-semibold"
-                              style={{ height: 34, padding: "0 13px", background: "#F3F3F3", color: "#111111", borderRadius: 8, fontSize: 12.5 }}
+                              style={{ height: 34, padding: "0 13px", background: "var(--hx-f3f3f3)", color: "var(--hx-111111)", borderRadius: 8, fontSize: 12.5 }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleClick(n);
@@ -231,7 +231,7 @@ export default function NotificationsPanel() {
                           )}
                           {n.secondary_action_label && (
                             <button
-                              style={{ height: 34, padding: "0 13px", background: "#333534", color: "#E6E6E6", border: "1px solid rgba(255,255,255,0.035)", borderRadius: 8, fontSize: 12.5 }}
+                              style={{ height: 34, padding: "0 13px", background: "var(--hx-333534)", color: "var(--hx-e6e6e6)", border: "1px solid rgb(var(--w) / 0.035)", borderRadius: 8, fontSize: 12.5 }}
                               onClick={(e) => dismiss(n.id, e)}
                             >
                               {n.secondary_action_label}

@@ -101,10 +101,10 @@ export default function LeadResearchCommandBar({
           style={{
             height: "clamp(84px, 8vw, 96px)",
             maxWidth: 820,
-            background: "linear-gradient(180deg, #101010 0%, #080808 100%)",
-            border: `1px solid ${focused ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.11)"}`,
+            background: "linear-gradient(180deg, var(--hx-101010) 0%, var(--hx-080808) 100%)",
+            border: `1px solid ${focused ? "rgb(var(--w) / 0.18)" : "rgb(var(--w) / 0.11)"}`,
             borderRadius: 28,
-            boxShadow: focused ? "0 28px 90px rgba(0,0,0,0.50)" : "0 28px 90px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.035)",
+            boxShadow: focused ? "0 28px 90px rgba(0,0,0,0.50)" : "0 28px 90px rgba(0,0,0,0.46), inset 0 1px 0 rgb(var(--w) / 0.035)",
           }}
         >
           {/* Soft moving research scan glow */}
@@ -117,7 +117,7 @@ export default function LeadResearchCommandBar({
               width: 240,
               zIndex: 2,
               background:
-                "radial-gradient(ellipse at center, rgba(200,255,130,0.80) 0%, rgba(120,200,70,0.38) 23%, rgba(65,130,42,0.16) 48%, rgba(0,0,0,0) 76%)",
+                "radial-gradient(ellipse at center, rgba(200,255,130,0.80) 0%, rgba(120,200,70,0.38) 23%, rgba(65,130,42,0.16) 48%, rgb(var(--k) / 0) 76%)",
               filter: "blur(12px)",
               opacity: 0.68,
               mixBlendMode: "screen",
@@ -141,11 +141,11 @@ export default function LeadResearchCommandBar({
               fontSize: "clamp(34px, 3.2vw, 42px)",
               fontWeight: 300,
               letterSpacing: "-0.04em",
-              color: "#F5F5F7",
-              caretColor: "#FFFFFF",
+              color: "var(--hx-f5f5f7)",
+              caretColor: "var(--hx-ffffff)",
               zIndex: 4,
-              WebkitMaskImage: "linear-gradient(90deg, #000 0%, #000 58%, rgba(0,0,0,0.45) 76%, transparent 100%)",
-              maskImage: "linear-gradient(90deg, #000 0%, #000 58%, rgba(0,0,0,0.45) 76%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(90deg, var(--hx-000000) 0%, var(--hx-000000) 58%, rgb(var(--k) / 0.45) 76%, transparent 100%)",
+              maskImage: "linear-gradient(90deg, var(--hx-000000) 0%, var(--hx-000000) 58%, rgb(var(--k) / 0.45) 76%, transparent 100%)",
             }}
           />
 
@@ -160,8 +160,8 @@ export default function LeadResearchCommandBar({
               width: 62,
               height: 62,
               borderRadius: 18,
-              background: "rgba(255,255,255,0.055)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "rgb(var(--w) / 0.055)",
+              border: "1px solid rgb(var(--w) / 0.07)",
               zIndex: 5,
               opacity: disabled || !value.trim() ? 0.3 : 1,
               cursor: disabled || !value.trim() ? "not-allowed" : "pointer",
@@ -172,12 +172,12 @@ export default function LeadResearchCommandBar({
         </div>
 
         {preview && !error && (
-          <div className="mt-3 pl-2.5 text-[12px]" style={{ color: "#6E6E73" }}>
+          <div className="mt-3 pl-2.5 text-[12px]" style={{ color: "var(--hx-6e6e73)" }}>
             {preview.domain} · {preview.type}
           </div>
         )}
         {error && (
-          <div className="mt-3 pl-2.5 text-[13px]" style={{ color: "#FF6B6B" }}>
+          <div className="mt-3 pl-2.5 text-[13px]" style={{ color: "var(--hx-ff6b6b)" }}>
             {error}
           </div>
         )}
@@ -187,15 +187,15 @@ export default function LeadResearchCommandBar({
           <div className="relative shrink-0" title="Research Agent Online">
             <div
               className="flex items-center justify-center rounded-full"
-              style={{ width: 54, height: 54, background: "#101010", border: "1px solid rgba(255,255,255,0.05)" }}
+              style={{ width: 54, height: 54, background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.05)" }}
             >
-              <span className="font-semibold" style={{ fontSize: 15, color: "#F5F5F7" }}>
+              <span className="font-semibold" style={{ fontSize: 15, color: "var(--hx-f5f5f7)" }}>
                 SFB
               </span>
             </div>
             <span
               className="absolute rounded-full"
-              style={{ width: 8, height: 8, background: "#30D158", right: 7, bottom: 7, boxShadow: "0 0 10px rgba(48,209,88,0.38)" }}
+              style={{ width: 8, height: 8, background: "var(--hx-30d158)", right: 7, bottom: 7, boxShadow: "0 0 10px rgba(48,209,88,0.38)" }}
             />
           </div>
 
@@ -207,11 +207,11 @@ export default function LeadResearchCommandBar({
             style={{
               width: 54,
               height: 54,
-              background: showAttach ? "#181818" : "#101010",
-              border: "1px solid rgba(255,255,255,0.05)",
+              background: showAttach ? "var(--hx-181818)" : "var(--hx-101010)",
+              border: "1px solid rgb(var(--w) / 0.05)",
             }}
           >
-            <Paperclip size={20} color={showAttach ? "#A1A1A6" : "#5E5E5E"} />
+            <Paperclip size={20} color={showAttach ? "var(--hx-a1a1a6)" : "var(--hx-5e5e5e)"} />
           </button>
 
           <div className="relative" ref={modeRef}>
@@ -224,12 +224,12 @@ export default function LeadResearchCommandBar({
                 minWidth: 170,
                 padding: "0 20px",
                 borderRadius: 27,
-                background: "#101010",
-                border: "1px solid rgba(255,255,255,0.05)",
+                background: "var(--hx-101010)",
+                border: "1px solid rgb(var(--w) / 0.05)",
               }}
             >
               <Globe2 size={18} color="#5F5F5F" />
-              <span style={{ fontSize: 14, fontWeight: 400, color: "#8A8A8A" }} className="truncate">
+              <span style={{ fontSize: 14, fontWeight: 400, color: "var(--hx-8a8a8a)" }} className="truncate">
                 {activeScope.label}{scope === "AUTO" && detectedLabel ? ` · ${detectedLabel}` : ""}
               </span>
               <ChevronDown size={13} color="#5F5F5F" className="ml-auto shrink-0" style={{ transform: modeOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }} />
@@ -238,7 +238,7 @@ export default function LeadResearchCommandBar({
             {modeOpen && (
               <div
                 className="absolute top-full left-0 mt-2 rounded-[14px] overflow-hidden p-1.5"
-                style={{ width: 300, background: "#0C0C0C", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}
+                style={{ width: 300, background: "var(--hx-0c0c0c)", border: "1px solid rgb(var(--w) / 0.1)", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}
               >
                 {SCOPE_OPTIONS.map((opt) => (
                   <button
@@ -249,7 +249,7 @@ export default function LeadResearchCommandBar({
                       setModeOpen(false);
                     }}
                     className="w-full text-left px-3 py-2.5 rounded-[9px] transition-colors"
-                    style={{ background: scope === opt.value ? "rgba(255,255,255,0.06)" : "transparent" }}
+                    style={{ background: scope === opt.value ? "rgb(var(--w) / 0.06)" : "transparent" }}
                   >
                     <div className="text-[13px] text-white/85">{opt.label}</div>
                     <div className="text-[11px] text-white/35 mt-0.5">{opt.description}</div>
@@ -267,10 +267,10 @@ export default function LeadResearchCommandBar({
               onChange={(e) => setSecondSource(e.target.value)}
               placeholder="Add a second source (optional)"
               className="flex-1 h-[42px] rounded-[10px] px-3.5 text-[13px] outline-none"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             />
             {secondSource && (
-              <button type="button" onClick={() => setSecondSource("")} className="text-[#6E6E73] hover:text-white">
+              <button type="button" onClick={() => setSecondSource("")} className="text-[color:var(--hx-6e6e73)] hover:text-white">
                 <X size={14} />
               </button>
             )}

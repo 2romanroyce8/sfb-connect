@@ -32,11 +32,11 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6" style={{ background: "#000" }}>
+    <main className="min-h-screen flex items-center justify-center px-6" style={{ background: "var(--hx-000000)" }}>
       <div className="w-full" style={{ maxWidth: 300 }}>
         <div className="text-center" style={{ marginBottom: 36 }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>SFB TEAM</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 10, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "rgb(var(--w) / 0.55)", fontWeight: 600 }}>SFB TEAM</div>
+          <div style={{ fontSize: 13, color: "rgb(var(--w) / 0.35)", marginTop: 10, lineHeight: 1.5 }}>
             {sent ? "If that email has an account, a reset link is on its way. Check spam if it doesn't arrive within a couple of minutes." : "Enter your account email and we'll send a link to set a new password."}
           </div>
         </div>
@@ -45,9 +45,9 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="flex flex-col items-center">
             <div
               className="relative flex items-center w-full"
-              style={{ height: 35, background: "#242424", border: "1px solid rgba(255,255,255,0.015)", borderRadius: 7, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.018), 0 4px 18px rgba(0,0,0,0.10)" }}
+              style={{ height: 35, background: "var(--hx-242424)", border: "1px solid rgb(var(--w) / 0.015)", borderRadius: 7, boxShadow: "inset 0 1px 0 rgb(var(--w) / 0.018), 0 4px 18px rgba(0,0,0,0.10)" }}
             >
-              <UserRound size={16} strokeWidth={2.4} className="absolute left-[18px]" style={{ color: "#050505", opacity: 0.95 }} />
+              <UserRound size={16} strokeWidth={2.4} className="absolute left-[18px]" style={{ color: "var(--hx-050505)", opacity: 0.95 }} />
               <input
                 type="email"
                 required
@@ -57,17 +57,17 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-full outline-none"
-                style={{ padding: "0 18px 0 48px", background: "transparent", color: "#D8D8D8", fontSize: 13, borderRadius: 7 }}
+                style={{ padding: "0 18px 0 48px", background: "transparent", color: "var(--hx-d8d8d8)", fontSize: 13, borderRadius: 7 }}
               />
             </div>
 
-            {error && <p style={{ fontSize: 10, color: "#B96A6A", marginTop: 9, textAlign: "center" }}>{error}</p>}
+            {error && <p style={{ fontSize: 10, color: "var(--hx-b96a6a)", marginTop: 9, textAlign: "center" }}>{error}</p>}
 
             <button
               type="submit"
               disabled={loading}
               className="disabled:opacity-60"
-              style={{ marginTop: 40, width: 105, height: 35, display: "flex", alignItems: "center", justifyContent: "center", background: "#080808", border: "1px solid rgba(255,255,255,0.025)", borderRadius: 2, boxShadow: "0 6px 18px rgba(0,0,0,0.28)", color: "#7B7B7B" }}
+              style={{ marginTop: 40, width: 105, height: 35, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--hx-080808)", border: "1px solid rgb(var(--w) / 0.025)", borderRadius: 2, boxShadow: "0 6px 18px rgba(0,0,0,0.28)", color: "var(--hx-7b7b7b)" }}
             >
               {loading ? <Loader2 size={18} strokeWidth={1.5} className="animate-spin" /> : <ArrowRight size={24} strokeWidth={1} />}
             </button>
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <div className="text-center" style={{ marginTop: 22 }}>
-          <a href="/login" style={{ fontSize: 9, color: "rgba(255,255,255,0.24)", textDecoration: "none" }}>
+          <a href="/login" style={{ fontSize: 9, color: "rgb(var(--w) / 0.24)", textDecoration: "none" }}>
             Back to sign in
           </a>
         </div>

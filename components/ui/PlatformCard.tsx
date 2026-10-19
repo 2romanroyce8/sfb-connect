@@ -9,7 +9,7 @@ export default function PlatformCard({ name }: { name: string }) {
       transition={{ duration: 0.25 }}
       className="glass-edge rounded-2xl px-7 py-6 flex items-center justify-center min-w-[140px]"
     >
-      <span className="text-lg font-semibold tracking-tight text-[#e4e4e7]">
+      <span className="text-lg font-semibold tracking-tight text-[color:var(--hx-e4e4e7)]">
         {name}
       </span>
     </motion.div>

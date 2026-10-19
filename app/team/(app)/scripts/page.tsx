@@ -37,22 +37,22 @@ export default async function ScriptsPage() {
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Scripts</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">{(scripts ?? []).length} generated</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Scripts</div>
+        <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">{(scripts ?? []).length} generated</div>
       </div>
 
       {!scripts || scripts.length === 0 ? (
-        <div className="rounded-[14px] p-10 text-center max-w-[520px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No scripts yet</div>
-          <p className="text-[13px] text-[#A1A1A6]">Generate a call script from a lead's audit — it'll show up here.</p>
+        <div className="rounded-[14px] p-10 text-center max-w-[520px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No scripts yet</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Generate a call script from a lead's audit — it'll show up here.</p>
         </div>
       ) : (
-        <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
           <table className="w-full text-[13px]">
             <thead>
-              <tr style={{ background: "#0A0A0A" }}>
+              <tr style={{ background: "var(--hx-0a0a0a)" }}>
                 {["Business", "Offer", ...(isOwner ? ["Rep"] : []), "Variant", "Created"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
+                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">
                     {h}
                   </th>
                 ))}
@@ -68,16 +68,16 @@ export default async function ScriptsPage() {
                 })
                 .reverse()
                 .map((s) => (
-                  <tr key={s.id} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <tr key={s.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
                     <td className="px-4 py-3">
-                      <Link href={`/team/leads/${s.lead_id}/script`} className="text-[#F5F5F7] hover:underline">
+                      <Link href={`/team/leads/${s.lead_id}/script`} className="text-[color:var(--hx-f5f5f7)] hover:underline">
                         {leadMap[s.lead_id]?.business_name || "Unknown lead"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-[#A1A1A6]">{OFFER_LABEL[leadMap[s.lead_id]?.recommended_offer] || "—"}</td>
-                    {isOwner && <td className="px-4 py-3 text-[#A1A1A6]">{s.created_by ? repMap[s.created_by] || "—" : "—"}</td>}
-                    <td className="px-4 py-3 text-[#A1A1A6] capitalize">{s.variant_type}</td>
-                    <td className="px-4 py-3 text-[#6E6E73]">v{s.version} · {new Date(s.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{OFFER_LABEL[leadMap[s.lead_id]?.recommended_offer] || "—"}</td>
+                    {isOwner && <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{s.created_by ? repMap[s.created_by] || "—" : "—"}</td>}
+                    <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)] capitalize">{s.variant_type}</td>
+                    <td className="px-4 py-3 text-[color:var(--hx-6e6e73)]">v{s.version} · {new Date(s.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
             </tbody>

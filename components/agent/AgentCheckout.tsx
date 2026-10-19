@@ -24,15 +24,15 @@ export default function AgentCheckout({ plan, interval = "month", funnel = false
   };
 
   // Inside the gated funnel the account and business profile are already known: one click to Stripe.
-  if (funnel) return <form onSubmit={start} className="flex flex-col gap-2"><button type="submit" disabled={busy} className="w-full inline-flex justify-center items-center bg-white text-black h-[44px] px-5 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity disabled:opacity-50">{busy ? "Opening checkout…" : "Pay & unlock your dashboard →"}</button>{error && <div className="text-[12px] text-[#FF9F9A]">{error}</div>}</form>;
+  if (funnel) return <form onSubmit={start} className="flex flex-col gap-2"><button type="submit" disabled={busy} className="w-full inline-flex justify-center items-center bg-white text-black h-[44px] px-5 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity disabled:opacity-50">{busy ? "Opening checkout…" : "Pay & unlock your dashboard →"}</button>{error && <div className="text-[12px] text-[color:var(--hx-ff9f9a)]">{error}</div>}</form>;
   if (!open) return <button onClick={() => setOpen(true)} className="w-full inline-flex justify-center items-center bg-white text-black h-[44px] px-5 rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity">Get your agent →</button>;
 
   return (
     <form onSubmit={start} className="flex flex-col gap-2.5">
-      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Work email" className="h-[42px] rounded-[9px] px-3 text-[13.5px] outline-none text-white placeholder:text-white/[0.35]" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)" }} />
-      <input type="text" required minLength={2} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Business name" className="h-[42px] rounded-[9px] px-3 text-[13.5px] outline-none text-white placeholder:text-white/[0.35]" style={{ background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.12)" }} />
+      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Work email" className="h-[42px] rounded-[9px] px-3 text-[13.5px] outline-none text-white placeholder:text-white/[0.35]" style={{ background: "var(--hx-0f0f0f)", border: "1px solid rgb(var(--w) / 0.12)" }} />
+      <input type="text" required minLength={2} value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Business name" className="h-[42px] rounded-[9px] px-3 text-[13.5px] outline-none text-white placeholder:text-white/[0.35]" style={{ background: "var(--hx-0f0f0f)", border: "1px solid rgb(var(--w) / 0.12)" }} />
       <button type="submit" disabled={busy} className="h-[44px] inline-flex justify-center items-center bg-white text-black rounded-full text-[13.5px] font-semibold hover:opacity-85 transition-opacity disabled:opacity-60">{busy ? "Opening secure checkout…" : (interval === "year" ? `Continue to checkout — ${fmtUsd(annualUsd(plan.monthlyUsd))}/yr + ${fmtUsd(plan.onboardingUsd)} one-time setup` : `Continue to checkout — ${fmtUsd(plan.monthlyUsd)}/mo + ${fmtUsd(plan.onboardingUsd)} one-time setup`)}</button>
-      {error && <div className="text-[12px] text-[#FF9F9A]">{error}</div>}
+      {error && <div className="text-[12px] text-[color:var(--hx-ff9f9a)]">{error}</div>}
       <div className="text-[11px] text-white/[0.4]">Secure payment by Stripe. {interval === "year" ? "Annual plan billed yearly, cancels anytime" : "Monthly plan cancels anytime"}; setup is a one-time charge. {CREDITS_PAY_FOR_WORK} You&apos;ll receive a sign-in email for your SFB dashboard after payment.</div>
     </form>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import ThemeToggle from "@/components/ThemeToggle";
 import { useState } from "react";
 import Link from "next/link";
 import TourProvider, { TourLauncher } from "@/components/tours/TourProvider";
@@ -102,7 +103,7 @@ export default function PortalShell({
 
   return (
     <TourProvider>
-    <div className="min-h-screen bg-white text-neutral-900">
+    <div className="min-h-screen bg-white text-neutral-900" data-authored="light">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-[248px] border-r border-neutral-200 px-4 py-6">
         <div className="px-2 mb-8">
@@ -134,7 +135,7 @@ export default function PortalShell({
         </nav>
 
         <div className="mt-auto pt-5 border-t border-neutral-200 px-2">
-          <div className="flex items-center justify-between gap-2"><div className="text-[13px] font-medium text-neutral-800 truncate">{displayName}</div><TourLauncher compact /></div>
+          <div className="flex items-center justify-between gap-2"><div className="text-[13px] font-medium text-neutral-800 truncate">{displayName}</div><div className="flex items-center gap-1.5"><ThemeToggle compact className="!w-[30px] !h-[30px]" /><TourLauncher compact /></div></div>
           <button
             onClick={handleSignOut}
             className="mt-2 flex items-center gap-2 text-[12.5px] text-neutral-500 hover:text-neutral-900 transition-colors"

@@ -78,8 +78,8 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-[20px] font-semibold text-[#F5F5F7]">Performance</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1">Company-wide sales performance</div>
+          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Performance</div>
+          <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Company-wide sales performance</div>
         </div>
         <div className="flex items-center gap-1">
           {[
@@ -92,9 +92,9 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
               href={`/team/performance?range=${value}`}
               className="h-[32px] px-3 inline-flex items-center rounded-[7px] text-[12.5px]"
               style={{
-                background: range === value ? "#151515" : "transparent",
-                color: range === value ? "#F5F5F7" : "#6E6E73",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: range === value ? "var(--hx-151515)" : "transparent",
+                color: range === value ? "var(--hx-f5f5f7)" : "var(--hx-6e6e73)",
+                border: "1px solid rgb(var(--w) / 0.08)",
               }}
             >
               {label}
@@ -105,25 +105,25 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
 
       <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-10">
         {teamMetrics.map((m) => (
-          <div key={m.label} className="p-4 rounded-[12px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="text-[20px] font-semibold text-[#F5F5F7] leading-none">{m.value}</div>
-            <div className="text-[11px] text-[#6E6E73] mt-1.5">{m.label}</div>
+          <div key={m.label} className="p-4 rounded-[12px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+            <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)] leading-none">{m.value}</div>
+            <div className="text-[11px] text-[color:var(--hx-6e6e73)] mt-1.5">{m.label}</div>
           </div>
         ))}
       </div>
 
-      <div className="mb-3 text-[13px] font-semibold text-[#F5F5F7]">Rep Comparison</div>
+      <div className="mb-3 text-[13px] font-semibold text-[color:var(--hx-f5f5f7)]">Rep Comparison</div>
       {repRows.length === 0 ? (
-        <div className="rounded-[12px] p-6 text-center" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-[13px] text-[#A1A1A6]">No sales reps yet — invite your team to see performance comparisons here.</p>
+        <div className="rounded-[12px] p-6 text-center" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">No sales reps yet — invite your team to see performance comparisons here.</p>
         </div>
       ) : (
-        <div className="rounded-[12px] overflow-hidden mb-10" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[12px] overflow-hidden mb-10" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
           <table className="w-full text-[13px]">
             <thead>
-              <tr style={{ background: "#0A0A0A" }}>
+              <tr style={{ background: "var(--hx-0a0a0a)" }}>
                 {["Rep", "Calls", "Talk Time", "Meetings", "Wins", "Conversion"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
+                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">
                     {h}
                   </th>
                 ))}
@@ -131,13 +131,13 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
             </thead>
             <tbody>
               {repRows.map((r) => (
-                <tr key={r.id} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  <td className="px-4 py-3 text-[#F5F5F7]">{r.name}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{r.calls}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{formatDuration(r.talkTime)}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{r.meetings}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{r.won}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{r.conversion}%</td>
+                <tr key={r.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
+                  <td className="px-4 py-3 text-[color:var(--hx-f5f5f7)]">{r.name}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{r.calls}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{formatDuration(r.talkTime)}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{r.meetings}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{r.won}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{r.conversion}%</td>
                 </tr>
               ))}
             </tbody>
@@ -145,15 +145,15 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
         </div>
       )}
 
-      <div className="mb-3 text-[13px] font-semibold text-[#F5F5F7]">Pipeline by Stage</div>
+      <div className="mb-3 text-[13px] font-semibold text-[color:var(--hx-f5f5f7)]">Pipeline by Stage</div>
       {Object.keys(stageCounts).length === 0 ? (
-        <div className="rounded-[12px] p-6 text-center" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-[13px] text-[#A1A1A6]">No pipeline movement in this range yet.</p>
+        <div className="rounded-[12px] p-6 text-center" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">No pipeline movement in this range yet.</p>
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           {Object.entries(stageCounts).map(([stage, count]) => (
-            <div key={stage} className="px-3 py-2 rounded-[8px] text-[12.5px] text-[#A1A1A6] capitalize" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div key={stage} className="px-3 py-2 rounded-[8px] text-[12.5px] text-[color:var(--hx-a1a1a6)] capitalize" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
               {stage.replace(/_/g, " ")}: {count}
             </div>
           ))}

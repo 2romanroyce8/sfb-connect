@@ -24,16 +24,16 @@ export default function AgentProgramSection() {
   };
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[12px] text-[#A1A1A6] mb-1">These statuses appear on sfbconnect.com/agent, the homepage, and every customer&apos;s dashboard. Change them here when a module ships — no deploy needed.</p>
+      <p className="text-[12px] text-[color:var(--hx-a1a1a6)] mb-1">These statuses appear on sfbconnect.com/agent, the homepage, and every customer&apos;s dashboard. Change them here when a module ships — no deploy needed.</p>
       {mods.map((m) => (
-        <div key={m.key} className="flex items-center justify-between gap-3 rounded-[10px] px-3 py-2" style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[13px] text-[#F5F5F7]"><span className="text-[#6E6E73] mr-2">{m.position}</span>{m.name}</div>
-          <select value={m.status} disabled={busy === m.key} onChange={(e) => set(m.key, e.target.value as ModuleStatus)} className="h-[30px] rounded-[7px] px-2 text-[12px] outline-none" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F5F7" }}>
+        <div key={m.key} className="flex items-center justify-between gap-3 rounded-[10px] px-3 py-2" style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[13px] text-[color:var(--hx-f5f5f7)]"><span className="text-[color:var(--hx-6e6e73)] mr-2">{m.position}</span>{m.name}</div>
+          <select value={m.status} disabled={busy === m.key} onChange={(e) => set(m.key, e.target.value as ModuleStatus)} className="h-[30px] rounded-[7px] px-2 text-[12px] outline-none" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.1)", color: "var(--hx-f5f5f7)" }}>
             {(Object.keys(STATUS_LABEL) as ModuleStatus[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
           </select>
         </div>
       ))}
-      {msg && <div className="text-[12px] text-[#A1A1A6]">{msg}</div>}
+      {msg && <div className="text-[12px] text-[color:var(--hx-a1a1a6)]">{msg}</div>}
     </div>
   );
 }

@@ -78,47 +78,47 @@ function RunningModule({ stage, progressPercent, sourcesFound, elapsedMs }: Runn
       style={{
         maxWidth: 920,
         minHeight: 260,
-        background: "#050505",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--hx-050505)",
+        border: "1px solid rgb(var(--w) / 0.08)",
         borderRadius: 26,
-        boxShadow: "0 28px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.025)",
+        boxShadow: "0 28px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgb(var(--w) / 0.025)",
         padding: "34px 36px 28px",
       }}
     >
-      <div className="uppercase" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", color: "#6E6E73", marginBottom: 18 }}>
+      <div className="uppercase" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", color: "var(--hx-6e6e73)", marginBottom: 18 }}>
         Research In Progress
       </div>
 
       <div className="relative flex items-center" style={{ height: 92 }}>
         <div
           className="absolute left-0 right-0 overflow-hidden"
-          style={{ height: 92, background: "#0B0B0B", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 3 }}
+          style={{ height: 92, background: "var(--hx-0b0b0b)", border: "1px solid rgb(var(--w) / 0.03)", borderRadius: 3 }}
         >
           <div
             style={{
               height: "100%",
               width: `${progressPercent}%`,
-              background: "linear-gradient(90deg, #4EDDC6 0%, #32C7B3 35%, #12695F 72%, rgba(9,44,40,0.15) 100%)",
-              boxShadow: "0 0 34px rgba(78,221,198,0.18), inset 0 1px 0 rgba(255,255,255,0.10)",
+              background: "linear-gradient(90deg, var(--hx-4eddc6) 0%, var(--hx-32c7b3) 35%, var(--hx-12695f) 72%, rgba(9,44,40,0.15) 100%)",
+              boxShadow: "0 0 34px rgba(78,221,198,0.18), inset 0 1px 0 rgb(var(--w) / 0.10)",
               transition: "width 450ms cubic-bezier(0.22,1,0.36,1)",
             }}
           />
         </div>
         <div className="relative z-[3] flex items-baseline" style={{ marginLeft: "auto", marginRight: "8%" }}>
-          <span style={{ fontFamily: "Inter, 'SF Pro Display', Helvetica Neue, Arial, sans-serif", fontSize: 78, fontWeight: 300, letterSpacing: "-0.05em", color: "#F5F5F7" }}>
+          <span style={{ fontFamily: "Inter, 'SF Pro Display', Helvetica Neue, Arial, sans-serif", fontSize: 78, fontWeight: 300, letterSpacing: "-0.05em", color: "var(--hx-f5f5f7)" }}>
             {progressPercent}
           </span>
-          <span style={{ fontSize: 28, fontWeight: 400, color: "#D0D0D0", marginLeft: 8 }}>%</span>
+          <span style={{ fontSize: 28, fontWeight: 400, color: "var(--hx-d0d0d0)", marginLeft: 8 }}>%</span>
         </div>
       </div>
 
-      <div style={{ fontSize: 15, fontWeight: 500, color: "#F5F5F7", marginTop: 18 }}>{STAGE_HEADLINE[stage]}</div>
+      <div style={{ fontSize: 15, fontWeight: 500, color: "var(--hx-f5f5f7)", marginTop: 18 }}>{STAGE_HEADLINE[stage]}</div>
 
       <StageDots stage={stage} />
 
       <div
         className="grid"
-        style={{ gridTemplateColumns: "1.2fr 0.8fr 1fr", gap: 18, marginTop: 14, paddingTop: 18, borderTop: "1px solid rgba(255,255,255,0.05)" }}
+        style={{ gridTemplateColumns: "1.2fr 0.8fr 1fr", gap: 18, marginTop: 14, paddingTop: 18, borderTop: "1px solid rgb(var(--w) / 0.05)" }}
       >
         <TelemetryItem icon={Clock3} label="Estimated Completion" value={estimateRemaining(displayElapsed, progressPercent)} />
         <TelemetryItem icon={SearchCheck} label="Sources Found" value={String(sourcesFound)} />
@@ -137,11 +137,11 @@ function StageDots({ stage }: { stage: ResearchStage }) {
         const groupMinProgress = Math.min(...group.stages.map((s) => STAGE_PROGRESS[s]));
         const isComplete = currentIdx > groupMaxProgress;
         const isActive = currentIdx >= groupMinProgress && currentIdx <= groupMaxProgress;
-        const color = isComplete ? "#30D158" : isActive ? "#20C7B7" : "#2A2A2A";
+        const color = isComplete ? "var(--hx-30d158)" : isActive ? "var(--hx-20c7b7)" : "var(--hx-2a2a2a)";
         return (
           <div key={group.label} className="flex items-center gap-1.5">
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, display: "inline-block", transition: "background 300ms" }} />
-            <span style={{ fontSize: 10, color: isActive || isComplete ? "#A1A1A6" : "#727272" }}>{group.label}</span>
+            <span style={{ fontSize: 10, color: isActive || isComplete ? "var(--hx-a1a1a6)" : "var(--hx-727272)" }}>{group.label}</span>
           </div>
         );
       })}
@@ -152,12 +152,12 @@ function StageDots({ stage }: { stage: ResearchStage }) {
 function TelemetryItem({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
   return (
     <div className="grid items-start" style={{ gridTemplateColumns: "22px 1fr", gap: 9 }}>
-      <Icon size={17} style={{ color: "#D2D2D2", marginTop: 1 }} />
+      <Icon size={17} style={{ color: "var(--hx-d2d2d2)", marginTop: 1 }} />
       <div>
-        <div className="uppercase" style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.06em", color: "#6E6E73" }}>
+        <div className="uppercase" style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.06em", color: "var(--hx-6e6e73)" }}>
           {label}
         </div>
-        <div style={{ fontSize: 14, fontWeight: 500, color: "#EDEDED", marginTop: 3 }}>{value}</div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--hx-ededed)", marginTop: 3 }}>{value}</div>
       </div>
     </div>
   );
@@ -165,42 +165,42 @@ function TelemetryItem({ icon: Icon, label, value }: { icon: React.ElementType; 
 
 function CompleteModule({ completenessPercent, verifiedCount, sourcesCheckedCount, needsReviewCount, onViewResults, onResearchMore }: CompleteProps) {
   const isPartial = completenessPercent < 100;
-  const accentColor = isPartial ? "#FFD60A" : "#30D158";
+  const accentColor = isPartial ? "var(--hx-ffd60a)" : "var(--hx-30d158)";
   return (
     <div
       className="relative overflow-hidden w-full"
       style={{
         maxWidth: 920,
         minHeight: 260,
-        background: "#050505",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--hx-050505)",
+        border: "1px solid rgb(var(--w) / 0.08)",
         borderRadius: 26,
-        boxShadow: "0 28px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.025)",
+        boxShadow: "0 28px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgb(var(--w) / 0.025)",
         padding: "34px 36px 28px",
       }}
     >
-      <div className="uppercase" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", color: "#6E6E73", marginBottom: 18 }}>
+      <div className="uppercase" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", color: "var(--hx-6e6e73)", marginBottom: 18 }}>
         Profile Research Complete
       </div>
 
       <div className="relative flex items-center" style={{ height: 92 }}>
-        <div className="absolute left-0 right-0 overflow-hidden" style={{ height: 92, background: "#0B0B0B", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 3 }}>
+        <div className="absolute left-0 right-0 overflow-hidden" style={{ height: 92, background: "var(--hx-0b0b0b)", border: "1px solid rgb(var(--w) / 0.03)", borderRadius: 3 }}>
           <div
             style={{
               height: "100%",
               width: `${completenessPercent}%`,
               background: isPartial
-                ? "linear-gradient(90deg, #FFD60A 0%, #C79A0A 60%, rgba(90,70,10,0.2) 100%)"
-                : "linear-gradient(90deg, #4EDDC6 0%, #32C7B3 35%, #12695F 72%, rgba(9,44,40,0.15) 100%)",
-              boxShadow: `0 0 34px ${isPartial ? "rgba(255,214,10,0.15)" : "rgba(78,221,198,0.18)"}, inset 0 1px 0 rgba(255,255,255,0.10)`,
+                ? "linear-gradient(90deg, var(--hx-ffd60a) 0%, var(--hx-c79a0a) 60%, rgba(90,70,10,0.2) 100%)"
+                : "linear-gradient(90deg, var(--hx-4eddc6) 0%, var(--hx-32c7b3) 35%, var(--hx-12695f) 72%, rgba(9,44,40,0.15) 100%)",
+              boxShadow: `0 0 34px ${isPartial ? "rgba(255,214,10,0.15)" : "rgba(78,221,198,0.18)"}, inset 0 1px 0 rgb(var(--w) / 0.10)`,
             }}
           />
         </div>
         <div className="relative z-[3] flex items-baseline" style={{ marginLeft: "auto", marginRight: "8%" }}>
-          <span style={{ fontFamily: "Inter, 'SF Pro Display', Helvetica Neue, Arial, sans-serif", fontSize: 78, fontWeight: 300, letterSpacing: "-0.05em", color: "#F5F5F7" }}>
+          <span style={{ fontFamily: "Inter, 'SF Pro Display', Helvetica Neue, Arial, sans-serif", fontSize: 78, fontWeight: 300, letterSpacing: "-0.05em", color: "var(--hx-f5f5f7)" }}>
             {completenessPercent}
           </span>
-          <span style={{ fontSize: 28, fontWeight: 400, color: "#D0D0D0", marginLeft: 8 }}>%</span>
+          <span style={{ fontSize: 28, fontWeight: 400, color: "var(--hx-d0d0d0)", marginLeft: 8 }}>%</span>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ function CompleteModule({ completenessPercent, verifiedCount, sourcesCheckedCoun
 
       <div
         className="grid"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: 18, marginTop: 14, paddingTop: 18, borderTop: "1px solid rgba(255,255,255,0.05)" }}
+        style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: 18, marginTop: 14, paddingTop: 18, borderTop: "1px solid rgb(var(--w) / 0.05)" }}
       >
         <TelemetryItem icon={SearchCheck} label="Verified Fields" value={String(verifiedCount)} />
         <TelemetryItem icon={SearchCheck} label="Sources Checked" value={String(sourcesCheckedCount)} />
@@ -223,7 +223,7 @@ function CompleteModule({ completenessPercent, verifiedCount, sourcesCheckedCoun
             <button
               onClick={onViewResults}
               className="inline-flex items-center gap-1.5"
-              style={{ height: 42, padding: "0 18px", background: "#F5F5F7", color: "#111111", borderRadius: 8, fontSize: 14, fontWeight: 600 }}
+              style={{ height: 42, padding: "0 18px", background: "var(--hx-f5f5f7)", color: "var(--hx-111111)", borderRadius: 8, fontSize: 14, fontWeight: 600 }}
             >
               View Results <ArrowRight size={14} />
             </button>
@@ -232,7 +232,7 @@ function CompleteModule({ completenessPercent, verifiedCount, sourcesCheckedCoun
             <button
               onClick={onResearchMore}
               className="inline-flex items-center gap-1.5"
-              style={{ height: 42, padding: "0 18px", background: "transparent", border: "1px solid rgba(255,255,255,0.14)", color: "#D2D2D2", borderRadius: 8, fontSize: 14, fontWeight: 600 }}
+              style={{ height: 42, padding: "0 18px", background: "transparent", border: "1px solid rgb(var(--w) / 0.14)", color: "var(--hx-d2d2d2)", borderRadius: 8, fontSize: 14, fontWeight: 600 }}
             >
               Research More
             </button>
@@ -250,23 +250,23 @@ function FailedModule({ lastStage, reason, onRetry }: FailedProps) {
       style={{
         maxWidth: 920,
         minHeight: 200,
-        background: "#050505",
+        background: "var(--hx-050505)",
         border: "1px solid rgba(255,69,58,0.25)",
         borderRadius: 26,
         boxShadow: "0 28px 80px rgba(0,0,0,0.45)",
         padding: "34px 36px 28px",
       }}
     >
-      <div className="uppercase" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", color: "#6E6E73", marginBottom: 18 }}>
+      <div className="uppercase" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", color: "var(--hx-6e6e73)", marginBottom: 18 }}>
         Research In Progress
       </div>
       <div className="relative flex items-center" style={{ height: 92 }}>
-        <div className="absolute left-0 right-0" style={{ height: 92, background: "#0B0B0B", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 3 }}>
-          <div style={{ height: "100%", width: "100%", background: "#3A3A3A" }} />
+        <div className="absolute left-0 right-0" style={{ height: 92, background: "var(--hx-0b0b0b)", border: "1px solid rgb(var(--w) / 0.03)", borderRadius: 3 }}>
+          <div style={{ height: "100%", width: "100%", background: "var(--hx-3a3a3a)" }} />
         </div>
       </div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: "#FF453A", marginTop: 18 }}>Research interrupted</div>
-      <div style={{ fontSize: 12.5, color: "#A1A1A6", marginTop: 6 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: "var(--hx-ff453a)", marginTop: 18 }}>Research interrupted</div>
+      <div style={{ fontSize: 12.5, color: "var(--hx-a1a1a6)", marginTop: 6 }}>
         {lastStage ? `Last completed stage: ${STAGE_HEADLINE[lastStage]}. ` : ""}
         {reason}
       </div>
@@ -274,7 +274,7 @@ function FailedModule({ lastStage, reason, onRetry }: FailedProps) {
         <button
           onClick={onRetry}
           className="inline-flex items-center gap-1.5 mt-5"
-          style={{ height: 40, padding: "0 16px", background: "#151515", border: "1px solid rgba(255,255,255,0.1)", color: "#F5F5F7", borderRadius: 8, fontSize: 13, fontWeight: 600 }}
+          style={{ height: 40, padding: "0 16px", background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.1)", color: "var(--hx-f5f5f7)", borderRadius: 8, fontSize: 13, fontWeight: 600 }}
         >
           <RotateCcw size={14} /> Retry Research
         </button>
@@ -289,18 +289,18 @@ function CompactModule(props: RunningProps | CompleteProps) {
   const isRunning = props.mode === "running";
   const percent = isRunning ? props.progressPercent : props.completenessPercent;
   const isPartial = !isRunning && props.completenessPercent < 100;
-  const fillColor = isRunning ? "#20C7B7" : isPartial ? "#FFD60A" : "#20C7B7";
+  const fillColor = isRunning ? "var(--hx-20c7b7)" : isPartial ? "var(--hx-ffd60a)" : "var(--hx-20c7b7)";
   const label = isRunning ? STAGE_HEADLINE[props.stage].toUpperCase() : "RESEARCH COMPLETE";
   return (
-    <div style={{ width: 230, height: 88, background: "#090909", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 14px" }}>
+    <div style={{ width: 230, height: 88, background: "var(--hx-090909)", border: "1px solid rgb(var(--w) / 0.06)", borderRadius: 12, padding: "12px 14px" }}>
       <div className="flex items-baseline">
-        <span style={{ fontSize: 34, fontWeight: 400, color: "#F5F5F7" }}>{percent}</span>
-        <span style={{ fontSize: 15, color: "#A1A1A6", marginLeft: 4 }}>%</span>
+        <span style={{ fontSize: 34, fontWeight: 400, color: "var(--hx-f5f5f7)" }}>{percent}</span>
+        <span style={{ fontSize: 15, color: "var(--hx-a1a1a6)", marginLeft: 4 }}>%</span>
       </div>
-      <div style={{ height: 5, background: "#171717", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
+      <div style={{ height: 5, background: "var(--hx-171717)", borderRadius: 3, marginTop: 6, overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${percent}%`, background: fillColor, transition: "width 400ms ease" }} />
       </div>
-      <div className="uppercase truncate" style={{ fontSize: 9.5, color: "#6E6E73", marginTop: 6, letterSpacing: "0.06em" }}>
+      <div className="uppercase truncate" style={{ fontSize: 9.5, color: "var(--hx-6e6e73)", marginTop: 6, letterSpacing: "0.06em" }}>
         {label}
       </div>
     </div>

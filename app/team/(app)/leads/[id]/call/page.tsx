@@ -17,9 +17,9 @@ export default async function LeadCallPage({ params }: { params: { id: string } 
   if (!workSession) {
     return (
       <div className="px-8 py-16 flex flex-col items-center text-center">
-        <CalendarClock size={28} className="text-[#6E6E73] mb-4" />
-        <div className="text-[17px] font-medium text-[#F5F5F7] mb-1.5">Clock in to unlock calling</div>
-        <p className="text-[13px] text-[#A1A1A6] mb-5 max-w-[360px]">
+        <CalendarClock size={28} className="text-[color:var(--hx-6e6e73)] mb-4" />
+        <div className="text-[17px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">Clock in to unlock calling</div>
+        <p className="text-[13px] text-[color:var(--hx-a1a1a6)] mb-5 max-w-[360px]">
           The call workspace is part of Work Mode. Clock in from the sidebar, then come back here.
         </p>
         <Link href="/team/clock" className="h-[38px] px-4 inline-flex items-center rounded-[8px] bg-white text-black text-[13px] font-semibold">

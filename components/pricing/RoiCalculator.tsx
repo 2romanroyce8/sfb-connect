@@ -24,12 +24,12 @@ export default function RoiCalculator() {
   }, [result, tierKey]);
 
   const field = "h-[48px] w-full rounded-[10px] px-4 text-[16px] outline-none text-white placeholder:text-white/[0.3]";
-  const fieldStyle = { background: "#0F0F0F", border: "1px solid rgba(255,255,255,0.14)" };
+  const fieldStyle = { background: "var(--hx-0f0f0f)", border: "1px solid rgb(var(--w) / 0.14)" };
 
   return (
     <section className="px-6 pt-6 pb-10 md:pt-8 md:pb-12 scroll-mt-24" id="roi">
-      <div className="max-w-[1100px] mx-auto rounded-[22px] p-7 md:p-10" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#30D158] mb-4">Do the math</div>
+      <div className="max-w-[1100px] mx-auto rounded-[22px] p-7 md:p-10" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+        <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[color:var(--hx-30d158)] mb-4">Do the math</div>
         <h2 className="text-[30px] md:text-[40px] font-bold tracking-[-0.035em] leading-[1.05]">What is one customer worth to you?</h2>
         <p className="mt-3 text-[14px] text-white/[0.55] max-w-[640px]">Type two numbers. We assume 1 booked call ≈ {CREDITS_PER_BOOKED_CALL} credits, so a plan&apos;s monthly credits become a number of calls, your close rate turns calls into customers, and your customer value turns that into dollars.</p>
 
@@ -43,17 +43,17 @@ export default function RoiCalculator() {
           <div className="flex flex-col gap-2 text-[12.5px] text-white/[0.6]">Plan
             <div className="grid grid-cols-2 p-1 rounded-[10px] h-[48px]" style={fieldStyle}>
               {PAID_TIERS.map((t) => (
-                <button key={t.key} type="button" onClick={() => setTierKey(t.key as "solo" | "agency")} aria-pressed={tierKey === t.key} className="rounded-[8px] text-[13.5px] font-semibold transition-colors" style={{ background: tierKey === t.key ? "#fff" : "transparent", color: tierKey === t.key ? "#000" : "rgba(255,255,255,0.7)" }}>{t.name}</button>
+                <button key={t.key} type="button" onClick={() => setTierKey(t.key as "solo" | "agency")} aria-pressed={tierKey === t.key} className="rounded-[8px] text-[13.5px] font-semibold transition-colors" style={{ background: tierKey === t.key ? "var(--hx-ffffff)" : "transparent", color: tierKey === t.key ? "var(--hx-000000)" : "rgb(var(--w) / 0.7)" }}>{t.name}</button>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-8 rounded-[14px] p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.14)" }} aria-live="polite">
+        <div className="mt-8 rounded-[14px] p-6" style={{ background: "rgb(var(--w) / 0.03)", border: "1px dashed rgb(var(--w) / 0.14)" }} aria-live="polite">
           {result ? (
             <>
               <div className="text-[24px] md:text-[32px] font-semibold tracking-[-0.03em] leading-tight text-white">
-                ≈ {result.calls} booked calls → ≈ {fmtCustomers(result.customers)} new customers → <span className="text-[#30D158]">≈ {fmtUsd(result.revenueUsd)}/mo</span>
+                ≈ {result.calls} booked calls → ≈ {fmtCustomers(result.customers)} new customers → <span className="text-[color:var(--hx-30d158)]">≈ {fmtUsd(result.revenueUsd)}/mo</span>
               </div>
               <div className="mt-3 text-[13.5px] text-white/[0.6]">
                 On a {fmtUsd(result.costUsd)}/mo plan that is {result.netUsd >= 0 ? <>≈ <strong className="text-white">{fmtUsd(result.netUsd)}</strong> more than the agent costs each month.</> : <>≈ <strong className="text-white">{fmtUsd(-result.netUsd)}</strong> short of covering the plan — try a higher close rate or customer value, or talk to us on a demo call.</>}

@@ -44,25 +44,25 @@ const NEXT_ACTION: Record<string, string> = {
 
 export default function RecentLeadsTable({ leads, showRep }: { leads: Lead[]; showRep: boolean }) {
   return (
-    <div className="rounded-[8px] overflow-hidden" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.05)" }}>
+    <div className="rounded-[8px] overflow-hidden" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.05)" }}>
       <div
         className="flex items-center gap-2.5 px-6"
-        style={{ height: 58, borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+        style={{ height: 58, borderBottom: "1px solid rgb(var(--w) / 0.05)" }}
       >
-        <span className="text-[15px] font-medium text-[#F5F5F7]">Recent Lead Activity</span>
-        <span className="text-[13px] text-[#D0D0D0]">
+        <span className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)]">Recent Lead Activity</span>
+        <span className="text-[13px] text-[color:var(--hx-d0d0d0)]">
           {leads.length} lead{leads.length === 1 ? "" : "s"}
         </span>
       </div>
 
       {leads.length === 0 ? (
-        <div className="px-6 py-8 text-[13px] text-[#6E6E73]">No leads yet.</div>
+        <div className="px-6 py-8 text-[13px] text-[color:var(--hx-6e6e73)]">No leads yet.</div>
       ) : (
         <table className="w-full text-[13px]">
           <thead>
-            <tr style={{ background: "#111111" }}>
+            <tr style={{ background: "var(--hx-111111)" }}>
               {["Business", ...(showRep ? ["Assigned Rep"] : []), "Stage", "Last Contact", "Next Action"].map((h) => (
-                <th key={h} className="text-left px-4 font-medium" style={{ height: 40, fontSize: 12, color: "#8A8A8A", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <th key={h} className="text-left px-4 font-medium" style={{ height: 40, fontSize: 12, color: "var(--hx-8a8a8a)", borderBottom: "1px solid rgb(var(--w) / 0.04)" }}>
                   {h}
                 </th>
               ))}
@@ -70,16 +70,16 @@ export default function RecentLeadsTable({ leads, showRep }: { leads: Lead[]; sh
           </thead>
           <tbody>
             {leads.map((l) => (
-              <tr key={l.id} className="hover:bg-[#161616]" style={{ height: 52, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              <tr key={l.id} className="hover:bg-[color:var(--hx-161616)]" style={{ height: 52, borderBottom: "1px solid rgb(var(--w) / 0.04)" }}>
                 <td className="px-4">
-                  <Link href={`/team/leads/${l.id}`} className="text-[#D8D8D8] hover:text-white">
+                  <Link href={`/team/leads/${l.id}`} className="text-[color:var(--hx-d8d8d8)] hover:text-white">
                     {l.business_name || "Unnamed lead"}
                   </Link>
                 </td>
-                {showRep && <td className="px-4 text-[#A1A1A6]">{l.assigned_rep_name || "Unassigned"}</td>}
-                <td className="px-4 text-[#A1A1A6]">{STAGE_LABEL[l.pipeline_stage] || l.pipeline_stage}</td>
-                <td className="px-4 text-[#A1A1A6]">{new Date(l.updated_at).toLocaleDateString()}</td>
-                <td className="px-4 text-[#A1A1A6]">{NEXT_ACTION[l.pipeline_stage] || "—"}</td>
+                {showRep && <td className="px-4 text-[color:var(--hx-a1a1a6)]">{l.assigned_rep_name || "Unassigned"}</td>}
+                <td className="px-4 text-[color:var(--hx-a1a1a6)]">{STAGE_LABEL[l.pipeline_stage] || l.pipeline_stage}</td>
+                <td className="px-4 text-[color:var(--hx-a1a1a6)]">{new Date(l.updated_at).toLocaleDateString()}</td>
+                <td className="px-4 text-[color:var(--hx-a1a1a6)]">{NEXT_ACTION[l.pipeline_stage] || "—"}</td>
               </tr>
             ))}
           </tbody>

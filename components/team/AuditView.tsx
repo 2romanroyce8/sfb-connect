@@ -39,7 +39,7 @@ function ScoreDial({ score }: { score: number }) {
   const radius = 84;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 70 ? "#30D158" : score >= 40 ? "#FFD60A" : "#FF453A";
+  const color = score >= 70 ? "var(--hx-30d158)" : score >= 40 ? "var(--hx-ffd60a)" : "var(--hx-ff453a)";
 
   return (
     <svg width="200" height="200" viewBox="0 0 200 200">
@@ -89,17 +89,17 @@ export default function AuditView({ lead, audit, categories, identityConfidence 
   if (!audit) {
     return (
       <div className="px-8 py-8 max-w-[700px]">
-        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6E6E73]">Business Readiness Audit</div>
-        <div className="text-[24px] font-semibold text-[#F5F5F7] mb-2">No audit has been generated yet.</div>
-        <div className="text-[13.5px] text-[#6E6E73] mb-4 max-w-[620px]">
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[color:var(--hx-6e6e73)]">Business Readiness Audit</div>
+        <div className="text-[24px] font-semibold text-[color:var(--hx-f5f5f7)] mb-2">No audit has been generated yet.</div>
+        <div className="text-[13.5px] text-[color:var(--hx-6e6e73)] mb-4 max-w-[620px]">
           Viewing this page does not create database records. Generate the audit explicitly after the lead has verified research evidence, so the score reflects SFB Connect' source-backed Business Readiness workflow.
         </div>
         {identityConfidence && identityConfidence !== "confirmed" && (
-          <div className="mb-4 rounded-[8px] px-3 py-2 text-[12.5px]" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.3)" }}>
+          <div className="mb-4 rounded-[8px] px-3 py-2 text-[12.5px]" style={{ background: "rgba(255,159,10,0.08)", color: "var(--hx-ff9f0a)", border: "1px solid rgba(255,159,10,0.3)" }}>
             Identity {identityConfidence.replace("_", " ")} — add stronger source evidence before generating, or have the owner explicitly override.
           </div>
         )}
-        {error && <p className="text-[13px] text-[#FF453A] mb-3">{error}</p>}
+        {error && <p className="text-[13px] text-[color:var(--hx-ff453a)] mb-3">{error}</p>}
         <button
           onClick={regenerate}
           disabled={loading}
@@ -118,25 +118,25 @@ export default function AuditView({ lead, audit, categories, identityConfidence 
 
   return (
     <div className="px-8 py-8 max-w-[900px]">
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6E6E73]">Business Readiness Audit</div>
-      <div className="text-[24px] font-semibold text-[#F5F5F7] mb-1">How ready is this business to be found by AI?</div>
-      <div className="text-[12.5px] text-[#6E6E73] mb-3 max-w-[720px]">
-        This is <span className="text-[#A1A1A6]">not</span> a measurement of whether ChatGPT or Perplexity currently recommend this business — that is the AI Visibility scan. It scores, from verified public evidence only, whether the business has the identity, knowledge, authority, location and machine-readability foundations those systems need.
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[color:var(--hx-6e6e73)]">Business Readiness Audit</div>
+      <div className="text-[24px] font-semibold text-[color:var(--hx-f5f5f7)] mb-1">How ready is this business to be found by AI?</div>
+      <div className="text-[12.5px] text-[color:var(--hx-6e6e73)] mb-3 max-w-[720px]">
+        This is <span className="text-[color:var(--hx-a1a1a6)]">not</span> a measurement of whether ChatGPT or Perplexity currently recommend this business — that is the AI Visibility scan. It scores, from verified public evidence only, whether the business has the identity, knowledge, authority, location and machine-readability foundations those systems need.
       </div>
       {identityConfidence && identityConfidence !== "confirmed" && (
-        <div className="mb-4 rounded-[8px] px-3 py-2 text-[12.5px]" style={{ background: "rgba(255,159,10,0.08)", color: "#FF9F0A", border: "1px solid rgba(255,159,10,0.3)" }}>
+        <div className="mb-4 rounded-[8px] px-3 py-2 text-[12.5px]" style={{ background: "rgba(255,159,10,0.08)", color: "var(--hx-ff9f0a)", border: "1px solid rgba(255,159,10,0.3)" }}>
           Identity {identityConfidence.replace("_", " ")} — this audit was generated under an owner override. Scores may describe the wrong business.
         </div>
       )}
-      <div className="flex items-center gap-3 text-[13px] text-[#A1A1A6] mb-8">
+      <div className="flex items-center gap-3 text-[13px] text-[color:var(--hx-a1a1a6)] mb-8">
         <span>{lead.business_name || "Unnamed lead"}</span>
         {lead.website && (
           <>
-            <span className="text-[#3A3A3C]">·</span>
+            <span className="text-[color:var(--hx-3a3a3c)]">·</span>
             <span>{lead.website.replace(/^https?:\/\//, "")}</span>
           </>
         )}
-        <span className="text-[#3A3A3C]">·</span>
+        <span className="text-[color:var(--hx-3a3a3c)]">·</span>
         <span>Last verified {new Date(audit.created_at).toLocaleDateString()}</span>
       </div>
 
@@ -148,15 +148,15 @@ export default function AuditView({ lead, audit, categories, identityConfidence 
           {categories.map((c) => (
             <div key={c.category}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[13px] text-[#F5F5F7]">{CATEGORY_LABEL[c.category] || c.category}</span>
-                <span className="text-[12.5px] text-[#A1A1A6]">{c.score}/20</span>
+                <span className="text-[13px] text-[color:var(--hx-f5f5f7)]">{CATEGORY_LABEL[c.category] || c.category}</span>
+                <span className="text-[12.5px] text-[color:var(--hx-a1a1a6)]">{c.score}/20</span>
               </div>
-              <div className="h-[6px] rounded-full overflow-hidden" style={{ background: "#151515" }}>
+              <div className="h-[6px] rounded-full overflow-hidden" style={{ background: "var(--hx-151515)" }}>
                 <div
                   className="h-full rounded-full"
                   style={{
                     width: `${(c.score / 20) * 100}%`,
-                    background: c.score >= 15 ? "#30D158" : c.score >= 8 ? "#FFD60A" : "#FF453A",
+                    background: c.score >= 15 ? "var(--hx-30d158)" : c.score >= 8 ? "var(--hx-ffd60a)" : "var(--hx-ff453a)",
                   }}
                 />
               </div>
@@ -172,14 +172,14 @@ export default function AuditView({ lead, audit, categories, identityConfidence 
         <Panel title="Recommended Improvements" items={fixes} color="#0A84FF" />
       </div>
 
-      {error && <p className="text-[13px] text-[#FF453A] mb-3">{error}</p>}
+      {error && <p className="text-[13px] text-[color:var(--hx-ff453a)] mb-3">{error}</p>}
 
       <div className="flex items-center gap-3">
         <button
           onClick={regenerate}
           disabled={loading}
-          className="h-[38px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[#A1A1A6] hover:text-white disabled:opacity-60"
-          style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+          className="h-[38px] px-4 inline-flex items-center gap-1.5 rounded-[8px] text-[13px] text-[color:var(--hx-a1a1a6)] hover:text-white disabled:opacity-60"
+          style={{ border: "1px solid rgb(var(--w) / 0.10)" }}
         >
           <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> {loading ? "Regenerating…" : "Regenerate Readiness Audit"}
         </button>
@@ -196,16 +196,16 @@ export default function AuditView({ lead, audit, categories, identityConfidence 
 
 function Panel({ title, items, color }: { title: string; items: string[]; color: string }) {
   return (
-    <div className="rounded-[12px] p-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="rounded-[12px] p-4" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
       <div className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color }}>
         {title}
       </div>
       {items.length === 0 ? (
-        <div className="text-[12.5px] text-[#6E6E73]">Nothing here.</div>
+        <div className="text-[12.5px] text-[color:var(--hx-6e6e73)]">Nothing here.</div>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {items.map((item, i) => (
-            <li key={i} className="text-[12.5px] text-[#A1A1A6] leading-snug">
+            <li key={i} className="text-[12.5px] text-[color:var(--hx-a1a1a6)] leading-snug">
               • {item}
             </li>
           ))}

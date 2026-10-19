@@ -25,24 +25,24 @@ export default async function AuditsPage() {
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Business Readiness Audits</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">{rows.length} audited lead{rows.length === 1 ? "" : "s"}</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Business Readiness Audits</div>
+        <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">{rows.length} audited lead{rows.length === 1 ? "" : "s"}</div>
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-[14px] p-10 text-center max-w-[520px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No audits yet</div>
-          <p className="text-[13px] text-[#A1A1A6]">
+        <div className="rounded-[14px] p-10 text-center max-w-[520px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No audits yet</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">
             Open a researched lead with a confirmed identity and generate its Business Readiness Audit — it'll show up here.
           </p>
         </div>
       ) : (
-        <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
           <table className="w-full text-[13px]">
             <thead>
-              <tr style={{ background: "#0A0A0A" }}>
+              <tr style={{ background: "var(--hx-0a0a0a)" }}>
                 {["Business", "Overall", "Identity", "Knowledge", "Authority", "Location", "Machine Read.", "Last Audited"].map((h) => (
-                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
+                  <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">
                     {h}
                   </th>
                 ))}
@@ -50,19 +50,19 @@ export default async function AuditsPage() {
             </thead>
             <tbody>
               {rows.map((a) => (
-                <tr key={a.id} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <tr key={a.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
                   <td className="px-4 py-3">
-                    <Link href={`/team/leads/${a.lead_id}/audit`} className="text-[#F5F5F7] hover:underline">
+                    <Link href={`/team/leads/${a.lead_id}/audit`} className="text-[color:var(--hx-f5f5f7)] hover:underline">
                       {leadMap[a.lead_id]?.business_name || "Unknown lead"}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-[#F5F5F7] font-medium">{a.overall_score}/100</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{a.identity_score}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{a.knowledge_score}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{a.authority_score}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{a.location_score}</td>
-                  <td className="px-4 py-3 text-[#A1A1A6]">{a.machine_readability_score}</td>
-                  <td className="px-4 py-3 text-[#6E6E73]">{new Date(a.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-f5f5f7)] font-medium">{a.overall_score}/100</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{a.identity_score}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{a.knowledge_score}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{a.authority_score}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{a.location_score}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{a.machine_readability_score}</td>
+                  <td className="px-4 py-3 text-[color:var(--hx-6e6e73)]">{new Date(a.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

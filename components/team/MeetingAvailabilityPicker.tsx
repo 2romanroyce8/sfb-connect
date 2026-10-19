@@ -10,7 +10,7 @@ type Selected = { startISO: string; endISO: string } | null;
 const DURATIONS = [15, 30, 45, 60];
 const GENERIC_TIMES = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"];
 
-const STATUS_COLOR: Record<string, string> = { AVAILABLE: "#30D158", LIMITED: "#FFD60A" };
+const STATUS_COLOR: Record<string, string> = { AVAILABLE: "var(--hx-30d158)", LIMITED: "var(--hx-ffd60a)" };
 
 export default function MeetingAvailabilityPicker({
   leadId,
@@ -118,7 +118,7 @@ export default function MeetingAvailabilityPicker({
   }
 
   return (
-    <div style={{ width: "100%", background: "#121212", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, overflow: "hidden" }}>
+    <div style={{ width: "100%", background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.08)", borderRadius: 20, overflow: "hidden" }}>
       {expanded ? (
         <ExpandedMonthCalendar
           calMonth={calMonth}
@@ -142,10 +142,10 @@ export default function MeetingAvailabilityPicker({
                     height: 32,
                     padding: "0 12px",
                     borderRadius: 8,
-                    background: quickFilter === key ? "#1F1F1F" : "#151515",
-                    border: `1px solid ${quickFilter === key ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)"}`,
+                    background: quickFilter === key ? "var(--hx-1f1f1f)" : "var(--hx-151515)",
+                    border: `1px solid ${quickFilter === key ? "rgb(var(--w) / 0.16)" : "rgb(var(--w) / 0.06)"}`,
                     fontSize: 11,
-                    color: quickFilter === key ? "#F5F5F7" : "#A1A1A6",
+                    color: quickFilter === key ? "var(--hx-f5f5f7)" : "var(--hx-a1a1a6)",
                   }}
                 >
                   {label}
@@ -155,7 +155,7 @@ export default function MeetingAvailabilityPicker({
           </div>
 
           {googleConnected === false && (
-            <div className="mx-0.5 mb-2 text-[11.5px] rounded-[8px] p-2.5" style={{ background: "rgba(255,214,10,0.08)", color: "#FFD60A" }}>
+            <div className="mx-0.5 mb-2 text-[11.5px] rounded-[8px] p-2.5" style={{ background: "rgba(255,214,10,0.08)", color: "var(--hx-ffd60a)" }}>
               Google Calendar isn't connected — availability below is not verified.{" "}
               <a href="/team/integrations" className="underline">
                 Connect it
@@ -179,12 +179,12 @@ export default function MeetingAvailabilityPicker({
               <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto", padding: "0 2px" }}>
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 size={18} className="animate-spin text-[#6E6E73]" />
+                    <Loader2 size={18} className="animate-spin text-[color:var(--hx-6e6e73)]" />
                   </div>
                 ) : googleConnected === false ? (
-                  <div className="text-[12.5px] text-[#6E6E73] px-1 py-3">Connect Google Calendar to see upcoming availability, or choose a date manually below.</div>
+                  <div className="text-[12.5px] text-[color:var(--hx-6e6e73)] px-1 py-3">Connect Google Calendar to see upcoming availability, or choose a date manually below.</div>
                 ) : filteredSlots.length === 0 ? (
-                  <div className="text-[12.5px] text-[#6E6E73] px-1 py-3">No open slots found in this range — try "Choose another date".</div>
+                  <div className="text-[12.5px] text-[color:var(--hx-6e6e73)] px-1 py-3">No open slots found in this range — try "Choose another date".</div>
                 ) : (
                   filteredSlots.map((s) => {
                     const isSelected = selected?.startISO === s.startISO;
@@ -201,24 +201,24 @@ export default function MeetingAvailabilityPicker({
                           alignItems: "center",
                           gap: 12,
                           padding: "10px 12px 10px 16px",
-                          background: isSelected ? "#1C1C1C" : "#151515",
-                          border: `1px solid ${isSelected ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.055)"}`,
+                          background: isSelected ? "var(--hx-1c1c1c)" : "var(--hx-151515)",
+                          border: `1px solid ${isSelected ? "rgb(var(--w) / 0.16)" : "rgb(var(--w) / 0.055)"}`,
                           borderRadius: 13,
                           cursor: "pointer",
                           transition: "background 150ms ease, border-color 150ms ease",
                           textAlign: "left",
                         }}
                       >
-                        {isSelected && <span style={{ position: "absolute", left: 0, top: 10, bottom: 10, width: 3, background: "#30D158", borderRadius: 3 }} />}
+                        {isSelected && <span style={{ position: "absolute", left: 0, top: 10, bottom: 10, width: 3, background: "var(--hx-30d158)", borderRadius: 3 }} />}
                         <div className="flex flex-col items-center justify-center">
-                          <span style={{ fontSize: 18, fontWeight: 600, color: isSelected ? "#FFFFFF" : "#F5F5F7" }}>{s.dayNumber}</span>
-                          <span style={{ fontSize: 10, fontWeight: 500, textTransform: "uppercase", color: "#6E6E73", marginTop: 2 }}>{s.monthAbbr}</span>
+                          <span style={{ fontSize: 18, fontWeight: 600, color: isSelected ? "var(--hx-ffffff)" : "var(--hx-f5f5f7)" }}>{s.dayNumber}</span>
+                          <span style={{ fontSize: 10, fontWeight: 500, textTransform: "uppercase", color: "var(--hx-6e6e73)", marginTop: 2 }}>{s.monthAbbr}</span>
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 500, color: isSelected ? "#FFFFFF" : "#ECECEC" }}>
+                          <div style={{ fontSize: 14, fontWeight: 500, color: isSelected ? "var(--hx-ffffff)" : "var(--hx-ececec)" }}>
                             {s.weekday} · {s.timeLabel}
                           </div>
-                          <div style={{ fontSize: 11, color: "#77777C", marginTop: 4, display: "flex", alignItems: "center", gap: 5 }}>
+                          <div style={{ fontSize: 11, color: "var(--hx-77777c)", marginTop: 4, display: "flex", alignItems: "center", gap: 5 }}>
                             <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_COLOR[s.status] }} />
                             {duration} min · {s.status === "AVAILABLE" ? "Available" : "Limited"}
                           </div>
@@ -234,7 +234,7 @@ export default function MeetingAvailabilityPicker({
                 type="button"
                 onClick={() => setExpanded(true)}
                 className="flex items-center gap-1.5"
-                style={{ marginTop: 10, padding: "8px 6px", fontSize: 12, color: "#A1A1A6" }}
+                style={{ marginTop: 10, padding: "8px 6px", fontSize: 12, color: "var(--hx-a1a1a6)" }}
               >
                 <CalendarDays size={13} /> Choose another date
               </button>
@@ -243,7 +243,7 @@ export default function MeetingAvailabilityPicker({
 
           {/* Duration selector */}
           <div style={{ marginTop: 12, padding: "0 2px" }}>
-            <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "#6E6E73", marginBottom: 6 }}>Duration</div>
+            <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--hx-6e6e73)", marginBottom: 6 }}>Duration</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0,1fr))", gap: 8 }}>
               {DURATIONS.map((d) => (
                 <button
@@ -252,11 +252,11 @@ export default function MeetingAvailabilityPicker({
                   onClick={() => onDurationChange(d)}
                   style={{
                     height: 38,
-                    background: duration === d ? "#F5F5F7" : "#151515",
-                    border: `1px solid ${duration === d ? "#F5F5F7" : "rgba(255,255,255,0.06)"}`,
+                    background: duration === d ? "var(--hx-f5f5f7)" : "var(--hx-151515)",
+                    border: `1px solid ${duration === d ? "var(--hx-f5f5f7)" : "rgb(var(--w) / 0.06)"}`,
                     borderRadius: 10,
                     fontSize: 12,
-                    color: duration === d ? "#111111" : "#D1D1D6",
+                    color: duration === d ? "var(--hx-111111)" : "var(--hx-d1d1d6)",
                     fontWeight: duration === d ? 600 : 400,
                   }}
                 >
@@ -266,7 +266,7 @@ export default function MeetingAvailabilityPicker({
             </div>
           </div>
 
-          <div style={{ marginTop: 10, padding: "0 4px", fontSize: 11, color: "#6E6E73" }}>Timezone: {timeZone}</div>
+          <div style={{ marginTop: 10, padding: "0 4px", fontSize: 11, color: "var(--hx-6e6e73)" }}>Timezone: {timeZone}</div>
         </div>
       )}
     </div>
@@ -294,18 +294,18 @@ function CustomDayTimeGrid({
   return (
     <div style={{ padding: "4px 2px" }}>
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={onBack} className="flex items-center gap-1 text-[11.5px] text-[#A1A1A6] hover:text-white">
+        <button type="button" onClick={onBack} className="flex items-center gap-1 text-[11.5px] text-[color:var(--hx-a1a1a6)] hover:text-white">
           <ChevronLeft size={13} /> Back
         </button>
-        <div style={{ fontSize: 13, color: "#F5F5F7" }}>{dateLabel}</div>
+        <div style={{ fontSize: 13, color: "var(--hx-f5f5f7)" }}>{dateLabel}</div>
       </div>
-      {!verified && <div className="text-[11px] text-[#6E6E73] mb-2 px-0.5">Not verified against a calendar — pick a common time.</div>}
+      {!verified && <div className="text-[11px] text-[color:var(--hx-6e6e73)] mb-2 px-0.5">Not verified against a calendar — pick a common time.</div>}
       {loading ? (
         <div className="flex items-center justify-center py-6">
-          <Loader2 size={16} className="animate-spin text-[#6E6E73]" />
+          <Loader2 size={16} className="animate-spin text-[color:var(--hx-6e6e73)]" />
         </div>
       ) : slots.length === 0 ? (
-        <div className="text-[12px] text-[#6E6E73] py-4 px-1">No open times found this day.</div>
+        <div className="text-[12px] text-[color:var(--hx-6e6e73)] py-4 px-1">No open times found this day.</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 8, maxHeight: 220, overflowY: "auto" }}>
           {slots.map((s) => {
@@ -322,11 +322,11 @@ function CustomDayTimeGrid({
                 onClick={() => onPick(s)}
                 style={{
                   height: 42,
-                  background: isSelected ? "#F5F5F7" : "#151515",
-                  border: `1px solid ${isSelected ? "#F5F5F7" : "rgba(255,255,255,0.06)"}`,
+                  background: isSelected ? "var(--hx-f5f5f7)" : "var(--hx-151515)",
+                  border: `1px solid ${isSelected ? "var(--hx-f5f5f7)" : "rgb(var(--w) / 0.06)"}`,
                   borderRadius: 10,
                   fontSize: 12,
-                  color: isSelected ? "#111111" : "#D1D1D6",
+                  color: isSelected ? "var(--hx-111111)" : "var(--hx-d1d1d6)",
                 }}
               >
                 {s.timeLabel}
@@ -372,33 +372,33 @@ function ExpandedMonthCalendar({
 
   return (
     <div>
-      <div style={{ height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", background: "#171717", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <button type="button" onClick={onClose} className="flex items-center gap-1 text-[11.5px] text-[#A1A1A6] hover:text-white">
+      <div style={{ height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", background: "var(--hx-171717)", borderBottom: "1px solid rgb(var(--w) / 0.06)" }}>
+        <button type="button" onClick={onClose} className="flex items-center gap-1 text-[11.5px] text-[color:var(--hx-a1a1a6)] hover:text-white">
           <ChevronLeft size={13} /> Back
         </button>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5F7" }}>{monthLabel}</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--hx-f5f5f7)" }}>{monthLabel}</div>
         <div style={{ display: "flex", gap: 6 }}>
           <button
             type="button"
             onClick={() => setCalMonth(calMonth.month === 0 ? { year: calMonth.year - 1, month: 11 } : { year: calMonth.year, month: calMonth.month - 1 })}
-            style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "1px solid rgb(var(--w) / 0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             <ChevronLeft size={15} color="#A1A1A6" />
           </button>
           <button
             type="button"
             onClick={() => setCalMonth(calMonth.month === 11 ? { year: calMonth.year + 1, month: 0 } : { year: calMonth.year, month: calMonth.month + 1 })}
-            style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "1px solid rgb(var(--w) / 0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             <ChevronRight size={15} color="#A1A1A6" />
           </button>
         </div>
       </div>
 
-      <div style={{ background: "#121212", padding: 16 }}>
+      <div style={{ background: "var(--hx-121212)", padding: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 4 }}>
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <div key={i} style={{ fontSize: 10, fontWeight: 600, color: "#66666A", textAlign: "center" }}>
+            <div key={i} style={{ fontSize: 10, fontWeight: 600, color: "var(--hx-66666a)", textAlign: "center" }}>
               {d}
             </div>
           ))}
@@ -418,10 +418,10 @@ function ExpandedMonthCalendar({
                   height: 38,
                   minWidth: 0,
                   background: "transparent",
-                  border: isToday ? "1px solid rgba(255,255,255,0.15)" : "none",
+                  border: isToday ? "1px solid rgb(var(--w) / 0.15)" : "none",
                   borderRadius: 9,
                   fontSize: 12,
-                  color: past ? "#454549" : "#D1D1D6",
+                  color: past ? "var(--hx-454549)" : "var(--hx-d1d1d6)",
                   cursor: past ? "not-allowed" : "pointer",
                 }}
               >

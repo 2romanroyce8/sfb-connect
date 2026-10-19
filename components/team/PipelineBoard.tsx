@@ -19,18 +19,18 @@ type Lead = {
 };
 
 const STAGES: { value: string; label: string; color: string }[] = [
-  { value: "demo_requested", label: "Book Demo (Pending)", color: "#FFD60A" },
-  { value: "new", label: "New", color: "#46B5FF" },
-  { value: "researching", label: "Researching", color: "#6E7BFF" },
-  { value: "ready_to_call", label: "Ready to Call", color: "#30D158" },
-  { value: "contacted", label: "Contacted", color: "#20C7B7" },
-  { value: "interested", label: "Interested", color: "#5AC8FA" },
-  { value: "follow_up", label: "Follow-Up", color: "#FF9F0A" },
-  { value: "meeting_booked", label: "Meeting Booked", color: "#BF5AF2" },
-  { value: "proposal", label: "Proposal", color: "#FF9F0A" },
-  { value: "won", label: "Won", color: "#30D158" },
-  { value: "lost", label: "Lost", color: "#FF453A" },
-  { value: "nurture", label: "Nurture", color: "#6E6E73" },
+  { value: "demo_requested", label: "Book Demo (Pending)", color: "var(--hx-ffd60a)" },
+  { value: "new", label: "New", color: "var(--hx-46b5ff)" },
+  { value: "researching", label: "Researching", color: "var(--hx-6e7bff)" },
+  { value: "ready_to_call", label: "Ready to Call", color: "var(--hx-30d158)" },
+  { value: "contacted", label: "Contacted", color: "var(--hx-20c7b7)" },
+  { value: "interested", label: "Interested", color: "var(--hx-5ac8fa)" },
+  { value: "follow_up", label: "Follow-Up", color: "var(--hx-ff9f0a)" },
+  { value: "meeting_booked", label: "Meeting Booked", color: "var(--hx-bf5af2)" },
+  { value: "proposal", label: "Proposal", color: "var(--hx-ff9f0a)" },
+  { value: "won", label: "Won", color: "var(--hx-30d158)" },
+  { value: "lost", label: "Lost", color: "var(--hx-ff453a)" },
+  { value: "nurture", label: "Nurture", color: "var(--hx-6e6e73)" },
 ];
 
 const WON_PLANS: { key: string; label: string; price: string }[] = [
@@ -53,11 +53,11 @@ const OFFER_LABEL: Record<string, string> = {
 // used everywhere else in the CRM to rank "next best lead", just surfaced
 // here as a visual strip instead of a raw number.
 function priorityFor(score: number | null): { label: string; color: string } {
-  if (score == null) return { label: "UNSCORED", color: "#6E6E73" };
-  if (score >= 80) return { label: "URGENT", color: "#FF4D4D" };
-  if (score >= 60) return { label: "HIGH", color: "#FF9F0A" };
-  if (score >= 30) return { label: "NORMAL", color: "#46B5FF" };
-  return { label: "LOW", color: "#3CBF73" };
+  if (score == null) return { label: "UNSCORED", color: "var(--hx-6e6e73)" };
+  if (score >= 80) return { label: "URGENT", color: "var(--hx-ff4d4d)" };
+  if (score >= 60) return { label: "HIGH", color: "var(--hx-ff9f0a)" };
+  if (score >= 30) return { label: "NORMAL", color: "var(--hx-46b5ff)" };
+  return { label: "LOW", color: "var(--hx-3cbf73)" };
 }
 
 function timeAgo(iso: string) {
@@ -145,9 +145,9 @@ export default function PipelineBoard({
   if (leads.length === 0) {
     return (
       <div className="px-8 py-8">
-        <div className="rounded-[14px] p-10 text-center max-w-[480px] mx-auto" style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No leads yet</div>
-          <p className="text-[13px] text-[#A1A1A6] mb-5">Research your first business to start filling the pipeline.</p>
+        <div className="rounded-[14px] p-10 text-center max-w-[480px] mx-auto" style={{ background: "var(--hx-111111)", border: "1px solid rgb(var(--w) / 0.06)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No leads yet</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)] mb-5">Research your first business to start filling the pipeline.</p>
           <Link href="/team/leads/import" className="inline-flex h-[38px] px-4 items-center rounded-[8px] bg-white text-black text-[12.5px] font-semibold">
             Research a Business
           </Link>
@@ -157,24 +157,24 @@ export default function PipelineBoard({
   }
 
   return (
-    <div className="px-6 py-6" style={{ background: "#0A0A0A", minHeight: "100vh" }}>
+    <div className="px-6 py-6" style={{ background: "var(--hx-0a0a0a)", minHeight: "100vh" }}>
       {/* toolbar */}
-      <div className="inline-flex items-center rounded-[14px] overflow-hidden mb-5" style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 24px rgba(0,0,0,0.18)" }}>
-        <div className="h-[46px] px-5 flex items-center gap-2" style={{ background: "#1B1B1B", color: "#F3F3F3", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className="inline-flex items-center rounded-[14px] overflow-hidden mb-5" style={{ background: "var(--hx-111111)", border: "1px solid rgb(var(--w) / 0.07)", boxShadow: "0 8px 24px rgba(0,0,0,0.18)" }}>
+        <div className="h-[46px] px-5 flex items-center gap-2" style={{ background: "var(--hx-1b1b1b)", color: "var(--hx-f3f3f3)", borderRight: "1px solid rgb(var(--w) / 0.05)" }}>
           <LayoutGrid size={16} color="#30D158" /> <span className="text-[13.5px] font-medium">Pipeline view</span>
         </div>
         <div className="relative">
-          <button onClick={() => { setShowFilter((v) => !v); setShowSort(false); }} className="h-[46px] px-5 flex items-center gap-2 text-[13.5px]" style={{ color: repFilter ? "#F3F3F3" : "#AFAFAF", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+          <button onClick={() => { setShowFilter((v) => !v); setShowSort(false); }} className="h-[46px] px-5 flex items-center gap-2 text-[13.5px]" style={{ color: repFilter ? "var(--hx-f3f3f3)" : "var(--hx-afafaf)", borderRight: "1px solid rgb(var(--w) / 0.05)" }}>
             <ListFilter size={16} /> Filter{repFilter ? `: ${repNames[repFilter] || "Rep"}` : ""}
           </button>
           {showFilter && (
-            <div className="absolute left-0 mt-1 z-20 rounded-[10px] p-1.5" style={{ background: "#1B1B1B", border: "1px solid rgba(255,255,255,0.1)", width: 200 }}>
-              <button onClick={() => { setRepFilter(""); setShowFilter(false); }} className="w-full text-left px-2.5 py-2 rounded-[6px] text-[12.5px] text-[#A1A1A6] hover:bg-[#252525]">
+            <div className="absolute left-0 mt-1 z-20 rounded-[10px] p-1.5" style={{ background: "var(--hx-1b1b1b)", border: "1px solid rgb(var(--w) / 0.1)", width: 200 }}>
+              <button onClick={() => { setRepFilter(""); setShowFilter(false); }} className="w-full text-left px-2.5 py-2 rounded-[6px] text-[12.5px] text-[color:var(--hx-a1a1a6)] hover:bg-[color:var(--hx-252525)]">
                 All Reps
               </button>
               {isOwner &&
                 Object.entries(repNames).map(([id, name]) => (
-                  <button key={id} onClick={() => { setRepFilter(id); setShowFilter(false); }} className="w-full text-left px-2.5 py-2 rounded-[6px] text-[12.5px] text-[#A1A1A6] hover:bg-[#252525]">
+                  <button key={id} onClick={() => { setRepFilter(id); setShowFilter(false); }} className="w-full text-left px-2.5 py-2 rounded-[6px] text-[12.5px] text-[color:var(--hx-a1a1a6)] hover:bg-[color:var(--hx-252525)]">
                     {name}
                   </button>
                 ))}
@@ -182,13 +182,13 @@ export default function PipelineBoard({
           )}
         </div>
         <div className="relative">
-          <button onClick={() => { setShowSort((v) => !v); setShowFilter(false); }} className="h-[46px] px-5 flex items-center gap-2 text-[13.5px]" style={{ color: "#AFAFAF" }}>
+          <button onClick={() => { setShowSort((v) => !v); setShowFilter(false); }} className="h-[46px] px-5 flex items-center gap-2 text-[13.5px]" style={{ color: "var(--hx-afafaf)" }}>
             <ArrowUpDown size={16} /> Sort: {SORTS.find((s) => s.key === sort)?.label}
           </button>
           {showSort && (
-            <div className="absolute left-0 mt-1 z-20 rounded-[10px] p-1.5" style={{ background: "#1B1B1B", border: "1px solid rgba(255,255,255,0.1)", width: 200 }}>
+            <div className="absolute left-0 mt-1 z-20 rounded-[10px] p-1.5" style={{ background: "var(--hx-1b1b1b)", border: "1px solid rgb(var(--w) / 0.1)", width: 200 }}>
               {SORTS.map((s) => (
-                <button key={s.key} onClick={() => { setSort(s.key); setShowSort(false); }} className="w-full text-left px-2.5 py-2 rounded-[6px] text-[12.5px] text-[#A1A1A6] hover:bg-[#252525]">
+                <button key={s.key} onClick={() => { setSort(s.key); setShowSort(false); }} className="w-full text-left px-2.5 py-2 rounded-[6px] text-[12.5px] text-[color:var(--hx-a1a1a6)] hover:bg-[color:var(--hx-252525)]">
                   {s.label}
                 </button>
               ))}
@@ -222,15 +222,15 @@ export default function PipelineBoard({
                 }
               }}
               className="w-[300px] shrink-0"
-              style={{ background: dragOverStage === stage.value ? "#141414" : "transparent", borderRadius: 12 }}
+              style={{ background: dragOverStage === stage.value ? "var(--hx-141414)" : "transparent", borderRadius: 12 }}
             >
               <div className="flex items-center gap-2.5 px-2 mb-1">
                 <span className="rounded-full" style={{ width: 6, height: 22, background: stage.color }} />
-                <span className="text-[15px] font-medium uppercase tracking-tight text-[#F5F5F7]">{stage.label}</span>
+                <span className="text-[15px] font-medium uppercase tracking-tight text-[color:var(--hx-f5f5f7)]">{stage.label}</span>
               </div>
               <div className="flex items-center justify-between px-2 mb-3">
-                <span className="text-[12px] text-[#B6B6B6]">{cards.length} lead{cards.length === 1 ? "" : "s"}</span>
-                {latestUpdate && <span className="text-[11.5px] text-[#A2A2A2]">Updated {timeAgo(latestUpdate)}</span>}
+                <span className="text-[12px] text-[color:var(--hx-b6b6b6)]">{cards.length} lead{cards.length === 1 ? "" : "s"}</span>
+                {latestUpdate && <span className="text-[11.5px] text-[color:var(--hx-a2a2a2)]">Updated {timeAgo(latestUpdate)}</span>}
               </div>
 
               <div className="flex flex-col gap-2.5 min-h-[40px] px-1">
@@ -246,36 +246,36 @@ export default function PipelineBoard({
                       }}
                       onDragEnd={() => setDragging(null)}
                       className="rounded-[14px] overflow-hidden cursor-grab active:cursor-grabbing"
-                      style={{ background: "#151515", border: "1px solid rgba(255,255,255,0.055)", opacity: dragging === lead.id ? 0.4 : 1, boxShadow: "0 10px 26px rgba(0,0,0,0.18)" }}
+                      style={{ background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.055)", opacity: dragging === lead.id ? 0.4 : 1, boxShadow: "0 10px 26px rgba(0,0,0,0.18)" }}
                     >
-                      <div className="h-[26px] flex items-center justify-center text-[11px] font-semibold uppercase tracking-wide" style={{ background: priority.color, color: "#FFFFFF" }}>
+                      <div className="h-[26px] flex items-center justify-center text-[11px] font-semibold uppercase tracking-wide" style={{ background: priority.color, color: "var(--hx-ffffff)" }}>
                         {priority.label}
                       </div>
-                      <div className="m-2 p-3 rounded-[10px]" style={{ border: "1px dashed rgba(255,255,255,0.16)" }}>
-                        <Link href={`/team/leads/${lead.id}`} className="text-[14.5px] font-medium text-[#F5F5F7] hover:underline block truncate">
+                      <div className="m-2 p-3 rounded-[10px]" style={{ border: "1px dashed rgb(var(--w) / 0.16)" }}>
+                        <Link href={`/team/leads/${lead.id}`} className="text-[14.5px] font-medium text-[color:var(--hx-f5f5f7)] hover:underline block truncate">
                           {lead.business_name || "Unnamed lead"}
                         </Link>
-                        {lead.category && <div className="text-[11.5px] text-[#A4A4A4] mt-1 truncate">{lead.category}</div>}
+                        {lead.category && <div className="text-[11.5px] text-[color:var(--hx-a4a4a4)] mt-1 truncate">{lead.category}</div>}
 
                         <div className="flex items-center justify-between mt-3">
                           <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-[10px] font-bold">
                             {isOwner && lead.assigned_rep ? (repNames[lead.assigned_rep] || "?").slice(0, 1).toUpperCase() : (lead.business_name || "?").slice(0, 1).toUpperCase()}
                           </div>
                           {lead.recommended_offer && (
-                            <span className="text-[10.5px] px-2 py-1 rounded-[6px]" style={{ background: "#2D2D2D", color: "#F2F2F2" }}>
+                            <span className="text-[10.5px] px-2 py-1 rounded-[6px]" style={{ background: "var(--hx-2d2d2d)", color: "var(--hx-f2f2f2)" }}>
                               {OFFER_LABEL[lead.recommended_offer]}
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 px-3 pb-2.5 text-[11px] text-[#C6C6C6]">
+                      <div className="flex items-center gap-3 px-3 pb-2.5 text-[11px] text-[color:var(--hx-c6c6c6)]">
                         <span className="flex items-center gap-1">
                           <StickyNote size={12} /> {noteCounts[lead.id] || 0}
                         </span>
                         <span className="flex items-center gap-1">
                           <Link2 size={12} /> {sourceCounts[lead.id] || 0}
                         </span>
-                        <span className="ml-auto text-[#C9C9C9]">{timeAgo(lead.updated_at)}</span>
+                        <span className="ml-auto text-[color:var(--hx-c9c9c9)]">{timeAgo(lead.updated_at)}</span>
                       </div>
                     </div>
                   );
@@ -289,16 +289,16 @@ export default function PipelineBoard({
       {wonPrompt && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ background: "rgba(0,0,0,0.6)" }}
+          style={{ background: "rgb(var(--k) / 0.6)" }}
           onClick={() => !savingWon && setWonPrompt(null)}
         >
           <div
             className="w-full max-w-[380px] rounded-[16px] p-6"
-            style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 90px rgba(0,0,0,0.5)" }}
+            style={{ background: "var(--hx-141414)", border: "1px solid rgb(var(--w) / 0.1)", boxShadow: "0 30px 90px rgba(0,0,0,0.5)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[15px] font-semibold text-[#F5F5F7] mb-1">Which plan did they buy?</div>
-            <p className="text-[12.5px] text-[#A1A1A6] mb-5">
+            <div className="text-[15px] font-semibold text-[color:var(--hx-f5f5f7)] mb-1">Which plan did they buy?</div>
+            <p className="text-[12.5px] text-[color:var(--hx-a1a1a6)] mb-5">
               {wonPrompt.businessName || "This lead"} will be marked Won and a real revenue event will be recorded.
             </p>
             <div className="flex flex-col gap-2">
@@ -308,18 +308,18 @@ export default function PipelineBoard({
                   disabled={savingWon}
                   onClick={() => confirmWon(p.key)}
                   className="flex items-center justify-between px-4 h-[46px] rounded-[10px] text-left transition-colors disabled:opacity-50"
-                  style={{ background: "#1B1B1B", border: "1px solid rgba(255,255,255,0.08)" }}
+                  style={{ background: "var(--hx-1b1b1b)", border: "1px solid rgb(var(--w) / 0.08)" }}
                 >
-                  <span className="text-[13.5px] text-[#F5F5F7]">{p.label}</span>
-                  <span className="text-[12px] text-[#6E6E73]">{p.price}</span>
+                  <span className="text-[13.5px] text-[color:var(--hx-f5f5f7)]">{p.label}</span>
+                  <span className="text-[12px] text-[color:var(--hx-6e6e73)]">{p.price}</span>
                 </button>
               ))}
             </div>
             <button
               disabled={savingWon}
               onClick={() => setWonPrompt(null)}
-              className="w-full mt-4 h-[38px] rounded-[8px] text-[12.5px] text-[#A1A1A6] disabled:opacity-50"
-              style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+              className="w-full mt-4 h-[38px] rounded-[8px] text-[12.5px] text-[color:var(--hx-a1a1a6)] disabled:opacity-50"
+              style={{ border: "1px solid rgb(var(--w) / 0.08)" }}
             >
               Cancel
             </button>

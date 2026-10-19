@@ -15,7 +15,7 @@ export default async function IntegrationRegistryPage() {
   const registry = await loadIntegrationRegistry();
   return (
     <div className="px-8 py-8">
-      <Link href="/team/integrations" className="text-[12px] text-[#A1A1A6] underline underline-offset-2">← Integrations</Link>
+      <Link href="/team/integrations" className="text-[12px] text-[color:var(--hx-a1a1a6)] underline underline-offset-2">← Integrations</Link>
       <IntegrationRegistryList items={registry} />
     </div>
   );

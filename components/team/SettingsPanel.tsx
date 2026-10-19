@@ -7,6 +7,7 @@ import ConnectedAgentsSection from "./ConnectedAgentsSection";
 import DangerZoneSection from "./DangerZoneSection";
 import AgentProgramSection from "./AgentProgramSection";
 import TextAlertsSection from "./TextAlertsSection";
+import ThemeToggle from "@/components/ThemeToggle";
 import HomepageVideoSection from "./HomepageVideoSection";
 
 type Profile = {
@@ -21,8 +22,8 @@ type Profile = {
 
 function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
-    <div id={id} className="rounded-[12px] p-5 mb-4 scroll-mt-6" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-      <div className="text-[13px] font-semibold text-[#F5F5F7] mb-3">{title}</div>
+    <div id={id} className="rounded-[12px] p-5 mb-4 scroll-mt-6" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+      <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)] mb-3">{title}</div>
       {children}
     </div>
   );
@@ -171,20 +172,20 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
   return (
     <div className="px-8 py-8 max-w-[600px]">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Settings</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Settings</div>
       </div>
 
       <Section title="Profile" id="profile">
         <div className="flex flex-col gap-3">
           <div>
-            <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Photo</label>
+            <label className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Photo</label>
             <div className="flex items-center gap-4 mt-1.5">
-              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "#1c1c1e", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 flex items-center justify-center" style={{ background: "var(--hx-1c1c1e)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                 {avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarUrl} alt="Your profile photo" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[20px] font-semibold text-[#F5F5F7]">
+                  <span className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">
                     {(fullName || profile.email || "?").slice(0, 1).toUpperCase()}
                   </span>
                 )}
@@ -202,14 +203,14 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
                     <button
                       onClick={removeAvatar}
                       disabled={uploadingAvatar}
-                      className="h-[32px] px-3.5 rounded-[8px] text-[12px] text-[#A1A1A6] disabled:opacity-60"
-                      style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)" }}
+                      className="h-[32px] px-3.5 rounded-[8px] text-[12px] text-[color:var(--hx-a1a1a6)] disabled:opacity-60"
+                      style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)" }}
                     >
                       Remove
                     </button>
                   )}
                 </div>
-                {avatarMsg && <span className="text-[12px] text-[#A1A1A6]">{avatarMsg}</span>}
+                {avatarMsg && <span className="text-[12px] text-[color:var(--hx-a1a1a6)]">{avatarMsg}</span>}
               </div>
               <input
                 ref={fileInputRef}
@@ -225,17 +226,17 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
             </div>
           </div>
           <div>
-            <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Full Name</label>
+            <label className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Full Name</label>
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="w-full h-[38px] rounded-[8px] px-3 text-[13px] outline-none mt-1"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             />
           </div>
           <div>
-            <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Email</label>
-            <div className="h-[38px] flex items-center px-3 rounded-[8px] text-[13px] text-[#6E6E73] mt-1" style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <label className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Email</label>
+            <div className="h-[38px] flex items-center px-3 rounded-[8px] text-[13px] text-[color:var(--hx-6e6e73)] mt-1" style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)" }}>
               {profile.email}
             </div>
           </div>
@@ -243,29 +244,29 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
             <button onClick={saveName} disabled={savingName} className="h-[34px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold disabled:opacity-60 self-start">
               {savingName ? "Saving…" : "Save"}
             </button>
-            {nameMsg && <span className="text-[12px] text-[#A1A1A6]">{nameMsg}</span>}
+            {nameMsg && <span className="text-[12px] text-[color:var(--hx-a1a1a6)]">{nameMsg}</span>}
           </div>
         </div>
       </Section>
 
       <Section title="Workspace">
-        <div className="text-[13px] text-[#A1A1A6] capitalize">Role: {profile.team_role.replace(/_/g, " ")}</div>
-        <div className="text-[13px] text-[#A1A1A6] capitalize mt-1">Status: {profile.team_status}</div>
-        <div className="text-[13px] text-[#A1A1A6] mt-1">Member since {new Date(profile.created_at).toLocaleDateString()}</div>
+        <div className="text-[13px] text-[color:var(--hx-a1a1a6)] capitalize">Role: {profile.team_role.replace(/_/g, " ")}</div>
+        <div className="text-[13px] text-[color:var(--hx-a1a1a6)] capitalize mt-1">Status: {profile.team_status}</div>
+        <div className="text-[13px] text-[color:var(--hx-a1a1a6)] mt-1">Member since {new Date(profile.created_at).toLocaleDateString()}</div>
       </Section>
 
       <Section title="My Timezone" id="timezone">
-        <p className="text-[12.5px] text-[#6E6E73] leading-relaxed mb-3">
+        <p className="text-[12.5px] text-[color:var(--hx-6e6e73)] leading-relaxed mb-3">
           Every follow-up, meeting, and calendar time you see is shown in this timezone. You'll never need to convert a
           client's requested time yourself — just enter it as "business time" and pick their state, and SFB does the math.
         </p>
         <div>
-          <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">Timezone</label>
+          <label className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Timezone</label>
           <select
             value={homeTimezone}
             onChange={(e) => setHomeTimezone(e.target.value)}
             className="w-full h-[38px] rounded-[8px] px-3 text-[13px] outline-none mt-1"
-            style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+            style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
           >
             {COMMON_TIMEZONES.map((tz) => (
               <option key={tz.iana} value={tz.iana}>
@@ -278,7 +279,7 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
           <button onClick={saveTimezone} disabled={savingTimezone} className="h-[34px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold disabled:opacity-60 self-start">
             {savingTimezone ? "Saving…" : "Save"}
           </button>
-          {timezoneMsg && <span className="text-[12px] text-[#A1A1A6]">{timezoneMsg}</span>}
+          {timezoneMsg && <span className="text-[12px] text-[color:var(--hx-a1a1a6)]">{timezoneMsg}</span>}
         </div>
       </Section>
 
@@ -286,24 +287,27 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
         <TextAlertsSection />
       </Section>
 
+      <Section title="Appearance" id="appearance">
+        <div className="flex flex-col gap-3"><p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Light or dark for the whole app on this device — the public site, your dashboard and the customer portal. &ldquo;System&rdquo; follows your OS setting.</p><ThemeToggle /></div>
+      </Section>
       <Section title="Security" id="security">
         <div className="flex flex-col gap-3">
           <div>
-            <label className="text-[11px] uppercase tracking-wide text-[#6E6E73]">New Password</label>
+            <label className="text-[11px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">New Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 8 characters"
               className="w-full h-[38px] rounded-[8px] px-3 text-[13px] outline-none mt-1"
-              style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
             />
           </div>
           <div className="flex items-center gap-3">
             <button onClick={savePassword} disabled={savingPassword} className="h-[34px] px-4 rounded-[8px] bg-white text-black text-[12.5px] font-semibold disabled:opacity-60 self-start">
               {savingPassword ? "Updating…" : "Update Password"}
             </button>
-            {passwordMsg && <span className="text-[12px] text-[#A1A1A6]">{passwordMsg}</span>}
+            {passwordMsg && <span className="text-[12px] text-[color:var(--hx-a1a1a6)]">{passwordMsg}</span>}
           </div>
         </div>
       </Section>
@@ -330,16 +334,16 @@ export default function SettingsPanel({ profile, integrations }: { profile: Prof
       )}
 
       <Section title="Notifications, Sales Defaults, Calendar Defaults, AI Defaults">
-        <ul className="text-[12.5px] text-[#A1A1A6] leading-relaxed flex flex-col gap-1.5">
+        <ul className="text-[12.5px] text-[color:var(--hx-a1a1a6)] leading-relaxed flex flex-col gap-1.5">
           <li>
-            <span className="text-[#F5F5F7]">Google Calendar:</span>{" "}
-            {integrations?.calendarEmail ? <>connected as <span className="font-mono text-[12px]">{integrations.calendarEmail}</span>. Calendar defaults will appear here as they are introduced.</> : <>not connected for your account. Connect it on the <a href="/team/integrations" className="underline underline-offset-2 text-[#F5F5F7]">Integrations</a> page.</>}
+            <span className="text-[color:var(--hx-f5f5f7)]">Google Calendar:</span>{" "}
+            {integrations?.calendarEmail ? <>connected as <span className="font-mono text-[12px]">{integrations.calendarEmail}</span>. Calendar defaults will appear here as they are introduced.</> : <>not connected for your account. Connect it on the <a href="/team/integrations" className="underline underline-offset-2 text-[color:var(--hx-f5f5f7)]">Integrations</a> page.</>}
           </li>
           <li>
-            <span className="text-[#F5F5F7]">AI Provider:</span>{" "}
+            <span className="text-[color:var(--hx-f5f5f7)]">AI Provider:</span>{" "}
             {integrations?.aiProviderConfigured ? "configured for this workspace. AI defaults will appear here as they are introduced." : "not configured. The owner adds a provider key in the hosting environment; AI defaults appear here afterwards."}
           </li>
-          <li><span className="text-[#F5F5F7]">Notifications:</span> text alerts are configured above. Sales defaults: not yet configurable — coming with the SOP phase.</li>
+          <li><span className="text-[color:var(--hx-f5f5f7)]">Notifications:</span> text alerts are configured above. Sales defaults: not yet configurable — coming with the SOP phase.</li>
         </ul>
       </Section>
     </div>

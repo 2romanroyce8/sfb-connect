@@ -18,7 +18,7 @@ function Word({
     <motion.span
       style={{
         opacity,
-        color: highlight ? "#ffffff" : "hsl(var(--hero-subtitle))",
+        color: highlight ? "var(--hx-ffffff)" : "hsl(var(--hero-subtitle))",
       }}
       className="inline-block mr-[0.28em]"
     >

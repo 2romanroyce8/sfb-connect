@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 
 const COLORS = {
-  cyan: "#46C7FF",
-  violet: "#9B6CFF",
-  green: "#67F2A3",
-  warm: "#FF8D65",
+  cyan: "var(--hx-46c7ff)",
+  violet: "var(--hx-9b6cff)",
+  green: "var(--hx-67f2a3)",
+  warm: "var(--hx-ff8d65)",
 };
 
 export default function AmbientOrb({

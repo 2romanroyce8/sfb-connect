@@ -52,29 +52,29 @@ export default function ConnectedAgentsSection() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[12px] text-[#A1A1A6]">
-        AI agents (Hyperagent, Muse, …) connect through OAuth and act as <span className="text-[#F5F5F7]">you</span>, read-only, under the same permissions you have. They never receive your password. Agents connect by pointing at <span className="font-mono text-[11px] text-[#F5F5F7]">{typeof window !== "undefined" ? window.location.origin : ""}/api/v1/agent/mcp</span>.
+      <p className="text-[12px] text-[color:var(--hx-a1a1a6)]">
+        AI agents (Hyperagent, Muse, …) connect through OAuth and act as <span className="text-[color:var(--hx-f5f5f7)]">you</span>, read-only, under the same permissions you have. They never receive your password. Agents connect by pointing at <span className="font-mono text-[11px] text-[color:var(--hx-f5f5f7)]">{typeof window !== "undefined" ? window.location.origin : ""}/api/v1/agent/mcp</span>.
       </p>
-      {error && <div className="text-[12px] text-[#FF9F9A]">{error}</div>}
+      {error && <div className="text-[12px] text-[color:var(--hx-ff9f9a)]">{error}</div>}
       {loading ? (
-        <div className="text-[12px] text-[#6E6E73]">Loading…</div>
+        <div className="text-[12px] text-[color:var(--hx-6e6e73)]">Loading…</div>
       ) : active.length === 0 ? (
-        <div className="text-[12.5px] text-[#6E6E73]">No agents are connected to your account. Owners also see agents authorized by other team members here.</div>
+        <div className="text-[12.5px] text-[color:var(--hx-6e6e73)]">No agents are connected to your account. Owners also see agents authorized by other team members here.</div>
       ) : (
         <ul className="flex flex-col gap-2">
           {active.map((a) => (
-            <li key={a.id} className="rounded-[10px] p-3" style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <li key={a.id} className="rounded-[10px] p-3" style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)" }}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-[13px] font-semibold text-[#F5F5F7]">{a.client_name} <span className="ml-1 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: "rgba(48,209,88,0.12)", color: "#30D158" }}>read-only</span></div>
-                  <div className="text-[11.5px] text-[#6E6E73] mt-0.5">{a.authorized_by ? <>Authorized by <span className="text-[#A1A1A6]">{a.authorized_by}</span> · </> : null}Connected {fmt(a.created_at)} · last used {fmt(a.last_used_at)} · {a.workspace_label}</div>
+                  <div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)]">{a.client_name} <span className="ml-1 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: "rgba(48,209,88,0.12)", color: "var(--hx-30d158)" }}>read-only</span></div>
+                  <div className="text-[11.5px] text-[color:var(--hx-6e6e73)] mt-0.5">{a.authorized_by ? <>Authorized by <span className="text-[color:var(--hx-a1a1a6)]">{a.authorized_by}</span> · </> : null}Connected {fmt(a.created_at)} · last used {fmt(a.last_used_at)} · {a.workspace_label}</div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {a.scopes.map((s) => (
-                      <span key={s} title={s} className="text-[11px] px-2 py-0.5 rounded-full text-[#A1A1A6]" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>{describeScope(s)}</span>
+                      <span key={s} title={s} className="text-[11px] px-2 py-0.5 rounded-full text-[color:var(--hx-a1a1a6)]" style={{ border: "1px solid rgb(var(--w) / 0.1)" }}>{describeScope(s)}</span>
                     ))}
                   </div>
                 </div>
-                <button onClick={() => revoke(a)} disabled={busy === a.id} className="h-[30px] px-3 rounded-[8px] text-[12px] font-semibold disabled:opacity-60" style={{ background: "rgba(255,69,58,0.12)", color: "#FF6961", border: "1px solid rgba(255,69,58,0.3)" }}>
+                <button onClick={() => revoke(a)} disabled={busy === a.id} className="h-[30px] px-3 rounded-[8px] text-[12px] font-semibold disabled:opacity-60" style={{ background: "rgba(255,69,58,0.12)", color: "var(--hx-ff6961)", border: "1px solid rgba(255,69,58,0.3)" }}>
                   {busy === a.id ? "Revoking…" : "Revoke"}
                 </button>
               </div>
@@ -83,29 +83,29 @@ export default function ConnectedAgentsSection() {
         </ul>
       )}
       {revoked.length > 0 && (
-        <div className="text-[11.5px] text-[#6E6E73]">
+        <div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">
           {revoked.length} revoked: {revoked.slice(0, 5).map((a) => `${a.client_name} (${fmt(a.revoked_at)}${a.revoked_reason ? `, ${a.revoked_reason.replace(/_/g, " ")}` : ""})`).join("; ")}
         </div>
       )}
-      <button onClick={() => setShowLog((v) => !v)} className="self-start text-[12px] text-[#A1A1A6] underline underline-offset-2">
+      <button onClick={() => setShowLog((v) => !v)} className="self-start text-[12px] text-[color:var(--hx-a1a1a6)] underline underline-offset-2">
         {showLog ? "Hide" : "Show"} agent activity log ({audit.length})
       </button>
       {showLog && (
-        <div className="rounded-[10px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[10px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
           <table className="w-full text-[11.5px]">
-            <thead><tr className="text-left text-[#6E6E73]" style={{ background: "#101010" }}><th className="px-2 py-1.5 font-medium">When</th><th className="px-2 py-1.5 font-medium">Agent</th><th className="px-2 py-1.5 font-medium">Via</th><th className="px-2 py-1.5 font-medium">Action</th><th className="px-2 py-1.5 font-medium">Resource</th><th className="px-2 py-1.5 font-medium">Result</th></tr></thead>
+            <thead><tr className="text-left text-[color:var(--hx-6e6e73)]" style={{ background: "var(--hx-101010)" }}><th className="px-2 py-1.5 font-medium">When</th><th className="px-2 py-1.5 font-medium">Agent</th><th className="px-2 py-1.5 font-medium">Via</th><th className="px-2 py-1.5 font-medium">Action</th><th className="px-2 py-1.5 font-medium">Resource</th><th className="px-2 py-1.5 font-medium">Result</th></tr></thead>
             <tbody>
               {audit.map((r) => (
-                <tr key={r.id} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <td className="px-2 py-1 text-[#A1A1A6] whitespace-nowrap">{fmt(r.created_at)}</td>
-                  <td className="px-2 py-1 text-[#F5F5F7]">{r.client_id ?? "—"}</td>
-                  <td className="px-2 py-1 text-[#A1A1A6]">{r.access_method}</td>
-                  <td className="px-2 py-1 font-mono text-[#F5F5F7]">{r.action}</td>
-                  <td className="px-2 py-1 text-[#A1A1A6] max-w-[220px] truncate">{r.resource ?? ""}</td>
-                  <td className="px-2 py-1" style={{ color: r.result === "success" ? "#30D158" : r.result === "denied" ? "#FFD60A" : "#FF6961" }}>{r.result}</td>
+                <tr key={r.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.05)" }}>
+                  <td className="px-2 py-1 text-[color:var(--hx-a1a1a6)] whitespace-nowrap">{fmt(r.created_at)}</td>
+                  <td className="px-2 py-1 text-[color:var(--hx-f5f5f7)]">{r.client_id ?? "—"}</td>
+                  <td className="px-2 py-1 text-[color:var(--hx-a1a1a6)]">{r.access_method}</td>
+                  <td className="px-2 py-1 font-mono text-[color:var(--hx-f5f5f7)]">{r.action}</td>
+                  <td className="px-2 py-1 text-[color:var(--hx-a1a1a6)] max-w-[220px] truncate">{r.resource ?? ""}</td>
+                  <td className="px-2 py-1" style={{ color: r.result === "success" ? "var(--hx-30d158)" : r.result === "denied" ? "var(--hx-ffd60a)" : "var(--hx-ff6961)" }}>{r.result}</td>
                 </tr>
               ))}
-              {audit.length === 0 && <tr><td colSpan={6} className="px-2 py-2 text-[#6E6E73]">No agent activity yet.</td></tr>}
+              {audit.length === 0 && <tr><td colSpan={6} className="px-2 py-2 text-[color:var(--hx-6e6e73)]">No agent activity yet.</td></tr>}
             </tbody>
           </table>
         </div>

@@ -94,9 +94,9 @@ export default function MeetingsList({
   if (meetings.length === 0) {
     return (
       <div className="px-8 py-8">
-        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">No meetings booked</div>
-          <p className="text-[13px] text-[#A1A1A6]">Booking a meeting from a call's outcome sheet will list it here.</p>
+        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">No meetings booked</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Booking a meeting from a call's outcome sheet will list it here.</p>
         </div>
       </div>
     );
@@ -109,10 +109,10 @@ export default function MeetingsList({
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Meetings</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">{upcoming.length} upcoming</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Meetings</div>
+        <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">{upcoming.length} upcoming</div>
       </div>
-      {error && <p className="text-[12.5px] text-[#FF453A] mb-4">{error}</p>}
+      {error && <p className="text-[12.5px] text-[color:var(--hx-ff453a)] mb-4">{error}</p>}
 
       <div className="flex flex-col gap-8">
         {[
@@ -121,42 +121,42 @@ export default function MeetingsList({
         ].map(([title, list]) =>
           (list as Meeting[]).length === 0 ? null : (
             <div key={title as string}>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-2">{title as string}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-2">{title as string}</div>
               <div className="flex flex-col gap-2 max-w-[720px]">
                 {(list as Meeting[]).map((m) => {
                   const lead = leadMap[m.lead_id];
                   const isPast = new Date(m.scheduled_at) < now;
                   return (
-                    <div key={m.id} className="p-4 rounded-[12px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <div key={m.id} className="p-4 rounded-[12px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <Link href={`/team/leads/${m.lead_id}`} className="text-[13.5px] text-[#F5F5F7] hover:underline">
+                          <Link href={`/team/leads/${m.lead_id}`} className="text-[13.5px] text-[color:var(--hx-f5f5f7)] hover:underline">
                             {lead?.business_name || "Unknown lead"}
                           </Link>
-                          <div className="text-[12px] text-[#6E6E73] mt-0.5">
+                          <div className="text-[12px] text-[color:var(--hx-6e6e73)] mt-0.5">
                             {new Date(m.scheduled_at).toLocaleString()} {isOwner && repMap[m.rep_id] ? `· ${repMap[m.rep_id]}` : ""} · <span className="capitalize">{m.status}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5">
                           {m.google_meet_url && m.status === "booked" && (
-                            <a href={m.google_meet_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-[6px] text-[#0A84FF] hover:bg-[#151515]" title="Join Meeting">
+                            <a href={m.google_meet_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-[6px] text-[color:var(--hx-0a84ff)] hover:bg-[color:var(--hx-151515)]" title="Join Meeting">
                               <Video size={14} />
                             </a>
                           )}
                           {m.status === "booked" && (
                             <>
-                              <button disabled={busyId === m.id} onClick={() => setReschedulingId(reschedulingId === m.id ? null : m.id)} className="p-1.5 rounded-[6px] text-[#6E6E73] hover:text-white hover:bg-[#151515]" title="Reschedule">
+                              <button disabled={busyId === m.id} onClick={() => setReschedulingId(reschedulingId === m.id ? null : m.id)} className="p-1.5 rounded-[6px] text-[color:var(--hx-6e6e73)] hover:text-white hover:bg-[color:var(--hx-151515)]" title="Reschedule">
                                 <CalendarClock size={14} />
                               </button>
-                              <button disabled={busyId === m.id} onClick={() => cancel(m.id)} className="p-1.5 rounded-[6px] text-[#6E6E73] hover:text-white hover:bg-[#151515]" title="Cancel">
+                              <button disabled={busyId === m.id} onClick={() => cancel(m.id)} className="p-1.5 rounded-[6px] text-[color:var(--hx-6e6e73)] hover:text-white hover:bg-[color:var(--hx-151515)]" title="Cancel">
                                 <X size={14} />
                               </button>
                               {isPast && (
                                 <>
-                                  <button disabled={busyId === m.id} onClick={() => outcome(m.id, "completed")} className="p-1.5 rounded-[6px] text-[#30D158] hover:bg-[#151515]" title="Completed">
+                                  <button disabled={busyId === m.id} onClick={() => outcome(m.id, "completed")} className="p-1.5 rounded-[6px] text-[color:var(--hx-30d158)] hover:bg-[color:var(--hx-151515)]" title="Completed">
                                     <Check size={14} />
                                   </button>
-                                  <button disabled={busyId === m.id} onClick={() => outcome(m.id, "no_show")} className="p-1.5 rounded-[6px] text-[#FF9F0A] hover:bg-[#151515]" title="No-Show">
+                                  <button disabled={busyId === m.id} onClick={() => outcome(m.id, "no_show")} className="p-1.5 rounded-[6px] text-[color:var(--hx-ff9f0a)] hover:bg-[color:var(--hx-151515)]" title="No-Show">
                                     <UserX size={14} />
                                   </button>
                                 </>
@@ -164,7 +164,7 @@ export default function MeetingsList({
                             </>
                           )}
                           {(m.status === "no_show" || m.status === "cancelled") && (
-                            <button disabled={busyId === m.id} onClick={() => setReschedulingId(reschedulingId === m.id ? null : m.id)} className="p-1.5 rounded-[6px] text-[#6E6E73] hover:text-white hover:bg-[#151515]" title="Reschedule">
+                            <button disabled={busyId === m.id} onClick={() => setReschedulingId(reschedulingId === m.id ? null : m.id)} className="p-1.5 rounded-[6px] text-[color:var(--hx-6e6e73)] hover:text-white hover:bg-[color:var(--hx-151515)]" title="Reschedule">
                               <RotateCcw size={14} />
                             </button>
                           )}
@@ -172,8 +172,8 @@ export default function MeetingsList({
                       </div>
                       {reschedulingId === m.id && (
                         <div className="flex items-center gap-2 mt-3">
-                          <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="h-[34px] rounded-[7px] px-2.5 text-[12.5px] outline-none" style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }} />
-                          <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="h-[34px] rounded-[7px] px-2.5 text-[12.5px] outline-none" style={{ background: "#101010", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }} />
+                          <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="h-[34px] rounded-[7px] px-2.5 text-[12.5px] outline-none" style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }} />
+                          <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="h-[34px] rounded-[7px] px-2.5 text-[12.5px] outline-none" style={{ background: "var(--hx-101010)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }} />
                           <button onClick={() => reschedule(m.id)} disabled={busyId === m.id} className="h-[34px] px-3 rounded-[7px] bg-white text-black text-[12px] font-semibold">
                             Save
                           </button>

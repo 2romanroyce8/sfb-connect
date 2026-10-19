@@ -47,7 +47,7 @@ export default function AIEvaluationComparison() {
     <div
       ref={ref}
       className="relative w-full overflow-hidden"
-      style={{ background: "#111214" }}
+      style={{ background: "var(--hx-111214)" }}
     >
       {/* Vignette */}
       <div
@@ -55,7 +55,7 @@ export default function AIEvaluationComparison() {
         style={{
           zIndex: 15,
           background:
-            "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.16) 70%, rgba(0,0,0,0.48) 100%)",
+            "radial-gradient(ellipse at center, transparent 40%, rgb(var(--k) / 0.16) 70%, rgb(var(--k) / 0.48) 100%)",
         }}
       />
 
@@ -91,7 +91,7 @@ export default function AIEvaluationComparison() {
           style={{
             zIndex: 3,
             background:
-              "linear-gradient(180deg, #111214 0%, rgba(17,18,20,0.55) 14%, rgba(17,18,20,0) 34%, rgba(17,18,20,0) 70%, #111214 100%)",
+              "linear-gradient(180deg, var(--hx-111214) 0%, rgba(17,18,20,0.55) 14%, rgba(17,18,20,0) 34%, rgba(17,18,20,0) 70%, var(--hx-111214) 100%)",
           }}
         />
 
@@ -124,7 +124,7 @@ export default function AIEvaluationComparison() {
           }}
         >
           <h2
-            className="font-bold text-[#f4f4f4]"
+            className="font-bold text-[color:var(--hx-f4f4f4)]"
             style={{
               fontSize: "clamp(2.6rem, 3.9vw, 4.3rem)",
               lineHeight: 0.88,
@@ -145,7 +145,7 @@ export default function AIEvaluationComparison() {
               fontSize: "10px",
               lineHeight: 1.45,
               letterSpacing: "0.01em",
-              color: "rgba(255,255,255,0.26)",
+              color: "rgb(var(--w) / 0.26)",
             }}
           >
             Businesses often focus on what people can see. AI evaluates the
@@ -184,7 +184,7 @@ export default function AIEvaluationComparison() {
               width: "42px",
               height: "100%",
               background:
-                "linear-gradient(180deg, rgba(255,88,53,0.04) 0%, rgba(255,85,50,0.22) 18%, rgba(255,81,48,0.62) 48%, #FF5A38 66%, rgba(255,77,45,0.26) 84%, rgba(255,70,42,0.03) 100%)",
+                "linear-gradient(180deg, rgba(255,88,53,0.04) 0%, rgba(255,85,50,0.22) 18%, rgba(255,81,48,0.62) 48%, var(--hx-ff5a38) 66%, rgba(255,77,45,0.26) 84%, rgba(255,70,42,0.03) 100%)",
               borderLeft: "1px solid rgba(255,135,100,0.08)",
               borderRight: "1px solid rgba(255,135,100,0.07)",
               boxShadow: "0 0 28px rgba(255,74,44,0.14)",
@@ -206,7 +206,7 @@ export default function AIEvaluationComparison() {
             style={{
               width: "1px",
               background:
-                "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.22), rgba(255,255,255,0.03))",
+                "linear-gradient(180deg, rgb(var(--w) / 0.07), rgb(var(--w) / 0.22), rgb(var(--w) / 0.03))",
             }}
           />
         </div>
@@ -232,7 +232,7 @@ export default function AIEvaluationComparison() {
               fontWeight: 500,
               lineHeight: 0.84,
               letterSpacing: "-0.06em",
-              color: "rgba(255,255,255,0.72)",
+              color: "rgb(var(--w) / 0.72)",
             }}
           >
             35%
@@ -244,12 +244,12 @@ export default function AIEvaluationComparison() {
               fontWeight: 600,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.28)",
+              color: "rgb(var(--w) / 0.28)",
             }}
           >
             What Businesses Focus On
           </div>
-          <div className="mt-[6px]" style={{ fontSize: "9px", color: "rgba(255,255,255,0.34)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "9px", color: "rgb(var(--w) / 0.34)" }}>
             surface-level signals
           </div>
         </div>
@@ -275,7 +275,7 @@ export default function AIEvaluationComparison() {
               fontWeight: 600,
               lineHeight: 0.84,
               letterSpacing: "-0.06em",
-              color: "#FFFFFF",
+              color: "var(--hx-ffffff)",
             }}
           >
             85%
@@ -287,12 +287,12 @@ export default function AIEvaluationComparison() {
               fontWeight: 700,
               letterSpacing: "0.17em",
               textTransform: "uppercase",
-              color: "#FF6A48",
+              color: "var(--hx-ff6a48)",
             }}
           >
             What AI Actually Evaluates
           </div>
-          <div className="mt-[6px]" style={{ fontSize: "9px", color: "rgba(255,255,255,0.40)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "9px", color: "rgb(var(--w) / 0.40)" }}>
             structured discovery signals
           </div>
         </div>
@@ -302,10 +302,10 @@ export default function AIEvaluationComparison() {
           className="absolute"
           style={{ left: "17%", bottom: "46px", width: "260px", zIndex: 11, opacity: 0.9 }}
         >
-          <div style={{ fontSize: "7px", letterSpacing: "0.18em", color: "rgba(255,255,255,0.22)" }}>
+          <div style={{ fontSize: "7px", letterSpacing: "0.18em", color: "rgb(var(--w) / 0.22)" }}>
             VISIBLE SIGNALS
           </div>
-          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgba(255,255,255,0.20)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgb(var(--w) / 0.20)" }}>
             LOGO · SOCIALS · WEBSITE DESIGN · FOLLOWERS
           </div>
         </div>
@@ -316,7 +316,7 @@ export default function AIEvaluationComparison() {
           <div style={{ fontSize: "7px", letterSpacing: "0.18em", color: "rgba(255,102,68,0.48)" }}>
             AI DISCOVERY SIGNALS
           </div>
-          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgba(255,255,255,0.30)" }}>
+          <div className="mt-[6px]" style={{ fontSize: "8px", letterSpacing: "0.05em", color: "rgb(var(--w) / 0.30)" }}>
             IDENTITY · SCHEMA · LOCATION · AUTHORITY · KNOWLEDGE · FRESHNESS
           </div>
         </div>
@@ -339,13 +339,13 @@ export default function AIEvaluationComparison() {
           style={{
             zIndex: 1,
             background:
-              "linear-gradient(180deg, #111214 0%, rgba(17,18,20,0.5) 12%, rgba(17,18,20,0) 30%, rgba(17,18,20,0) 68%, #111214 100%)",
+              "linear-gradient(180deg, var(--hx-111214) 0%, rgba(17,18,20,0.5) 12%, rgba(17,18,20,0) 30%, rgba(17,18,20,0) 68%, var(--hx-111214) 100%)",
           }}
         />
 
         <div className="relative z-10 text-center transition-all duration-700 ease-out" style={fade(0)}>
           <h2
-            className="font-bold text-[#f4f4f4]"
+            className="font-bold text-[color:var(--hx-f4f4f4)]"
             style={{ fontSize: "clamp(2.4rem, 10vw, 3.6rem)", lineHeight: 0.9, letterSpacing: "-0.05em" }}
           >
             AI evaluates more than what{" "}
@@ -353,7 +353,7 @@ export default function AIEvaluationComparison() {
               looks impressive.
             </span>
           </h2>
-          <p className="mx-auto mt-4" style={{ maxWidth: "310px", fontSize: "10px", color: "rgba(255,255,255,0.28)", lineHeight: 1.45 }}>
+          <p className="mx-auto mt-4" style={{ maxWidth: "310px", fontSize: "10px", color: "rgb(var(--w) / 0.28)", lineHeight: 1.45 }}>
             Businesses often focus on what people can see. AI evaluates the
             deeper signals underneath the surface.
           </p>
@@ -387,7 +387,7 @@ export default function AIEvaluationComparison() {
                 width: "30px",
                 height: "100%",
                 background:
-                  "linear-gradient(180deg, rgba(255,90,51,0.08) 0%, #FF5A38 48%, rgba(255,70,42,0.04) 100%)",
+                  "linear-gradient(180deg, rgba(255,90,51,0.08) 0%, var(--hx-ff5a38) 48%, rgba(255,70,42,0.04) 100%)",
                 boxShadow: "0 0 22px rgba(255,74,44,0.16)",
               }}
             />
@@ -396,24 +396,24 @@ export default function AIEvaluationComparison() {
 
         <div className="relative z-10 flex items-end justify-between mt-7">
           <div style={fade(0.2, "x", -14)} className="transition-all duration-700 ease-out">
-            <div style={{ fontSize: "42px", fontWeight: 500, lineHeight: 0.84, letterSpacing: "-0.05em", color: "rgba(255,255,255,0.72)" }}>
+            <div style={{ fontSize: "42px", fontWeight: 500, lineHeight: 0.84, letterSpacing: "-0.05em", color: "rgb(var(--w) / 0.72)" }}>
               35%
             </div>
-            <div className="mt-2" style={{ fontSize: "7px", fontWeight: 600, letterSpacing: "0.14em", color: "rgba(255,255,255,0.28)" }}>
+            <div className="mt-2" style={{ fontSize: "7px", fontWeight: 600, letterSpacing: "0.14em", color: "rgb(var(--w) / 0.28)" }}>
               BUSINESSES FOCUS ON
             </div>
           </div>
           <div style={fade(0.3, "x", 14)} className="text-right transition-all duration-700 ease-out">
-            <div style={{ fontSize: "46px", fontWeight: 600, lineHeight: 0.84, letterSpacing: "-0.05em", color: "#FFFFFF" }}>
+            <div style={{ fontSize: "46px", fontWeight: 600, lineHeight: 0.84, letterSpacing: "-0.05em", color: "var(--hx-ffffff)" }}>
               85%
             </div>
-            <div className="mt-2" style={{ fontSize: "7px", fontWeight: 700, letterSpacing: "0.14em", color: "#FF6A48" }}>
+            <div className="mt-2" style={{ fontSize: "7px", fontWeight: 700, letterSpacing: "0.14em", color: "var(--hx-ff6a48)" }}>
               WHAT AI EVALUATES
             </div>
           </div>
         </div>
 
-        <p className="relative z-10 text-center mt-9" style={{ fontSize: "8px", letterSpacing: "0.06em", color: "rgba(255,255,255,0.26)" }}>
+        <p className="relative z-10 text-center mt-9" style={{ fontSize: "8px", letterSpacing: "0.06em", color: "rgb(var(--w) / 0.26)" }}>
           IDENTITY · SCHEMA · LOCATION · AUTHORITY · KNOWLEDGE · FRESHNESS
         </p>
       </div>

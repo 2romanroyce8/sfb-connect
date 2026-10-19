@@ -23,7 +23,7 @@ export default function Hero() {
   }
 
   return (
-    <section className="relative min-h-[100svh] w-full overflow-hidden flex flex-col items-center justify-center text-center px-6 pt-[120px] pb-[72px]">
+    <section data-theme-lock="dark" className="relative min-h-[100svh] w-full overflow-hidden flex flex-col items-center justify-center text-center px-6 pt-[120px] pb-[72px]">
       <video
         autoPlay
         loop
@@ -37,14 +37,14 @@ export default function Hero() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(0,0,0,0.44) 0%, rgba(0,0,0,0.18) 30%, rgba(0,0,0,0.20) 62%, rgba(0,0,0,0.48) 100%)",
+            "linear-gradient(180deg, rgb(var(--k) / 0.44) 0%, rgb(var(--k) / 0.18) 30%, rgb(var(--k) / 0.20) 62%, rgb(var(--k) / 0.48) 100%)",
         }}
       />
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle at 50% 43%, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.36) 100%)",
+            "radial-gradient(circle at 50% 43%, rgb(var(--k) / 0.04) 0%, rgb(var(--k) / 0.18) 58%, rgb(var(--k) / 0.36) 100%)",
         }}
       />
       {/* Smooth fade into the next section — no blur/opacity on the media itself */}
@@ -52,7 +52,7 @@ export default function Hero() {
         className="absolute inset-x-0 bottom-0 h-[140px] pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 60%, #000000 100%)",
+            "linear-gradient(180deg, transparent 0%, rgb(var(--k) / 0.5) 60%, var(--page-bg) 100%)",
         }}
       />
 
@@ -93,7 +93,7 @@ export default function Hero() {
         <div className="mt-[26px] flex flex-wrap items-center justify-center gap-3">
           <Link href="/start" onClick={() => trackMarketingEvent("funnel_start_click", { from: "hero" })} className="inline-flex items-center bg-white text-black px-6 py-3.5 rounded-full text-[14px] font-semibold hover:opacity-85 transition-opacity">Get started →</Link>
           <BookDemoCall source="hero" />
-          <Link href="#agent" className="inline-flex items-center px-6 py-3.5 rounded-full text-[14px] font-medium text-white hover:bg-white/[0.08] transition-colors" style={{ border: "1px solid rgba(255,255,255,0.28)", background: "rgba(7,7,7,0.4)" }}>See the 8 capabilities →</Link>
+          <Link href="#agent" className="inline-flex items-center px-6 py-3.5 rounded-full text-[14px] font-medium text-white hover:bg-white/[0.08] transition-colors" style={{ border: "1px solid rgb(var(--w) / 0.28)", background: "rgba(7,7,7,0.4)" }}>See the 8 capabilities →</Link>
         </div>
 
         <div className="w-full max-w-[650px] mt-[34px]">
@@ -108,7 +108,7 @@ export default function Hero() {
               backdropFilter: "blur(18px) saturate(120%)",
               WebkitBackdropFilter: "blur(18px) saturate(120%)",
               boxShadow:
-                "0 16px 55px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08)",
+                "0 16px 55px rgb(var(--k) / 0.30), inset 0 1px 0 rgb(var(--w) / 0.08)",
             }}
           >
             <input
@@ -122,7 +122,7 @@ export default function Hero() {
             <button
               type="submit"
               disabled={loading}
-              className="h-[52px] px-[25px] rounded-[13px] bg-white text-[#080808] text-[12px] font-bold tracking-[-0.01em] inline-flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-60 whitespace-nowrap"
+              className="h-[52px] px-[25px] rounded-[13px] bg-white text-[color:var(--hx-080808)] text-[12px] font-bold tracking-[-0.01em] inline-flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-60 whitespace-nowrap"
             >
               {loading ? (
                 <>

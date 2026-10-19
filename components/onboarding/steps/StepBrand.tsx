@@ -38,7 +38,7 @@ export default function StepBrand({ business: b, onConfirm }: { business: Busine
         <div className="text-[12px] font-medium text-neutral-600 mb-2">Brand colors</div>
         <div className="flex items-center gap-2 flex-wrap">
           {colors.map((c, i) => <label key={i} className="flex items-center gap-2 border border-neutral-200 rounded-full pl-1 pr-3 py-1 text-[12.5px]"><input type="color" value={c} onChange={(e) => { const n = [...colors]; n[i] = e.target.value.toLowerCase(); void saveColors(n); }} className="w-6 h-6 rounded-full border-0 p-0 bg-transparent" /><span className="font-mono">{c}</span><button type="button" onClick={() => void saveColors(colors.filter((_, j) => j !== i))} className="text-neutral-400">×</button></label>)}
-          {colors.length < 4 && <button type="button" onClick={() => void saveColors([...colors, "#0a84ff"])} className="h-[32px] px-3 rounded-full border border-dashed border-neutral-300 text-[12.5px] text-neutral-500">+ add</button>}
+          {colors.length < 4 && <button type="button" onClick={() => void saveColors([...colors, "var(--hx-0a84ff)"])} className="h-[32px] px-3 rounded-full border border-dashed border-neutral-300 text-[12.5px] text-neutral-500">+ add</button>}
         </div>
       </div>
       <div className="flex items-center gap-3 pt-1">

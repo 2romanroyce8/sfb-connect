@@ -20,7 +20,7 @@ export default function GoogleGate({ connectHref, label, connected, account, onC
     const j = await r.json(); setBusy(false); if (!r.ok) { setErr(j.error || "Could not save."); return; } setG((x) => ({ ...(x ?? j), ...j }));
   };
   const text = dark ? "text-white/[0.65]" : "text-neutral-600"; const sub = dark ? "text-white/[0.45]" : "text-neutral-500";
-  const input = dark ? "h-[42px] rounded-lg px-3 text-[14px] outline-none bg-[#0F0F0F] border border-white/[0.12] text-white" : "h-[42px] rounded-lg border border-neutral-300 px-3 text-[14px] outline-none focus:border-neutral-900";
+  const input = dark ? "h-[42px] rounded-lg px-3 text-[14px] outline-none bg-[color:var(--hx-0f0f0f)] border border-white/[0.12] text-white" : "h-[42px] rounded-lg border border-neutral-300 px-3 text-[14px] outline-none focus:border-neutral-900";
   const btn = dark ? "h-[42px] px-5 rounded-full bg-white text-black text-[14px] font-semibold disabled:opacity-60" : "h-[42px] px-5 rounded-full bg-neutral-900 text-white text-[14px] font-semibold disabled:opacity-60";
 
   if (connected) return <>{onConnected ?? <span className="inline-flex items-center gap-2 text-[13.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5">✓ Connected{account ? ` as ${account}` : ""}</span>}</>;

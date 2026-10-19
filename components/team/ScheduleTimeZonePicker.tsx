@@ -91,7 +91,7 @@ export default function ScheduleTimeZonePicker({
     <div className="flex flex-col gap-3">
       {/* Business Time / My Time toggle */}
       <div>
-        <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Time is in</label>
+        <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Time is in</label>
         <div className="mt-1 grid grid-cols-2 gap-1.5">
           {(["business", "mine"] as const).map((m) => (
             <button
@@ -100,9 +100,9 @@ export default function ScheduleTimeZonePicker({
               onClick={() => setMode(m)}
               className="h-[34px] rounded-[8px] text-[12.5px] font-medium transition-colors"
               style={{
-                background: mode === m ? "#F5F5F7" : "#0A0A0A",
-                color: mode === m ? "#111111" : "#A1A1A6",
-                border: `1px solid ${mode === m ? "#F5F5F7" : "rgba(255,255,255,0.08)"}`,
+                background: mode === m ? "var(--hx-f5f5f7)" : "var(--hx-0a0a0a)",
+                color: mode === m ? "var(--hx-111111)" : "var(--hx-a1a1a6)",
+                border: `1px solid ${mode === m ? "var(--hx-f5f5f7)" : "rgb(var(--w) / 0.08)"}`,
               }}
             >
               {m === "business" ? "Business Time" : "My Time"}
@@ -114,7 +114,7 @@ export default function ScheduleTimeZonePicker({
       {/* Business state/timezone selector -- only relevant when entering business time */}
       {mode === "business" && (
         <div>
-          <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Business State</label>
+          <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Business State</label>
           <select
             value={businessStateLabel}
             onChange={(e) => {
@@ -124,7 +124,7 @@ export default function ScheduleTimeZonePicker({
               setNeedsConfirmation(!!entry?.ambiguous);
             }}
             className="w-full mt-1 h-[38px] rounded-[8px] px-3 text-[13px] outline-none"
-            style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+            style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
           >
             <option value="">Select state…</option>
             {US_STATE_TIMEZONES.map((s) => (
@@ -134,10 +134,10 @@ export default function ScheduleTimeZonePicker({
             ))}
           </select>
           {businessStateLabel && (
-            <div className="text-[11.5px] text-[#6E6E73] mt-1">
+            <div className="text-[11.5px] text-[color:var(--hx-6e6e73)] mt-1">
               {findStateTimezone(businessStateLabel)?.label}
               {needsConfirmation && (
-                <span className="text-[#FFD60A]"> — this state spans multiple timezones. Confirm the correct one below.</span>
+                <span className="text-[color:var(--hx-ffd60a)]"> — this state spans multiple timezones. Confirm the correct one below.</span>
               )}
             </div>
           )}
@@ -146,7 +146,7 @@ export default function ScheduleTimeZonePicker({
               value={businessTz}
               onChange={(e) => setBusinessTz(e.target.value)}
               className="w-full mt-1.5 h-[34px] rounded-[8px] px-3 text-[12.5px] outline-none"
-              style={{ background: "#0A0A0A", border: "1px solid rgba(255,214,10,0.35)", color: "#F5F5F7" }}
+              style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgba(255,214,10,0.35)", color: "var(--hx-f5f5f7)" }}
             >
               <option value="America/New_York">Eastern Time</option>
               <option value="America/Chicago">Central Time</option>
@@ -160,12 +160,12 @@ export default function ScheduleTimeZonePicker({
 
       {/* Calendar date picker */}
       <div>
-        <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Date</label>
+        <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Date</label>
         <button
           type="button"
           onClick={() => setShowCalendar((v) => !v)}
           className="w-full mt-1 h-[38px] rounded-[8px] px-3 text-[13px] outline-none text-left"
-          style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: date ? "#F5F5F7" : "#6E6E73" }}
+          style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: date ? "var(--hx-f5f5f7)" : "var(--hx-6e6e73)" }}
         >
           {date ? new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(new Date(`${date}T12:00:00`)) : "Choose a date"}
         </button>
@@ -185,17 +185,17 @@ export default function ScheduleTimeZonePicker({
 
       {/* Dual-time preview */}
       {computed && (
-        <div className="rounded-[10px] p-3 mt-1" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[10px] p-3 mt-1" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           <div className="grid grid-cols-2 gap-3 text-center">
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-[#6E6E73]">Client Requested</div>
-              <div className="text-[15px] font-semibold text-[#F5F5F7] mt-0.5">
+              <div className="text-[10px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Client Requested</div>
+              <div className="text-[15px] font-semibold text-[color:var(--hx-f5f5f7)] mt-0.5">
                 {computed.dual.businessTime} {computed.dual.businessTzLabel}
               </div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-[#6E6E73]">Your Time</div>
-              <div className="text-[15px] font-semibold text-[#30D158] mt-0.5">
+              <div className="text-[10px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Your Time</div>
+              <div className="text-[15px] font-semibold text-[color:var(--hx-30d158)] mt-0.5">
                 {computed.dual.employeeTime} {computed.dual.employeeTzLabel}
               </div>
             </div>
@@ -222,12 +222,12 @@ function MiniCalendar({ selected, onPick }: { selected: string; onPick: (dateStr
   }
 
   return (
-    <div className="mt-1.5 rounded-[10px] overflow-hidden" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}>
-      <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="mt-1.5 rounded-[10px] overflow-hidden" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.1)" }}>
+      <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: "1px solid rgb(var(--w) / 0.06)" }}>
         <button type="button" onClick={() => setCalMonth((m) => (m.month === 0 ? { year: m.year - 1, month: 11 } : { year: m.year, month: m.month - 1 }))}>
           <ChevronLeft size={14} color="#A1A1A6" />
         </button>
-        <div className="text-[12.5px] text-[#F5F5F7]">{monthLabel}</div>
+        <div className="text-[12.5px] text-[color:var(--hx-f5f5f7)]">{monthLabel}</div>
         <button type="button" onClick={() => setCalMonth((m) => (m.month === 11 ? { year: m.year + 1, month: 0 } : { year: m.year, month: m.month + 1 }))}>
           <ChevronRight size={14} color="#A1A1A6" />
         </button>
@@ -235,7 +235,7 @@ function MiniCalendar({ selected, onPick }: { selected: string; onPick: (dateStr
       <div className="p-2.5">
         <div className="grid grid-cols-7 gap-1">
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <div key={i} className="text-[9.5px] text-center text-[#66666A] font-semibold">
+            <div key={i} className="text-[9.5px] text-center text-[color:var(--hx-66666a)] font-semibold">
               {d}
             </div>
           ))}
@@ -253,9 +253,9 @@ function MiniCalendar({ selected, onPick }: { selected: string; onPick: (dateStr
                 onClick={() => onPick(ds)}
                 className="h-[28px] text-[11.5px] rounded-[7px]"
                 style={{
-                  background: isSelected ? "#F5F5F7" : "transparent",
-                  color: isSelected ? "#111111" : "#D1D1D6",
-                  border: isToday && !isSelected ? "1px solid rgba(255,255,255,0.2)" : "none",
+                  background: isSelected ? "var(--hx-f5f5f7)" : "transparent",
+                  color: isSelected ? "var(--hx-111111)" : "var(--hx-d1d1d6)",
+                  border: isToday && !isSelected ? "1px solid rgb(var(--w) / 0.2)" : "none",
                   fontWeight: isSelected ? 600 : 400,
                 }}
               >
@@ -264,7 +264,7 @@ function MiniCalendar({ selected, onPick }: { selected: string; onPick: (dateStr
             );
           })}
         </div>
-        <button type="button" onClick={() => onPick(todayStr)} className="w-full mt-2 h-[28px] rounded-[7px] text-[11px] text-[#A1A1A6]" style={{ background: "#151515" }}>
+        <button type="button" onClick={() => onPick(todayStr)} className="w-full mt-2 h-[28px] rounded-[7px] text-[11px] text-[color:var(--hx-a1a1a6)]" style={{ background: "var(--hx-151515)" }}>
           Today
         </button>
       </div>
@@ -285,13 +285,13 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
 
   return (
     <div>
-      <label className="text-[10.5px] uppercase tracking-wide text-[#6E6E73]">Time</label>
+      <label className="text-[10.5px] uppercase tracking-wide text-[color:var(--hx-6e6e73)]">Time</label>
       <div className="grid grid-cols-3 gap-1.5 mt-1">
         <select
           value={h12}
           onChange={(e) => set(+e.target.value, m, ampm)}
           className="h-[38px] rounded-[8px] px-2 text-[13px] outline-none text-center"
-          style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
         >
           {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
             <option key={h} value={h}>
@@ -303,7 +303,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
           value={m}
           onChange={(e) => set(h12, +e.target.value, ampm)}
           className="h-[38px] rounded-[8px] px-2 text-[13px] outline-none text-center"
-          style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
         >
           {[0, 15, 30, 45].map((mm) => (
             <option key={mm} value={mm}>
@@ -315,7 +315,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
           value={ampm}
           onChange={(e) => set(h12, m, e.target.value as "AM" | "PM")}
           className="h-[38px] rounded-[8px] px-2 text-[13px] outline-none text-center"
-          style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
         >
           <option value="AM">AM</option>
           <option value="PM">PM</option>

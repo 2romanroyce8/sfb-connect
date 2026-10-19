@@ -17,11 +17,11 @@ export type SimpleIntegrationState = { status: "Needs Setup" | "Disconnected"; d
 type TabId = "google_calendar" | "apple_calendar" | "ai_provider" | "messaging";
 
 const STATUS_COLOR: Record<string, string> = {
-  Connected: "#30D158",
-  "Needs Setup": "#FFD60A",
-  Disconnected: "#6E6E73",
-  "Connection Issue": "#FF453A",
-  "Not Connected": "#6E6E73",
+  Connected: "var(--hx-30d158)",
+  "Needs Setup": "var(--hx-ffd60a)",
+  Disconnected: "var(--hx-6e6e73)",
+  "Connection Issue": "var(--hx-ff453a)",
+  "Not Connected": "var(--hx-6e6e73)",
 };
 
 export default function IntegrationControlDeck({
@@ -71,16 +71,16 @@ export default function IntegrationControlDeck({
       {/* depth layer behind */}
       <div
         className="absolute rounded-[36px]"
-        style={{ left: "1%", right: "-1%", top: 0, bottom: "-1.5%", background: "#0C0C0C", border: "1px solid rgba(255,255,255,0.08)", zIndex: 0 }}
+        style={{ left: "1%", right: "-1%", top: 0, bottom: "-1.5%", background: "var(--hx-0c0c0c)", border: "1px solid rgb(var(--w) / 0.08)", zIndex: 0 }}
       />
 
       {/* outer frame */}
       <div
         className="relative rounded-[34px]"
         style={{
-          background: "linear-gradient(180deg, #121212 0%, #0E0E0E 100%)",
-          border: "1px solid rgba(255,255,255,0.10)",
-          boxShadow: "0 26px 80px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.035)",
+          background: "linear-gradient(180deg, var(--hx-121212) 0%, var(--hx-0e0e0e) 100%)",
+          border: "1px solid rgb(var(--w) / 0.10)",
+          boxShadow: "0 26px 80px rgba(0,0,0,0.38), inset 0 1px 0 rgb(var(--w) / 0.035)",
           zIndex: 1,
         }}
       >
@@ -88,9 +88,9 @@ export default function IntegrationControlDeck({
         <div
           className="relative rounded-[30px] overflow-hidden m-[3%]"
           style={{
-            background: "linear-gradient(180deg, #171717 0%, #111111 100%)",
-            border: "1px solid rgba(255,255,255,0.18)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02), 0 20px 60px rgba(0,0,0,0.25)",
+            background: "linear-gradient(180deg, var(--hx-171717) 0%, var(--hx-111111) 100%)",
+            border: "1px solid rgb(var(--w) / 0.18)",
+            boxShadow: "inset 0 1px 0 rgb(var(--w) / 0.02), 0 20px 60px rgba(0,0,0,0.25)",
           }}
         >
           {/* top progress / category navigation -- real tab switcher */}
@@ -104,7 +104,7 @@ export default function IntegrationControlDeck({
                 style={{
                   height: 3,
                   borderRadius: 999,
-                  background: i <= selectedIndex ? "#F3F3F3" : "#4A4A4A",
+                  background: i <= selectedIndex ? "var(--hx-f3f3f3)" : "var(--hx-4a4a4a)",
                   transition: "background 0.2s ease",
                 }}
                 aria-label={`Show ${t.label}`}
@@ -124,7 +124,7 @@ export default function IntegrationControlDeck({
               onSelect={setSelected}
               animating={animating}
               delay="0s"
-              style={{ left: "4%", top: "26%", width: 60, height: 60, borderRadius: 20, background: "linear-gradient(180deg, #4D4D4D 0%, #252525 100%)", border: "1px solid rgba(255,255,255,0.14)" }}
+              style={{ left: "4%", top: "26%", width: 60, height: 60, borderRadius: 20, background: "linear-gradient(180deg, var(--hx-4d4d4d) 0%, var(--hx-252525) 100%)", border: "1px solid rgb(var(--w) / 0.14)" }}
             >
               <Calendar size={26} className="text-white/90" strokeWidth={1.75} />
             </IconSelector>
@@ -135,9 +135,9 @@ export default function IntegrationControlDeck({
               onSelect={setSelected}
               animating={animating}
               delay="0.7s"
-              style={{ left: "28%", top: "50%", width: 46, height: 46, borderRadius: 16, background: "#F2F2F2" }}
+              style={{ left: "28%", top: "50%", width: 46, height: 46, borderRadius: 16, background: "var(--hx-f2f2f2)" }}
             >
-              <CalendarDays size={20} className="text-[#6E6E73]" strokeWidth={1.9} />
+              <CalendarDays size={20} className="text-[color:var(--hx-6e6e73)]" strokeWidth={1.9} />
             </IconSelector>
 
             <IconSelector
@@ -146,9 +146,9 @@ export default function IntegrationControlDeck({
               onSelect={setSelected}
               animating={animating}
               delay="1.4s"
-              style={{ left: "54%", top: "14%", width: 62, height: 62, borderRadius: 19, background: "#F2F2F2" }}
+              style={{ left: "54%", top: "14%", width: 62, height: 62, borderRadius: 19, background: "var(--hx-f2f2f2)" }}
             >
-              <Bot size={28} className="text-[#7A5CFF]" strokeWidth={1.75} />
+              <Bot size={28} className="text-[color:var(--hx-7a5cff)]" strokeWidth={1.75} />
             </IconSelector>
 
             <IconSelector
@@ -157,7 +157,7 @@ export default function IntegrationControlDeck({
               onSelect={setSelected}
               animating={animating}
               delay="2.1s"
-              style={{ right: "6%", top: "22%", width: 52, height: 52, borderRadius: 17, background: "linear-gradient(180deg, #A621EF 0%, #7A11C4 100%)" }}
+              style={{ right: "6%", top: "22%", width: 52, height: 52, borderRadius: 17, background: "linear-gradient(180deg, var(--hx-a621ef) 0%, var(--hx-7a11c4) 100%)" }}
             >
               <MessageSquare size={22} className="text-white" strokeWidth={1.9} />
             </IconSelector>
@@ -180,12 +180,12 @@ export default function IntegrationControlDeck({
                 <PanelHeader title="Google Calendar" status={googleStatus} />
                 {google ? (
                   <>
-                    <p className="text-[14.5px] text-[#B4B4B6] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
-                      Connected as <span className="text-[#F5F5F7]">{google.email}</span> · Since {new Date(google.connectedAt).toLocaleDateString()}
+                    <p className="text-[14.5px] text-[color:var(--hx-b4b4b6)] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
+                      Connected as <span className="text-[color:var(--hx-f5f5f7)]">{google.email}</span> · Since {new Date(google.connectedAt).toLocaleDateString()}
                     </p>
                     <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4">
                       {["Read availability", "Create events", "Google Meet"].map((c) => (
-                        <span key={c} className="inline-flex items-center gap-1.5 text-[12.5px] text-[#30D158]">
+                        <span key={c} className="inline-flex items-center gap-1.5 text-[12.5px] text-[color:var(--hx-30d158)]">
                           <Check size={13} strokeWidth={2.5} /> {c}
                         </span>
                       ))}
@@ -193,10 +193,10 @@ export default function IntegrationControlDeck({
 
                     {isOwner && teamConnections.length > 0 && (
                       <div className="mt-6">
-                        <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-2">
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-2">
                           Team Connections
                         </div>
-                        <div className="rounded-[14px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <div className="rounded-[14px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
                           {teamConnections.map((c, i) => (
                             <div
                               key={i}
@@ -204,12 +204,12 @@ export default function IntegrationControlDeck({
                               style={{
                                 height: 52,
                                 gridTemplateColumns: "1fr 1.4fr auto",
-                                borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.05)",
-                                background: "#0A0A0A",
+                                borderTop: i === 0 ? "none" : "1px solid rgb(var(--w) / 0.05)",
+                                background: "var(--hx-0a0a0a)",
                               }}
                             >
-                              <span className="text-[13px] text-[#F5F5F7] truncate">{c.repName}</span>
-                              <span className="text-[13px] text-[#A1A1A6] truncate">{c.email || "—"}</span>
+                              <span className="text-[13px] text-[color:var(--hx-f5f5f7)] truncate">{c.repName}</span>
+                              <span className="text-[13px] text-[color:var(--hx-a1a1a6)] truncate">{c.email || "—"}</span>
                               <span className="inline-flex items-center gap-1.5 text-[11.5px] justify-self-end" style={{ color: c.valid ? STATUS_COLOR.Connected : STATUS_COLOR["Connection Issue"] }}>
                                 <span className="w-[6px] h-[6px] rounded-full" style={{ background: c.valid ? STATUS_COLOR.Connected : STATUS_COLOR["Connection Issue"] }} />
                                 {c.valid ? "Connected" : "Needs Reconnect"}
@@ -217,14 +217,14 @@ export default function IntegrationControlDeck({
                             </div>
                           ))}
                         </div>
-                        <p className="text-[11px] text-[#6E6E73] mt-2 leading-relaxed">
+                        <p className="text-[11px] text-[color:var(--hx-6e6e73)] mt-2 leading-relaxed">
                           You see who's connected and when — never the underlying Google tokens, which stay encrypted and server-side per rep.
                         </p>
                       </div>
                     )}
                   </>
                 ) : (
-                  <p className="text-[14.5px] text-[#B4B4B6] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
+                  <p className="text-[14.5px] text-[color:var(--hx-b4b4b6)] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
                     Connect Google Calendar to check rep availability, create meetings, and automatically generate Google Meet links.
                   </p>
                 )}
@@ -237,14 +237,14 @@ export default function IntegrationControlDeck({
                     className="mt-6 flex items-center justify-center w-full transition-opacity disabled:opacity-60"
                     style={pillStyle("danger")}
                   >
-                    <span className="text-[#FF453A] font-medium" style={{ fontSize: 16, letterSpacing: "-0.02em" }}>
+                    <span className="text-[color:var(--hx-ff453a)] font-medium" style={{ fontSize: 16, letterSpacing: "-0.02em" }}>
                       {disconnecting ? "Disconnecting…" : "Disconnect Google Calendar"}
                     </span>
                   </button>
                 ) : (
                   <a href="/api/team/integrations/google/connect" className="mt-6 flex items-center justify-center gap-2 w-full" style={pillStyle("default")}>
-                    <span className="text-[#F3F3F3] font-medium" style={{ fontSize: 16, letterSpacing: "-0.02em" }}>Connect Google Calendar</span>
-                    <span className="text-[#F3F3F3]" style={{ fontSize: 17 }}>→</span>
+                    <span className="text-[color:var(--hx-f3f3f3)] font-medium" style={{ fontSize: 16, letterSpacing: "-0.02em" }}>Connect Google Calendar</span>
+                    <span className="text-[color:var(--hx-f3f3f3)]" style={{ fontSize: 17 }}>→</span>
                   </a>
                 )}
               </>
@@ -253,7 +253,7 @@ export default function IntegrationControlDeck({
             {selected === "apple_calendar" && (
               <>
                 <PanelHeader title="Apple Calendar" status={appleCalendar.status} />
-                <p className="text-[14.5px] text-[#B4B4B6] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
+                <p className="text-[14.5px] text-[color:var(--hx-b4b4b6)] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
                   {appleCalendar.description}
                 </p>
                 <DisabledPill label="Not Available Yet" />
@@ -263,7 +263,7 @@ export default function IntegrationControlDeck({
             {selected === "ai_provider" && (
               <>
                 <PanelHeader title="AI Provider" status={aiProvider.status} />
-                <p className="text-[14.5px] text-[#B4B4B6] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
+                <p className="text-[14.5px] text-[color:var(--hx-b4b4b6)] mt-[10px]" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
                   {aiProvider.description}
                 </p>
                 <DisabledPill label="Not Available Yet" />
@@ -273,15 +273,15 @@ export default function IntegrationControlDeck({
             {selected === "messaging" && (
               <>
                 <PanelHeader title="Messaging" status={null} />
-                <p className="text-[14.5px] text-[#B4B4B6] mt-[10px] mb-4" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
+                <p className="text-[14.5px] text-[color:var(--hx-b4b4b6)] mt-[10px] mb-4" style={{ letterSpacing: "-0.01em", lineHeight: 1.45 }}>
                   Send text reminders, confirmations, and follow-up emails from the CRM.
                 </p>
-                <div className="rounded-[14px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="rounded-[14px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
                   {messaging.map((m, i) => (
-                    <div key={m.name} className="flex items-center justify-between px-4 py-3" style={{ background: "#0A0A0A", borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
+                    <div key={m.name} className="flex items-center justify-between px-4 py-3" style={{ background: "var(--hx-0a0a0a)", borderTop: i === 0 ? "none" : "1px solid rgb(var(--w) / 0.05)" }}>
                       <div>
-                        <div className="text-[13.5px] text-[#F5F5F7]">{m.name}</div>
-                        <div className="text-[11.5px] text-[#6E6E73] mt-0.5">{m.description}</div>
+                        <div className="text-[13.5px] text-[color:var(--hx-f5f5f7)]">{m.name}</div>
+                        <div className="text-[11.5px] text-[color:var(--hx-6e6e73)] mt-0.5">{m.description}</div>
                       </div>
                       <span className="inline-flex items-center gap-1.5 text-[11px] shrink-0 ml-3" style={{ color: STATUS_COLOR[m.status] }}>
                         <span className="w-[6px] h-[6px] rounded-full" style={{ background: STATUS_COLOR[m.status] }} />
@@ -307,16 +307,16 @@ export default function IntegrationControlDeck({
             bottom: "3%",
             width: 52,
             height: 52,
-            background: "radial-gradient(circle at 45% 35%, #4A4A4C 0%, #2C2C2F 56%, #1E1738 100%)",
-            border: "1px solid rgba(255,255,255,0.18)",
+            background: "radial-gradient(circle at 45% 35%, var(--hx-4a4a4c) 0%, var(--hx-2c2c2f) 56%, var(--hx-1e1738) 100%)",
+            border: "1px solid rgb(var(--w) / 0.18)",
             boxShadow: "0 18px 36px rgba(0,0,0,0.35)",
             zIndex: 10,
           }}
         >
           {animating ? (
-            <Pause size={17} className="text-[#F0F0F0]" fill="currentColor" strokeWidth={0} />
+            <Pause size={17} className="text-[color:var(--hx-f0f0f0)]" fill="currentColor" strokeWidth={0} />
           ) : (
-            <Play size={17} className="text-[#F0F0F0]" fill="currentColor" strokeWidth={0} />
+            <Play size={17} className="text-[color:var(--hx-f0f0f0)]" fill="currentColor" strokeWidth={0} />
           )}
         </button>
       </div>
@@ -363,8 +363,8 @@ function IconSelector({
       className={`absolute rounded-[20px] flex items-center justify-center integrations-float ${animating ? "" : "paused"} transition-all duration-200`}
       style={{
         ...style,
-        border: (style.background as string)?.includes("#F2F2F2") ? "1px solid rgba(0,0,0,0.06)" : (style.border as string) || "1px solid rgba(255,255,255,0.14)",
-        boxShadow: isActive ? "0 0 0 2px rgba(255,255,255,0.55), 0 16px 34px rgba(0,0,0,0.35)" : "0 16px 34px rgba(0,0,0,0.30)",
+        border: (style.background as string)?.includes("var(--hx-f2f2f2)") ? "1px solid rgb(var(--k) / 0.06)" : (style.border as string) || "1px solid rgb(var(--w) / 0.14)",
+        boxShadow: isActive ? "0 0 0 2px rgb(var(--w) / 0.55), 0 16px 34px rgba(0,0,0,0.35)" : "0 16px 34px rgba(0,0,0,0.30)",
         opacity: isActive ? 1 : 0.55,
         transform: `${isActive ? "scale(1.08)" : "scale(1)"} rotate(-4deg)`,
         animationDelay: delay,
@@ -380,7 +380,7 @@ function IconSelector({
 function PanelHeader({ title, status }: { title: string; status: string | null }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="font-medium text-[#F4F4F4]" style={{ fontSize: 26, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+      <div className="font-medium text-[color:var(--hx-f4f4f4)]" style={{ fontSize: 26, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
         {title}
       </div>
       {status && (
@@ -400,7 +400,7 @@ function DisabledPill({ label }: { label: string }) {
       style={{ ...pillStyle("disabled"), cursor: "not-allowed" }}
       aria-disabled="true"
     >
-      <span className="text-[#5C5C5F] font-medium" style={{ fontSize: 16, letterSpacing: "-0.02em" }}>{label}</span>
+      <span className="text-[color:var(--hx-5c5c5f)] font-medium" style={{ fontSize: 16, letterSpacing: "-0.02em" }}>{label}</span>
     </div>
   );
 }
@@ -409,9 +409,9 @@ function pillStyle(kind: "default" | "danger" | "disabled"): React.CSSProperties
   const base: React.CSSProperties = {
     height: 56,
     borderRadius: 40,
-    background: "linear-gradient(180deg, #262626 0%, #1D1D1D 100%)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 28px rgba(0,0,0,0.22)",
+    background: "linear-gradient(180deg, var(--hx-262626) 0%, var(--hx-1d1d1d) 100%)",
+    border: "1px solid rgb(var(--w) / 0.10)",
+    boxShadow: "inset 0 1px 0 rgb(var(--w) / 0.04), 0 10px 28px rgba(0,0,0,0.22)",
   };
   if (kind === "danger") return { ...base, border: "1px solid rgba(255,69,58,0.28)" };
   if (kind === "disabled") return { ...base, opacity: 0.55 };

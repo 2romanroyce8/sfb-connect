@@ -26,7 +26,7 @@ export default function MetricBar({ name, value }: { name: string; value: number
 
   return (
     <div ref={ref} className="flex items-center gap-5">
-      <span className="w-[170px] shrink-0 text-[14.5px] text-[#d4d4d8]">{name}</span>
+      <span className="w-[170px] shrink-0 text-[14.5px] text-[color:var(--hx-d4d4d8)]">{name}</span>
       <div className="flex-1 h-1.5 rounded-md bg-white/[0.08] overflow-hidden">
         <motion.div
           className="h-full bg-white rounded-md"

@@ -18,9 +18,9 @@ export default function AnalyticsTabs({ initial, isOwner, stripeConfigured }: { 
   ];
   return (
     <div className="flex flex-col gap-5">
-      <div className="inline-flex items-center gap-0.5 p-[3px] rounded-[10px] self-start" style={{ background: "#121212", border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="inline-flex items-center gap-0.5 p-[3px] rounded-[10px] self-start" style={{ background: "var(--hx-121212)", border: "1px solid rgb(var(--w) / 0.06)" }}>
         {tabs.filter((t) => t.show).map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} title={t.hint} className="h-8 px-4 rounded-[7px] text-[12.5px] font-medium transition-colors" style={tab === t.key ? { background: "#F5F5F7", color: "#090909" } : { color: "#A1A1A6" }}>{t.label}</button>
+          <button key={t.key} onClick={() => setTab(t.key)} title={t.hint} className="h-8 px-4 rounded-[7px] text-[12.5px] font-medium transition-colors" style={tab === t.key ? { background: "var(--hx-f5f5f7)", color: "var(--hx-090909)" } : { color: "var(--hx-a1a1a6)" }}>{t.label}</button>
         ))}
       </div>
       {tab === "sales" && <RevenueAnalyticsView initial={initial} isOwner={isOwner} />}

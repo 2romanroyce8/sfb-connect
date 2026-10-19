@@ -78,9 +78,9 @@ export default function ActivityFeed({
   if (activities.length === 0) {
     return (
       <div className="px-8 py-8">
-        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="text-[15px] font-medium text-[#F5F5F7] mb-1.5">Nothing has happened yet</div>
-          <p className="text-[13px] text-[#A1A1A6]">Research a business or start a call and it'll show up here.</p>
+        <div className="rounded-[14px] p-10 text-center max-w-[480px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
+          <div className="text-[15px] font-medium text-[color:var(--hx-f5f5f7)] mb-1.5">Nothing has happened yet</div>
+          <p className="text-[13px] text-[color:var(--hx-a1a1a6)]">Research a business or start a call and it'll show up here.</p>
         </div>
       </div>
     );
@@ -89,8 +89,8 @@ export default function ActivityFeed({
   return (
     <div className="px-8 py-8">
       <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#F5F5F7]">Activity</div>
-        <div className="text-[13px] text-[#6E6E73] mt-1">{filtered.length} of {activities.length} events</div>
+        <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Activity</div>
+        <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">{filtered.length} of {activities.length} events</div>
       </div>
 
       <div className="flex items-center gap-2 mb-5">
@@ -99,13 +99,13 @@ export default function ActivityFeed({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search…"
           className="h-[36px] w-[220px] rounded-[8px] px-3 text-[12.5px] outline-none"
-          style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
         />
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="h-[36px] rounded-[8px] px-3 text-[12.5px] outline-none"
-          style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+          style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
         >
           <option value="">All events</option>
           {types.map((t) => (
@@ -119,7 +119,7 @@ export default function ActivityFeed({
             value={repFilter}
             onChange={(e) => setRepFilter(e.target.value)}
             className="h-[36px] rounded-[8px] px-3 text-[12.5px] outline-none"
-            style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)", color: "#F5F5F7" }}
+            style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)", color: "var(--hx-f5f5f7)" }}
           >
             <option value="">All reps</option>
             {reps.map((r) => (
@@ -135,21 +135,21 @@ export default function ActivityFeed({
         {filtered.map((a) => {
           const Icon = iconFor(a.activity_type);
           return (
-            <div key={a.id} className="flex items-start gap-3 p-3 rounded-[10px]" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <Icon size={15} className="text-[#6E6E73] mt-0.5 shrink-0" />
+            <div key={a.id} className="flex items-start gap-3 p-3 rounded-[10px]" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.06)" }}>
+              <Icon size={15} className="text-[color:var(--hx-6e6e73)] mt-0.5 shrink-0" />
               <div className="min-w-0">
-                <div className="text-[13px] text-[#F5F5F7]">
+                <div className="text-[13px] text-[color:var(--hx-f5f5f7)]">
                   {a.description || a.activity_type.replace(/_/g, " ")}
                   {a.lead_id && leadMap[a.lead_id] && (
                     <>
                       {" · "}
-                      <Link href={`/team/leads/${a.lead_id}`} className="text-[#0A84FF] hover:underline">
+                      <Link href={`/team/leads/${a.lead_id}`} className="text-[color:var(--hx-0a84ff)] hover:underline">
                         {leadMap[a.lead_id]}
                       </Link>
                     </>
                   )}
                 </div>
-                <div className="text-[11px] text-[#6E6E73] mt-0.5">
+                <div className="text-[11px] text-[color:var(--hx-6e6e73)] mt-0.5">
                   {isOwner && a.rep_id && repMap[a.rep_id] ? `${repMap[a.rep_id]} · ` : ""}
                   {formatInTimeZone(a.created_at, timeZone, { month: "numeric", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                 </div>

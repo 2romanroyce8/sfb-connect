@@ -4,13 +4,16 @@ const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Theme-relative (2026-10-18): every utility below resolves through the tokens in app/theme-tokens.css,
+      // so text-white / bg-black / neutral-* flip with html[data-theme] and the [data-authored] register.
       colors: {
-        black: "#000000",
-        white: "#ffffff",
-        "soft-white": "#F5F5F7",
-        "dark-gray": "#1D1D1F",
-        "medium-gray": "#86868B",
-        border: "rgba(255,255,255,0.12)",
+        black: "rgb(var(--k) / <alpha-value>)",
+        white: "rgb(var(--w) / <alpha-value>)",
+        neutral: Object.fromEntries([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((n) => [n, `rgb(var(--n-${n}) / <alpha-value>)`])),
+        "soft-white": "var(--hx-f5f5f7)",
+        "dark-gray": "var(--hx-1d1d1f)",
+        "medium-gray": "var(--hx-86868b)",
+        border: "rgb(var(--w) / 0.12)",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

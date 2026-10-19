@@ -20,9 +20,9 @@ function ReportHeader({ name, logoUrl, enteredQuery, domain, market, cached, sta
   const [broken, setBroken] = useState(false);
   const showLogo = !!logoUrl && !broken;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] p-4 md:p-5" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] p-4 md:p-5" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
       <div className="flex items-center gap-4 min-w-0">
-        <div className="shrink-0 w-[56px] h-[56px] rounded-[14px] flex items-center justify-center overflow-hidden" style={{ background: "#141416", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <div className="shrink-0 w-[56px] h-[56px] rounded-[14px] flex items-center justify-center overflow-hidden" style={{ background: "var(--hx-141416)", border: "1px solid rgb(var(--w) / 0.1)" }}>
           {showLogo ? <img src={logoUrl!} alt={name ? `${name} logo` : "Logo"} className="w-full h-full object-contain p-1.5" onError={() => setBroken(true)} /> : <span className="text-[22px] font-semibold text-white/[0.85]">{initialOf(name, domain)}</span>}
         </div>
         <div className="min-w-0">
@@ -42,7 +42,7 @@ function Heading({ name }: { name: string | null }) {
       <h2 className="text-[32px] sm:text-[40px] md:text-[56px] font-extrabold tracking-[-0.025em] leading-[1.06]">
         Your agent&apos;s first 7 days{name ? <> at <span className="font-serif-accent italic font-normal">{name}.</span></> : <span className="font-serif-accent italic font-normal">.</span>}
       </h2>
-      <p className="mt-4 text-[15px] leading-relaxed text-[#a3a3a8]">Real findings from public data, grouped by day. Live capabilities act first; the rest tell you when they ship. <a href="#agent" className="underline underline-offset-2 text-white/[0.85]">See all 8 →</a></p>
+      <p className="mt-4 text-[15px] leading-relaxed text-[color:var(--hx-a3a3a8)]">Real findings from public data, grouped by day. Live capabilities act first; the rest tell you when they ship. <a href="#agent" className="underline underline-offset-2 text-white/[0.85]">See all 8 →</a></p>
     </div>
   );
 }
@@ -53,7 +53,7 @@ export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) 
     return (
       <>
         <Heading name={null} />
-        <div className="rounded-[18px] p-8 text-center" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-[18px] p-8 text-center" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.08)" }}>
           <div className="text-[15px] text-white/[0.6]">Enter your website above. In about 30 seconds you&apos;ll see exactly what your agent would do in its first 7 days — from public data, nothing invented.</div>
         </div>
       </>
@@ -64,7 +64,7 @@ export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) 
       <>
         <Heading name={null} />
         <div className="rounded-[18px] p-6 flex items-start gap-3" style={{ background: "rgba(255,69,58,0.06)", border: "1px solid rgba(255,69,58,0.25)" }}>
-          <AlertCircle size={18} className="shrink-0 mt-0.5 text-[#FF6B6B]" />
+          <AlertCircle size={18} className="shrink-0 mt-0.5 text-[color:var(--hx-ff6b6b)]" />
           <div><div className="text-[14px] font-medium text-white">We couldn&apos;t run the scan.</div><div className="text-[13px] text-white/[0.6] mt-1">{s.error.message}</div></div>
         </div>
       </>
@@ -79,13 +79,13 @@ export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) 
       <Heading name={name} />
       <ReportHeader name={name} logoUrl={s.meta?.logoUrl ?? null} enteredQuery={s.meta?.enteredQuery ?? s.query} domain={s.meta?.domain ?? s.query} market={s.meta?.market ?? null} cached={!!s.meta?.cached} status={s.phase === "running" ? "Scanning public data…" : `Public data only · ${s.findings.length} checks`} />
 
-      <ol className="rounded-[18px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <ol className="rounded-[18px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
         {rows.map((r, i) => (
-          <li key={r.check} className="grid md:grid-cols-[150px_1fr] gap-3 md:gap-6 px-5 md:px-6 py-5" style={{ background: i % 2 ? "#0A0A0A" : "#0D0D0D", borderTop: i ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+          <li key={r.check} className="grid md:grid-cols-[150px_1fr] gap-3 md:gap-6 px-5 md:px-6 py-5" style={{ background: i % 2 ? "var(--hx-0a0a0a)" : "var(--hx-0d0d0d)", borderTop: i ? "1px solid rgb(var(--w) / 0.06)" : undefined }}>
             <div>
-              <div className="text-[11px] font-semibold tracking-[0.14em] uppercase text-[#30D158]">{r.dayLabel}</div>
+              <div className="text-[11px] font-semibold tracking-[0.14em] uppercase text-[color:var(--hx-30d158)]">{r.dayLabel}</div>
               <div className="mt-1 text-[16px] font-semibold text-white">{r.title}</div>
-              <div className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-medium rounded-full px-2 py-0.5" style={{ background: r.live ? "rgba(48,209,88,0.12)" : "rgba(255,255,255,0.06)", color: r.live ? "#30D158" : "#8E8E93" }}>{r.live ? <Check size={10} /> : <Lock size={10} />}{r.live ? "Live" : "Not shipped yet"}</div>
+              <div className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-medium rounded-full px-2 py-0.5" style={{ background: r.live ? "rgba(48,209,88,0.12)" : "rgb(var(--w) / 0.06)", color: r.live ? "var(--hx-30d158)" : "var(--hx-8e8e93)" }}>{r.live ? <Check size={10} /> : <Lock size={10} />}{r.live ? "Live" : "Not shipped yet"}</div>
             </div>
             <div className="min-w-0">
               {!r.finding ? (
@@ -97,7 +97,7 @@ export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) 
                     <ul className="mt-2 flex flex-col gap-1">{r.finding.items.map((it) => <li key={it} className="text-[13px] text-white/[0.65] pl-3 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:w-[5px] before:h-[5px] before:rounded-full before:bg-white/[0.3]">{it}</li>)}</ul>
                   )}
                   {r.finding.reason && <div className="mt-2 text-[12.5px] text-white/[0.42]">{r.finding.status === "missing" ? "Why: " : ""}{r.finding.reason}</div>}
-                  {r.agentLine && <div className="mt-3 text-[13.5px] font-medium" style={{ color: r.live ? "#30D158" : "rgba(255,255,255,0.7)" }}>→ {r.agentLine}</div>}
+                  {r.agentLine && <div className="mt-3 text-[13.5px] font-medium" style={{ color: r.live ? "var(--hx-30d158)" : "rgb(var(--w) / 0.7)" }}>→ {r.agentLine}</div>}
                 </>
               )}
             </div>
@@ -106,7 +106,7 @@ export default function FirstSevenDays({ modules }: { modules: AgentModule[] }) 
       </ol>
 
       {s.phase === "done" && (
-        <div className="rounded-[18px] p-6 flex flex-wrap items-center justify-between gap-4" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.1)" }}>
+        <div className="rounded-[18px] p-6 flex flex-wrap items-center justify-between gap-4" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.1)" }}>
           <div>
             <div className="text-[16px] font-semibold text-white">The preview shows findings. Your agent is where they get done.</div>
             <div className="text-[13px] text-white/[0.55] mt-1">Create your account and your agent starts from exactly what you see above. Price shown after it builds itself.</div>

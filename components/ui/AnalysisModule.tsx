@@ -20,7 +20,7 @@ export default function AnalysisModule({
       </div>
       <ul className="flex flex-col gap-3">
         {items.map((item) => (
-          <li key={item} className="text-[14px] text-[#d4d4d8] leading-snug">
+          <li key={item} className="text-[14px] text-[color:var(--hx-d4d4d8)] leading-snug">
             {item}
           </li>
         ))}

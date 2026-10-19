@@ -44,11 +44,11 @@ export default function ActiveResearchJobs() {
 
   return (
     <div className="mb-6">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73] mb-2">Currently Researching ({jobs.length})</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)] mb-2">Currently Researching ({jobs.length})</div>
       <div className="flex flex-wrap gap-3">
         {jobs.map((job) => (
-          <div key={job.id} className="rounded-[14px] p-3" style={{ background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <div className="text-[12px] text-[#A1A1A6] truncate max-w-[210px] mb-2 px-0.5">{job.started_for || "Researching…"}</div>
+          <div key={job.id} className="rounded-[14px] p-3" style={{ background: "var(--hx-0a0a0a)", border: "1px solid rgb(var(--w) / 0.06)" }}>
+            <div className="text-[12px] text-[color:var(--hx-a1a1a6)] truncate max-w-[210px] mb-2 px-0.5">{job.started_for || "Researching…"}</div>
             <ResearchProgressModule mode="running" compact stage={job.current_step} progressPercent={job.progress_percent} sourcesFound={job.sources_found} elapsedMs={Date.now() - new Date(job.created_at).getTime()} />
           </div>
         ))}

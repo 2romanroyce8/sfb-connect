@@ -45,7 +45,7 @@ export default function CsvImport({ target, dark = false, onImported }: Props) {
   };
 
   const t = dark
-    ? { text: "text-[#F5F5F7]", muted: "text-[#A1A1A6]", faint: "text-[#6E6E73]", box: "border border-white/[0.1] bg-[#0F0F0F]", select: "bg-[#0F0F0F] text-[#F5F5F7] border border-white/[0.14]", primary: "bg-white text-black", ghost: "border border-white/[0.14] text-[#F5F5F7]", ok: "text-[#30D158]", bad: "text-[#FF6961]", cell: "border-white/[0.06]" }
+    ? { text: "text-[color:var(--hx-f5f5f7)]", muted: "text-[color:var(--hx-a1a1a6)]", faint: "text-[color:var(--hx-6e6e73)]", box: "border border-white/[0.1] bg-[color:var(--hx-0f0f0f)]", select: "bg-[color:var(--hx-0f0f0f)] text-[color:var(--hx-f5f5f7)] border border-white/[0.14]", primary: "bg-white text-black", ghost: "border border-white/[0.14] text-[color:var(--hx-f5f5f7)]", ok: "text-[color:var(--hx-30d158)]", bad: "text-[color:var(--hx-ff6961)]", cell: "border-white/[0.06]" }
     : { text: "text-neutral-900", muted: "text-neutral-600", faint: "text-neutral-400", box: "border border-neutral-200 bg-white", select: "bg-white text-neutral-900 border border-neutral-300", primary: "bg-neutral-900 text-white", ghost: "border border-neutral-300 text-neutral-900", ok: "text-emerald-700", bad: "text-red-600", cell: "border-neutral-100" };
   const mapped = (f: ImportField) => Object.values(mapping).includes(f);
   const ready = mapped("email") && (mapped("name") || mapped("company") || mapped("first_name") || mapped("last_name"));

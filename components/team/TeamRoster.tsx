@@ -18,9 +18,9 @@ type Member = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  invited: "#FFD60A",
-  active: "#30D158",
-  disabled: "#FF453A",
+  invited: "var(--hx-ffd60a)",
+  active: "var(--hx-30d158)",
+  disabled: "var(--hx-ff453a)",
 };
 
 async function callAction(action: string, payload: Record<string, unknown>) {
@@ -84,8 +84,8 @@ export default function TeamRoster({
     <div className="px-8 py-8 max-w-[1100px]">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-[20px] font-semibold text-[#F5F5F7]">Team</div>
-          <div className="text-[13px] text-[#6E6E73] mt-1">
+          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Team</div>
+          <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">
             Manage who has access to the Sales OS.
           </div>
         </div>
@@ -100,17 +100,17 @@ export default function TeamRoster({
       {showInvite && <InviteCollaboratorsModal members={members} onClose={() => setShowInvite(false)} onChanged={refresh} />}
 
       {toast && (
-        <div className="mb-4 text-[12.5px] text-[#F5F5F7] bg-[#151515] border border-white/10 rounded-[8px] px-3 py-2">
+        <div className="mb-4 text-[12.5px] text-[color:var(--hx-f5f5f7)] bg-[color:var(--hx-151515)] border border-white/10 rounded-[8px] px-3 py-2">
           {toast}
         </div>
       )}
 
-      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-[12px] overflow-hidden" style={{ border: "1px solid rgb(var(--w) / 0.08)" }}>
         <table className="w-full text-[13px]">
           <thead>
-            <tr style={{ background: "#0A0A0A" }}>
+            <tr style={{ background: "var(--hx-0a0a0a)" }}>
               {["Name", "Email", "Role", "Status", "Calls", "Talk Time", "Meetings", "Wins", "Conversion", "Last Active", ""].map((h) => (
-                <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#6E6E73]">
+                <th key={h} className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[color:var(--hx-6e6e73)]">
                   {h}
                 </th>
               ))}
@@ -118,27 +118,27 @@ export default function TeamRoster({
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr key={m.id} style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <td className="px-4 py-3 text-[#F5F5F7]">
+              <tr key={m.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
+                <td className="px-4 py-3 text-[color:var(--hx-f5f5f7)]">
                   {m.full_name || [m.first_name, m.last_name].filter(Boolean).join(" ") || "—"}
                 </td>
-                <td className="px-4 py-3 text-[#A1A1A6]">{m.email}</td>
-                <td className="px-4 py-3 text-[#A1A1A6] capitalize">{m.team_role.replace("_", " ")}</td>
+                <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{m.email}</td>
+                <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)] capitalize">{m.team_role.replace("_", " ")}</td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center gap-1.5">
                     <span
                       className="w-[6px] h-[6px] rounded-full"
                       style={{ background: STATUS_COLOR[m.team_status || "invited"] }}
                     />
-                    <span className="capitalize text-[#A1A1A6]">{m.team_status || "invited"}</span>
+                    <span className="capitalize text-[color:var(--hx-a1a1a6)]">{m.team_status || "invited"}</span>
                   </span>
                 </td>
-                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.calls ?? 0}</td>
-                <td className="px-4 py-3 text-[#A1A1A6]">{formatDuration(performance[m.id]?.talkTime ?? 0)}</td>
-                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.meetings ?? 0}</td>
-                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.wins ?? 0}</td>
-                <td className="px-4 py-3 text-[#A1A1A6]">{performance[m.id]?.conversion ?? 0}%</td>
-                <td className="px-4 py-3 text-[#6E6E73]">
+                <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{performance[m.id]?.calls ?? 0}</td>
+                <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{formatDuration(performance[m.id]?.talkTime ?? 0)}</td>
+                <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{performance[m.id]?.meetings ?? 0}</td>
+                <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{performance[m.id]?.wins ?? 0}</td>
+                <td className="px-4 py-3 text-[color:var(--hx-a1a1a6)]">{performance[m.id]?.conversion ?? 0}%</td>
+                <td className="px-4 py-3 text-[color:var(--hx-6e6e73)]">
                   {m.last_active_at ? new Date(m.last_active_at).toLocaleDateString() : "Never"}
                 </td>
                 <td className="px-4 py-3">
@@ -148,7 +148,7 @@ export default function TeamRoster({
                         disabled={busyId === m.id}
                         onClick={() => handleAction("resend-invite", m.id, "Invite resent.")}
                         title="Resend invite"
-                        className="p-1.5 rounded-[6px] text-[#6E6E73] hover:text-white hover:bg-[#151515]"
+                        className="p-1.5 rounded-[6px] text-[color:var(--hx-6e6e73)] hover:text-white hover:bg-[color:var(--hx-151515)]"
                       >
                         <RotateCcw size={14} />
                       </button>
@@ -157,7 +157,7 @@ export default function TeamRoster({
                       disabled={busyId === m.id}
                       onClick={() => handleAction("reset-access", m.id, "Password reset email sent.")}
                       title="Reset access"
-                      className="p-1.5 rounded-[6px] text-[#6E6E73] hover:text-white hover:bg-[#151515]"
+                      className="p-1.5 rounded-[6px] text-[color:var(--hx-6e6e73)] hover:text-white hover:bg-[color:var(--hx-151515)]"
                     >
                       <KeyRound size={14} />
                     </button>
@@ -171,7 +171,7 @@ export default function TeamRoster({
                         )
                       }
                       title={m.team_status === "disabled" ? "Reactivate" : "Deactivate"}
-                      className="p-1.5 rounded-[6px] text-[#6E6E73] hover:text-white hover:bg-[#151515]"
+                      className="p-1.5 rounded-[6px] text-[color:var(--hx-6e6e73)] hover:text-white hover:bg-[color:var(--hx-151515)]"
                     >
                       <Power size={14} />
                     </button>

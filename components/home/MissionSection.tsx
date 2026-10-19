@@ -18,7 +18,7 @@ export default function MissionSection() {
   });
 
   return (
-    <section ref={ref} className="pt-24 md:pt-32 pb-24 md:pb-32 px-6">
+    <section data-theme-lock="dark" ref={ref} className="pt-24 md:pt-32 pb-24 md:pb-32 px-6">
       <div className="max-w-4xl mx-auto flex flex-col items-center">
         <video
           autoPlay

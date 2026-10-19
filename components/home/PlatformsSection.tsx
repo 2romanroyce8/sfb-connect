@@ -28,7 +28,7 @@ export default function PlatformsSection() {
           <h2 className="text-[28px] sm:text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em]">
             Built for the new discovery layer.
           </h2>
-          <p className="mt-5 text-[15px] leading-relaxed text-[#a3a3a8] max-w-[680px] mx-auto">
+          <p className="mt-5 text-[15px] leading-relaxed text-[color:var(--hx-a3a3a8)] max-w-[680px] mx-auto">
             When your customers ask an AI who to hire, your agent&apos;s job is to make sure you&apos;re the answer. Nothing to connect here — this is where you get found.
           </p>
         </Reveal>
