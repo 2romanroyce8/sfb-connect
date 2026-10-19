@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const [{ data: accounts }, { data: rows }, { data: meta }] = await Promise.all([
     service.from("content_watch_accounts").select("id, username, niche, active, last_error, created_at").order("created_at"),
     service.from("content_posts").select("*").gte("posted_at", since).order("velocity", { ascending: false, nullsFirst: false }).limit(400),
-    service.from("integration_connections").select("status, account_label").eq("provider", "meta").limit(1).maybeSingle(),
+    service.from("integration_connections").select("status, account_label, provider").in("provider", ["meta_instagram", "meta"]).order("provider", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const posts = ((rows ?? []) as Row[]).map(toAnalyzed);
   const byNiche = new Map<string, typeof posts>(); for (const p of posts) { const k = p.niche ?? "—"; byNiche.set(k, [...(byNiche.get(k) ?? []), p]); }
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   const hashtagsUsed = Object.entries((settings.hashtag_ids as Record<string, { first_used_at: string }>) ?? {}).filter(([, v]) => Date.now() - Date.parse(v.first_used_at) < 7 * 864e5).length;
   return NextResponse.json({
     setupNeeded: false, niches: settings.niches, igUsername: settings.ig_username, lastRefreshAt: settings.last_refresh_at, lastResult: settings.last_result,
-    meta: meta ? { status: meta.status, label: meta.account_label } : null, accounts: accounts ?? [], days,
+    meta: meta ? { status: meta.status, label: meta.account_label, instagram: meta.provider === "meta_instagram" } : null, accounts: accounts ?? [], days,
     radar, own, patterns: analyzePatterns(posts.filter((p) => p.source !== "own")), principle: PACKAGING_PRINCIPLE, hashtagBudget: { used: hashtagsUsed, cap: HASHTAG_WEEKLY_CAP },
   });
 }

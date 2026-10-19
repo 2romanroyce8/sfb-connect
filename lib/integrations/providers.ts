@@ -6,7 +6,7 @@
  * exactly that URL in the vendor's app settings.
  */
 export type EnvLike = Record<string, string | undefined>;
-export type OAuthProviderKey = "gohighlevel" | "gmail" | "meta" | "slack" | "notion" | "linkedin" | "google_business_profile" | "outlook" | "hubspot" | "quickbooks" | "tiktok";
+export type OAuthProviderKey = "gohighlevel" | "gmail" | "meta" | "meta_instagram" | "slack" | "notion" | "linkedin" | "google_business_profile" | "outlook" | "hubspot" | "quickbooks" | "tiktok";
 
 export type OAuthProvider = {
   key: OAuthProviderKey;
@@ -80,7 +80,21 @@ export const OAUTH_PROVIDERS: Record<OAuthProviderKey, OAuthProvider> = {
     key: "meta", name: "Meta",
     authorizeUrl: "https://www.facebook.com/v21.0/dialog/oauth",
     tokenUrl: "https://graph.facebook.com/v21.0/oauth/access_token",
-    scopes: ["ads_management", "ads_read", "business_management", "pages_show_list", "pages_read_engagement", "instagram_basic", "instagram_manage_insights"], // instagram_*: Content Lab trend reads (2026-10-19)
+    scopes: ["ads_management", "ads_read", "business_management", "pages_show_list", "pages_read_engagement"], // Step 1 (2026-10-19): Facebook/Page only. Instagram scopes moved to "meta_instagram" below — Facebook rejected them as invalid until the app's Instagram product is configured.
+    scopeSeparator: ",",
+    env: { clientId: "META_APP_ID", clientSecret: "META_APP_SECRET" },
+    tokenAuth: "body", tokenMethod: "GET",
+    accountLabel: async (t) => { const u = await bearerJson("https://graph.facebook.com/v21.0/me?fields=name", String(t.access_token)); return (u?.name as string) ?? null; },
+    consoleUrl: "https://developers.facebook.com/apps/",
+  },
+  // Step 2 (2026-10-19): separate Instagram connection for Content Lab, same Meta app (META_APP_ID/SECRET).
+  // Needs, in the Meta app: the Instagram product (Instagram API with Facebook Login) added, and this redirect URI
+  // registered: https://www.sfbconnect.com/api/team/integrations/meta_instagram/callback
+  meta_instagram: {
+    key: "meta_instagram", name: "Instagram (via Meta)",
+    authorizeUrl: "https://www.facebook.com/v21.0/dialog/oauth",
+    tokenUrl: "https://graph.facebook.com/v21.0/oauth/access_token",
+    scopes: ["instagram_basic", "instagram_manage_insights", "pages_show_list", "pages_read_engagement", "business_management"],
     scopeSeparator: ",",
     env: { clientId: "META_APP_ID", clientSecret: "META_APP_SECRET" },
     tokenAuth: "body", tokenMethod: "GET",

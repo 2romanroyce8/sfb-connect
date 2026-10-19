@@ -9,9 +9,13 @@ export type Niche = { name: string; hashtags: string[] };
 export type RefreshResult = { ok: boolean; status: "done" | "not_connected" | "no_ig_account" | "error"; message: string; fetched: number; upserted: number; accounts: { username: string; posts: number; error?: string }[]; hashtags: { tag: string; posts: number; error?: string }[]; blockedHashtags: string[]; own: number; at: string };
 
 /** The Meta connection used for reads: the team owner who connected Meta. */
-async function metaOwner(service: SupabaseClient): Promise<string | null> {
-  const { data } = await service.from("integration_connections").select("owner_id").eq("provider", "meta").not("access_token_enc", "is", null).limit(1).maybeSingle();
-  return (data?.owner_id as string | undefined) ?? null;
+async function metaOwner(service: SupabaseClient): Promise<{ owner: string; provider: string } | null> {
+  // Prefer the Instagram connection (step 2); fall back to the base Meta connection.
+  for (const provider of ["meta_instagram", "meta"]) {
+    const { data } = await service.from("integration_connections").select("owner_id").eq("provider", provider).not("access_token_enc", "is", null).limit(1).maybeSingle();
+    if (data?.owner_id) return { owner: data.owner_id as string, provider };
+  }
+  return null;
 }
 
 export async function refreshContentLab(service: SupabaseClient): Promise<RefreshResult> {
@@ -21,10 +25,10 @@ export async function refreshContentLab(service: SupabaseClient): Promise<Refres
 
   const { data: settings } = await service.from("content_lab_settings").select("*").eq("id", 1).maybeSingle();
   if (!settings) return { ...res, message: "Content Lab tables are not set up yet (migration 20261019_content_lab.sql)." };
-  const owner = await metaOwner(service);
-  if (!owner) return finish({ ...res, status: "not_connected", message: "Connect Meta (with Instagram permissions) in Integrations." });
+  const conn = await metaOwner(service);
+  if (!conn) return finish({ ...res, status: "not_connected", message: "Connect Instagram from Content Lab (step 2), after the Meta connection works." });
   let token: string;
-  try { token = (await getAccessToken("meta", owner)).token; } catch { return finish({ ...res, status: "not_connected", message: "The Meta connection needs to be reconnected in Integrations." }); }
+  try { token = (await getAccessToken(conn.provider, conn.owner)).token; } catch { return finish({ ...res, status: "not_connected", message: "The Meta connection needs to be reconnected in Integrations." }); }
 
   let igId = settings.ig_user_id as string | null;
   try {
