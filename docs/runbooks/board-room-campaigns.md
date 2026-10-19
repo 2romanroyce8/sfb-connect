@@ -1,0 +1,10 @@
+# Runbook — Board Room & Campaigns (team-only)
+
+Loop: **Board Room idea → plan → Send to Campaigns (draft carries the plan) → run → Complete → summary back on the idea card → scale / iterate / kill.**
+
+- **Board Room** `/team/board-room`: idea cards (title, description, target metric, status draft / ready / tested / killed), upvotes, brainstorm sessions (live: the page polls every 5 s while a session is open), plan builder (what, who, success, duration, channels, optional CRM audience tag), archive of killed ideas with the reason. A complete plan marks the idea "Ready to test". "Iterate" copies the idea as v2; "Scale" records the decision.
+- **Campaigns** `/team/campaigns`: list (name, linked idea, status, dates, metrics) and detail (plan fields, audience, channels, A/B variants, live performance, Complete).
+- **No duplicate tracking.** Email metrics come from `outbound_messages` for each variant's `template_key` (preset key or `saved:<id>`) sent inside the campaign dates; replies = prospects who wrote back. Calls / booked / closed come from `crm_calls`, `crm_meetings`, `revenue_events` for CRM leads carrying the campaign's `audience_tag` (per variant: the variant's `lead_tag`). "Add" pulls existing leads in by one of their tags; "Split audience A/B" alternates them across variant tags for call-script tests.
+- **Winner:** best reply rate with ≥ 20 sends per variant (email), else most booked (`lib/boardroom/loop.ts pickWinner`). **Complete** stores the metrics, writes the summary to `board_ideas.result_summary` and sets the idea to Tested. A winning variant with copy can be saved as an outbound template on SFB Connect's house business.
+- **Tables:** migration `20261019_board_room_campaigns.sql` (`board_sessions`, `board_ideas`, `board_votes`, `campaigns`, `campaign_variants`; RLS `is_team_member()`). APIs `/api/team/board-room`, `/api/team/campaigns` refuse anyone without a team role. Pages say "Database setup pending" until the migration is applied.
+- Tests: `tests/lib/boardroom.test.ts`.
