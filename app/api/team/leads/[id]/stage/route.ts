@@ -2,20 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { SFB_PLAN_PRICES, isPlanKey } from "@/lib/team/plans";
 import { awardPointsForEvent, reversePointEvent, saleEventTypeForPlan } from "@/lib/team/competition/scoring";
+import { MANUAL_STAGES } from "@/lib/crm/stages";
 
-const VALID_STAGES = [
-  "new",
-  "researching",
-  "ready_to_call",
-  "contacted",
-  "interested",
-  "follow_up",
-  "nurture",
-  "meeting_booked",
-  "proposal",
-  "won",
-  "lost",
-];
+const VALID_STAGES = MANUAL_STAGES;
 
 // Runs entirely on the session-scoped client on purpose: crm_leads' own RLS
 // (owner: all, rep: only assigned_rep = auth.uid()) decides whether this

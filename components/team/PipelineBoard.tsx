@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PIPELINE_STAGES } from "@/lib/crm/stages";
 import Link from "next/link";
 import { LayoutGrid, ListFilter, ArrowUpDown, StickyNote, Link2 } from "lucide-react";
 
@@ -18,20 +19,7 @@ type Lead = {
   updated_at: string;
 };
 
-const STAGES: { value: string; label: string; color: string }[] = [
-  { value: "demo_requested", label: "Book Demo (Pending)", color: "var(--hx-ffd60a)" },
-  { value: "new", label: "New", color: "var(--hx-46b5ff)" },
-  { value: "researching", label: "Researching", color: "var(--hx-6e7bff)" },
-  { value: "ready_to_call", label: "Ready to Call", color: "var(--hx-30d158)" },
-  { value: "contacted", label: "Contacted", color: "var(--hx-20c7b7)" },
-  { value: "interested", label: "Interested", color: "var(--hx-5ac8fa)" },
-  { value: "follow_up", label: "Follow-Up", color: "var(--hx-ff9f0a)" },
-  { value: "meeting_booked", label: "Meeting Booked", color: "var(--hx-bf5af2)" },
-  { value: "proposal", label: "Proposal", color: "var(--hx-ff9f0a)" },
-  { value: "won", label: "Won", color: "var(--hx-30d158)" },
-  { value: "lost", label: "Lost", color: "var(--hx-ff453a)" },
-  { value: "nurture", label: "Nurture", color: "var(--hx-6e6e73)" },
-];
+const STAGES = PIPELINE_STAGES;
 
 const WON_PLANS: { key: string; label: string; price: string }[] = [
   { key: "revenue_presence", label: "Revenue Presence", price: "$19.99/mo" },

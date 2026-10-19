@@ -78,7 +78,7 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Performance</div>
+          <div className="text-[20px] font-semibold text-[color:var(--hx-f5f5f7)]">Rep Performance</div>
           <div className="text-[13px] text-[color:var(--hx-6e6e73)] mt-1">Company-wide sales performance</div>
         </div>
         <div className="flex items-center gap-1">

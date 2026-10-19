@@ -41,77 +41,53 @@ import SidebarSearch from "./SidebarSearch";
 // data — no "Favorites"/"Notifications"/"Automations" placeholders just to
 // match a reference's row count. Density comes from real navigation, not
 // invented pages.
-const NAV_GROUPS: {
+type NavGroup = {
   label: string | null;
   collapsible: boolean;
   items: { href: string; label: string; icon: React.ElementType; ownerOnly?: boolean }[];
-}[] = [
-  {
-    label: null,
-    collapsible: false,
-    items: [
-      { href: "/team/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/team/clock", label: "Clock", icon: CalendarClock },
-    ],
-  },
-  {
-    label: "Records",
-    collapsible: true,
-    items: [{ href: "/team/leads", label: "Leads", icon: Users }],
-  },
-  {
-    label: "Sales",
-    collapsible: true,
-    items: [
-      { href: "/team/pipeline", label: "Pipeline", icon: Kanban },
-      { href: "/team/calls", label: "Calls", icon: Phone },
-      { href: "/team/meetings", label: "Meetings", icon: CalendarClock },
-      { href: "/team/follow-ups", label: "Follow-Ups", icon: Bell },
-      { href: "/team/work-plan", label: "Work Plan", icon: GanttChartSquare },
-      { href: "/team/outbound", label: "Outbound", icon: Send, ownerOnly: true },
-    ],
-  },
-  {
-    label: "AI",
-    collapsible: true,
-    items: [
-      { href: "/team/leads/import", label: "Lead Research", icon: FileSearch },
-      { href: "/team/research", label: "Research Queue", icon: ClipboardList },
-      { href: "/team/audits", label: "Business Audits", icon: ClipboardList },
-    ],
-  },
-  {
-    label: "Workspace",
-    collapsible: true,
-    items: [
-      { href: "/team/calendar", label: "Calendar", icon: Calendar },
-      { href: "/team/notes", label: "Notes", icon: StickyNote },
-      { href: "/team/activity", label: "Activity", icon: Activity },
-      { href: "/team/projects", label: "Projects", icon: FolderKanban },
-      { href: "/team/tasks", label: "Agent Tasks", icon: ListTodo },
-      { href: "/team/prompts", label: "Give HyperAgent", icon: ClipboardPaste },
-      { href: "/team/charts", label: "Analytics", icon: LineChart },
-    ],
-  },
-  {
-    label: "Team",
-    collapsible: true,
-    items: [
-      { href: "/team/team", label: "Team", icon: UserCog, ownerOnly: true },
-      { href: "/team/leaderboard", label: "Leaderboard", icon: Trophy },
-      { href: "/team/performance", label: "Performance", icon: BarChart3, ownerOnly: true },
-      { href: "/team/portfolio", label: "Portfolio", icon: Images, ownerOnly: true },
-    ],
-  },
-  {
-    label: "System",
-    collapsible: true,
-    items: [
-      { href: "/team/integrations", label: "Integrations", icon: Plug, ownerOnly: true },
-      { href: "/team/legal", label: "Legal Drafts", icon: Scale, ownerOnly: true },
-      { href: "/team/settings", label: "Settings", icon: Settings },
-    ],
-  },
+};
+// Audit 2026-10-19 (Rome: every item must help close deals). Ordered by the
+// selling day. Reps see 16 items (was 20); Rome's own tools sit under
+// "Owner". "Lead Research" was removed: it duplicated Leads → New Lead and
+// lit up together with Leads. Every page is still reachable by URL.
+const NAV_GROUPS: NavGroup[] = [
+  { label: null, collapsible: false, items: [
+    { href: "/team/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/team/follow-ups", label: "Follow-Ups", icon: Bell },
+  ] },
+  { label: "Sell", collapsible: true, items: [
+    { href: "/team/leads", label: "Leads", icon: Users },
+    { href: "/team/pipeline", label: "Pipeline", icon: Kanban },
+    { href: "/team/calls", label: "Calls", icon: Phone },
+    { href: "/team/meetings", label: "Meetings", icon: CalendarClock },
+    { href: "/team/calendar", label: "Calendar", icon: Calendar },
+    { href: "/team/outbound", label: "Outbound Email", icon: Send, ownerOnly: true },
+  ] },
+  { label: "Research", collapsible: true, items: [
+    { href: "/team/research", label: "Research Queue", icon: FileSearch },
+    { href: "/team/audits", label: "Business Audits", icon: ClipboardList },
+  ] },
+  { label: "Goals & Results", collapsible: true, items: [
+    { href: "/team/work-plan", label: "Work Plan", icon: GanttChartSquare },
+    { href: "/team/leaderboard", label: "Leaderboard", icon: Trophy },
+    { href: "/team/charts", label: "Revenue", icon: LineChart },
+    { href: "/team/performance", label: "Rep Performance", icon: BarChart3, ownerOnly: true },
+    { href: "/team/clock", label: "Timesheets", icon: CalendarClock },
+  ] },
+  { label: "Workspace", collapsible: true, items: [
+    { href: "/team/notes", label: "Notes", icon: StickyNote },
+    { href: "/team/activity", label: "Activity", icon: Activity },
+  ] },
+  { label: "Owner", collapsible: true, items: [
+    { href: "/team/prompts", label: "Give HyperAgent", icon: ClipboardPaste, ownerOnly: true },
+    { href: "/team/tasks", label: "Agent Tasks", icon: ListTodo, ownerOnly: true },
+    { href: "/team/projects", label: "Client Projects", icon: FolderKanban, ownerOnly: true },
+    { href: "/team/team", label: "Team", icon: UserCog, ownerOnly: true },
+    { href: "/team/portfolio", label: "Portfolio", icon: Images, ownerOnly: true },
+    { href: "/team/integrations", label: "Integrations", icon: Plug, ownerOnly: true },
+    { href: "/team/legal", label: "Legal Drafts", icon: Scale, ownerOnly: true },
+  ] },
+  { label: null, collapsible: false, items: [{ href: "/team/settings", label: "Settings", icon: Settings }] },
 ];
 
 export default function TeamSidebar({
