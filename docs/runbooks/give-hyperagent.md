@@ -27,3 +27,8 @@ Over MCP: call `add_sfb_prompt_card` with `{ name, prompt_text, urgency?, send_o
 - History: `select sent_at, name, created_by_label from prompt_cards where status='sent' order by sent_at desc;`
 - Files: `select c.name, f.filename, f.size_bytes from prompt_card_files f join prompt_cards c on c.id=f.card_id;`
 - Agent calls: `select * from agent_audit_log where action in ('add_sfb_prompt_card','list_sfb_prompt_cards') order by created_at desc;`
+
+## Notify Muse, auto-refresh, queue age (2026-10-19)
+- **Notify Muse** (top of the Queue view) → `POST /api/team/prompts {action:"notify_muse"}` → `lib/crm/notifyMuse.ts`: creates an agent task owned by **atlas**, priority **high**, title `HyperAgent prompts complete — verify`, `requires_review:false`, brief = who clicked + when, cards still queued, prompts sent in the last 24h with their wait times; plus a thread message to atlas (inbox). Fires `task.created`. A repeat click within 10 min reuses the open task (adds a message) instead of stacking. If cards are still queued the button asks to confirm first. Atlas picks it up via `list_tasks({owner_agent:"atlas", status:"open"})` / `inbox`; visible at `/team/tasks`.
+- **Auto-refresh:** the tab re-fetches `GET /api/team/prompts` every 60 s while visible and when the browser tab regains focus (`POLL_MS` in `lib/crm/promptTiming.ts`). Agent-added cards and status changes appear without a reload.
+- **Queue age:** queued cards show "in queue for 2h 14m", ticking every second (from `created_at`); Sent Prompts show "Sent … after 3h 22m in queue" (frozen: `sent_at − created_at`). Tests: `tests/lib/promptTiming.test.ts`.
