@@ -4,6 +4,7 @@ import { AGENT_SESSION_COOKIE } from "@/lib/agent/readOnly";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import TeamSidebar from "@/components/team/TeamSidebar";
 import AccountWorkspaceMenu from "@/components/team/AccountWorkspaceMenu";
+import AssistantWidget from "@/components/assistant/AssistantWidget";
 
 export default async function TeamAppLayout({
   children,
@@ -57,6 +58,7 @@ export default async function TeamAppLayout({
         />
         {children}
       </div>
+      <AssistantWidget endpoint="/api/team/assistant" theme="dark" title="SFB Assistant" />
     </div>
   );
 }
