@@ -58,6 +58,9 @@ export type RowIssue = { row: number; name: string; reason: "missing_name" | "mi
 export const splitTags = (s: string | null | undefined) => Array.from(new Set((s ?? "").split(/[,;|]/).map((t) => t.trim().toLowerCase()).filter(Boolean)));
 const cleanUrl = (s: string) => { const t = s.trim(); if (!t) return null; try { const u = new URL(/^https?:\/\//i.test(t) ? t : `https://${t}`); return u.hostname.replace(/^www\./, "") + (u.pathname !== "/" ? u.pathname : ""); } catch { return t; } };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/** Values people type to mean "no email" — treated as blank (call-only lead), never as an error. `[email protected]` is Cloudflare's scraped-email placeholder. */
+export const EMAIL_PLACEHOLDER_RE = /^(?:n\/?a|none|null|nil|tbd|unknown|no email|-+|—|–|\[email protected\]|\[email\s*protected\])$/i;
+export const isPlaceholderEmail = (s: string) => EMAIL_PLACEHOLDER_RE.test(s.trim());
 
 /** Map + validate every data row. Invalid rows are returned separately with a reason; valid rows carry a normalized phone. */
 export function buildLeadRows(parsed: ParsedCsv, mapping: LeadMapping): { rows: LeadRow[]; issues: RowIssue[] } {
@@ -66,7 +69,7 @@ export function buildLeadRows(parsed: ParsedCsv, mapping: LeadMapping): { rows: 
   parsed.rows.forEach((cells, i) => {
     const row = i + 2; const get = (f: LeadField) => { const k = idx.findIndex((x) => x.f === f); return k >= 0 ? (cells[k] ?? "").trim() : ""; };
     const custom: Record<string, string> = {}; idx.forEach((x, k) => { if (x.f === "custom" && (cells[k] ?? "").trim()) custom[x.h] = cells[k].trim(); });
-    const name = get("business_name"); const phoneRaw = get("phone"); const email = get("email");
+    const name = get("business_name"); const phoneRaw = get("phone"); const emailRaw = get("email"); const email = isPlaceholderEmail(emailRaw) ? "" : emailRaw;
     if (!name) { issues.push({ row, name: name || "(blank)", reason: "missing_name" }); return; }
     if (!phoneRaw) { issues.push({ row, name, reason: "missing_phone" }); return; }
     const phone = normalizePhone(phoneRaw);

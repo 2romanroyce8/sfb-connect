@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseCsv, suggestLeadMapping, validateLeadMapping, buildLeadRows, findDuplicates, mergeRows, assigneeFor, tagsFor, splitTags } from "../../lib/crm/leadImport";
+import { parseCsv, suggestLeadMapping, validateLeadMapping, buildLeadRows, findDuplicates, mergeRows, assigneeFor, tagsFor, splitTags, isPlaceholderEmail } from "../../lib/crm/leadImport";
 
 const CSV = `name,website,city,phone,email,notes,state_group
 Ja-Mar Roofing & Sheet Metal,jamarroofing.com,Austin,(512) 555-0100,info@jamar.com,Family owned,TX
@@ -50,3 +50,13 @@ test("assignment by column value is case-insensitive; unmatched → null; range 
   assert.deepEqual(tagsFor(rows[0], ["roofing-pilot"], { lastN: 2, tags: ["priority-dossier"] }, total), ["roofing-pilot"]);
   assert.deepEqual(splitTags("A, b;c|a"), ["a", "b", "c"]);
 });
+
+test("placeholder emails (n/a, —, [email protected]) import as call-only leads with a blank email — never as errors", () => {
+  for (const v of ["n/a", "N/A", "—", "-", "[email protected]", "none", ""]) assert.equal(isPlaceholderEmail(v) || v === "", true, v);
+  assert.equal(isPlaceholderEmail("sales@jamarroofing.com"), false);
+  const p = parseCsv("name,phone,email\nA Co,(305) 555-0100,n/a\nB Co,(305) 555-0101,—\nC Co,(305) 555-0102,[email protected]\nD Co,(305) 555-0103,not-an-email\n");
+  const { rows, issues } = buildLeadRows(p, suggestLeadMapping(p.headers));
+  assert.deepEqual(rows.map((r) => [r.business_name, r.email]), [["A Co", null], ["B Co", null], ["C Co", null]]);
+  assert.deepEqual(issues.map((i) => [i.row, i.reason]), [[5, "invalid_email"]]);
+});
+
