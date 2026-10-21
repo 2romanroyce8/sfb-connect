@@ -77,6 +77,13 @@ export default function OutboundWorkspace() {
     delMsgs(msQ),
   ];
   const prospectActions: BulkAction[] = [
+    { label: "Start sequence", tone: "primary", confirm: (n) => `Start sequences for ${plural(n, "prospect")}? This drafts ${plural(n, "intro email")} into the approval queue (2 credits each on client businesses). Nothing sends until a human approves each one.`, run: async (ids) => {
+      const tpl = compose && compose.mode !== "agent" && !(compose.mode === "custom" && (!compose.custom?.subject.trim() || !compose.custom?.body.trim())) ? { template: compose.template, custom: compose.custom } : {};
+      let started = 0; let stopped = false; const skipped: { name: string; reason: string }[] = [];
+      for (const part of chunk(ids, 25)) { const j = await bulk({ action: "bulk_start_sequence", prospect_ids: part, ...tpl }); started += j.started; skipped.push(...j.skipped); if (j.stoppedForCredits) { stopped = true; break; } }
+      await load(biz);
+      return [`${plural(started, "sequence")} started — first emails are in the approval queue (nothing sent)`, skipped.length ? `${skipped.length} not started (${skipped[0].name}: ${skipped[0].reason}${skipped.length > 1 ? ` +${skipped.length - 1} more` : ""})` : "", stopped ? "stopped: out of credits" : ""].filter(Boolean).join(" · ");
+    } },
     ...(cv.length ? [{ label: "Add to campaign", options: cv.map((v) => ({ label: v.label, value: v.id })), confirm: (n: number) => `Draft the campaign email for ${plural(n, "prospect")}?`, run: async (ids: string[], v?: string) => {
       let drafted = 0; const skipped: string[] = [];
       for (const part of chunk(ids, 10)) { const j = await bulk({ action: "bulk_add_to_campaign", prospect_ids: part, variant_id: v }); drafted += j.drafted; skipped.push(...j.skipped); }

@@ -8,6 +8,7 @@ import { assistStatus, assistEditLogged } from "@/lib/outbound/assistSpend";
 import { previewCsv, importProspects } from "@/lib/outbound/importProspects";
 import { importCrmLeadsByTag } from "@/lib/outbound/fromCrm";
 import type { ImportField } from "@/lib/outbound/csvImport";
+import { startSequenceBlocker } from "@/lib/outbound/sequenceRules";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,6 +111,26 @@ export async function POST(req: NextRequest) {
         const { data, error } = await service.from("outbound_prospects").delete().eq("business_id", b.id).in("id", ids).select("id");
         if (error) throw new Error(error.message);
         return NextResponse.json({ ok: true, deleted: (data ?? []).length });
+      }
+      case "bulk_start_sequence": {
+        // Start the default sequence for the selected prospects (Roman, 2026-10-21). Drafts each intro into the approval queue
+        // (2 credits each on client businesses); NOTHING is sent. Client sends ≤25 ids per request. Ids are checked to belong to
+        // this business; ineligible prospects are reported with a reason, never dropped silently; stops at the first out-of-credits.
+        const ids = (Array.isArray(body.prospect_ids) ? (body.prospect_ids as unknown[]) : []).filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x)).slice(0, 25);
+        if (!ids.length) return NextResponse.json({ error: "Select at least one prospect." }, { status: 400 });
+        const { data: mine } = await service.from("outbound_prospects").select("id, name, email, status").eq("business_id", b.id).in("id", ids);
+        const byId = new Map((mine ?? []).map((x) => [x.id as string, x as { id: string; name: string; email: string | null; status: string }]));
+        const ov = s("template") ? { template: s("template"), custom: (body.custom as { subject: string; body: string } | undefined) ?? null } : null;
+        const out = { started: 0, skipped: [] as { name: string; reason: string }[], stoppedForCredits: false };
+        for (const id of ids) {
+          const p = byId.get(id);
+          if (!p) { out.skipped.push({ name: id.slice(0, 8), reason: "not found in this business" }); continue; }
+          if (out.stoppedForCredits) { out.skipped.push({ name: p.name, reason: "not attempted — out of credits" }); continue; }
+          const why = startSequenceBlocker(p); if (why) { out.skipped.push({ name: p.name, reason: why }); continue; }
+          try { await startSequence(service, id, actor, ov); out.started++; }
+          catch (e) { if (e instanceof InsufficientCreditsError) { out.stoppedForCredits = true; out.skipped.push({ name: p.name, reason: "out of credits" }); } else out.skipped.push({ name: p.name, reason: e instanceof Error ? e.message.slice(0, 120) : "failed" }); }
+        }
+        return NextResponse.json({ ok: true, ...out });
       }
       case "bulk_add_to_campaign": {
         // Drafts each prospect's intro with the campaign variant's template → lands in the approval queue and counts in that campaign's numbers.
