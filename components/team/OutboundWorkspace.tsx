@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import CsvImport from "@/components/outbound/CsvImport";
-import { startSequenceBlocker } from "@/lib/outbound/sequenceRules";
 import ComposePicker, { type Compose } from "@/components/outbound/ComposePicker";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson, type BulkAction } from "@/components/ui/MultiSelect";
+import { chunk, plural } from "@/lib/ui/selection";
 
 type Biz = { id: string; legal_name: string; plan_key: string | null; outbound_offer_line: string | null; outbound_time_zone: string };
 type Prospect = { id: string; name: string; contact_name: string | null; website: string | null; email: string | null; email_source: string | null; phone_e164: string | null; city: string | null; state: string | null; category: string | null; status: string; enriched_at: string | null; last_contacted_at: string | null; source?: string | null; import_id?: string | null };
@@ -31,48 +32,58 @@ export default function OutboundWorkspace() {
   const [biz, setBiz] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"queue" | "prospects" | "activity">("queue");
   const [open, setOpen] = useState<Msg | null>(null);
   const [newP, setNewP] = useState({ name: "", website: "", email: "", contact_name: "" });
   const [offer, setOffer] = useState("");
   const [slots, setSlots] = useState<{ start: string; end: string }[] | null>(null);
-  const [sel, setSel] = useState<Set<string>>(new Set());
-  const [bulk, setBulk] = useState<{ phase: "confirm" | "running" | "done"; done: number; total: number; started: number; skipped: { name: string; reason: string }[]; stoppedForCredits: boolean } | null>(null);
+  const [cv, setCv] = useState<{ id: string; label: string }[]>([]);
   const [compose, setCompose] = useState<Compose | null>(null); const [saveFor, setSaveFor] = useState<{ id: string; name: string } | null>(null);
 
   const load = useCallback(async (b?: string | null) => {
     const r = await fetch(`/api/team/outbound${b ? `?business=${b}` : ""}`, { cache: "no-store" });
     if (!r.ok) { setErr("Could not load outbound."); return; }
-    const j = (await r.json()) as State; setS(j); setBiz(j.business?.id ?? null); setOffer(j.business?.outbound_offer_line ?? "");
+    const j = (await r.json()) as State & { campaignVariants?: { id: string; label: string }[] }; setS(j); setCv(j.campaignVariants ?? []); setBiz(j.business?.id ?? null); setOffer(j.business?.outbound_offer_line ?? "");
   }, []);
   useEffect(() => { void load(); }, [load]);
 
   const act = async (payload: Record<string, unknown>, key: string) => {
-    setBusy(key); setErr(null);
+    setBusy(key); setErr(null); setNotice(null);
     try {
       const r = await fetch("/api/team/outbound", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ business_id: biz, ...payload }) });
       const j = await r.json();
       if (!r.ok) { setErr(j.error || "Failed."); return null; }
+      if (j.message?.held_until) setNotice(`Approved — held for the send window (${j.message.held_label}). It sends automatically inside the window.`);
       await load(biz); return j;
     } finally { setBusy(null); }
   };
 
-  const runBulk = async (ids: string[]) => {
-    const tpl = compose && compose.mode !== "agent" && !(compose.mode === "custom" && (!compose.custom?.subject.trim() || !compose.custom?.body.trim())) ? { template: compose.template, custom: compose.custom } : {};
-    setBulk({ phase: "running", done: 0, total: ids.length, started: 0, skipped: [], stoppedForCredits: false }); setErr(null);
-    let started = 0; const skipped: { name: string; reason: string }[] = []; let stopped = false;
-    for (let i = 0; i < ids.length && !stopped; i += 25) {
-      const chunk = ids.slice(i, i + 25);
-      const r = await fetch("/api/team/outbound", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ business_id: biz, action: "start_sequences", prospect_ids: chunk, ...tpl }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(j.error || "Bulk start failed."); stopped = true; break; }
-      for (const x of j.results as { name: string; status: string; reason?: string }[]) { if (x.status === "started") started++; else skipped.push({ name: x.name, reason: x.reason ?? x.status }); }
-      stopped = !!j.stoppedForCredits;
-      setBulk({ phase: "running", done: Math.min(ids.length, i + chunk.length), total: ids.length, started, skipped, stoppedForCredits: stopped });
-    }
-    setBulk({ phase: "done", done: ids.length, total: ids.length, started, skipped, stoppedForCredits: stopped });
-    setSel(new Set()); await load(biz);
-  };
+  // ---------- multi-select (2026-10-19) ----------
+  const pendingIds = (s?.messages ?? []).filter((m) => m.status === "pending_approval").map((m) => m.id);
+  const msQ = useMultiSelect(pendingIds);
+  const msP = useMultiSelect((s?.prospects ?? []).map((p) => p.id));
+  const msA = useMultiSelect((s?.messages ?? []).slice(0, 60).map((m) => m.id));
+  const bulk = (body: Record<string, unknown>) => postJson("/api/team/outbound", { business_id: biz, ...body });
+  const emails = (n: number) => plural(n, "email");
+  const delMsgs = (ms: typeof msQ): BulkAction => ({ label: "Delete", tone: "danger", confirm: (n) => `Delete ${emails(n)}?`, run: async (ids) => { const j = await bulk({ action: "bulk_delete_messages", message_ids: ids }); setOpen(null); await load(biz); return `${emails(j.deleted)} deleted`; } });
+  const queueActions: BulkAction[] = [
+    { label: "Approve All", tone: "primary", confirm: (n) => `Approve ${emails(n)}?`, run: async (ids) => {
+      let approved = 0, held = 0, sent = 0, sendFailed = 0; const errors: string[] = [];
+      for (const part of chunk(ids, 10)) { const j = await bulk({ action: "bulk_approve", message_ids: part }); approved += j.approved; held += j.held; sent += j.sent; sendFailed += j.sendFailed; errors.push(...j.errors); }
+      setOpen(null); await load(biz);
+      return [`${emails(approved)} approved`, held ? `${held} held for the send window` : "", sent ? `${sent} sent` : "", sendFailed ? `${sendFailed} failed to send (retry in queue)` : "", errors.length ? `${errors.length} not approved: ${errors[0]}` : ""].filter(Boolean).join(" · ");
+    } },
+    delMsgs(msQ),
+  ];
+  const prospectActions: BulkAction[] = [
+    ...(cv.length ? [{ label: "Add to campaign", options: cv.map((v) => ({ label: v.label, value: v.id })), confirm: (n: number) => `Draft the campaign email for ${plural(n, "prospect")}?`, run: async (ids: string[], v?: string) => {
+      let drafted = 0; const skipped: string[] = [];
+      for (const part of chunk(ids, 10)) { const j = await bulk({ action: "bulk_add_to_campaign", prospect_ids: part, variant_id: v }); drafted += j.drafted; skipped.push(...j.skipped); }
+      await load(biz); return `${emails(drafted)} drafted into the approval queue${skipped.length ? ` · ${skipped.length} skipped (${skipped[0]})` : ""}`;
+    } }] : []),
+    { label: "Delete", tone: "danger", confirm: (n) => `Delete ${plural(n, "prospect")}? Their emails go too.`, run: async (ids) => { const j = await bulk({ action: "bulk_delete_prospects", prospect_ids: ids }); await load(biz); return `${plural(j.deleted, "prospect")} deleted`; } },
+  ];
 
   if (!s) return <div className="text-[12px] text-[color:var(--hx-6e6e73)]">{err ?? "Loading outbound…"}</div>;
   if (!s.business) return <div className="rounded-[12px] p-5 text-[13px] text-[color:var(--hx-a1a1a6)]" style={card}>No business with a plan yet. Outbound runs per customer business (Solo or Agency).</div>;
@@ -80,8 +91,6 @@ export default function OutboundWorkspace() {
   const pending = s.messages.filter((m) => m.status === "pending_approval");
   const failed = s.messages.filter((m) => m.status === "failed" && m.approved_by);
   const byId = Object.fromEntries(s.prospects.map((p) => [p.id, p]));
-  const eligible = s.prospects.filter((p) => !startSequenceBlocker(p));
-  const selIds = s.prospects.filter((p) => sel.has(p.id)).map((p) => p.id);
   const sentCount = s.messages.filter((m) => m.status === "sent" || m.status === "simulated").length;
   const openedCount = s.messages.filter((m) => m.opened_at).length;
   const repliedCount = s.messages.filter((m) => m.replied_at).length;
@@ -94,6 +103,7 @@ export default function OutboundWorkspace() {
         <span className="text-[12px] text-[color:var(--hx-6e6e73)]">· {sentCount} sent · {openedCount} opened · {repliedCount} replied · {s.bookings.length} booked</span>
         <button onClick={() => act({ action: "sync" }, "sync")} disabled={busy === "sync"} className={ghost} style={ghostStyle}>{busy === "sync" ? "Syncing…" : "Sync replies & steps"}</button>
       </div>
+      {notice && <div className="rounded-[10px] p-3 text-[12.5px] text-[color:var(--hx-30d158)]" style={{ background: "rgba(48,209,88,0.08)" }}>{notice}</div>}
       {err && <div className="rounded-[10px] p-3 text-[12.5px] text-[color:var(--hx-ff6961)]" style={{ background: "rgba(255,69,58,0.08)" }}>{err}</div>}
 
       {/* Offer line: the one approved sentence every intro uses. Without it nothing can be drafted. */}
@@ -102,7 +112,7 @@ export default function OutboundWorkspace() {
         <div className="mt-2 flex gap-2"><input value={offer} onChange={(e) => setOffer(e.target.value)} placeholder="e.g. We replace roofs for property managers in Oklahoma City with a 48-hour quote turnaround." className="flex-1 h-[36px] rounded-[8px] px-3 text-[13px] bg-[color:var(--hx-0f0f0f)] text-[color:var(--hx-f5f5f7)] outline-none" style={ghostStyle} /><button onClick={() => act({ action: "set_offer_line", offer_line: offer }, "offer")} disabled={busy === "offer"} className={primary}>Save</button></div>
       </div>
 
-      <div className="flex gap-2">{(["queue", "prospects", "activity"] as const).map((t) => <button key={t} onClick={() => setTab(t)} className={`${btn} ${tab === t ? "bg-white text-black" : "text-[color:var(--hx-a1a1a6)]"}`} style={tab === t ? undefined : ghostStyle}>{t === "queue" ? `Approval queue (${pending.length})` : t === "prospects" ? `Prospects (${s.prospects.length})` : "Activity"}</button>)}</div>
+      <div className="flex gap-2">{(["queue", "prospects", "activity"] as const).map((t) => <button key={t} onClick={() => { setTab(t); msQ.cancel(); msP.cancel(); msA.cancel(); }} className={`${btn} ${tab === t ? "bg-white text-black" : "text-[color:var(--hx-a1a1a6)]"}`} style={tab === t ? undefined : ghostStyle}>{t === "queue" ? `Approval queue (${pending.length})` : t === "prospects" ? `Prospects (${s.prospects.length})` : "Activity"}</button>)}</div>
 
       {tab === "queue" && (
         <div className="flex flex-col gap-4">
@@ -112,6 +122,7 @@ export default function OutboundWorkspace() {
         </details>
         <div className="grid lg:grid-cols-[1fr_1.2fr] gap-4">
           <div className="flex flex-col gap-2">
+            {pending.length > 0 && <div className="flex items-center justify-between"><span className="text-[12px] text-[color:var(--hx-6e6e73)]">{pending.length} waiting for approval</span><SelectToggle ms={msQ} total={pending.length} noun="emails" /></div>}
             {pending.length === 0 && <div className="rounded-[12px] p-5 text-[13px] text-[color:var(--hx-6e6e73)]" style={card}>Nothing waiting. Drafts land here the moment the agent (or a sequence step) writes one.</div>}
             {failed.length > 0 && (
               <div className="rounded-[12px] p-4" style={{ ...card, borderColor: "rgba(255,69,58,0.3)" }}>
@@ -120,10 +131,13 @@ export default function OutboundWorkspace() {
               </div>
             )}
             {pending.map((m) => (
-              <button key={m.id} onClick={() => setOpen(m)} className="text-left rounded-[12px] p-4" style={{ ...card, borderColor: open?.id === m.id ? "rgb(var(--w) / 0.22)" : "rgb(var(--w) / 0.08)" }}>
+              <button key={m.id} onClick={() => setOpen(m)} className="text-left rounded-[12px] p-4 flex gap-2" style={{ ...card, borderColor: msQ.isSelected(m.id) ? "var(--hx-0a84ff)" : open?.id === m.id ? "rgb(var(--w) / 0.22)" : "rgb(var(--w) / 0.08)" }}>
+                {msQ.active && <SelectCircle checked={msQ.isSelected(m.id)} onToggle={() => msQ.toggle(m.id)} label={`Select email to ${m.to_email}`} />}
+                <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3"><div className="text-[13px] font-semibold text-[color:var(--hx-f5f5f7)] truncate">{byId[m.prospect_id]?.name ?? "Prospect"} <span className="font-normal text-[color:var(--hx-6e6e73)]">· {m.to_email}</span></div><span className="text-[10.5px] uppercase tracking-wide" style={{ color: STATUS[m.status] }}>{m.template_key ?? `step ${m.step}`}</span></div>
                 <div className="text-[12px] text-[color:var(--hx-a1a1a6)] mt-1 truncate">{m.subject}</div>
                 <div className="text-[11px] text-[color:var(--hx-6e6e73)] mt-1">drafted {fmt(m.created_at)} by {m.created_by}</div>
+                </div>
               </button>
             ))}
           </div>
@@ -162,24 +176,12 @@ export default function OutboundWorkspace() {
               <ul className="mt-3 flex flex-col gap-1.5">{s.findings.map((f) => <li key={f.id} className="flex items-center justify-between gap-3 text-[12.5px]"><span className="text-[color:var(--hx-f5f5f7)] truncate">{f.business_name} <span className="text-[color:var(--hx-6e6e73)]">· {f.city}, {f.state} · {f.category} · {f.identity_label}</span></span><button onClick={() => act({ action: "import_findings", finding_ids: [f.id] }, `imp-${f.id}`)} className={ghost} style={ghostStyle}>Import</button></li>)}</ul>
             </details>
           )}
-          {(selIds.length > 0 || bulk) && (
-            <div className="rounded-[12px] p-4 flex flex-col gap-2" style={card}>
-              {bulk?.phase === "running" ? (
-                <div><div className="text-[12.5px] text-[color:var(--hx-f5f5f7)]">Starting sequences… {bulk.done} / {bulk.total}</div><div className="h-[6px] rounded-full overflow-hidden mt-2" style={{ background: "rgb(var(--w) / 0.08)" }}><div className="h-full rounded-full transition-all" style={{ width: `${Math.round((bulk.done / Math.max(1, bulk.total)) * 100)}%`, background: "var(--hx-30d158)" }} /></div></div>
-              ) : bulk?.phase === "done" ? (
-                <div className="flex flex-col gap-1"><div className="text-[12.5px] text-[color:var(--hx-30d158)]">Done — {bulk.started} sequence{bulk.started === 1 ? "" : "s"} started; the first emails are in the Approval queue (nothing has been sent).</div>{bulk.stoppedForCredits && <div className="text-[12.5px] text-[color:var(--hx-ffd60a)]">Stopped early: the business ran out of credits. The rest were not started — top up and select them again.</div>}{bulk.skipped.length > 0 && <details className="text-[12px] text-[color:var(--hx-a1a1a6)]"><summary className="cursor-pointer">{bulk.skipped.length} not started</summary><ul className="mt-1">{bulk.skipped.slice(0, 50).map((x, i) => <li key={i}>{x.name} — {x.reason}</li>)}</ul></details>}<button onClick={() => setBulk(null)} className={ghost} style={ghostStyle}>Dismiss</button></div>
-              ) : bulk?.phase === "confirm" ? (
-                <div className="flex flex-wrap items-center justify-between gap-3"><div className="text-[12.5px] text-[color:var(--hx-f5f5f7)]">Start sequences for <strong>{selIds.length}</strong> prospect{selIds.length === 1 ? "" : "s"}? This drafts {selIds.length} intro email{selIds.length === 1 ? "" : "s"} into the approval queue — <strong>{selIds.length * 2} credits</strong> ({"2"} each). Nothing sends until a human approves each one (5 credits per approval).</div><div className="flex gap-2"><button onClick={() => void runBulk(selIds)} className={ghost} style={{ ...ghostStyle, background: "rgb(var(--w))", color: "rgb(var(--k))" }}>Confirm — start {selIds.length}</button><button onClick={() => setBulk(null)} className={ghost} style={ghostStyle}>Cancel</button></div></div>
-              ) : (
-                <div className="flex flex-wrap items-center justify-between gap-3"><div className="text-[12.5px] text-[color:var(--hx-f5f5f7)]">{selIds.length} selected{selIds.length === eligible.length ? " (all eligible)" : ""}</div><div className="flex gap-2"><button onClick={() => setBulk({ phase: "confirm", done: 0, total: selIds.length, started: 0, skipped: [], stoppedForCredits: false })} className={ghost} style={{ ...ghostStyle, background: "rgb(var(--w))", color: "rgb(var(--k))" }}>Start sequence ({selIds.length})</button><button onClick={() => setSel(new Set())} className={ghost} style={ghostStyle}>Clear</button></div></div>
-              )}
-            </div>
-          )}
           <div className="rounded-[12px] overflow-x-auto" style={card}>
-            <table className="w-full text-[12.5px]"><thead><tr className="text-left text-[color:var(--hx-6e6e73)]"><th className="pl-4 py-2 w-[28px]"><input type="checkbox" aria-label="Select all prospects that can start a sequence" disabled={eligible.length === 0 || bulk?.phase === "running"} checked={eligible.length > 0 && eligible.every((p) => sel.has(p.id))} ref={(el) => { if (el) el.indeterminate = sel.size > 0 && !eligible.every((p) => sel.has(p.id)); }} onChange={(e) => setSel(e.target.checked ? new Set(eligible.map((p) => p.id)) : new Set())} /></th><th className="px-4 py-2 font-medium">Prospect</th><th className="px-4 py-2 font-medium">Contact</th><th className="px-4 py-2 font-medium">Status</th><th className="px-4 py-2 font-medium text-right">Actions</th></tr></thead><tbody>
-              {s.prospects.length === 0 ? <tr><td colSpan={5} className="px-4 py-6 text-[color:var(--hx-6e6e73)]">No prospects yet. Add one above or import from the feed.</td></tr> : s.prospects.map((p) => (
-                <tr key={p.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}>
-                  <td className="pl-4 py-2.5"><input type="checkbox" aria-label={`Select ${p.name}`} disabled={!!startSequenceBlocker(p) || bulk?.phase === "running"} title={startSequenceBlocker(p) ?? undefined} checked={sel.has(p.id)} onChange={(e) => setSel((x) => { const n = new Set(x); if (e.target.checked) n.add(p.id); else n.delete(p.id); return n; })} /></td>
+            <div className="flex items-center justify-between px-4 pt-3"><span className="text-[12px] text-[color:var(--hx-6e6e73)]">{s.prospects.length} prospects</span><SelectToggle ms={msP} total={s.prospects.length} noun="prospects" /></div>
+            <table className="w-full text-[12.5px]"><thead><tr className="text-left text-[color:var(--hx-6e6e73)]">{msP.active && <th className="w-[44px]" />}<th className="px-4 py-2 font-medium">Prospect</th><th className="px-4 py-2 font-medium">Contact</th><th className="px-4 py-2 font-medium">Status</th><th className="px-4 py-2 font-medium text-right">Actions</th></tr></thead><tbody>
+              {s.prospects.length === 0 ? <tr><td colSpan={4} className="px-4 py-6 text-[color:var(--hx-6e6e73)]">No prospects yet. Add one above or import from the feed.</td></tr> : s.prospects.map((p) => (
+                <tr key={p.id} style={{ borderTop: "1px solid rgb(var(--w) / 0.06)", background: msP.isSelected(p.id) ? "rgba(10,132,255,0.08)" : undefined }}>
+                  {msP.active && <td className="pl-3 w-[44px]"><SelectCircle checked={msP.isSelected(p.id)} onToggle={() => msP.toggle(p.id)} label={`Select ${p.name}`} /></td>}
                   <td className="px-4 py-2.5"><div className="text-[color:var(--hx-f5f5f7)] font-medium">{p.name}{p.source === "upload" && <span className="ml-2 text-[10px] uppercase tracking-wide rounded-full px-1.5 py-0.5 align-middle" style={{ background: "rgba(10,132,255,0.15)", color: "var(--hx-6fb3ff)" }} title={(() => { const i = s.imports?.find((x) => x.id === p.import_id); return i ? `Uploaded · ${i.filename} · ${fmt(i.created_at)}` : "Uploaded"; })()}>Uploaded{(() => { const i = s.imports?.find((x) => x.id === p.import_id); return i ? ` · ${i.filename}` : ""; })()}</span>}</div><div className="text-[11px] text-[color:var(--hx-6e6e73)]">{p.contact_name && p.contact_name !== p.name ? `${p.contact_name} · ` : ""}{p.website ?? "no website"}{p.city ? ` · ${p.city}, ${p.state}` : ""}</div></td>
                   <td className="px-4 py-2.5 text-[color:var(--hx-a1a1a6)]">{p.email ? <span className="text-[color:var(--hx-f5f5f7)]">{p.email} <span className="text-[color:var(--hx-6e6e73)]">({p.email_source})</span></span> : <span className="text-[color:var(--hx-6e6e73)]">no email yet</span>}{p.phone_e164 ? <div className="text-[11px]">{p.phone_e164}</div> : null}</td>
                   <td className="px-4 py-2.5"><span className="text-[11px] uppercase tracking-wide" style={{ color: STATUS[p.status] ?? "var(--hx-a1a1a6)" }}>{p.status.replace("_", " ")}</span></td>
@@ -201,8 +203,8 @@ export default function OutboundWorkspace() {
 
       {tab === "activity" && (
         <div className="grid lg:grid-cols-2 gap-4">
-          <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[color:var(--hx-f5f5f7)]">Messages</div>
-            <ul className="divide-y divide-white/[0.06]">{s.messages.slice(0, 60).map((m) => <li key={m.id} className="px-4 py-2.5 text-[12.5px]"><div className="flex items-center justify-between gap-3"><span className="text-[color:var(--hx-f5f5f7)] truncate">{m.direction === "in" ? "↩ " : ""}{byId[m.prospect_id]?.name ?? "Prospect"} <span className="text-[color:var(--hx-6e6e73)]">· {m.subject}</span></span><span className="text-[10.5px] uppercase tracking-wide shrink-0" style={{ color: STATUS[m.status] ?? "var(--hx-a1a1a6)" }}>{m.status.replace("_", " ")}</span></div><div className="text-[11px] text-[color:var(--hx-6e6e73)]">{m.sent_at ? `sent ${fmt(m.sent_at)}` : fmt(m.created_at)}{m.opened_at ? ` · opened ${fmt(m.opened_at)}` : ""}{m.replied_at ? ` · replied ${fmt(m.replied_at)}` : ""}{m.rejected_reason ? ` · ${m.rejected_reason}` : ""}{m.error ? ` · ${m.error}` : ""}{m.template_key ? ` · ${m.template_key}` : ""}{m.direction === "out" && (m.status === "sent" || m.status === "approved") && !m.template_key?.startsWith("saved:") ? <> · <button onClick={() => setSaveFor({ id: m.id, name: "" })} className="underline text-[color:var(--hx-a1a1a6)]">save as preset</button></> : null}</div></li>)}</ul>
+          <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[color:var(--hx-f5f5f7)] flex items-center justify-between">Messages<SelectToggle ms={msA} total={Math.min(60, s.messages.length)} noun="emails" /></div>
+            <ul className="divide-y divide-white/[0.06]">{s.messages.slice(0, 60).map((m) => <li key={m.id} className="px-4 py-2.5 text-[12.5px] flex gap-2" style={{ background: msA.isSelected(m.id) ? "rgba(10,132,255,0.08)" : undefined }}>{msA.active && <SelectCircle checked={msA.isSelected(m.id)} onToggle={() => msA.toggle(m.id)} />}<div className="flex-1 min-w-0"><div className="flex items-center justify-between gap-3"><span className="text-[color:var(--hx-f5f5f7)] truncate">{m.direction === "in" ? "↩ " : ""}{byId[m.prospect_id]?.name ?? "Prospect"} <span className="text-[color:var(--hx-6e6e73)]">· {m.subject}</span></span><span className="text-[10.5px] uppercase tracking-wide shrink-0" style={{ color: STATUS[m.status] ?? "var(--hx-a1a1a6)" }}>{m.status.replace("_", " ")}</span></div><div className="text-[11px] text-[color:var(--hx-6e6e73)]">{m.sent_at ? `sent ${fmt(m.sent_at)}` : fmt(m.created_at)}{m.opened_at ? ` · opened ${fmt(m.opened_at)}` : ""}{m.replied_at ? ` · replied ${fmt(m.replied_at)}` : ""}{m.rejected_reason ? ` · ${m.rejected_reason}` : ""}{m.error ? ` · ${m.error}` : ""}{m.template_key ? ` · ${m.template_key}` : ""}{m.direction === "out" && (m.status === "sent" || m.status === "approved") && !m.template_key?.startsWith("saved:") ? <> · <button onClick={() => setSaveFor({ id: m.id, name: "" })} className="underline text-[color:var(--hx-a1a1a6)]">save as preset</button></> : null}</div></div></li>)}</ul>
             {saveFor && <div className="px-4 py-3 flex items-center gap-2 flex-wrap" style={{ borderTop: "1px solid rgb(var(--w) / 0.06)" }}><input autoFocus value={saveFor.name} onChange={(e) => setSaveFor({ ...saveFor, name: e.target.value })} placeholder="Name this preset" className="h-[32px] rounded-[8px] px-3 text-[12.5px] bg-[color:var(--hx-0f0f0f)] text-[color:var(--hx-f5f5f7)] outline-none" style={ghostStyle} /><button onClick={async () => { const r = await act({ action: "template_save", name: saveFor.name, message_id: saveFor.id, category: "saved" }, "tsave"); if (r) setSaveFor(null); }} disabled={!saveFor.name.trim() || busy === "tsave"} className={primary}>{busy === "tsave" ? "Saving…" : "Save"}</button><button onClick={() => setSaveFor(null)} className={ghost} style={ghostStyle}>Cancel</button></div>}</div>
           <div className="flex flex-col gap-4">
             <div className="rounded-[12px]" style={card}><div className="px-4 py-3 text-[12px] font-semibold text-[color:var(--hx-f5f5f7)]">Bookings</div><ul className="divide-y divide-white/[0.06]">{s.bookings.length === 0 ? <li className="px-4 py-3 text-[12.5px] text-[color:var(--hx-6e6e73)]">None yet.</li> : s.bookings.map((b) => <li key={b.id} className="px-4 py-2.5 text-[12.5px] text-[color:var(--hx-f5f5f7)]">{byId[b.prospect_id]?.name ?? "Prospect"} · {fmt(b.start_at)}{b.meet_url ? <a href={b.meet_url} target="_blank" rel="noopener noreferrer" className="ml-2 underline text-[color:var(--hx-a1a1a6)]">Meet</a> : null}<span className="ml-2 text-[10.5px] uppercase text-[color:var(--hx-6e6e73)]">{b.status}</span></li>)}</ul></div>
@@ -210,6 +212,10 @@ export default function OutboundWorkspace() {
           </div>
         </div>
       )}
+      {tab === "queue" && <BulkBar ms={msQ} noun={emails} actions={queueActions} />}
+      {tab === "prospects" && <BulkBar ms={msP} noun={(n) => plural(n, "prospect")} actions={prospectActions} />}
+      {tab === "activity" && <BulkBar ms={msA} noun={emails} actions={[delMsgs(msA)]} />}
+      {(msQ.active || msP.active || msA.active) && <div className="h-[96px]" />}
     </div>
   );
 }

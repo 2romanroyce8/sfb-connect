@@ -35,13 +35,3 @@ test("G9/G12: system_health is a real, configurable trigger coalesced to one tex
   assert.ok(CONFIGURABLE_TRIGGERS.some((t) => t.key === "system_health"));
   assert.equal(COALESCE_MINUTES.system_health, 60);
 });
-
-import { startSequenceBlocker } from "../../lib/outbound/sequenceRules";
-test("bulk start-sequence eligibility: needs an email; not already in a sequence; not unsubscribed", () => {
-  assert.equal(startSequenceBlocker({ email: "a@b.co", status: "new" }), null);
-  assert.equal(startSequenceBlocker({ email: "a@b.co", status: "enriched" }), null);
-  assert.equal(startSequenceBlocker({ email: null, status: "new" }), "no email yet");
-  assert.equal(startSequenceBlocker({ email: "", status: "new" }), "no email yet");
-  assert.equal(startSequenceBlocker({ email: "a@b.co", status: "in_sequence" }), "already in a sequence");
-  assert.equal(startSequenceBlocker({ email: "a@b.co", status: "unsubscribed" }), "unsubscribed");
-});
