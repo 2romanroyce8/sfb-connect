@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
 import { addProspect, approveMessage, bookMeeting, draftMessage, enrichProspect, importFindings, OutboundError, proposeMeetingSlots, rejectMessage, sendApprovedMessage, retryFailedSend, startSequence, syncReplies, advanceSequences, InsufficientCreditsError } from "@/lib/outbound/engine";
+import { startSequenceBlocker } from "@/lib/outbound/sequenceRules";
 import type { TemplateKey } from "@/lib/outbound/templates";
 import { listLibrary, pickIntro, saveTemplate, archiveTemplate } from "@/lib/outbound/library";
 import { ASSIST_INSTRUCTIONS, type AssistKey } from "@/lib/outbound/assist";
 import { assistStatus, assistEditLogged } from "@/lib/outbound/assistSpend";
 import { previewCsv, importProspects } from "@/lib/outbound/importProspects";
-import { importCrmLeadsByTag } from "@/lib/outbound/fromCrm";
 import type { ImportField } from "@/lib/outbound/csvImport";
 
 export const runtime = "nodejs";
@@ -36,8 +36,8 @@ export async function GET(req: NextRequest) {
   const businessId = req.nextUrl.searchParams.get("business") || businesses[0]?.id || null;
   if (!businessId || !businesses.some((b) => b.id === businessId)) return NextResponse.json({ businesses, business: null });
   const [p, m, e, bk, f, bal, imps] = await Promise.all([
-    service.from("outbound_prospects").select("*").eq("business_id", businessId).order("updated_at", { ascending: false }).limit(1000),
-    service.from("outbound_messages").select("*").eq("business_id", businessId).order("created_at", { ascending: false }).limit(1000),
+    service.from("outbound_prospects").select("*").eq("business_id", businessId).order("updated_at", { ascending: false }).limit(200),
+    service.from("outbound_messages").select("*").eq("business_id", businessId).order("created_at", { ascending: false }).limit(200),
     service.from("outbound_events").select("*").eq("business_id", businessId).order("created_at", { ascending: false }).limit(100),
     service.from("outbound_bookings").select("*").eq("business_id", businessId).order("start_at", { ascending: false }).limit(50),
     service.from("research_feed_findings").select("id, business_name, website, city, state, category, identity_label, created_at").eq("accepted", true).order("created_at", { ascending: false }).limit(50),
@@ -45,11 +45,7 @@ export async function GET(req: NextRequest) {
     service.from("outbound_imports").select("id, filename, uploaded_by, counts, created_at").eq("business_id", businessId).order("created_at", { ascending: false }).limit(20),
   ]);
   const breakdown = Array.isArray(bal.data) ? bal.data[0] : bal.data;
-  // Campaign variants with an email template → "Add to campaign" targets for prospects (Campaigns tab, 2026-10-19).
-  const { data: camps } = await service.from("campaigns").select("id, name, status").in("status", ["draft", "running", "paused"]);
-  const { data: vars } = camps?.length ? await service.from("campaign_variants").select("id, campaign_id, name, template_key").in("campaign_id", camps.map((c) => c.id)).not("template_key", "is", null) : { data: [] };
-  const campaignVariants = (vars ?? []).map((v) => ({ id: v.id, template_key: v.template_key, label: `${camps!.find((c) => c.id === v.campaign_id)?.name ?? "Campaign"} — ${v.name}` }));
-  return NextResponse.json({ campaignVariants, businesses, business: businesses.find((b) => b.id === businessId), prospects: p.data ?? [], messages: m.data ?? [], events: e.data ?? [], bookings: bk.data ?? [], findings: f.data ?? [], credits: breakdown ?? null, imports: imps.data ?? [] });
+  return NextResponse.json({ businesses, business: businesses.find((b) => b.id === businessId), prospects: p.data ?? [], messages: m.data ?? [], events: e.data ?? [], bookings: bk.data ?? [], findings: f.data ?? [], credits: breakdown ?? null, imports: imps.data ?? [] });
 }
 
 export async function POST(req: NextRequest) {
@@ -82,47 +78,34 @@ export async function POST(req: NextRequest) {
         if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
         return NextResponse.json({ ok: true, ...r });
       }
-      // CRM leads → prospects by tag (team owners only). dry_run defaults to true.
-      case "import_crm_tag": {
-        if (me.team_role !== "owner") return NextResponse.json({ error: "Only a team owner can copy CRM leads." }, { status: 403 });
-        if (!s("tag")) return NextResponse.json({ error: "Pick a tag." }, { status: 400 });
-        return NextResponse.json({ ok: true, ...(await importCrmLeadsByTag(service, { businessId: b.id, tag: s("tag"), dryRun: body.dry_run !== false }, actor)) });
-      }
-      // ---------- bulk (multi-select, 2026-10-19). Every id is re-checked against this business. ----------
-      case "bulk_approve": {
-        const ids = (Array.isArray(body.message_ids) ? (body.message_ids as string[]) : []).slice(0, 10);
-        const { data: mine } = await service.from("outbound_messages").select("id").eq("business_id", b.id).eq("status", "pending_approval").in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
-        const out = { approved: 0, sent: 0, held: 0, sendFailed: 0, skipped: ids.length - (mine ?? []).length, errors: [] as string[] };
-        for (const m of mine ?? []) {
-          try { const r = (await approveMessage(service, m.id as string, { id: me.id, label: actor.label }, { andSend: true })) as { status?: string; held_until?: string }; out.approved++; if (r?.held_until) out.held++; else if (r?.status === "sent" || r?.status === "simulated") out.sent++; }
-          catch (e) { if (e instanceof OutboundError && e.code === "send_failed") { out.approved++; out.sendFailed++; } else out.errors.push(e instanceof Error ? e.message.slice(0, 120) : "failed"); }
-        }
-        return NextResponse.json({ ok: true, ...out });
-      }
-      case "bulk_delete_messages": {
-        const ids = (Array.isArray(body.message_ids) ? (body.message_ids as string[]) : []).slice(0, 1000); if (!ids.length) return NextResponse.json({ ok: true, deleted: 0 });
-        const { data, error } = await service.from("outbound_messages").delete().eq("business_id", b.id).in("id", ids).select("id");
-        if (error) throw new Error(error.message);
-        return NextResponse.json({ ok: true, deleted: (data ?? []).length });
-      }
-      case "bulk_delete_prospects": {
-        const ids = (Array.isArray(body.prospect_ids) ? (body.prospect_ids as string[]) : []).slice(0, 1000); if (!ids.length) return NextResponse.json({ ok: true, deleted: 0 });
-        const { data, error } = await service.from("outbound_prospects").delete().eq("business_id", b.id).in("id", ids).select("id");
-        if (error) throw new Error(error.message);
-        return NextResponse.json({ ok: true, deleted: (data ?? []).length });
-      }
-      case "bulk_add_to_campaign": {
-        // Drafts each prospect's intro with the campaign variant's template → lands in the approval queue and counts in that campaign's numbers.
-        const ids = (Array.isArray(body.prospect_ids) ? (body.prospect_ids as string[]) : []).slice(0, 10);
-        const { data: v } = await service.from("campaign_variants").select("template_key").eq("id", s("variant_id")).maybeSingle();
-        if (!v?.template_key) return NextResponse.json({ error: "That campaign variant has no email template set." }, { status: 400 });
-        const { data: mine } = await service.from("outbound_prospects").select("id").eq("business_id", b.id).in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
-        const out = { drafted: 0, skipped: [] as string[] };
-        for (const p of mine ?? []) { try { await startSequence(service, p.id as string, actor, { template: v.template_key as string }); out.drafted++; } catch (e) { out.skipped.push(e instanceof Error ? e.message.slice(0, 100) : "failed"); } }
-        return NextResponse.json({ ok: true, ...out });
-      }
       case "enrich": return NextResponse.json(await enrichProspect(service, s("prospect_id"), actor));
-      case "start_sequence": return NextResponse.json({ message: await startSequence(service, s("prospect_id"), actor, s("template") ? { template: s("template"), custom: (body.custom as { subject: string; body: string } | undefined) ?? null } : null) });
+      case "start_sequences": {
+        // Bulk (Roman, 2026-10-21): the client sends ≤25 ids per request and loops, so no request outlives the function limit.
+        // Drafts into the approval queue only (2 credits each); nothing is sent. Stops at the first out-of-credits and says so.
+        const ids = (Array.isArray(body.prospect_ids) ? (body.prospect_ids as unknown[]) : []).filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x)).slice(0, 25);
+        if (!ids.length) return NextResponse.json({ error: "Select at least one prospect." }, { status: 400 });
+        const { data: ps } = await service.from("outbound_prospects").select("id, name, email, status").eq("business_id", b.id).in("id", ids);
+        const found = new Map((ps ?? []).map((x) => [x.id as string, x as { id: string; name: string; email: string | null; status: string }]));
+        const ov = s("template") ? { template: s("template"), custom: (body.custom as { subject: string; body: string } | undefined) ?? null } : null;
+        const results: { id: string; name: string; status: "started" | "skipped" | "error" | "not_attempted"; reason?: string }[] = []; let stopped = false;
+        for (const id of ids) {
+          const p = found.get(id);
+          if (!p) { results.push({ id, name: "(not in this business)", status: "skipped", reason: "not found in this business" }); continue; }
+          if (stopped) { results.push({ id, name: p.name, status: "not_attempted", reason: "stopped — out of credits" }); continue; }
+          const why = startSequenceBlocker(p); if (why) { results.push({ id, name: p.name, status: "skipped", reason: why }); continue; }
+          try { await startSequence(service, id, actor, ov); results.push({ id, name: p.name, status: "started" }); }
+          catch (e) {
+            if (e instanceof InsufficientCreditsError) { stopped = true; results.push({ id, name: p.name, status: "error", reason: "out of credits" }); }
+            else results.push({ id, name: p.name, status: "error", reason: e instanceof Error ? e.message.slice(0, 160) : "failed" });
+          }
+        }
+        return NextResponse.json({ ok: true, results, stoppedForCredits: stopped });
+      }
+      case "start_sequence": {
+        // Ownership check: the prospect must belong to the business this caller was authorized for.
+        const { data: owned } = await service.from("outbound_prospects").select("id").eq("id", s("prospect_id")).eq("business_id", b.id).maybeSingle();
+        if (!owned) return NextResponse.json({ error: "Prospect not found for this business." }, { status: 404 });
+        return NextResponse.json({ message: await startSequence(service, s("prospect_id"), actor, s("template") ? { template: s("template"), custom: (body.custom as { subject: string; body: string } | undefined) ?? null } : null) }); }
       case "draft": return NextResponse.json({ message: await draftMessage(service, { prospectId: s("prospect_id"), template: (s("template") || "intro") as TemplateKey, custom: (body.custom as { subject: string; body: string } | undefined) ?? null, slots: s("slots") || null }, actor) });
       // Template library (2026-10-12)
       case "template_library": { const [library, assist] = await Promise.all([listLibrary(service, b.id), assistStatus(service)]); return NextResponse.json({ ok: true, library, assist }); }
