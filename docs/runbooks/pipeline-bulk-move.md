@@ -1,0 +1,5 @@
+# Runbook — Pipeline board: Select all + Move to next stage (2026-10-22)
+Pipeline board toolbar → **Select** → circles appear on every card (cards stop being draggable while selecting). **Select All (N)** takes every lead currently shown (respects the rep filter); each column header also has its own **Select all / Clear column**. Bottom bar: **Move to next stage** (each lead goes to the next stage on the board's order; mixed stages are fine) and **Move to…** (pick one stage for all).
+- Forward path = board order up to Proposal (`lib/crm/nextStage.ts`, tested). **Won is never bulk** — Proposal → Won needs the plan sold (revenue event), so those leads are reported as "not moved", never moved. Won/Lost/Nurture have no next stage.
+- Writes go through the existing `POST /api/team/leads/bulk {action:"stage"}` (session client → RLS: owners all, reps only their own; writes `crm_pipeline_history` and a `pipeline_changed` activity per lead). Nothing new server-side.
+- Undo: select the leads in their new stage and use **Move to…** back; history rows stay.

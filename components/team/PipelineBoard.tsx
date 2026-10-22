@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PIPELINE_STAGES } from "@/lib/crm/stages";
 import Link from "next/link";
+import { useMultiSelect, SelectCircle, SelectToggle, BulkBar, postJson, type BulkAction } from "@/components/ui/MultiSelect";
+import { planNextStage } from "@/lib/crm/nextStage";
+import { plural } from "@/lib/ui/selection";
 import { LayoutGrid, ListFilter, ArrowUpDown, StickyNote, Link2 } from "lucide-react";
 
 type Lead = {
@@ -130,6 +133,29 @@ export default function PipelineBoard({
     }
   }, [filtered, sort]);
 
+  // Select all + Move to next stage (Roman, 2026-10-22): same shared multi-select as Leads/Outbound; moves go through the
+  // existing bulk stage API (RLS + history + activity). Won is never bulk (needs the plan sold).
+  const ms = useMultiSelect(sorted.map((l) => l.id));
+  const stageOf = (id: string) => leads.find((l) => l.id === id)?.pipeline_stage ?? "";
+  const applyMoves = async (moves: Record<string, string[]>) => {
+    let moved = 0; let unchanged = 0; const done: Record<string, string> = {};
+    for (const [stage, ids] of Object.entries(moves)) { const j = await postJson("/api/team/leads/bulk", { action: "stage", ids, stage }); moved += j.count; unchanged += j.unchanged ?? 0; for (const id of ids) done[id] = stage; }
+    setLeads((cur) => cur.map((l) => (done[l.id] ? { ...l, pipeline_stage: done[l.id] } : l)));
+    router.refresh();
+    return { moved, unchanged };
+  };
+  const boardActions: BulkAction[] = [
+    { label: "Move to next stage", tone: "primary", confirm: (n) => `Move ${plural(n, "lead")} to their next stage?`, run: async (ids) => {
+      const { moves, blocked } = planNextStage(ids.map((id) => ({ id, stage: stageOf(id) })));
+      const { moved } = await applyMoves(moves);
+      return `${plural(moved, "lead")} moved forward${blocked.length ? ` · ${blocked.length} not moved (${blocked[0].reason})` : ""}`;
+    } },
+    { label: "Move to…", options: STAGES.filter((st) => st.manual && st.value !== "won").map((st) => ({ label: st.label, value: st.value })), confirm: (n) => `Move ${plural(n, "lead")}?`, run: async (ids, v) => {
+      const { moved, unchanged } = await applyMoves({ [v as string]: ids });
+      return `${plural(moved, "lead")} moved${unchanged ? ` · ${unchanged} already there` : ""}`;
+    } },
+  ];
+
   if (leads.length === 0) {
     return (
       <div className="px-8 py-8">
@@ -185,6 +211,8 @@ export default function PipelineBoard({
         </div>
       </div>
 
+      <div className="flex items-center gap-3 mb-4"><SelectToggle ms={ms} total={sorted.length} noun="leads" />{ms.active && <span className="text-[12px] text-[color:var(--hx-a1a1a6)]">Select All takes every lead on the board; use a column's own Select all for just that stage.</span>}</div>
+
       <div className="flex gap-5 overflow-x-auto pb-4">
         {STAGES.map((stage) => {
           const cards = sorted.filter((l) => l.pipeline_stage === stage.value);
@@ -217,7 +245,7 @@ export default function PipelineBoard({
                 <span className="text-[15px] font-medium uppercase tracking-tight text-[color:var(--hx-f5f5f7)]">{stage.label}</span>
               </div>
               <div className="flex items-center justify-between px-2 mb-3">
-                <span className="text-[12px] text-[color:var(--hx-b6b6b6)]">{cards.length} lead{cards.length === 1 ? "" : "s"}</span>
+                <span className="text-[12px] text-[color:var(--hx-b6b6b6)]">{cards.length} lead{cards.length === 1 ? "" : "s"}{ms.active && cards.length > 0 && (() => { const all = cards.every((c) => ms.isSelected(c.id)); return <button type="button" onClick={() => cards.forEach((c) => { if (ms.isSelected(c.id) === all) ms.toggle(c.id); })} className="ml-2 font-semibold" style={{ color: "var(--hx-0a84ff)" }} data-column-select-all>{all ? "Clear column" : "Select all"}</button>; })()}</span>
                 {latestUpdate && <span className="text-[11.5px] text-[color:var(--hx-a2a2a2)]">Updated {timeAgo(latestUpdate)}</span>}
               </div>
 
@@ -227,18 +255,19 @@ export default function PipelineBoard({
                   return (
                     <div
                       key={lead.id}
-                      draggable
+                      draggable={!ms.active}
                       onDragStart={(e) => {
                         e.dataTransfer.setData("text/plain", lead.id);
                         setDragging(lead.id);
                       }}
                       onDragEnd={() => setDragging(null)}
                       className="rounded-[14px] overflow-hidden cursor-grab active:cursor-grabbing"
-                      style={{ background: "var(--hx-151515)", border: "1px solid rgb(var(--w) / 0.055)", opacity: dragging === lead.id ? 0.4 : 1, boxShadow: "0 10px 26px rgba(0,0,0,0.18)" }}
+                      style={{ background: "var(--hx-151515)", border: ms.isSelected(lead.id) ? "1px solid var(--hx-0a84ff)" : "1px solid rgb(var(--w) / 0.055)", opacity: dragging === lead.id ? 0.4 : 1, boxShadow: "0 10px 26px rgba(0,0,0,0.18)" }}
                     >
                       <div className="h-[26px] flex items-center justify-center text-[11px] font-semibold uppercase tracking-wide" style={{ background: priority.color, color: "var(--hx-ffffff)" }}>
                         {priority.label}
                       </div>
+                      {ms.active && <div className="px-3 pt-2 flex items-center"><SelectCircle checked={ms.isSelected(lead.id)} onToggle={() => ms.toggle(lead.id)} label={`Select ${lead.business_name ?? "lead"}`} /><span className="text-[11px] text-[color:var(--hx-a1a1a6)] ml-1">{ms.isSelected(lead.id) ? "Selected" : "Select"}</span></div>}
                       <div className="m-2 p-3 rounded-[10px]" style={{ border: "1px dashed rgb(var(--w) / 0.16)" }}>
                         <Link href={`/team/leads/${lead.id}`} className="text-[14.5px] font-medium text-[color:var(--hx-f5f5f7)] hover:underline block truncate">
                           {lead.business_name || "Unnamed lead"}
@@ -273,6 +302,9 @@ export default function PipelineBoard({
           );
         })}
       </div>
+
+      <BulkBar ms={ms} noun={(n) => plural(n, "lead")} actions={boardActions} />
+      {ms.active && <div className="h-[96px]" />}
 
       {wonPrompt && (
         <div
