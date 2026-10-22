@@ -9,6 +9,7 @@ const LOGO_SRC =
   "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 import {
   LayoutDashboard,
+  MessageCircle,
   Users,
   Kanban,
   Phone,
@@ -52,6 +53,7 @@ type NavGroup = {
 // lit up together with Leads. Every page is still reachable by URL.
 const NAV_GROUPS: NavGroup[] = [
   { label: null, collapsible: false, items: [
+    { href: "/team/chat", label: "Home", icon: MessageCircle },
     { href: "/team/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/team/follow-ups", label: "Follow-Ups", icon: Bell },
   ] },

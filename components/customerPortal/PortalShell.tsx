@@ -21,8 +21,7 @@ import {
   type LucideIcon,
   Bot,
   Coins,
-  Plug,
-} from "lucide-react";
+  Plug, MessageCircle } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import AssistantWidget from "@/components/assistant/AssistantWidget";
 
@@ -34,7 +33,8 @@ type NavItem = {
 };
 
 const PRIMARY_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Overview", icon: LayoutGrid, ready: true },
+  { href: "/dashboard/chat", label: "Home", icon: MessageCircle, ready: true },
+  { href: "/dashboard?view=overview", label: "Overview", icon: LayoutGrid, ready: true },
   { href: "/dashboard/agent", label: "Agent", icon: Bot, ready: true },
   { href: "/dashboard/credits", label: "Credits", icon: Coins, ready: true },
   { href: "/dashboard/presence", label: "AI Presence", icon: Sparkles, ready: true },
@@ -100,7 +100,7 @@ export default function PortalShell({
     router.push("/login");
   }
 
-  const isActive = (href: string) => (href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href));
+  const isActive = (href: string) => (href.startsWith("/dashboard?") ? pathname === "/dashboard" : pathname.startsWith(href));
 
   return (
     <TourProvider>

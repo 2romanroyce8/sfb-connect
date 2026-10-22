@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MessageCircle, X, Send, Check, Loader2 } from "lucide-react";
 import type { Reply } from "@/lib/assistant/types";
 
@@ -11,6 +12,7 @@ import type { Reply } from "@/lib/assistant/types";
 type Msg = { from: "me" | "bot"; text: string; reply?: Reply; done?: boolean };
 
 export default function AssistantWidget({ endpoint, theme, title }: { endpoint: "/api/team/assistant" | "/api/dashboard/assistant"; theme: "dark" | "light"; title: string }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -50,6 +52,7 @@ export default function AssistantWidget({ endpoint, theme, title }: { endpoint: 
     try { const reply = await call({ confirm: { action: m.reply.confirm.action, token: m.reply.confirm.token } }); setMsgs((all) => [...all, { from: "bot", text: reply.text, reply }]); } finally { setBusy(false); }
   };
 
+  if (pathname === "/team/chat" || pathname === "/dashboard/chat") return null; // the full-page chat IS the assistant there
   return (
     <>
       {!open && (

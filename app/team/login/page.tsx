@@ -15,7 +15,7 @@ import { createSupabaseBrowserClient, getRememberPreference, setRememberPreferen
 function TeamLoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/team/dashboard";
+  const next = params.get("next") || "/team/chat";
   const notAuthorized = params.get("error") === "not_authorized";
   const agentError = params.get("error")?.startsWith("agent_") ? params.get("error") : null;
 

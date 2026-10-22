@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { code: string
   const authz = await getAuthorization(authorizationId);
   if (!authz || authz.status !== "active" || !authz.scopes.includes("sfb:browser")) return fail("agent_revoked");
 
-  const nextRaw = req.nextUrl.searchParams.get("next") ?? "/team/dashboard";
+  const nextRaw = req.nextUrl.searchParams.get("next") ?? "/team/chat";
   const next = /^\/team(\/|$)/.test(nextRaw) ? nextRaw : "/team/dashboard";
   const response = NextResponse.redirect(new URL(next, origin));
   const secure = origin.startsWith("https://");

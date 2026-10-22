@@ -17,5 +17,5 @@ export default async function TeamRootPage() {
 
   if (!profile?.team_role) redirect("/team/login?error=not_authorized");
 
-  redirect("/team/dashboard");
+  redirect("/team/chat");
 }

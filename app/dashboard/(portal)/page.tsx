@@ -22,7 +22,7 @@ function greeting() {
   return "Good evening";
 }
 
-export default async function OverviewPage() {
+export default async function OverviewPage({ searchParams }: { searchParams?: { view?: string } }) {
   const result = await getCustomerContext("/dashboard");
   if (result.status === "no_customer") redirect("/dashboard/no-membership");
   const { context } = result;
@@ -31,6 +31,9 @@ export default async function OverviewPage() {
   // overview sends the customer to the current step; after that it nudges with the unfinished list.
   const { state: onboarding } = await loadOnboarding(createSupabaseServiceClient(), context.business.id);
   if (onboarding.showFlow) redirect(`/dashboard/onboarding/${stepByNo(onboarding.current)!.slug}`);
+
+  // Chat is the first screen (Roman, 2026-10-22); the numbers overview is one click away.
+  if (searchParams?.view !== "overview") redirect("/dashboard/chat");
 
   const supabase = createSupabaseServerClient();
 
