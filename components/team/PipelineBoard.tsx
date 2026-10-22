@@ -211,7 +211,7 @@ export default function PipelineBoard({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 mb-4"><SelectToggle ms={ms} total={sorted.length} noun="leads" />{ms.active && <span className="text-[12px] text-[color:var(--hx-a1a1a6)]">Select All takes every lead on the board; use a column's own Select all for just that stage.</span>}</div>
+      <div className="flex items-center gap-3 mb-4"><SelectToggle ms={ms} total={sorted.length} noun="leads" />{!ms.active && <button type="button" disabled={sorted.length === 0} onClick={() => { ms.start(); ms.selectAll(); }} className="h-[32px] px-3.5 rounded-full text-[12.5px] font-semibold disabled:opacity-40" style={{ background: "var(--hx-0a84ff)", color: "var(--hx-ffffff)" }} data-select-all-board>{`Select all ${sorted.length} → move to next stage`}</button>}{ms.active && <span className="text-[12px] text-[color:var(--hx-a1a1a6)]">Select All takes every lead on the board; use a column's own Select all for just that stage.</span>}</div>
 
       <div className="flex gap-5 overflow-x-auto pb-4">
         {STAGES.map((stage) => {
