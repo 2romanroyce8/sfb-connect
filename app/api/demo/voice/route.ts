@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { rateLimit } from "@/lib/agent/store";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { tradeByKey } from "@/lib/mk/trades";
 import { receptionistPrompt, firstMessage } from "@/lib/mk/voicePrompt";
 import { ensureAgent, signedUrl, voiceConfigured } from "@/lib/mk/elevenlabs";
@@ -25,7 +26,11 @@ export async function POST(req: NextRequest) {
     const url = await signedUrl(agentId);
     return NextResponse.json({ signedUrl: url, overrides: { agent: { prompt: { prompt: receptionistPrompt(trade) }, first_message: firstMessage(trade) } }, maxSeconds: 180 });
   } catch (e) {
-    console.error("[voice-demo]", e instanceof Error ? e.message : e);
-    return NextResponse.json({ error: "The voice service couldn't start the call. Please try again." }, { status: 502 });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[voice-demo]", msg);
+    // The upstream message (never the key) is shown only to a signed-in team member, for debugging.
+    let detail: string | undefined;
+    try { const db = createSupabaseServerClient(); const { data: { user } } = await db.auth.getUser(); if (user) { const { data: p } = await db.from("users").select("team_role").eq("id", user.id).maybeSingle(); if (p?.team_role) detail = msg.slice(0, 400); } } catch { /* ignore */ }
+    return NextResponse.json({ error: "The voice service couldn't start the call. Please try again.", ...(detail ? { detail } : {}) }, { status: 502 });
   }
 }
