@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Presentation, Palette, LogOut } from "lucide-react";
+import { LayoutDashboard, Presentation, Palette, LogOut, Users, Kanban, Bell } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 // Same shell/styling as the team sidebar (Roman: keep the UI, change the tabs). Only routes that exist and render real data are listed;
-// each later phase adds its tab when its page ships (CRM, Clients, Fulfillment, Automations, Appointments, Team, Revenue, Usage, Billing).
+// each later phase adds its tab when its page ships (Clients, Fulfillment, Automations, Appointments, Team, Revenue, Usage, Billing).
 const ITEMS: { href: string; label: string; icon: React.ElementType }[] = [
   { href: "/app", label: "Overview", icon: LayoutDashboard },
+  { href: "/app/leads", label: "Prospects", icon: Users },
+  { href: "/app/pipeline", label: "Pipeline", icon: Kanban },
+  { href: "/app/followups", label: "Follow-ups", icon: Bell },
   { href: "/app/demos", label: "Demo Builder", icon: Presentation },
   { href: "/app/branding", label: "Branding", icon: Palette },
 ];
