@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // A published demo, branded as the AGENCY (not SFB Connect). Drafts and unknown links are a plain 404. Not indexed: these are private sales links.
 export async function generateMetadata({ params }: { params: { agency: string; slug: string } }): Promise<Metadata> {
   const d = await getPublicDemo(params.agency, params.slug);
-  return { title: d ? `${d.businessName} — AI demo by ${d.brand.name}` : "Demo not found", robots: { index: false, follow: false } };
+  return { title: { absolute: d ? `${d.businessName}: AI demo by ${d.brand.name}` : "Demo not found" }, robots: { index: false, follow: false } };
 }
 export default async function DemoPage({ params }: { params: { agency: string; slug: string } }) {
   const d = await getPublicDemo(params.agency, params.slug); if (!d) notFound();
