@@ -1,18 +1,11 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { TRADES, type Trade } from "@/lib/mk/trades";
+import VoiceCall from "./VoiceCall";
 
 // Every panel is a SIMULATION driven by a fixed script (no model, no microphone, no network call) and says so on screen.
 // The businesses are FICTIONAL, invented for this demo. Real sandboxed voice/chat/audit modules live inside the agency's demo builder.
 type Turn = { from: "caller" | "ai"; text: string };
-type Trade = { key: string; label: string; biz: string; service: string; city: string; asks: string[] };
-const TRADES: Trade[] = [
-  { key: "hvac", label: "HVAC company", biz: "Northside Heating & Air", service: "an AC tune-up", city: "Tampa", asks: ["Do you do same-day repairs?", "How much is an AC tune-up?", "Can someone come this week?"] },
-  { key: "dental", label: "Dental practice", biz: "Harbor Dental Studio", service: "a cleaning and exam", city: "Miami", asks: ["Are you taking new patients?", "How much is a cleaning?", "Can I get in this week?"] },
-  { key: "roofing", label: "Roofing contractor", biz: "Summit Roofing Co", service: "a roof inspection", city: "Orlando", asks: ["Do you handle storm damage?", "How much is an inspection?", "Can someone come out this week?"] },
-  { key: "medspa", label: "Med spa", biz: "Glow Aesthetics", service: "a facial consultation", city: "Fort Lauderdale", asks: ["What treatments do you offer?", "How much is a consultation?", "Do you have openings Saturday?"] },
-  { key: "plumbing", label: "Plumbing company", biz: "Bayline Plumbing", service: "a leak inspection", city: "Jacksonville", asks: ["Do you take emergency calls?", "How much is a leak inspection?", "Can someone come today?"] },
-];
-
 function receptionist(t: Trade): { prompt: string; turns: Turn[] }[] {
   return [
     { prompt: `"${t.asks[0]}"`, turns: [{ from: "caller", text: t.asks[0] }, { from: "ai", text: `Thanks for calling ${t.biz}. I can help with that. Let me get a couple of details so the right person can follow up. What's your name and the best number?` }] },
@@ -94,6 +87,8 @@ const TABS = ["AI receptionist", "Website chatbot", "Website audit", "Missed-cal
 export default function DemoStage({ showTrades = true }: { showTrades?: boolean }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("AI receptionist");
   const [tradeKey, setTradeKey] = useState(TRADES[0].key);
+  const [voiceOn, setVoiceOn] = useState(false);
+  useEffect(() => { fetch("/api/demo/voice").then((r) => r.json()).then((j) => setVoiceOn(!!j.configured)).catch(() => setVoiceOn(false)); }, []);
   const trade = TRADES.find((t) => t.key === tradeKey) ?? TRADES[0];
   const rec = useMemo(() => receptionist(trade), [trade]); const bot = useMemo(() => chatbot(trade), [trade]); const missed = useMemo(() => MISSED(trade), [trade]);
   const needsTrade = tab === "AI receptionist" || tab === "Website chatbot" || tab === "Missed-call text-back";
@@ -112,7 +107,8 @@ export default function DemoStage({ showTrades = true }: { showTrades?: boolean 
         <div className="flex flex-wrap gap-2 mb-7" role="tablist" aria-label="Demo modules">
           {TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 40, fontSize: 14, ...(tab === t ? { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } : { background: "var(--mk-white)", border: "1px solid var(--mk-border)", color: "var(--mk-text)" }) }}>{t}</button>)}
         </div>
-        {tab === "AI receptionist" && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
+        {tab === "AI receptionist" && voiceOn && <VoiceCall key={trade.key} trade={trade.key} label={`A real call to the ${trade.label.toLowerCase()} receptionist`} />}
+        {tab === "AI receptionist" && !voiceOn && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
         {tab === "Website chatbot" && <Chat script={bot} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
         {tab === "Website audit" && (
           <div>
