@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { TRADES, type Trade } from "@/lib/mk/trades";
 import VoiceCall from "./VoiceCall";
+import AuditPanel from "./AuditPanel";
 
 // Every panel is a SIMULATION driven by a fixed script (no model, no microphone, no network call) and says so on screen.
 // The businesses are FICTIONAL, invented for this demo. Real sandboxed voice/chat/audit modules live inside the agency's demo builder.
@@ -28,14 +29,6 @@ const MISSED = (t: Trade): { t: string; text: string; who: "sys" | "ai" | "cust"
   { t: "10:06", who: "cust", text: "33131." },
   { t: "10:06", who: "ai", text: "Got it. Does today at 3pm or tomorrow at 9am work for a visit?" },
   { t: "10:07", who: "sys", text: "Appointment request created (simulated)" },
-];
-const AUDIT = [
-  { check: "HTTPS", result: "Pass", note: "Site served over a valid certificate." },
-  { check: "Page title", result: "Needs work", note: "Title is missing the city and service." },
-  { check: "Meta description", result: "Missing", note: "No description tag found on the homepage." },
-  { check: "Heading structure", result: "Pass", note: "One H1 followed by ordered H2 sections." },
-  { check: "Mobile viewport", result: "Pass", note: "Viewport tag present." },
-  { check: "Contact info", result: "Needs work", note: "Phone number is an image, not text." },
 ];
 
 const Sim = () => <span className="mk-sim">Simulation</span>;
@@ -110,18 +103,7 @@ export default function DemoStage({ showTrades = true }: { showTrades?: boolean 
         {tab === "AI receptionist" && voiceOn && <VoiceCall key={trade.key} trade={trade.key} label={`A real call to the ${trade.label.toLowerCase()} receptionist`} />}
         {tab === "AI receptionist" && !voiceOn && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
         {tab === "Website chatbot" && <Chat script={bot} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
-        {tab === "Website audit" && (
-          <div>
-            <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>Illustrative sample report for a made-up site. Real audits read the public site you enter and cite what they found.</span></div>
-            <div className="rounded-[18px] overflow-hidden" style={{ border: "1px solid var(--mk-border)" }}>
-              {AUDIT.map((a, i) => (
-                <div key={a.check} className="grid grid-cols-[1fr_auto] md:grid-cols-[180px_120px_1fr] gap-x-4 gap-y-1 px-5 py-3.5 text-[14.5px]" style={{ borderTop: i ? "1px solid var(--mk-border)" : "none", background: i % 2 ? "var(--mk-bg2)" : "var(--mk-white)" }}>
-                  <span className="font-medium">{a.check}</span><span className="font-medium" style={{ color: a.result === "Pass" ? "var(--mk-blue2)" : "var(--mk-muted)" }}>{a.result}</span><span className="col-span-2 md:col-span-1" style={{ color: "var(--mk-muted)" }}>{a.note}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {tab === "Website audit" && <AuditPanel />}
         {tab === "Missed-call text-back" && (
           <div>
             <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>Simulated phone events. No real call or text is sent.</span></div>
