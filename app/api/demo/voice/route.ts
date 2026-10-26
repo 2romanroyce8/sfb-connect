@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { rateLimit } from "@/lib/agent/store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { tradeByKey } from "@/lib/mk/trades";
-import { receptionistPrompt, firstMessage } from "@/lib/mk/voicePrompt";
+import { receptionistPrompt } from "@/lib/mk/voicePrompt";
 import { ensureAgent, ensureOverrides, inspectAgent, signedUrl, voiceConfigured } from "@/lib/mk/elevenlabs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const agentId = await ensureAgent();
     await ensureOverrides(agentId);
     const url = await signedUrl(agentId);
-    return NextResponse.json({ signedUrl: url, overrides: { agent: { prompt: { prompt: receptionistPrompt(trade) }, first_message: firstMessage(trade) } }, maxSeconds: 180 });
+    return NextResponse.json({ signedUrl: url, overrides: { agent: { prompt: { prompt: receptionistPrompt(trade) } } }, maxSeconds: 180 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[voice-demo]", msg);
