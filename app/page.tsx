@@ -16,7 +16,7 @@ export default function HomePage() {
     <MkShell>
       <PageHero eyebrow="The operating system for AI agencies" title="Your Agency. Your Brand. Your Clients. One Operating System."
         lead="Build interactive AI demonstrations, close software deals, manage clients, and deliver AI-powered business systems through one platform." />
-      <Section id="demo" eyebrow="Try it" title="See what your prospects will see." lead="These panels are scripted simulations so you can feel the experience. Inside your workspace, demos run on a real business's own details.">
+      <Section id="demo" eyebrow="Try it yourself" title="This is what your prospect opens, under your brand." lead="Switch the trade and try each module. These panels are scripted simulations so you can feel the experience; inside your workspace, demos run on a real business's own details.">
         <DemoStage />
       </Section>
       <Section tint eyebrow="The workflow" title="Build. Brand. Publish. Sell."><Steps items={HOME_STEPS} /></Section>

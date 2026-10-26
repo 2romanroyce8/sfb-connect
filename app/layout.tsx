@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
+import { Inter, IBM_Plex_Mono, Instrument_Serif, DM_Sans } from "next/font/google";
 import "./theme-tokens.css";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
@@ -10,6 +10,8 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
 });
+
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm", display: "swap" });
 
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -63,7 +65,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${mono.variable} ${instrumentSerif.variable}`}
+      className={`${inter.variable} ${mono.variable} ${instrumentSerif.variable} ${dmSans.variable}`}
       suppressHydrationWarning
     >
       <head>

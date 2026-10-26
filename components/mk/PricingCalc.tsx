@@ -16,7 +16,7 @@ export default function PricingCalc() {
       <div className="grid gap-3 sm:grid-cols-3">{field("Your setup cost", setup, setSetup, "$")}{field("Your monthly cost", monthly, setMonthly, "$/mo")}{field("Markup", markup, setMarkup, "%")}</div>
       <div className="mt-5 grid gap-3 sm:grid-cols-4">
         {[["Suggested retail setup", usd(rs)], ["Suggested retail monthly", usd(rm)], ["Gross margin", `${margin(rm, monthly).toFixed(0)}%`], ["Recurring profit / client / yr", usd((rm - monthly) * 12)]].map(([k, v]) => (
-          <div key={k} className="rounded-[12px] p-4" style={{ background: "var(--mk-bg)", border: "1px solid var(--mk-border)" }}><div className="text-[12px]" style={{ color: "var(--mk-muted)" }}>{k}</div><div className="text-[24px] font-semibold mt-1">{v}</div></div>))}
+          <div key={k} className="rounded-[12px] p-4" style={{ background: "var(--mk-bg2)", border: "1px solid var(--mk-border)" }}><div className="text-[12px]" style={{ color: "var(--mk-muted)" }}>{k}</div><div className="text-[24px] font-semibold mt-1">{v}</div></div>))}
       </div>
       <p className="mt-4 text-[12.5px]" style={{ color: "var(--mk-muted)" }}>Retail = cost × (1 + markup). Margin = (retail − cost) ÷ retail. Defaults are placeholders to show the math, not SFB Connect prices. Usage-based costs (such as voice minutes) are extra.</p>
     </div>

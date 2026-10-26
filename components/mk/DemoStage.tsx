@@ -1,25 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-// Every panel here is a SIMULATION driven by a fixed script (no model, no microphone, no network call) and says so on screen.
-// Real sandboxed voice/chat/audit modules live inside the agency's demo builder; nothing below is presented as live.
+// Every panel is a SIMULATION driven by a fixed script (no model, no microphone, no network call) and says so on screen.
+// The businesses are FICTIONAL, invented for this demo. Real sandboxed voice/chat/audit modules live inside the agency's demo builder.
 type Turn = { from: "caller" | "ai"; text: string };
-const RECEPTIONIST: { prompt: string; turns: Turn[] }[] = [
-  { prompt: "Ask about pricing", turns: [{ from: "caller", text: "How much does a roof inspection cost?" }, { from: "ai", text: "Inspections are quoted per property, so I'll grab a few details and book a time that works. What's the address area, and is there a leak right now?" }] },
-  { prompt: "Ask about hours", turns: [{ from: "caller", text: "Are you open on Saturdays?" }, { from: "ai", text: "I can check the schedule for you. Saturday has morning appointments available. Would you like me to hold one?" }] },
-  { prompt: "Book an appointment", turns: [{ from: "caller", text: "I'd like someone to come out this week." }, { from: "ai", text: "Happy to set that up. Which day works best, and what's the best number to confirm with?" }, { from: "caller", text: "Thursday morning." }, { from: "ai", text: "Thursday morning noted. In a connected setup this lands on the calendar; in this demo it is simulated, so nothing was booked." }] },
+type Trade = { key: string; label: string; biz: string; service: string; city: string; asks: string[] };
+const TRADES: Trade[] = [
+  { key: "hvac", label: "HVAC company", biz: "Northside Heating & Air", service: "an AC tune-up", city: "Tampa", asks: ["Do you do same-day repairs?", "How much is an AC tune-up?", "Can someone come this week?"] },
+  { key: "dental", label: "Dental practice", biz: "Harbor Dental Studio", service: "a cleaning and exam", city: "Miami", asks: ["Are you taking new patients?", "How much is a cleaning?", "Can I get in this week?"] },
+  { key: "roofing", label: "Roofing contractor", biz: "Summit Roofing Co", service: "a roof inspection", city: "Orlando", asks: ["Do you handle storm damage?", "How much is an inspection?", "Can someone come out this week?"] },
+  { key: "medspa", label: "Med spa", biz: "Glow Aesthetics", service: "a facial consultation", city: "Fort Lauderdale", asks: ["What treatments do you offer?", "How much is a consultation?", "Do you have openings Saturday?"] },
+  { key: "plumbing", label: "Plumbing company", biz: "Bayline Plumbing", service: "a leak inspection", city: "Jacksonville", asks: ["Do you take emergency calls?", "How much is a leak inspection?", "Can someone come today?"] },
 ];
-const CHATBOT: { prompt: string; turns: Turn[] }[] = [
-  { prompt: "What services do you offer?", turns: [{ from: "caller", text: "What services do you offer?" }, { from: "ai", text: "The assistant answers from the business details your agency approved: services, service area and hours. Anything it can't find, it hands to a person." }] },
-  { prompt: "I need a quote", turns: [{ from: "caller", text: "I need a quote." }, { from: "ai", text: "Sure. Is this a repair or a full replacement, and when would you like it done?" }, { from: "caller", text: "Replacement, next month." }, { from: "ai", text: "Thanks. That's enough to qualify the request. In production it creates a lead for the team; in this demo the handoff is simulated." }] },
-  { prompt: "Talk to a person", turns: [{ from: "caller", text: "Can I talk to a human?" }, { from: "ai", text: "Of course. Handing you to the team now (simulated handoff in this demo)." }] },
-];
-const MISSED: { t: string; text: string; who: "sys" | "ai" | "cust" }[] = [
+
+function receptionist(t: Trade): { prompt: string; turns: Turn[] }[] {
+  return [
+    { prompt: `"${t.asks[0]}"`, turns: [{ from: "caller", text: t.asks[0] }, { from: "ai", text: `Thanks for calling ${t.biz}. I can help with that. Let me get a couple of details so the right person can follow up. What's your name and the best number?` }] },
+    { prompt: `"${t.asks[1]}"`, turns: [{ from: "caller", text: t.asks[1] }, { from: "ai", text: `${t.service[0].toUpperCase() + t.service.slice(1)} is quoted based on your situation, so I'll note what you need and book a time to confirm the details. Is there anything urgent right now?` }] },
+    { prompt: `"${t.asks[2]}"`, turns: [{ from: "caller", text: t.asks[2] }, { from: "ai", text: "Happy to set that up. Which day works best?" }, { from: "caller", text: "Thursday morning." }, { from: "ai", text: `Thursday morning noted for ${t.service}. In a connected setup this lands on the calendar; in this demo it is simulated, so nothing was booked.` }] },
+  ];
+}
+function chatbot(t: Trade): { prompt: string; turns: Turn[] }[] {
+  return [
+    { prompt: `"What services do you offer?"`, turns: [{ from: "caller", text: "What services do you offer?" }, { from: "ai", text: `I answer from the details ${t.biz} approved: services, service area (${t.city} and nearby) and hours. If I can't find something, I hand you to a person.` }] },
+    { prompt: `"I'd like a quote"`, turns: [{ from: "caller", text: "I'd like a quote." }, { from: "ai", text: "Sure. What do you need done, and when would you like it?" }, { from: "caller", text: `${t.service[0].toUpperCase() + t.service.slice(1)}, next week.` }, { from: "ai", text: "Thanks. That's enough to qualify the request. In production it creates a lead for the team; in this demo the handoff is simulated." }] },
+    { prompt: `"Can I talk to a person?"`, turns: [{ from: "caller", text: "Can I talk to a human?" }, { from: "ai", text: "Of course. Handing you to the team now (simulated handoff in this demo)." }] },
+  ];
+}
+const MISSED = (t: Trade): { t: string; text: string; who: "sys" | "ai" | "cust" }[] => [
   { t: "10:02", who: "sys", text: "Inbound call, not answered" },
-  { t: "10:02", who: "ai", text: "Sorry we missed you. What can we help with?" },
-  { t: "10:04", who: "cust", text: "My AC stopped cooling." },
-  { t: "10:04", who: "ai", text: "Sorry to hear that. Is the unit running at all, and what's your zip code?" },
-  { t: "10:06", who: "cust", text: "It's on but warm. 33131." },
+  { t: "10:02", who: "ai", text: `Sorry we missed you. This is ${t.biz}. What can we help with?` },
+  { t: "10:04", who: "cust", text: `I need ${t.service}.` },
+  { t: "10:04", who: "ai", text: "Happy to help. What's your zip code?" },
+  { t: "10:06", who: "cust", text: "33131." },
   { t: "10:06", who: "ai", text: "Got it. Does today at 3pm or tomorrow at 9am work for a visit?" },
   { t: "10:07", who: "sys", text: "Appointment request created (simulated)" },
 ];
@@ -32,23 +45,25 @@ const AUDIT = [
   { check: "Contact info", result: "Needs work", note: "Phone number is an image, not text." },
 ];
 
-function Sim() { return <span className="mk-sim">Simulation</span>; }
+const Sim = () => <span className="mk-sim">Simulation</span>;
+const bubbleBlue = { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } as const;
 
-function Chat({ script, label }: { script: typeof RECEPTIONIST; label: string }) {
+function Chat({ script, label }: { script: { prompt: string; turns: Turn[] }[]; label: string }) {
   const [shown, setShown] = useState<Turn[]>([]);
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4"><Sim /><span className="text-[13px]" style={{ color: "var(--mk-muted)" }}>{label}. Scripted: no live AI, microphone or real booking.</span></div>
-      <div className="rounded-[14px] p-4 min-h-[220px] flex flex-col gap-2" style={{ background: "var(--mk-bg)", border: "1px solid var(--mk-border)" }} aria-live="polite">
-        {shown.length === 0 && <div className="text-[13.5px] m-auto" style={{ color: "var(--mk-muted)" }}>Pick something to say below.</div>}
+      <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>{label}. Scripted: no live AI, microphone or real booking.</span></div>
+      <div className="rounded-[18px] p-4 min-h-[230px] flex flex-col gap-2" style={{ background: "var(--mk-bg2)", border: "1px solid var(--mk-border)" }} aria-live="polite">
+        {shown.length === 0 && <div className="text-[14px] m-auto" style={{ color: "var(--mk-muted)" }}>Pick something to say below.</div>}
         {shown.map((t, i) => (
-          <div key={i} className={`max-w-[85%] rounded-[12px] px-3.5 py-2 text-[14px] ${t.from === "caller" ? "self-end" : "self-start"}`} style={{ background: t.from === "caller" ? "var(--mk-blue)" : "var(--mk-bg2)", border: t.from === "ai" ? "1px solid var(--mk-border)" : "none" }}>{t.text}</div>
+          <div key={i} className={`max-w-[85%] rounded-[14px] px-4 py-2.5 text-[14.5px] ${t.from === "caller" ? "self-end" : "self-start"}`} style={t.from === "caller" ? bubbleBlue : { background: "var(--mk-white)", border: "1px solid var(--mk-border)" }}>{t.text}</div>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {script.map((s) => <button key={s.prompt} type="button" onClick={() => setShown(s.turns)} className="mk-btn mk-btn-ghost" style={{ height: 36, fontSize: 13 }}>{s.prompt}</button>)}
-        {shown.length > 0 && <button type="button" onClick={() => setShown([])} className="text-[13px] px-2" style={{ color: "var(--mk-muted)" }}>Reset</button>}
-      </div>
+      <div className="mt-4"><div className="text-[11.5px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--mk-muted)" }}>Try asking</div>
+        <div className="flex flex-wrap gap-2">
+          {script.map((s) => <button key={s.prompt} type="button" onClick={() => setShown(s.turns)} className="mk-btn mk-btn-ghost" style={{ height: 40, fontSize: 13.5 }}>{s.prompt}</button>)}
+          {shown.length > 0 && <button type="button" onClick={() => setShown([])} className="text-[13px] px-2" style={{ color: "var(--mk-muted)" }}>Reset</button>}
+        </div></div>
     </div>
   );
 }
@@ -64,49 +79,64 @@ function Roi() {
   );
   return (
     <div>
-      <p className="text-[13px] mb-4" style={{ color: "var(--mk-muted)" }}>A transparent estimate from your own inputs. It is an assumption-based opportunity, never a guaranteed result.</p>
+      <p className="text-[13.5px] mb-4" style={{ color: "var(--mk-muted)" }}>A transparent estimate from your own inputs. It is an assumption-based opportunity, never a guaranteed result.</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{field("Calls per month", calls, setCalls)}{field("Missed calls", missed, setMissed, "%")}{field("Avg customer value", value, setValue, "$")}{field("Missed-call to job rate", conv, setConv, "%")}{field("Monthly software cost", cost, setCost, "$")}</div>
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="mk-card p-5"><div className="text-[12px] uppercase tracking-wide" style={{ color: "var(--mk-muted)" }}>Missed calls</div><div className="text-[28px] font-semibold mt-1">{f(missedCalls)}</div></div>
-        <div className="mk-card p-5"><div className="text-[12px] uppercase tracking-wide" style={{ color: "var(--mk-muted)" }}>Possible extra jobs</div><div className="text-[28px] font-semibold mt-1">{jobs.toFixed(1)}</div></div>
-        <div className="mk-card p-5"><div className="text-[12px] uppercase tracking-wide" style={{ color: "var(--mk-muted)" }}>Opportunity after software cost</div><div className="text-[28px] font-semibold mt-1">${f(net)}<span className="text-[13px] font-normal" style={{ color: "var(--mk-muted)" }}> /mo</span></div></div>
+        {[["Missed calls", f(missedCalls)], ["Possible extra jobs", jobs.toFixed(1)], ["Opportunity after software cost", `$${f(net)}/mo`]].map(([k, v]) => (
+          <div key={k} className="rounded-[16px] p-5" style={{ background: "var(--mk-bg2)", border: "1px solid var(--mk-border)" }}><div className="text-[12px] uppercase tracking-wide" style={{ color: "var(--mk-muted)" }}>{k}</div><div className="text-[30px] font-semibold mt-1">{v}</div></div>))}
       </div>
-      <p className="mt-4 text-[12.5px]" style={{ color: "var(--mk-muted)" }}>Formula: calls × missed % × job rate × customer value − software cost = ${f(calls)} × {missed}% × {conv}% × ${f(value)} − ${f(cost)}.</p>
+      <p className="mt-4 text-[12.5px]" style={{ color: "var(--mk-muted)" }}>Formula: calls × missed % × job rate × customer value − software cost = {f(calls)} × {missed}% × {conv}% × ${f(value)} − ${f(cost)}.</p>
     </div>
   );
 }
 
 const TABS = ["AI receptionist", "Website chatbot", "Website audit", "Missed-call text-back", "ROI calculator"] as const;
-export default function DemoStage() {
+export default function DemoStage({ showTrades = true }: { showTrades?: boolean }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("AI receptionist");
+  const [tradeKey, setTradeKey] = useState(TRADES[0].key);
+  const trade = TRADES.find((t) => t.key === tradeKey) ?? TRADES[0];
+  const rec = useMemo(() => receptionist(trade), [trade]); const bot = useMemo(() => chatbot(trade), [trade]); const missed = useMemo(() => MISSED(trade), [trade]);
+  const needsTrade = tab === "AI receptionist" || tab === "Website chatbot" || tab === "Missed-call text-back";
   return (
-    <div className="mk-card p-5 md:p-8">
-      <div className="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="Demo modules">
-        {TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 38, fontSize: 13.5, background: tab === t ? "var(--mk-blue)" : "transparent", border: "1px solid " + (tab === t ? "var(--mk-blue)" : "var(--mk-border)") }}>{t}</button>)}
-      </div>
-      {tab === "AI receptionist" && <Chat script={RECEPTIONIST} label="A caller talks to the receptionist" />}
-      {tab === "Website chatbot" && <Chat script={CHATBOT} label="A visitor chats with the site assistant" />}
-      {tab === "Website audit" && (
-        <div>
-          <div className="flex items-center gap-3 mb-4"><Sim /><span className="text-[13px]" style={{ color: "var(--mk-muted)" }}>Illustrative sample report for a made-up site. Real audits read the public site you enter and cite what they found.</span></div>
-          <div className="rounded-[14px] overflow-hidden" style={{ border: "1px solid var(--mk-border)" }}>
-            {AUDIT.map((a, i) => (
-              <div key={a.check} className="grid grid-cols-[1fr_auto] md:grid-cols-[180px_120px_1fr] gap-x-4 gap-y-1 px-4 py-3 text-[14px]" style={{ borderTop: i ? "1px solid var(--mk-border)" : "none", background: i % 2 ? "var(--mk-bg)" : "transparent" }}>
-                <span className="font-medium">{a.check}</span><span style={{ color: a.result === "Pass" ? "var(--mk-blue2)" : "var(--mk-muted)" }}>{a.result}</span><span className="col-span-2 md:col-span-1" style={{ color: "var(--mk-muted)" }}>{a.note}</span>
-              </div>
-            ))}
+    <div>
+      {showTrades && (
+        <div className="mb-3">
+          <div className="mx-auto flex flex-wrap items-center justify-center gap-1.5 rounded-[999px] p-2 w-fit max-w-full" style={{ background: "var(--mk-bg2)", border: "1px solid var(--mk-border)" }} role="tablist" aria-label="Pick a trade">
+            <span className="px-4 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--mk-muted)" }}>Pick a trade</span>
+            {TRADES.map((t) => <button key={t.key} role="tab" aria-selected={tradeKey === t.key} type="button" onClick={() => setTradeKey(t.key)} className="rounded-full px-4 h-[38px] text-[13.5px] font-medium" style={tradeKey === t.key ? { background: "var(--mk-ink)", color: "var(--mk-white)" } : { color: "var(--mk-text)" }}>{t.label}</button>)}
           </div>
+          <p className="text-center text-[13px] mt-3" style={{ color: "var(--mk-muted)" }}>You are about to try the demo for <strong style={{ color: "var(--mk-text)" }}>{trade.biz}</strong>, a fictional business invented for this demo.</p>
         </div>
       )}
-      {tab === "Missed-call text-back" && (
-        <div>
-          <div className="flex items-center gap-3 mb-4"><Sim /><span className="text-[13px]" style={{ color: "var(--mk-muted)" }}>Simulated phone events. No real call or text is sent.</span></div>
-          <ol className="flex flex-col gap-2">{MISSED.map((m, i) => (
-            <li key={i} className="flex gap-3 items-start text-[14px]"><span className="w-[44px] shrink-0 text-[12px] pt-1" style={{ color: "var(--mk-muted)" }}>{m.t}</span>
-              <span className="rounded-[10px] px-3 py-1.5" style={{ background: m.who === "cust" ? "var(--mk-blue)" : "var(--mk-bg)", border: m.who === "cust" ? "none" : "1px solid var(--mk-border)", color: m.who === "sys" ? "var(--mk-muted)" : "var(--mk-text)" }}>{m.text}</span></li>))}</ol>
+      <div className="mk-card p-5 md:p-9 mt-6" style={{ borderRadius: 32 }}>
+        <div className="flex flex-wrap gap-2 mb-7" role="tablist" aria-label="Demo modules">
+          {TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 40, fontSize: 14, ...(tab === t ? { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } : { background: "var(--mk-white)", border: "1px solid var(--mk-border)", color: "var(--mk-text)" }) }}>{t}</button>)}
         </div>
-      )}
-      {tab === "ROI calculator" && <Roi />}
+        {tab === "AI receptionist" && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
+        {tab === "Website chatbot" && <Chat script={bot} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
+        {tab === "Website audit" && (
+          <div>
+            <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>Illustrative sample report for a made-up site. Real audits read the public site you enter and cite what they found.</span></div>
+            <div className="rounded-[18px] overflow-hidden" style={{ border: "1px solid var(--mk-border)" }}>
+              {AUDIT.map((a, i) => (
+                <div key={a.check} className="grid grid-cols-[1fr_auto] md:grid-cols-[180px_120px_1fr] gap-x-4 gap-y-1 px-5 py-3.5 text-[14.5px]" style={{ borderTop: i ? "1px solid var(--mk-border)" : "none", background: i % 2 ? "var(--mk-bg2)" : "var(--mk-white)" }}>
+                  <span className="font-medium">{a.check}</span><span className="font-medium" style={{ color: a.result === "Pass" ? "var(--mk-blue2)" : "var(--mk-muted)" }}>{a.result}</span><span className="col-span-2 md:col-span-1" style={{ color: "var(--mk-muted)" }}>{a.note}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {tab === "Missed-call text-back" && (
+          <div>
+            <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>Simulated phone events. No real call or text is sent.</span></div>
+            <ol className="flex flex-col gap-2.5">{missed.map((m, i) => (
+              <li key={i} className="flex gap-3 items-start text-[14.5px]"><span className="w-[46px] shrink-0 text-[12px] pt-2" style={{ color: "var(--mk-muted)" }}>{m.t}</span>
+                <span className="rounded-[12px] px-3.5 py-2" style={m.who === "cust" ? bubbleBlue : { background: "var(--mk-bg2)", border: "1px solid var(--mk-border)", color: m.who === "sys" ? "var(--mk-muted)" : "var(--mk-text)" }}>{m.text}</span></li>))}</ol>
+          </div>
+        )}
+        {tab === "ROI calculator" && <Roi />}
+        {!needsTrade && showTrades && tab !== "ROI calculator" && null}
+      </div>
     </div>
   );
 }
