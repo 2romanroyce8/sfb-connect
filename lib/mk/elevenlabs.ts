@@ -47,3 +47,9 @@ export async function signedUrl(agentId: string): Promise<string> {
   if (!r.signed_url) throw new Error(`signed url failed: ${JSON.stringify(r).slice(0, 300)}`);
   return r.signed_url as string;
 }
+
+/** Team-only diagnostic: the override-related parts of the stored agent config. Contains no secrets. */
+export async function inspectAgent(agentId: string) {
+  const a = await j(await fetch(`${API}/convai/agents/${encodeURIComponent(agentId)}`, { headers: h() }));
+  return { agent_id: agentId, overrides: a?.platform_settings?.overrides ?? null, max_duration: a?.conversation_config?.conversation?.max_duration_seconds ?? null, first_message: a?.conversation_config?.agent?.first_message ?? null, keys: Object.keys(a ?? {}), ps_keys: Object.keys(a?.platform_settings ?? {}) };
+}
