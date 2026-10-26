@@ -34,7 +34,7 @@ const MISSED = (t: Trade): { t: string; text: string; who: "sys" | "ai" | "cust"
 const Sim = () => <span className="mk-sim">Simulation</span>;
 const bubbleBlue = { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } as const;
 
-function Chat({ script, label }: { script: { prompt: string; turns: Turn[] }[]; label: string }) {
+function Chat({ script, label, onChat }: { script: { prompt: string; turns: Turn[] }[]; label: string; onChat?: () => void }) {
   const [shown, setShown] = useState<Turn[]>([]);
   return (
     <div>
@@ -47,7 +47,7 @@ function Chat({ script, label }: { script: { prompt: string; turns: Turn[] }[]; 
       </div>
       <div className="mt-4"><div className="text-[11.5px] uppercase tracking-[0.12em] mb-2" style={{ color: "var(--mk-muted)" }}>Try asking</div>
         <div className="flex flex-wrap gap-2">
-          {script.map((s) => <button key={s.prompt} type="button" onClick={() => setShown(s.turns)} className="mk-btn mk-btn-ghost" style={{ height: 40, fontSize: 13.5 }}>{s.prompt}</button>)}
+          {script.map((s) => <button key={s.prompt} type="button" onClick={() => { if (shown.length === 0) onChat?.(); setShown(s.turns); }} className="mk-btn mk-btn-ghost" style={{ height: 40, fontSize: 13.5 }}>{s.prompt}</button>)}
           {shown.length > 0 && <button type="button" onClick={() => setShown([])} className="text-[13px] px-2" style={{ color: "var(--mk-muted)" }}>Reset</button>}
         </div></div>
     </div>
@@ -77,12 +77,12 @@ function Roi() {
 }
 
 const TABS = ["AI receptionist", "Website chatbot", "Website audit", "Missed-call text-back", "ROI calculator"] as const;
-export default function DemoStage({ showTrades = true }: { showTrades?: boolean }) {
+export default function DemoStage({ showTrades = true, fixedTrade, demo, onEvent }: { showTrades?: boolean; fixedTrade?: Trade; demo?: { agency: string; slug: string }; onEvent?: (e: "chat_started" | "voice_started" | "audit_requested") => void }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("AI receptionist");
   const [tradeKey, setTradeKey] = useState(TRADES[0].key);
   const [voiceOn, setVoiceOn] = useState(false);
   useEffect(() => { fetch("/api/demo/voice").then((r) => r.json()).then((j) => setVoiceOn(!!j.configured)).catch(() => setVoiceOn(false)); }, []);
-  const trade = TRADES.find((t) => t.key === tradeKey) ?? TRADES[0];
+  const trade = fixedTrade ?? TRADES.find((t) => t.key === tradeKey) ?? TRADES[0];
   const rec = useMemo(() => receptionist(trade), [trade]); const bot = useMemo(() => chatbot(trade), [trade]); const missed = useMemo(() => MISSED(trade), [trade]);
   const needsTrade = tab === "AI receptionist" || tab === "Website chatbot" || tab === "Missed-call text-back";
   return (
@@ -100,10 +100,10 @@ export default function DemoStage({ showTrades = true }: { showTrades?: boolean 
         <div className="flex flex-wrap gap-2 mb-7" role="tablist" aria-label="Demo modules">
           {TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 40, fontSize: 14, ...(tab === t ? { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } : { background: "var(--mk-white)", border: "1px solid var(--mk-border)", color: "var(--mk-text)" }) }}>{t}</button>)}
         </div>
-        {tab === "AI receptionist" && voiceOn && <VoiceCall key={trade.key} trade={trade.key} label={`A real call to the ${trade.label.toLowerCase()} receptionist`} />}
+        {tab === "AI receptionist" && voiceOn && <VoiceCall key={trade.key} trade={demo ? undefined : trade.key} demo={demo} onStart={() => onEvent?.("voice_started")} label={`A real call to the ${trade.label.toLowerCase()} receptionist`} />}
         {tab === "AI receptionist" && !voiceOn && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
-        {tab === "Website chatbot" && <Chat script={bot} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
-        {tab === "Website audit" && <AuditPanel />}
+        {tab === "Website chatbot" && <Chat script={bot} onChat={() => onEvent?.("chat_started")} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
+        {tab === "Website audit" && <AuditPanel onRun={() => onEvent?.("audit_requested")} />}
         {tab === "Missed-call text-back" && (
           <div>
             <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>Simulated phone events. No real call or text is sent.</span></div>

@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Demo = { id: string; slug: string; business_name: string; industry_key: string | null; status: string; created_at: string };
-export default function DemoManager({ initial, packs }: { initial: Demo[]; packs: { key: string; name: string }[] }) {
+type Demo = { id: string; slug: string; business_name: string; industry_key: string | null; status: string; created_at: string; opens?: number; actions?: number };
+export default function DemoManager({ initial, packs, agencySlug }: { initial: Demo[]; packs: { key: string; name: string }[]; agencySlug: string }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const link = (d: Demo) => `${typeof window === "undefined" ? "" : window.location.origin}/d/${agencySlug}/${d.slug}`;
   const router = useRouter();
   const [name, setName] = useState(""); const [site, setSite] = useState(""); const [industry, setIndustry] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState<string | null>(null);
   const input = "h-[38px] rounded-[8px] px-3 text-[13px] outline-none w-full";
@@ -26,7 +28,8 @@ export default function DemoManager({ initial, packs }: { initial: Demo[]; packs
         {initial.length === 0 && <div className="text-[13px] text-[color:var(--hx-6e6e73)]">No demos yet. Create the first one above.</div>}
         {initial.map((d) => (
           <div key={d.id} className="rounded-[12px] px-4 py-3 flex items-center gap-3" style={{ background: "var(--hx-111111)", border: "1px solid rgb(var(--w) / 0.07)" }}>
-            <div className="min-w-0 mr-auto"><div className="text-[14px] font-medium truncate">{d.business_name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">/{d.slug} · {d.industry_key ?? "general"} · {d.status}</div></div>
+            <div className="min-w-0 mr-auto"><div className="text-[14px] font-medium truncate">{d.business_name}</div><div className="text-[11.5px] text-[color:var(--hx-6e6e73)]">/d/{agencySlug}/{d.slug} · {d.industry_key ?? "general"} · {d.status}{d.status === "published" ? ` · ${d.opens ?? 0} opens · ${d.actions ?? 0} interactions` : ""}</div></div>
+            {d.status === "published" && <><a href={`/d/${agencySlug}/${d.slug}`} target="_blank" rel="noopener noreferrer" className="h-[32px] px-3 rounded-full text-[12px] font-semibold inline-flex items-center" style={{ border: "1px solid rgb(var(--w) / 0.14)" }}>Open</a><button type="button" onClick={() => { void navigator.clipboard.writeText(link(d)); setCopied(d.id); window.setTimeout(() => setCopied(null), 1800); }} className="h-[32px] px-3 rounded-full text-[12px] font-semibold" style={{ border: "1px solid rgb(var(--w) / 0.14)" }}>{copied === d.id ? "Copied" : "Copy link"}</button></>}
             <button disabled={busy} onClick={() => void call({ action: d.status === "published" ? "unpublish" : "publish", id: d.id })} className="h-[32px] px-3 rounded-full text-[12px] font-semibold" style={{ border: "1px solid rgb(var(--w) / 0.14)" }}>{d.status === "published" ? "Unpublish" : "Publish"}</button>
           </div>
         ))}

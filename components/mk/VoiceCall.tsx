@@ -12,7 +12,7 @@ const fromB64 = (s: string) => { const bin = atob(s); const u = new Uint8Array(b
 
 const WORKLET = `class P extends AudioWorkletProcessor{process(i){const c=i[0][0];if(c){const o=new Int16Array(c.length);for(let k=0;k<c.length;k++){const v=Math.max(-1,Math.min(1,c[k]));o[k]=v<0?v*32768:v*32767}this.port.postMessage(o.buffer,[o.buffer])}return true}}registerProcessor('p',P)`;
 
-export default function VoiceCall({ trade, label }: { trade: string; label: string }) {
+export default function VoiceCall({ trade, demo, label, onStart }: { trade?: string; demo?: { agency: string; slug: string }; label: string; onStart?: () => void }) {
   const [status, setStatus] = useState<Status>("idle"); const [lines, setLines] = useState<Line[]>([]); const [err, setErr] = useState<string | null>(null); const [secs, setSecs] = useState(0);
   const ws = useRef<WebSocket | null>(null); const ctx = useRef<AudioContext | null>(null); const stream = useRef<MediaStream | null>(null); const playAt = useRef(0); const sources = useRef<AudioBufferSourceNode[]>([]); const timer = useRef<number | null>(null);
 
@@ -38,8 +38,8 @@ export default function VoiceCall({ trade, label }: { trade: string; label: stri
   async function start() {
     setErr(null); setLines([]); setSecs(0); setStatus("connecting");
     try {
-      const r = await fetch("/api/demo/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ trade }) });
-      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || "Couldn't start the call.");
+      const r = await fetch("/api/demo/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(demo ? { agency: demo.agency, slug: demo.slug } : { trade }) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || "Couldn't start the call."); onStart?.();
       stream.current = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
       const c = new AudioContext({ sampleRate: 16000 }); ctx.current = c; playAt.current = 0;
       await c.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: "application/javascript" })));

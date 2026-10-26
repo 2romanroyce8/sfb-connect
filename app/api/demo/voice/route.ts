@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { rateLimit } from "@/lib/agent/store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { tradeByKey } from "@/lib/mk/trades";
+import { tradeByKey, type Trade } from "@/lib/mk/trades";
+import { getPublicDemo, demoToTrade } from "@/lib/agency/demoPublic";
 import { receptionistPrompt } from "@/lib/mk/voicePrompt";
 import { ensureAgent, ensureOverrides, inspectAgent, signedUrl, voiceConfigured } from "@/lib/mk/elevenlabs";
 export const dynamic = "force-dynamic";
@@ -18,8 +19,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!voiceConfigured()) return NextResponse.json({ error: "Live voice isn't configured yet." }, { status: 503 });
-  const body = (await req.json().catch(() => ({}))) as { trade?: string };
-  const trade = tradeByKey(body.trade); if (!trade) return NextResponse.json({ error: "Unknown trade." }, { status: 400 });
+  const body = (await req.json().catch(() => ({}))) as { trade?: string; agency?: string; slug?: string };
+  let trade: Trade | null = null;
+  if (typeof body.agency === "string" && typeof body.slug === "string") { const d = await getPublicDemo(body.agency, body.slug); if (d) trade = demoToTrade(d); } else trade = tradeByKey(body.trade);
+  if (!trade) return NextResponse.json({ error: "Unknown demo." }, { status: 400 });
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const per = await rateLimit(`voicedemo:${ip}:1h`, 4, 3600);
   if (!per.allowed) return NextResponse.json({ error: "You've reached the hourly limit for live demo calls. Try again later." }, { status: 429 });

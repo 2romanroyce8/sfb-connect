@@ -6,10 +6,10 @@ type Report = { url: string; status: number; fetchedMs: number; truncated: boole
 const tone = { pass: { t: "Pass", c: "var(--mk-blue2)" }, warn: { t: "Needs work", c: "var(--mk-muted)" }, fail: { t: "Fix", c: "var(--mk-text)" } } as const;
 
 // A REAL audit of a public page the visitor enters, run on our server. Every row shows the evidence found in the page; nothing is estimated.
-export default function AuditPanel() {
+export default function AuditPanel({ onRun }: { onRun?: () => void }) {
   const [url, setUrl] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState<string | null>(null); const [rep, setRep] = useState<Report | null>(null);
   async function run(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setErr(null); setRep(null);
+    e.preventDefault(); setBusy(true); setErr(null); setRep(null); onRun?.();
     try { const r = await fetch("/api/demo/audit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url }) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || "That didn't work."); setRep(j as Report); }
     catch (x) { setErr(x instanceof Error ? x.message : "That didn't work."); } finally { setBusy(false); }
   }
