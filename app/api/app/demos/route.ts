@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
   if (b.action === "create") {
     const name = s("business_name"); if (name.length < 2 || name.length > 120) return NextResponse.json({ error: "Business name must be 2–120 characters." }, { status: 400 });
     let site = s("website_url"); if (site && !/^https?:\/\//i.test(site)) site = `https://${site}`; if (site) { try { new URL(site); } catch { return NextResponse.json({ error: "That website URL isn't valid." }, { status: 400 }); } }
+    const { count } = await db.from("agy_demo_projects").select("id", { count: "exact", head: true }).eq("agency_id", r.ctx.agencyId);
+    if ((count ?? 0) >= 25) return NextResponse.json({ error: "You've reached the 25-demo limit. Unpublish or ask us to raise it." }, { status: 429 });
     const base = slugify(name) || "demo";
     for (let i = 0; i < 5; i++) {
       const slug = i === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;

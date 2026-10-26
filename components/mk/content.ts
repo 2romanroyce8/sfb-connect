@@ -28,33 +28,33 @@ export const HOME_STEPS = [
   { title: "Build", body: "Create a demo for a specific business: its name, services, hours and industry." },
   { title: "Brand", body: "Apply your logo, colors and booking link so it looks like your agency's product." },
   { title: "Publish", body: "Share a link. See when it is opened and what the prospect does." },
-  { title: "Sell", body: "Turn the interested prospect into a client, order the build and track delivery." },
+  { title: "Sell", body: "Follow up with the prospect who opened your link and turn the conversation into a client." },
 ];
 
 export const WORKSPACE = [
-  { title: "Prospects and CRM", body: "Pipeline, contacts, tasks, notes and follow-ups, with every activity recorded." },
-  { title: "Demo builder", body: "Personalized demos with a published link and engagement tracking." },
-  { title: "Clients and portal", body: "Each client sees only their own onboarding, services, files and progress." },
-  { title: "Fulfillment", body: "Orders move through real states from quote to live, with a task list for every build." },
-  { title: "Revenue and usage", body: "Your cost, your retail price and your margin, kept separate and visible." },
-  { title: "Team and permissions", body: "Invite staff with roles. Permissions are enforced on the server, not just hidden in the UI." },
+  { tag: "Coming next", title: "Prospects and CRM", body: "Pipeline, contacts, tasks, notes and follow-ups, with every activity recorded." },
+  { tag: "Available now", title: "Demo builder", body: "Personalized demos with a published link and engagement tracking." },
+  { tag: "Coming next", title: "Clients and portal", body: "Each client sees only their own onboarding, services, files and progress." },
+  { tag: "Coming next", title: "Fulfillment", body: "Orders move through real states from quote to live, with a task list for every build." },
+  { tag: "Coming next", title: "Revenue and usage", body: "Your cost, your retail price and your margin, kept separate and visible." },
+  { tag: "Coming next", title: "Team and permissions", body: "Invite staff with roles. Permissions are enforced on the server, not just hidden in the UI." },
 ];
 
 export const PORTAL = [
-  { title: "Structured onboarding", body: "Intake for business details, hours, services, booking preferences and approvals, with progress tracking." },
-  { title: "Project progress", body: "Clients follow milestones from quote through QA to launch." },
-  { title: "Secure by default", body: "Clients see only their own organization. Credentials go through secure integration flows, never plain-text forms." },
+  { tag: "Coming next", title: "Structured onboarding", body: "Intake for business details, hours, services, booking preferences and approvals, with progress tracking." },
+  { tag: "Coming next", title: "Project progress", body: "Clients follow milestones from quote through QA to launch." },
+  { tag: "Coming next", title: "Secure by default", body: "Clients see only their own organization. Credentials go through secure integration flows, never plain-text forms." },
 ];
 
 export const PRICING_FAQ = [
-  { q: "What does the platform cost?", a: "The agency workspace is $49 per month. That covers the workspace, demo builder, CRM, client portal and fulfillment tracking." },
-  { q: "What about the cost of building for my clients?", a: "Client builds are quoted at wholesale rates inside your workspace when you order them. You set your own retail price, and the difference is your margin." },
+  { q: "What does the platform cost?", a: "The agency workspace is $49 per month. Billing is not switched on yet, so creating a workspace is free for now. The CRM, client portal and fulfillment tracking are being added to the workspace." },
+  { q: "What about the cost of building for my clients?", a: "The plan is for client builds to be quoted at wholesale inside your workspace, with you setting your own retail price. Ordering is being built now and is not open yet." },
   { q: "Can I use the pricing calculator before I sign up?", a: "Yes. The calculator on the Resources page works with your own numbers and does not need an account." },
   { q: "Do voice and messaging cost extra?", a: "Usage-based items such as voice minutes and SMS are metered. Your workspace shows usage against limits so there are no surprises." },
 ];
 
 export const HOME_FAQ = [
-  { q: "Do I need technical skills to run an AI agency on SFB Connect?", a: "No. You sell and manage the relationship; builds are handled through the fulfillment workflow. A technical background helps but is not required." },
+  { q: "Do I need technical skills to run an AI agency on SFB Connect?", a: "No. You sell and manage the relationship. Fulfillment tooling is the next thing we are building. A technical background helps but is not required." },
   { q: "Are the demos on the homepage live AI?", a: "No. The panels on this page are scripted simulations and are labeled as such. Inside your workspace you build demos around a real business's own details." },
   { q: "Can I use my own brand and domain?", a: "Yes. Demos and client portals use your logo and colors. A custom domain attaches only after DNS verification, so no one can claim a domain that isn't theirs." },
   { q: "Do you guarantee results for my clients?", a: "No, and you shouldn't either. The ROI tools use transparent formulas from your own inputs and are labeled as estimates." },
