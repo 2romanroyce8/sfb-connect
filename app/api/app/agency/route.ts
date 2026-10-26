@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "@/lib/supabase/server";
-import { SLUG_RE, slugify } from "@/lib/agency/context";
+import { SLUG_RE, slugify } from "@/lib/agency/slug";
 export const dynamic = "force-dynamic";
 
 // Agency signup: the signed-in user creates their own agency and becomes its owner. Owner id comes from the session, never the body.

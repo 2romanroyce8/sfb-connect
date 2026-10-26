@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { slugify } from "@/lib/agency/context";
+import { slugify } from "@/lib/agency/slug";
 
 export default function StartAgencyForm() {
   const router = useRouter(); const [name, setName] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState<string | null>(null);

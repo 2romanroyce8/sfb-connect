@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAgencyContext, slugify } from "@/lib/agency/context";
+import { getAgencyContext } from "@/lib/agency/context";
+import { slugify } from "@/lib/agency/slug";
 export const dynamic = "force-dynamic";
 
 // Demo create/publish. The agency comes from the signed-in membership (never the request body) and every write uses the SESSION client,

@@ -11,5 +11,3 @@ export async function getAgencyContext(): Promise<{ status: "anon" } | { status:
   const { data: p } = await db.from("users").select("full_name, email").eq("id", user.id).maybeSingle();
   return { status: "ok", ctx: { userId: user.id, userName: (p?.full_name as string) || (p?.email as string) || "You", agencyId: m.agency_id as string, agencyName: ag?.name ?? "Your agency", role: m.role as string } };
 }
-export const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
-export const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
