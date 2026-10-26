@@ -30,6 +30,18 @@ export async function ensureAgent(): Promise<string> {
   return created.agent_id as string;
 }
 
+/** Idempotent: makes sure this agent accepts per-call prompt and first-message overrides (and caps calls at 180 s). Throws with the upstream message if ElevenLabs refuses. */
+export async function ensureOverrides(agentId: string): Promise<void> {
+  const r = await fetch(`${API}/convai/agents/${encodeURIComponent(agentId)}`, {
+    method: "PATCH", headers: h(),
+    body: JSON.stringify({
+      conversation_config: { conversation: { max_duration_seconds: 180 } },
+      platform_settings: { overrides: { conversation_config_override: { agent: { prompt: { prompt: true }, first_message: true, language: false } }, enable_conversation_initiation_client_data_from_webhook: false } },
+    }),
+  });
+  if (!r.ok) throw new Error(`agent patch failed (${r.status}): ${JSON.stringify(await j(r)).slice(0, 300)}`);
+}
+
 export async function signedUrl(agentId: string): Promise<string> {
   const r = await j(await fetch(`${API}/convai/conversation/get-signed-url?agent_id=${encodeURIComponent(agentId)}`, { headers: h() }));
   if (!r.signed_url) throw new Error(`signed url failed: ${JSON.stringify(r).slice(0, 300)}`);

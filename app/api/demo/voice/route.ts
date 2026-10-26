@@ -3,7 +3,7 @@ import { rateLimit } from "@/lib/agent/store";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { tradeByKey } from "@/lib/mk/trades";
 import { receptionistPrompt, firstMessage } from "@/lib/mk/voicePrompt";
-import { ensureAgent, signedUrl, voiceConfigured } from "@/lib/mk/elevenlabs";
+import { ensureAgent, ensureOverrides, signedUrl, voiceConfigured } from "@/lib/mk/elevenlabs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   if (!day.allowed) return NextResponse.json({ error: "Today's live demo capacity is used up. Try again tomorrow." }, { status: 429 });
   try {
     const agentId = await ensureAgent();
+    await ensureOverrides(agentId);
     const url = await signedUrl(agentId);
     return NextResponse.json({ signedUrl: url, overrides: { agent: { prompt: { prompt: receptionistPrompt(trade) }, first_message: firstMessage(trade) } }, maxSeconds: 180 });
   } catch (e) {
