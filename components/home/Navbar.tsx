@@ -26,8 +26,8 @@ const LOGO_SRC =
   "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
 
 const PRIMARY_LINKS = [
-  { label: "Agent", href: "/#agent" },
-  { label: "FAQ", href: "/#faq" },
+  { label: "Agent", href: "/agent" },
+  { label: "FAQ", href: "/business#faq" },
 ];
 
 export default function Navbar() {

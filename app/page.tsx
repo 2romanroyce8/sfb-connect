@@ -38,12 +38,12 @@ export default function HomePage() {
           <Link key={a.href} href={a.href} className="mk-card p-7 block"><h3 className="text-[22px] mb-2">{a.title}</h3><p className="text-[15px] leading-relaxed" style={{ color: "var(--mk-muted)" }}>{a.body}</p><span className="inline-block mt-4 text-[14px]" style={{ color: "var(--mk-blue2)" }}>Learn more →</span></Link>))}</div>
       </Section>
       <Section eyebrow="Prefer it done for you?" title="Meet the SFB Agent." lead="One AI agent with a human overseer that runs outbound, follow-up, your website and more for your own business. Same company, different product.">
-        <div className="flex flex-wrap gap-3 justify-center"><Link href="/agent" className="mk-btn mk-btn-primary">See the SFB Agent</Link><Link href="/start" className="mk-btn mk-btn-ghost">Check my business</Link></div>
+        <div className="flex flex-wrap gap-3 justify-center"><Link href="/agent" className="mk-btn mk-btn-primary">See the SFB Agent</Link><Link href="/business" className="mk-btn mk-btn-ghost">Check my business</Link></div>
       </Section>
       <Section eyebrow="Client acquisition" title="From a cold prospect to a signed client.">
         <Steps items={[{ title: "Find", body: "Research businesses in your market from public sources and keep the evidence." }, { title: "Demo", body: "Send a personalized demo link built for that business." }, { title: "Follow up", body: "Track views and replies, then move the deal through your pipeline." }, { title: "Close", body: "Quote the build, onboard the client and start fulfillment." }]} />
       </Section>
-      <Section tint eyebrow="FAQ" title="Straight answers."><Faq items={HOME_FAQ} /></Section>
+      <Section id="faq" tint eyebrow="FAQ" title="Straight answers."><Faq items={HOME_FAQ} /></Section>
       <CtaBand />
     </MkShell>
   );

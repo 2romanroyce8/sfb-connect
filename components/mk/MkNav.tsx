@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 
 export const NAV_LINKS = [
   { href: "/#demo", label: "Demo" }, { href: "/demo-builder", label: "Build it" }, { href: "/platform", label: "Platform" }, { href: "/pricing", label: "Pricing" },
-  { href: "/services", label: "Services" }, { href: "/how-it-works", label: "How it works" }, { href: "/resources", label: "Resources" },
+  { href: "/services", label: "Services" }, { href: "/agent", label: "SFB Agent" }, { href: "/resources", label: "Resources" },
 ];
 
 export default function MkNav() {
