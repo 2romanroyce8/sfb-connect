@@ -52,7 +52,7 @@ export default function VoiceCall({ trade, label }: { trade: string; label: stri
         if (d.type === "conversation_initiation_metadata") { const f = String(d.conversation_initiation_metadata_event?.agent_output_audio_format ?? "pcm_16000"); outRate = Number(f.split("_")[1]) || 16000; setStatus("live"); }
         else if (d.type === "audio" && d.audio_event?.audio_base_64) play(fromB64(d.audio_event.audio_base_64), outRate);
         else if (d.type === "user_transcript") { const t = d.user_transcription_event?.user_transcript; if (t) setLines((l) => [...l, { who: "you", text: t }]); }
-        else if (d.type === "agent_response") { const t = d.agent_response_event?.agent_response; if (t) setLines((l) => [...l, { who: "agent", text: t }]); }
+        else if (d.type === "agent_response") { const t = String(d.agent_response_event?.agent_response ?? "").replace(/\[[a-z ]{2,20}\]\s*/gi, "").trim(); if (t) setLines((l) => [...l, { who: "agent", text: t }]); }
         else if (d.type === "interruption") { sources.current.forEach((s) => { try { s.stop(); } catch { /* ended */ } }); sources.current = []; playAt.current = 0; }
         else if (d.type === "ping") sock.send(JSON.stringify({ type: "pong", event_id: d.ping_event?.event_id }));
       };
