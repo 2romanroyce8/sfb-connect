@@ -74,7 +74,7 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
     <div className="max-w-[820px] mx-auto flex flex-col gap-3">
       {items.map((f) => (
         <details key={f.q} className="mk-card px-7 py-5">
-          <summary className="cursor-pointer list-none flex justify-between gap-4 text-[17px] font-medium">{f.q}<span style={{ color: "var(--mk-blue)" }} aria-hidden>+</span></summary>
+          <summary className="cursor-pointer list-none flex justify-between gap-4 text-[17px] font-medium">{f.q}<span style={{ color: "var(--mk-blue2)" }} aria-hidden>+</span></summary>
           <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--mk-muted)" }}>{f.a}</p>
         </details>
       ))}
