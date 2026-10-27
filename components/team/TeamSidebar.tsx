@@ -1,12 +1,12 @@
 "use client";
+import { LOGO_MARK } from "@/lib/brand";
 
 import ThemeToggle from "@/components/ThemeToggle";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const LOGO_SRC =
-  "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
+const LOGO_SRC = LOGO_MARK;
 import {
   LayoutDashboard,
   MessageCircle,
@@ -125,7 +125,7 @@ export default function TeamSidebar({
     >
       <div className="px-[18px] pt-[18px] pb-1 flex items-center gap-2" style={{ height: 44 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_SRC} alt="SFB Connect" className="w-5 h-auto shrink-0" />
+        <img src={LOGO_SRC} alt="SFB Connect" className="w-6 h-6 shrink-0 rounded-[7px]" />
         <span className="text-[16px] font-semibold tracking-tight" style={{ letterSpacing: "-0.02em" }}>
           SFB CONNECT
         </span>

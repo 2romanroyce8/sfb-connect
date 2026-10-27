@@ -1,4 +1,5 @@
 "use client";
+import { LOGO_MARK } from "@/lib/brand";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -22,8 +23,7 @@ const SOCIAL_LINKS: { label: string; href: string | null; Icon: SocialIcon }[] =
   { label: "X", href: process.env.NEXT_PUBLIC_SOCIAL_X || null, Icon: Twitter },
 ];
 
-const LOGO_SRC =
-  "https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png";
+const LOGO_SRC = LOGO_MARK;
 
 const PRIMARY_LINKS = [
   { label: "Agent", href: "/agent" },
@@ -37,7 +37,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-14 py-5" style={{ background: "rgb(var(--k) / 0.55)", backdropFilter: "blur(14px)" }}>
       <Link href="/" className="flex items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO_SRC} alt="SFB Connect" className="w-7 h-auto shrink-0 theme-invert" />
+        <img src={LOGO_SRC} alt="SFB Connect" className="w-8 h-8 shrink-0 rounded-[9px]" />
         <span className="font-extrabold tracking-tight text-[15px]">
           SFB <span className="text-medium-gray font-semibold">CONNECT</span>
         </span>

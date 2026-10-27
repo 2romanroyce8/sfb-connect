@@ -4,6 +4,7 @@ import "./theme-tokens.css";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import ThemeSync from "@/components/ThemeSync";
+import { FAVICON } from "@/lib/brand";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -55,6 +56,7 @@ export const metadata: Metadata = {
       "One AI agent, eight jobs, a human overseer.",
   },
   alternates: { canonical: "/" },
+  icons: { icon: FAVICON, apple: FAVICON },
 };
 
 export default function RootLayout({

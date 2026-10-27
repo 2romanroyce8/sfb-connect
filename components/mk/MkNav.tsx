@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { LOGO_MARK } from "@/lib/brand";
 
 export const NAV_LINKS = [
   { href: "/#demo", label: "Demo" }, { href: "/demo-builder", label: "Build it" }, { href: "/platform", label: "Platform" }, { href: "/pricing", label: "Pricing" },
@@ -14,7 +15,7 @@ export default function MkNav() {
     <header className="mk-pill-nav" style={{ padding: "0 12px 0 22px" }}>
       <div className="h-[62px] flex items-center gap-7">
         <Link href="/" className="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
-          <span className="w-8 h-8 rounded-[10px] flex items-center justify-center" style={{ background: "var(--mk-ink)" }}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src="https://pub.hyperagent.com/api/published/pbf01M20H817H_JC6RBZ3RQ3YAXVV2/sfb_logo_mark_cropped.png" alt="" className="w-[18px] h-auto" /></span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}<img src={LOGO_MARK} alt="" className="w-8 h-8 rounded-[10px]" />
           <span>SFB<span style={{ color: "var(--mk-blue2)" }}>Connect</span></span>
         </Link>
         <nav className="hidden lg:flex items-center gap-6 text-[14.5px]" style={{ color: "var(--mk-muted)" }} aria-label="Main">
