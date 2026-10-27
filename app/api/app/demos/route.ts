@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAgencyContext } from "@/lib/agency/context";
 import { slugify } from "@/lib/agency/slug";
+import { agencyEntitled } from "@/lib/agency/billing";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 // Demo create/publish. The agency comes from the signed-in membership (never the request body) and every write uses the SESSION client,
@@ -10,6 +12,7 @@ export async function POST(req: NextRequest) {
   const r = await getAgencyContext(); if (r.status !== "ok") return NextResponse.json({ error: "Not signed in to an agency." }, { status: 401 });
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>; const s = (k: string) => (typeof b[k] === "string" ? (b[k] as string).trim() : "");
   const db = createSupabaseServerClient();
+  if ((b.action === "create" || b.action === "publish") && !(await agencyEntitled(createSupabaseServiceClient(), r.ctx.agencyId))) return NextResponse.json({ error: "An active subscription is needed to do that. Open Billing to subscribe." }, { status: 402 });
   if (b.action === "create") {
     const name = s("business_name"); if (name.length < 2 || name.length > 120) return NextResponse.json({ error: "Business name must be 2–120 characters." }, { status: 400 });
     let site = s("website_url"); if (site && !/^https?:\/\//i.test(site)) site = `https://${site}`; if (site) { try { new URL(site); } catch { return NextResponse.json({ error: "That website URL isn't valid." }, { status: 400 }); } }

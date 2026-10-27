@@ -1,0 +1,8 @@
+# Runbook — Agency billing (/app/billing). OFF by default.
+- Switch: env AGENCY_BILLING_ENABLED=1 (Vercel). Unset = workspaces are free, the Billing page says so, every billing endpoint returns 503, and nothing is gated.
+- Platform fee: $49/month, a Stripe Checkout (inline price, nothing pre-created in the Stripe dashboard) on SFB Connect's own Stripe account (same STRIPE_SECRET_KEY as the SFB Agent). Metadata kind=agency_platform + agency_id; the subscription carries it too.
+- Webhook: the existing /api/webhooks/stripe. Agency subscriptions are recognized by metadata.kind and handled first (lib/agency/billing.ts syncAgencySubscription); anything else, including every SFB Agent event, falls through to the original handlers unchanged (tested). Same signature check and dedupe as before.
+- Entitlement (server-side): with billing on, creating/publishing demos requires subscription_status active or trialing (HTTP 402 otherwise). Past-due/canceled agencies keep read access.
+- Stripe Connect: each agency creates its own connected account from /app/billing (Stripe-hosted onboarding; controller properties: Express dashboard, platform pays fees/losses). Status is read live from Stripe when the page opens. Requires Connect to be fully enabled on the LIVE platform account (business model + terms), which only the account owner can do in the Stripe dashboard.
+- Table: agency_billing (members read; only the server writes). 
+- Before flipping the switch: (1) finish Connect setup in Stripe live mode; (2) confirm the webhook endpoint already receives customer.subscription.* and checkout.session.completed (it does for the SFB Agent); (3) do one real $49 test with your own card, then refund it in Stripe; (4) set the env var and redeploy.
