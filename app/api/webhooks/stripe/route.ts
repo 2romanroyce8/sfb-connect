@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { syncAgencySubscription } from "@/lib/agency/billing";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
 import { appendCreditTransaction, getCreditBalance } from "@/lib/billing/credits";
 import type Stripe from "stripe";
@@ -58,9 +59,11 @@ export async function POST(req: NextRequest) {
         await handleCheckoutCompleted(service, event.data.object as Stripe.Checkout.Session, event.id);
         break;
       case "customer.subscription.updated":
+        if (await syncAgencySubscription(service, event.data.object as Stripe.Subscription)) break; // agency platform subscription: handled, SFB Agent code below is not involved
         await handleSubscriptionUpdated(service, event.data.object as Stripe.Subscription);
         break;
       case "customer.subscription.deleted":
+        if (await syncAgencySubscription(service, event.data.object as Stripe.Subscription)) break;
         await handleSubscriptionDeleted(service, event.data.object as Stripe.Subscription);
         await endAgentPlan(service, event.data.object as Stripe.Subscription, event.id);
         break;
@@ -94,6 +97,12 @@ async function handleCheckoutCompleted(service: ReturnType<typeof createSupabase
   // purchases from the dashboard continue below.
   if (session.metadata?.kind === "agent_plan") {
     await provisionAgentCustomer(service, session, eventId);
+    return;
+  }
+  // Agency platform subscription: record the customer; the subscription events (above) keep the status current.
+  if (session.metadata?.kind === "agency_platform") {
+    const agencyId = session.metadata.agency_id; const customer = typeof session.customer === "string" ? session.customer : session.customer?.id;
+    if (agencyId && customer && session.client_reference_id === agencyId) await service.from("agency_billing").upsert({ agency_id: agencyId, stripe_customer_id: customer, stripe_subscription_id: typeof session.subscription === "string" ? session.subscription : null, updated_at: new Date().toISOString() });
     return;
   }
   const businessId = session.metadata?.business_id;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Presentation, Palette, LogOut, Users, Kanban, Bell } from "lucide-react";
+import { LayoutDashboard, Presentation, Palette, LogOut, Users, Kanban, Bell, CreditCard } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -15,6 +15,7 @@ const ITEMS: { href: string; label: string; icon: React.ElementType }[] = [
   { href: "/app/followups", label: "Follow-ups", icon: Bell },
   { href: "/app/demos", label: "Demo Builder", icon: Presentation },
   { href: "/app/branding", label: "Branding", icon: Palette },
+  { href: "/app/billing", label: "Billing", icon: CreditCard },
 ];
 
 export default function AgencySidebar({ agencyName, userName, role }: { agencyName: string; userName: string; role: string }) {
