@@ -22,5 +22,10 @@ export async function POST(req: NextRequest) {
     const { data: s } = await db.from("agy_demo_sessions").select("id").eq("id", sessionId).eq("demo_id", demo.id).maybeSingle(); if (!s) sessionId = null; // never trust a client-supplied id
   }
   await db.from("agy_demo_events").insert({ demo_id: demo.id, agency_id: demo.agencyId, session_id: sessionId, event: b.event });
+  if (b.event === "demo_opened") {
+    // A lead this demo was sent to moves to Demo Viewed (only from the early stages, so it never drags a later deal backwards) and the history says why.
+    const { data: moved } = await db.from("agy_leads").update({ stage: "demo_viewed", updated_at: new Date().toISOString() }).eq("agency_id", demo.agencyId).eq("demo_id", demo.id).in("stage", ["new_lead", "contacted", "qualified", "demo_sent"]).select("id");
+    if (moved?.length) await db.from("agy_lead_activities").insert(moved.map((l) => ({ agency_id: demo.agencyId, lead_id: l.id as string, kind: "demo_viewed", body: "The prospect opened the demo link." })));
+  }
   return NextResponse.json({ ok: true, session: sessionId });
 }

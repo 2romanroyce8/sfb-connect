@@ -20,5 +20,6 @@ export async function POST(req: NextRequest) {
   const m = await svc.from("agency_members").insert({ agency_id: ag.id, user_id: user.id, role: "owner" });
   if (m.error) { await svc.from("agencies").delete().eq("id", ag.id); return NextResponse.json({ error: "Couldn't finish setup. Try again." }, { status: 500 }); }
   await svc.from("agency_branding").insert({ agency_id: ag.id, display_name: name });
+  await svc.rpc("agy_seed_stages", { p_agency: ag.id });
   return NextResponse.json({ ok: true });
 }
