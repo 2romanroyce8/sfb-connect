@@ -26,11 +26,11 @@ export function PageHero({ eyebrow, title, lead, ctas = [PRIMARY, SECONDARY], ch
   return (
     <section className="px-5 pt-[150px] pb-16 md:pt-[180px] md:pb-24">
       <div className="max-w-[1000px] mx-auto text-center mk-rise">
-        {eyebrow && <span className="mk-chip mb-8"><Sparkles size={14} style={{ color: "var(--mk-blue)" }} aria-hidden />{eyebrow}</span>}
-        <h1 className="text-[46px] sm:text-[68px] md:text-[88px] mt-5">{title}</h1>
+        {eyebrow && <span className="mk-chip mb-8"><Sparkles size={14} style={{ color: "var(--mk-blue2)" }} aria-hidden />{eyebrow}</span>}
+        <h1 className="text-[48px] sm:text-[72px] md:text-[96px] mt-5">{title}</h1>
         <p className="mt-8 text-[17px] md:text-[20px] leading-relaxed max-w-[720px] mx-auto" style={{ color: "var(--mk-muted)" }}>{lead}</p>
         <div className="mt-10 flex flex-wrap gap-3 justify-center">
-          {ctas.map((c, i) => <Link key={c.label} href={c.href} className={`mk-btn ${i === 0 ? "mk-btn-primary" : "mk-btn-ghost"}`}>{c.label}{i === 0 && <ArrowRight size={16} aria-hidden />}</Link>)}
+          {ctas.map((c, i) => <Link key={c.label} href={c.href} className={`mk-btn ${i === 0 ? "mk-btn-primary mk-btn-arrow" : "mk-btn-ghost"}`}>{c.label}{i === 0 && <span className="mk-dot" aria-hidden><ArrowRight size={16} /></span>}</Link>)}
         </div>
       </div>
       {children}
@@ -74,7 +74,7 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
     <div className="max-w-[820px] mx-auto flex flex-col gap-3">
       {items.map((f) => (
         <details key={f.q} className="mk-card px-7 py-5">
-          <summary className="cursor-pointer list-none flex justify-between gap-4 text-[17px] font-medium">{f.q}<span style={{ color: "var(--mk-blue)" }} aria-hidden>+</span></summary>
+          <summary className="cursor-pointer list-none flex justify-between gap-4 text-[17px] font-medium">{f.q}<span style={{ color: "var(--mk-blue2)" }} aria-hidden>+</span></summary>
           <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--mk-muted)" }}>{f.a}</p>
         </details>
       ))}

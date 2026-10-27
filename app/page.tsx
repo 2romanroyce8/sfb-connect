@@ -22,8 +22,8 @@ export default function HomePage() {
       <Section tint eyebrow="The workflow" title="Build. Brand. Publish. Sell."><Steps items={HOME_STEPS} /></Section>
       <Section eyebrow="Agency workspace" title="Everything an agency runs on, in one place." lead="The demo builder is live today. The rest of the workspace is being added, and each card says where it stands."><CardGrid items={WORKSPACE} /></Section>
       <Section tint eyebrow="Industry demonstrations" title="Start from a configuration that already knows the trade." lead="Each industry comes with typical services, common customer questions and qualifying questions. More can be added without code.">
-        <div className="flex flex-wrap gap-2">{INDUSTRIES.map((i) => <span key={i} className="mk-chip" style={{ fontSize: 13.5, padding: "7px 16px" }}>{i}</span>)}</div>
-        <p className="mt-5 text-[13.5px]" style={{ color: "var(--mk-muted)" }}>{INDUSTRIES.length} industries today, plus an industry-neutral fallback.</p>
+        <div className="flex flex-wrap gap-2.5 justify-center max-w-[900px] mx-auto">{INDUSTRIES.map((i) => <span key={i} className="mk-trade">{i}</span>)}</div>
+        <p className="mt-6 text-center text-[13.5px]" style={{ color: "var(--mk-muted)" }}>{INDUSTRIES.length} industries today, plus an industry-neutral fallback.</p>
       </Section>
       <Section eyebrow="Fulfillment and client portal" title="Then deliver it, without rebuilding from scratch." lead="Coming next: orders that move from quote to live, with a client portal your customer can follow."><CardGrid items={PORTAL} /></Section>
       <Section tint eyebrow="Service catalog" title="Fifteen kinds of work you can sell." lead="The catalog shows what you will be able to order. Ordering and wholesale quotes open in the workspace next.">
