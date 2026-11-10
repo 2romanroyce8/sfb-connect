@@ -182,3 +182,29 @@
   outline: 2px solid var(--launch-accent);
   outline-offset: 3px;
 }
+
+/* Invert the black mark and blend away the tile on the dark homepage. */
+.sfb-launch-nav > a:first-child img,
+.sfb-launch-screen img {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+.sfb-launch-nav > a:first-child img { width: 36px; height: 36px; }
+.sfb-launch-title {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: clamp(.75rem, 3vw, 2.5rem);
+}
+.sfb-launch-console {
+  position: static;
+  width: clamp(52px, 7vw, 96px);
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: none;
+  box-shadow: none;
+}
+.sfb-launch-screen { background: none; aspect-ratio: 1; }
+.sfb-launch-screen img { width: 100%; }
+.sfb-launch-console > span { display: none; }
