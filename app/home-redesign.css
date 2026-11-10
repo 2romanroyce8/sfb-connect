@@ -1,0 +1,210 @@
+.sfb-launch {
+  --launch-bg: #101010;
+  --launch-ink: #eee;
+  --launch-muted: #b4b4b4;
+  --launch-accent: #81ed97;
+  --launch-line: #353535;
+  background: var(--launch-bg);
+  color: var(--launch-ink);
+  font-family: var(--font-inter), sans-serif;
+}
+.sfb-launch [id] { scroll-margin-top: 2rem; }
+.sfb-launch a:focus-visible, .sfb-launch summary:focus-visible {
+  outline: 2px solid var(--launch-accent);
+  outline-offset: 4px;
+}
+.sfb-launch-nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem clamp(1.25rem, 3vw, 3rem);
+}
+.sfb-launch-nav nav { display: flex; flex: 1; justify-content: space-around; gap: 1rem; }
+.sfb-launch-nav img, .sfb-launch-screen img { border-radius: 16%; }
+.sfb-launch-nav a, .sfb-launch-label, .sfb-launch-button, .sfb-launch-footer {
+  font-family: var(--font-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.sfb-launch-nav a { font-size: .875rem; }
+.sfb-launch-nav a:hover, .sfb-launch-nav nav a:first-child, .sfb-launch-label {
+  color: var(--launch-accent);
+}
+.sfb-launch-hero {
+  min-height: min(78rem, calc(100svh - 6rem));
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(1.5rem, 5vw, 5rem);
+  padding: 3rem 1rem;
+  text-align: center;
+}
+.sfb-launch-title { position: relative; width: 100%; }
+.sfb-launch-title h1 {
+  margin: 0;
+  font-size: clamp(3rem, 16.1vw, 22rem);
+  line-height: .95;
+  font-weight: 500;
+  letter-spacing: -.09em;
+  white-space: nowrap;
+  background: linear-gradient(105deg, #424242, #d3d3d3 58%, #828282);
+  background-clip: text;
+  color: transparent;
+}
+.sfb-launch-console {
+  position: absolute;
+  top: 55%;
+  left: 51%;
+  width: clamp(50px, 7vw, 112px);
+  padding: 6px;
+  border: 1px solid #626262;
+  border-radius: 9%;
+  background: linear-gradient(#333, #181818);
+  transform: translate(-50%, -50%) rotate(11deg);
+  box-shadow: 5px 5px #080808, 0 12px 32px #0009;
+}
+.sfb-launch-screen {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.1;
+  border-radius: 7%;
+  background: #070807;
+}
+.sfb-launch-screen img { width: 44%; height: auto; }
+.sfb-launch-console > span {
+  display: block;
+  width: 13%;
+  aspect-ratio: 1;
+  margin-top: 7px;
+  background: var(--launch-accent);
+  border-radius: 50%;
+}
+.sfb-launch-hero p, .sfb-launch-section > p:not(.sfb-launch-label) {
+  color: var(--launch-muted);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+}
+.sfb-launch-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  width: fit-content;
+  padding: .9rem 1.25rem;
+  color: #111;
+  background: var(--launch-accent);
+  font-size: .85rem;
+  font-weight: 600;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+.sfb-launch-button:hover { background: #b2ffc0; }
+.sfb-launch-button:focus-visible { outline: none; background: white; }
+.sfb-launch-section {
+  border-top: 1px solid var(--launch-line);
+  padding: clamp(3rem, 9vw, 8rem) max(6vw, calc((100% - 1240px) / 2));
+}
+.sfb-launch-label { font-size: .78rem; }
+.sfb-launch-section h2 {
+  max-width: 18ch;
+  margin: .7rem 0 2rem;
+  font-size: clamp(2.1rem, 5.6vw, 5rem);
+  line-height: 1;
+  letter-spacing: -.065em;
+}
+.sfb-launch-section h3 { margin-bottom: .45rem; font-size: 1.25rem; font-weight: 600; }
+.sfb-launch-about > p:last-child { max-width: 44ch; }
+.sfb-launch-features, .sfb-launch-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 2rem; }
+.sfb-launch-features li, .sfb-launch-grid article {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.4rem;
+  border: 1px solid var(--launch-line);
+  margin: 0 -1px -1px 0;
+}
+.sfb-launch-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sfb-launch-grid article { display: block; background: #181818; }
+.sfb-launch-grid h3 { margin-top: .75rem; }
+.sfb-launch-features p, .sfb-launch-grid p, .sfb-launch-faq details p { color: var(--launch-muted); }
+.sfb-launch-demo .mk { border-radius: 1rem; padding: clamp(.75rem, 3vw, 2rem); }
+.sfb-launch-faq details { border-top: 1px solid var(--launch-line); padding: 1.2rem 0; }
+.sfb-launch-faq summary { cursor: pointer; }
+.sfb-launch-faq details p { margin-top: .75rem; }
+.sfb-launch-start {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  text-align: center;
+  background-image: radial-gradient(ellipse at bottom, #1a3421, transparent 75%);
+}
+.sfb-launch-start h2 { margin-bottom: 0; }
+.sfb-launch-start > a:last-child { text-decoration: underline; }
+.sfb-launch-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2rem 6vw;
+  border-top: 1px solid var(--launch-line);
+  color: var(--launch-muted);
+  font-size: .75rem;
+}
+@media (max-width: 680px) {
+  .sfb-launch-nav { flex-wrap: wrap; gap: .75rem; justify-content: space-between; }
+  .sfb-launch-nav nav { order: 1; flex: 0 0 100%; flex-wrap: wrap; justify-content: space-between; }
+  .sfb-launch-nav a { font-size: .7rem; }
+  .sfb-launch-hero { min-height: 66svh; }
+  .sfb-launch-features, .sfb-launch-grid { grid-template-columns: 1fr; }
+}
+
+/* Map the shared demo controls to the launch page palette. */
+.sfb-launch-demo .mk {
+  --mk-bg: #181818;
+  --mk-bg2: #202020;
+  --mk-white: #181818;
+  --mk-text: var(--launch-ink);
+  --mk-muted: var(--launch-muted);
+  --mk-border: var(--launch-line);
+  --mk-blue: var(--launch-accent);
+  --mk-blue2: var(--launch-accent);
+  --mk-on-blue: #111;
+  --mk-ink: #303830;
+  min-height: 0;
+  color-scheme: dark;
+}
+.sfb-launch-demo .mk::before { content: none; }
+.sfb-launch-demo .mk .mk-sim { background: #223327; }
+.sfb-launch-demo .mk .mk-btn-primary {
+  background: var(--launch-accent);
+  color: var(--mk-on-blue);
+  box-shadow: none;
+}
+.sfb-launch-demo .mk .mk-btn-primary:hover { background: #b2ffc0; }
+.sfb-launch-demo .mk button:focus-visible, .sfb-launch-demo .mk input:focus-visible {
+  outline: 2px solid var(--launch-accent);
+  outline-offset: 3px;
+}
+
+/* Invert the black mark and blend away the tile on the dark homepage. */
+.sfb-launch-nav > a:first-child img,
+.sfb-launch-screen img {
+  filter: invert(1);
+  mix-blend-mode: screen;
+}
+.sfb-launch-nav > a:first-child img { width: 36px; height: 36px; }
+.sfb-launch-title {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: clamp(.75rem, 3vw, 2.5rem);
+}
+.sfb-launch-console {
+  position: static;
+  width: clamp(52px, 7vw, 96px);
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: none;
+  box-shadow: none;
+}
+.sfb-launch-screen { background: none; aspect-ratio: 1; }
+.sfb-launch-screen img { width: 100%; }
+.sfb-launch-console > span { display: none; }

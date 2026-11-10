@@ -1,50 +1,115 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import MkShell from "@/components/mk/MkShell";
 import DemoStage from "@/components/mk/DemoStage";
-import { PageHero, Section, CardGrid, Steps, Faq, CtaBand } from "@/components/mk/MkParts";
-import { HOME_STEPS, WORKSPACE, INDUSTRIES, PORTAL, SERVICES, AUDIENCES, HOME_FAQ } from "@/components/mk/content";
+import { HOME_FAQ, PORTAL, SERVICES, WORKSPACE } from "@/components/mk/content";
+import { LOGO_MARK } from "@/lib/brand";
+import "@/components/mk/mk.css";
+import "./home-redesign.css";
 
 export const metadata: Metadata = {
-  title: "SFB Connect: Your Agency. Your Brand. Your Clients. One Operating System.",
-  description: "Build interactive AI demonstrations, close software deals, manage clients, and deliver AI-powered business systems through one platform.",
+  title: "SFB Connect | The operating system for AI agencies",
+  description: "Build interactive AI demos, close software deals, and deliver AI-powered business systems under your own brand.",
   alternates: { canonical: "/" },
 };
 
+const navigation = [
+  ["Home", "#hero"],
+  ["About", "#about"],
+  ["Features", "#features"],
+  ["Platform", "#platform"],
+  ["Get started", "#start"],
+];
+
 export default function HomePage() {
   return (
-    <MkShell>
-      <PageHero eyebrow="The operating system for AI agencies" title="Your Agency. Your Brand. Your Clients. One Operating System."
-        lead="Build interactive AI demonstrations, close software deals, manage clients, and deliver AI-powered business systems through one platform." />
-      <Section id="demo" eyebrow="Try it yourself" title="This is what your prospect opens, under your brand." lead="Switch the trade and try each module. These panels are scripted simulations so you can feel the experience; inside your workspace, demos run on a real business's own details.">
-        <DemoStage />
-      </Section>
-      <Section tint eyebrow="The workflow" title="Build. Brand. Publish. Sell."><Steps items={HOME_STEPS} /></Section>
-      <Section eyebrow="Agency workspace" title="Everything an agency runs on, in one place." lead="The demo builder is live today. The rest of the workspace is being added, and each card says where it stands."><CardGrid items={WORKSPACE} /></Section>
-      <Section tint eyebrow="Industry demonstrations" title="Start from a configuration that already knows the trade." lead="Each industry comes with typical services, common customer questions and qualifying questions. More can be added without code.">
-        <div className="flex flex-wrap gap-2.5 justify-center max-w-[900px] mx-auto">{INDUSTRIES.map((i) => <span key={i} className="mk-trade">{i}</span>)}</div>
-        <p className="mt-6 text-center text-[13.5px]" style={{ color: "var(--mk-muted)" }}>{INDUSTRIES.length} industries today, plus an industry-neutral fallback.</p>
-      </Section>
-      <Section eyebrow="Fulfillment and client portal" title="Then deliver it, without rebuilding from scratch." lead="Coming next: orders that move from quote to live, with a client portal your customer can follow."><CardGrid items={PORTAL} /></Section>
-      <Section tint eyebrow="Service catalog" title="Fifteen kinds of work you can sell." lead="The catalog shows what you will be able to order. Ordering and wholesale quotes open in the workspace next.">
-        <CardGrid items={SERVICES.slice(0, 6)} />
-        <div className="mt-8"><Link href="/services" className="mk-btn mk-btn-ghost">See the full catalog</Link></div>
-      </Section>
-      <Section eyebrow="Pricing" title="$49 a month for the platform." lead="Billing is not switched on yet, so creating a workspace is free for now. Client builds will be quoted at wholesale; whatever you charge above that is your margin.">
-        <div className="flex flex-wrap gap-3"><Link href="/pricing" className="mk-btn mk-btn-primary">See pricing</Link><Link href="/resources" className="mk-btn mk-btn-ghost">Open the pricing calculator</Link></div>
-      </Section>
-      <Section tint eyebrow="Built for" title="Agency owners and the people who sell for them.">
-        <div className="grid gap-4 md:grid-cols-2">{AUDIENCES.map((a) => (
-          <Link key={a.href} href={a.href} className="mk-card p-7 block"><h3 className="text-[22px] mb-2">{a.title}</h3><p className="text-[15px] leading-relaxed" style={{ color: "var(--mk-muted)" }}>{a.body}</p><span className="inline-block mt-4 text-[14px]" style={{ color: "var(--mk-blue2)" }}>Learn more →</span></Link>))}</div>
-      </Section>
-      <Section eyebrow="Prefer it done for you?" title="Meet the SFB Agent." lead="One AI agent with a human overseer that runs outbound, follow-up, your website and more for your own business. Same company, different product.">
-        <div className="flex flex-wrap gap-3 justify-center"><Link href="/agent" className="mk-btn mk-btn-primary">See the SFB Agent</Link><Link href="/business" className="mk-btn mk-btn-ghost">Check my business</Link></div>
-      </Section>
-      <Section eyebrow="Client acquisition" title="From a cold prospect to a signed client.">
-        <Steps items={[{ title: "Find", body: "Research businesses in your market from public sources and keep the evidence." }, { title: "Demo", body: "Send a personalized demo link built for that business." }, { title: "Follow up", body: "Track views and replies, then move the deal through your pipeline." }, { title: "Close", body: "Quote the build, onboard the client and start fulfillment." }]} />
-      </Section>
-      <Section id="faq" tint eyebrow="FAQ" title="Straight answers."><Faq items={HOME_FAQ} /></Section>
-      <CtaBand />
-    </MkShell>
+    <div className="sfb-launch">
+      <header className="sfb-launch-nav">
+        <Link href="/" aria-label="SFB Connect home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={LOGO_MARK} alt="" width={48} height={48} />
+        </Link>
+        <nav aria-label="Homepage">{navigation.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</nav>
+        <Link className="sfb-launch-login" href="/login">Sign in</Link>
+      </header>
+
+      <main>
+        <section id="hero" className="sfb-launch-hero">
+          <div className="sfb-launch-title">
+            <h1>SFB Connect</h1>
+            <div className="sfb-launch-console" aria-hidden="true">
+              <div className="sfb-launch-screen">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={LOGO_MARK} alt="" width={42} height={42} />
+              </div>
+              <span />
+            </div>
+          </div>
+          <p>Your agency. Your brand. Your clients. One operating system.</p>
+          <a className="sfb-launch-button" href="#about">Explore SFB Connect <span aria-hidden="true">↘</span></a>
+        </section>
+
+        <section id="about" className="sfb-launch-section sfb-launch-about">
+          <p className="sfb-launch-label">About the platform</p>
+          <h2>Build an AI agency under your own brand.</h2>
+          <p>Give prospects a demo built for their business, manage the sale, and deliver AI-powered systems from one workspace.</p>
+        </section>
+
+        <section id="features" className="sfb-launch-section">
+          <p className="sfb-launch-label">Features</p>
+          <h2>From first demo to client delivery.</h2>
+          <ol className="sfb-launch-features">
+            {SERVICES.map(({ title, body }, index) => (
+              <li key={title}>
+                <span className="sfb-launch-label">{String(index + 1).padStart(2, "0")}</span>
+                <div><h3>{title}</h3><p>{body}</p></div>
+              </li>
+            ))}
+          </ol>
+          <Link className="sfb-launch-button" href="/services">See the service catalog <span aria-hidden="true">↗</span></Link>
+        </section>
+
+        <section id="demo" className="sfb-launch-section sfb-launch-demo">
+          <p className="sfb-launch-label">Interactive demo</p>
+          <h2>See what your prospect opens.</h2>
+          <div className="mk"><DemoStage /></div>
+        </section>
+
+        <section id="platform" className="sfb-launch-section">
+          <p className="sfb-launch-label">Platform</p>
+          <h2>One workspace for your agency.</h2>
+          <div className="sfb-launch-grid">
+            {[...WORKSPACE, ...PORTAL].map(({ title, body, tag }) => (
+              <article key={title}>
+                <span className="sfb-launch-label">{tag || "Client portal"}</span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </article>
+            ))}
+          </div>
+          <Link className="sfb-launch-button" href="/platform">Explore the platform <span aria-hidden="true">↗</span></Link>
+        </section>
+
+        <section className="sfb-launch-section sfb-launch-faq">
+          <p className="sfb-launch-label">FAQ</p>
+          <h2>Frequently asked questions.</h2>
+          {HOME_FAQ.map(({ q, a }) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
+        </section>
+
+        <section id="start" className="sfb-launch-section sfb-launch-start">
+          <p className="sfb-launch-label">Get started</p>
+          <h2>Start your agency.</h2>
+          <p>Build your first demo and put it in front of a real business.</p>
+          <Link className="sfb-launch-button" href="/signup">Create a workspace <span aria-hidden="true">↗</span></Link>
+          <Link href="/pricing">See pricing</Link>
+        </section>
+      </main>
+
+      <footer className="sfb-launch-footer">
+        <span>© {new Date().getFullYear()} Six Figure Blueprints LLC</span>
+        <Link href="/contact">Contact</Link>
+        <Link href="/privacy">Privacy policy</Link>
+        <Link href="/terms">Terms of service</Link>
+      </footer>
+    </div>
   );
 }
