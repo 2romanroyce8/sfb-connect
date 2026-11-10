@@ -100,7 +100,10 @@ export default function HomePage() {
           <h2>Start your agency.</h2>
           <p>Build your first demo and put it in front of a real business.</p>
           <Link className="sfb-launch-button" href="/signup">Create a workspace <span aria-hidden="true">↗</span></Link>
-          <Link href="/pricing">See pricing</Link>
+          <div className="flex flex-wrap justify-center gap-5 underline">
+            <Link href="/pricing">See pricing</Link>
+            <Link href="/book">Book a walkthrough</Link>
+          </div>
         </section>
       </main>
 
