@@ -78,7 +78,7 @@ function Roi() {
 
 const TABS = ["AI receptionist", "Website chatbot", "Website audit", "Missed-call text-back", "ROI calculator"] as const;
 export default function DemoStage({ showTrades = true, sideBySide = false, fixedTrade, demo, onEvent }: { showTrades?: boolean; sideBySide?: boolean; fixedTrade?: Trade; demo?: { agency: string; slug: string }; onEvent?: (e: "chat_started" | "voice_started" | "audit_requested") => void }) {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("AI receptionist");
+  const [tab, setTab] = useState<(typeof TABS)[number]>(sideBySide ? "Website audit" : "AI receptionist");
   const [tradeKey, setTradeKey] = useState(TRADES[0].key);
   const [voiceOn, setVoiceOn] = useState(false);
   useEffect(() => { fetch("/api/demo/voice").then((r) => r.json()).then((j) => setVoiceOn(!!j.configured)).catch(() => setVoiceOn(false)); }, []);
@@ -91,7 +91,7 @@ export default function DemoStage({ showTrades = true, sideBySide = false, fixed
         <div className="mb-3">
           <div className="mx-auto flex flex-wrap items-center justify-center gap-1.5 rounded-[999px] p-2 w-fit max-w-full" style={{ background: "var(--mk-bg2)", border: "1px solid var(--mk-border)" }} role="tablist" aria-label="Pick a trade">
             <span className="px-4 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--mk-muted)" }}>Pick a trade</span>
-            {TRADES.map((t) => <button key={t.key} role="tab" aria-selected={tradeKey === t.key} type="button" onClick={() => setTradeKey(t.key)} className="rounded-full px-4 h-[38px] text-[13.5px] font-medium" style={tradeKey === t.key ? { background: "var(--mk-ink)", color: "var(--mk-white)" } : { color: "var(--mk-text)" }}>{t.label}</button>)}
+            {TRADES.map((t) => <button key={t.key} role="tab" aria-selected={tradeKey === t.key} type="button" onClick={() => setTradeKey(t.key)} className="rounded-full px-4 h-[38px] text-[13.5px] font-medium" style={tradeKey === t.key ? { background: sideBySide ? "var(--mk-blue)" : "var(--mk-ink)", color: sideBySide ? "var(--mk-on-blue)" : "var(--mk-white)" } : { color: "var(--mk-text)" }}>{t.label}</button>)}
           </div>
           <p className="text-center text-[13px] mt-3" style={{ color: "var(--mk-muted)" }}>You are about to try the demo for <strong style={{ color: "var(--mk-text)" }}>{trade.biz}</strong>, a fictional business invented for this demo.</p>
         </div>
@@ -124,12 +124,12 @@ export default function DemoStage({ showTrades = true, sideBySide = false, fixed
       )}
       <div className="mk-card p-5 md:p-9 mt-6" style={{ borderRadius: 32 }}>
         <div className="flex flex-wrap gap-2 mb-7" role="tablist" aria-label="Demo modules">
-          {(sideBySide ? TABS.slice(2) : TABS).map((t) => <button key={t} role="tab" aria-selected={tab === t || (sideBySide && tab === TABS[0] && t === TABS[2])} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 40, fontSize: 14, ...(tab === t || (sideBySide && tab === TABS[0] && t === TABS[2]) ? { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } : { background: "var(--mk-white)", border: "1px solid var(--mk-border)", color: "var(--mk-text)" }) }}>{t}</button>)}
+          {(sideBySide ? TABS.slice(2) : TABS).map((t) => <button key={t} role="tab" aria-selected={tab === t} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 40, fontSize: 14, ...(tab === t ? { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } : { background: "var(--mk-white)", border: "1px solid var(--mk-border)", color: "var(--mk-text)" }) }}>{t}</button>)}
         </div>
         {!sideBySide && tab === "AI receptionist" && voiceOn && <VoiceCall key={trade.key} trade={demo ? undefined : trade.key} demo={demo} onStart={() => onEvent?.("voice_started")} label={`A real call to the ${trade.label.toLowerCase()} receptionist`} />}
         {!sideBySide && tab === "AI receptionist" && !voiceOn && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
         {!sideBySide && tab === "Website chatbot" && <Chat script={bot} onChat={() => onEvent?.("chat_started")} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
-        {(tab === "Website audit" || (sideBySide && tab === TABS[0])) && <AuditPanel onRun={() => onEvent?.("audit_requested")} />}
+        {tab === "Website audit" && <AuditPanel onRun={() => onEvent?.("audit_requested")} />}
         {tab === "Missed-call text-back" && (
           <div>
             <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>Simulated phone events. No real call or text is sent.</span></div>
