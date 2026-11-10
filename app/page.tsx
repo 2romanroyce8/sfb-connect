@@ -71,7 +71,7 @@ export default function HomePage() {
         <section id="demo" className="sfb-launch-section sfb-launch-demo">
           <p className="sfb-launch-label">Interactive demo</p>
           <h2>See what your prospect opens.</h2>
-          <div className="mk"><DemoStage /></div>
+          <div className="mk"><DemoStage sideBySide /></div>
         </section>
 
         <section id="platform" className="sfb-launch-section">
