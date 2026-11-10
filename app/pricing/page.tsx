@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import MkShell from "@/components/mk/MkShell";
-import { PageHero, Section, Faq, CtaBand } from "@/components/mk/MkParts";
+import { Section, Faq, CtaBand } from "@/components/mk/MkParts";
 import PricingCalc from "@/components/mk/PricingCalc";
 import { PRICING_FAQ } from "@/components/mk/content";
 export const metadata: Metadata = { title: "Pricing", description: "$49 per month for the agency platform. Client builds are quoted at wholesale rates; you set your own retail price.", alternates: { canonical: "/pricing" } };
@@ -18,22 +18,42 @@ const LIMITS: [string, string][] = [["Demos per agency", "25"], ["Clients per ag
 
 export default function Page() {
   return (<MkShell>
-    <PageHero eyebrow="Pricing" title="$49 a month for the platform." lead="Billing is not switched on yet, so creating a workspace is free for now. Client builds will be quoted at wholesale, and whatever you charge above that is your margin." ctas={[{ href: "/signup", label: "Start Your Agency" }, { href: "#calculator", label: "Try the calculator" }]} />
-    <Section>
-      <div className="grid gap-5 lg:grid-cols-[420px_1fr] max-w-[1100px] mx-auto">
-        <div className="mk-plan p-9 flex flex-col">
-          <div className="flex items-baseline justify-between"><span className="text-[26px] font-medium">Agency</span><span><span className="text-[46px] font-bold tracking-tight">$49</span><span className="text-[15px]" style={{ color: "var(--mk-ink-muted)" }}> /mo</span></span></div>
-          <ul className="mt-7 flex flex-col gap-3.5 text-[15px]">{INCLUDED.map((i) => <li key={i.text} className="flex gap-3 items-start" style={{ color: i.live ? "var(--mk-white)" : "var(--mk-ink-muted)" }}><Check size={18} className="shrink-0 mt-0.5" style={{ color: i.live ? "var(--mk-blue)" : "var(--mk-ink-line)" }} aria-hidden /><span>{i.text}{!i.live && <em className="not-italic text-[12px] ml-2 opacity-80">coming next</em>}</span></li>)}</ul>
-          <Link href="/signup" className="mk-btn mt-9" style={{ background: "var(--mk-white)", color: "var(--mk-ink)" }}>Start Your Agency</Link>
-          <p className="mt-3 text-center text-[12.5px]" style={{ color: "var(--mk-ink-muted)" }}>Billing is off for now. You are not charged.</p>
-        </div>
-        <div className="mk-card p-9 flex flex-col">
-          <div className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--mk-muted)" }}>The limits, in full</div>
-          <div className="mt-4">{LIMITS.map(([k, v]) => <div key={k} className="mk-table-row"><span style={{ color: "var(--mk-muted)" }}>{k}</span><span className="font-medium">{v}</span></div>)}</div>
-          <p className="mt-auto pt-8 text-[13px] leading-relaxed" style={{ color: "var(--mk-muted)" }}>Client builds are quoted per order inside your workspace once ordering opens, at wholesale, and you set your own retail price. Usage-based items such as voice minutes are metered and shown against your limits.</p>
-        </div>
+    <section className="mx-auto max-w-[1180px] px-5 pb-20 pt-32 md:px-8 md:pt-40">
+      <div className="mx-auto mb-12 max-w-xl text-center">
+        <span className="mk-chip">Pricing</span>
+        <h1 className="mt-5 text-[clamp(2.6rem,6vw,4.5rem)]" style={{ fontWeight: 500 }}>Simple, transparent pricing.</h1>
+        <p className="mx-auto mt-5 max-w-md leading-relaxed text-[var(--mk-muted)]">One plan for your agency workspace. Client builds are quoted separately at wholesale, and you set your own retail price.</p>
+        <span className="mk-chip mt-6">Monthly plan</span>
       </div>
-    </Section>
+      <div className="mx-auto grid max-w-md items-center gap-5 lg:max-w-none lg:grid-cols-[1fr_1.15fr_1fr]">
+        <article className="mk-card p-6 md:p-7 lg:order-2" style={{ borderColor: "var(--mk-blue)" }}>
+          <div className="rounded-2xl border border-[var(--mk-border)] bg-gradient-to-br from-[#233e2a] via-[#181818] to-[#181818] p-6">
+            <h2 className="text-2xl">Agency plan</h2>
+            <p className="mt-4"><strong className="text-5xl tracking-tight">$49</strong><span className="ml-1 text-sm text-[var(--mk-muted)]">/ month</span></p>
+            <p className="mt-4 text-sm leading-relaxed text-[var(--mk-muted)]">Billing is off for now. Creating a workspace is free.</p>
+            <Link href="/signup" className="mk-btn mk-btn-primary mt-6 w-full">Start Your Agency</Link>
+          </div>
+          <ul className="mt-6 space-y-3 text-sm text-[var(--mk-text)]">{INCLUDED.filter((item) => item.live).map((item) => (
+            <li key={item.text} className="flex items-start gap-3"><Check size={16} className="mt-0.5 shrink-0 text-[var(--mk-blue)]" aria-hidden /><span>{item.text}</span></li>
+          ))}</ul>
+        </article>
+        <article className="mk-card p-6 md:p-7 lg:order-1">
+          <h2 className="text-xl">Platform limits</h2>
+          <dl className="mt-3">{LIMITS.map(([label, value]) => (
+            <div key={label} className="mk-table-row"><dt className="text-[var(--mk-muted)]">{label}</dt><dd className="shrink-0 text-right font-medium">{value}</dd></div>
+          ))}</dl>
+        </article>
+        <article className="mk-card p-6 md:p-7 lg:order-3">
+          <h2 className="text-xl">Client builds</h2>
+          <p className="mt-4 text-sm leading-relaxed text-[var(--mk-muted)]">Client builds are quoted per order at wholesale when ordering opens. Usage such as voice minutes is metered against your limits.</p>
+          <Link href="#calculator" className="mk-btn mk-btn-ghost mt-6 w-full">Try the calculator</Link>
+          <div className="mt-6 border-t border-[var(--mk-border)] pt-5">
+            <h3 className="text-sm">Coming next</h3>
+            <ul className="mt-3 space-y-3 text-sm text-[var(--mk-muted)]">{INCLUDED.filter((item) => !item.live).map((item) => <li key={item.text}>{item.text}</li>)}</ul>
+          </div>
+        </article>
+      </div>
+    </section>
     <Section id="calculator" tint eyebrow="Pricing calculator" title="Set your retail price from your cost." lead="Enter your own wholesale cost and markup. The math is shown. The defaults are placeholders, not SFB Connect prices."><PricingCalc /></Section>
     <Section eyebrow="Questions" title="Pricing FAQ"><Faq items={PRICING_FAQ} /></Section>
     <CtaBand />
