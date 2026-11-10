@@ -154,3 +154,31 @@
   .sfb-launch-hero { min-height: 66svh; }
   .sfb-launch-features, .sfb-launch-grid { grid-template-columns: 1fr; }
 }
+
+/* Map the shared demo controls to the launch page palette. */
+.sfb-launch-demo .mk {
+  --mk-bg: #181818;
+  --mk-bg2: #202020;
+  --mk-white: #181818;
+  --mk-text: var(--launch-ink);
+  --mk-muted: var(--launch-muted);
+  --mk-border: var(--launch-line);
+  --mk-blue: var(--launch-accent);
+  --mk-blue2: var(--launch-accent);
+  --mk-on-blue: #111;
+  --mk-ink: #303830;
+  min-height: 0;
+  color-scheme: dark;
+}
+.sfb-launch-demo .mk::before { content: none; }
+.sfb-launch-demo .mk .mk-sim { background: #223327; }
+.sfb-launch-demo .mk .mk-btn-primary {
+  background: var(--launch-accent);
+  color: var(--mk-on-blue);
+  box-shadow: none;
+}
+.sfb-launch-demo .mk .mk-btn-primary:hover { background: #b2ffc0; }
+.sfb-launch-demo .mk button:focus-visible, .sfb-launch-demo .mk input:focus-visible {
+  outline: 2px solid var(--launch-accent);
+  outline-offset: 3px;
+}
