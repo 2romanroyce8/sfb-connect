@@ -54,6 +54,12 @@ export default function HomePage() {
           <p>Give prospects a demo built for their business, manage the sale, and deliver AI-powered systems from one workspace.</p>
         </section>
 
+        <section id="demo" className="sfb-launch-section sfb-launch-demo">
+          <p className="sfb-launch-label">Interactive demo</p>
+          <h2>See what your prospect opens.</h2>
+          <div className="mk"><DemoStage sideBySide /></div>
+        </section>
+
         <section id="features" className="sfb-launch-section">
           <p className="sfb-launch-label">Features</p>
           <h2>From first demo to client delivery.</h2>
@@ -66,12 +72,6 @@ export default function HomePage() {
             ))}
           </ol>
           <Link className="sfb-launch-button" href="/services">See the service catalog <span aria-hidden="true">↗</span></Link>
-        </section>
-
-        <section id="demo" className="sfb-launch-section sfb-launch-demo">
-          <p className="sfb-launch-label">Interactive demo</p>
-          <h2>See what your prospect opens.</h2>
-          <div className="mk"><DemoStage sideBySide /></div>
         </section>
 
         <section id="platform" className="sfb-launch-section">
