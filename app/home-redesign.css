@@ -158,6 +158,7 @@
 /* Map the shared demo controls to the launch page palette. */
 .sfb-launch-demo .mk {
   --mk-bg: #181818;
+  --mk-control-border: #777;
   --mk-bg2: #202020;
   --mk-white: #181818;
   --mk-text: var(--launch-ink);
@@ -208,3 +209,16 @@
 .sfb-launch-screen { background: none; aspect-ratio: 1; }
 .sfb-launch-screen img { width: 100%; }
 .sfb-launch-console > span { display: none; }
+
+.sfb-launch-demo .mk .mk-card {
+  background: var(--mk-bg2);
+  box-shadow: none;
+}
+.sfb-launch-demo .mk .mk-btn-ghost,
+.sfb-launch-demo .mk .mk-input {
+  background: var(--mk-bg);
+  color: var(--mk-text);
+  border-color: var(--mk-control-border);
+}
+.sfb-launch-demo .mk .mk-input::placeholder { color: var(--mk-muted); opacity: 1; }
+.sfb-launch-demo .mk .mk-btn-ghost:hover { border-color: var(--mk-blue); }
