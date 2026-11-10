@@ -42,14 +42,14 @@
 .sfb-launch-title { position: relative; width: 100%; }
 .sfb-launch-title h1 {
   margin: 0;
-  font-size: clamp(3rem, 16.1vw, 22rem);
-  line-height: .95;
-  font-weight: 500;
-  letter-spacing: -.09em;
+  font-size: clamp(1.25rem, 5vw, 5rem);
+  line-height: 1.2;
+  font-weight: 400;
+  letter-spacing: .36em;
+  padding-inline-start: .36em;
+  text-transform: uppercase;
   white-space: nowrap;
-  background: linear-gradient(105deg, #424242, #d3d3d3 58%, #828282);
-  background-clip: text;
-  color: transparent;
+  color: #fff;
 }
 .sfb-launch-console {
   position: absolute;
@@ -191,24 +191,8 @@
   mix-blend-mode: screen;
 }
 .sfb-launch-nav > a:first-child img { width: 36px; height: 36px; }
-.sfb-launch-title {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: clamp(.75rem, 3vw, 2.5rem);
-}
-.sfb-launch-console {
-  position: static;
-  width: clamp(52px, 7vw, 96px);
-  padding: 0;
-  border: 0;
-  background: none;
-  transform: none;
-  box-shadow: none;
-}
-.sfb-launch-screen { background: none; aspect-ratio: 1; }
-.sfb-launch-screen img { width: 100%; }
-.sfb-launch-console > span { display: none; }
+.sfb-launch-title { display: grid; place-items: center; }
+.sfb-launch-title .sfb-launch-console { display: none; }
 
 .sfb-launch-demo .mk .mk-card {
   background: var(--mk-bg2);
