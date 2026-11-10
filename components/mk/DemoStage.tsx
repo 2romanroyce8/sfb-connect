@@ -77,7 +77,7 @@ function Roi() {
 }
 
 const TABS = ["AI receptionist", "Website chatbot", "Website audit", "Missed-call text-back", "ROI calculator"] as const;
-export default function DemoStage({ showTrades = true, fixedTrade, demo, onEvent }: { showTrades?: boolean; fixedTrade?: Trade; demo?: { agency: string; slug: string }; onEvent?: (e: "chat_started" | "voice_started" | "audit_requested") => void }) {
+export default function DemoStage({ showTrades = true, sideBySide = false, fixedTrade, demo, onEvent }: { showTrades?: boolean; sideBySide?: boolean; fixedTrade?: Trade; demo?: { agency: string; slug: string }; onEvent?: (e: "chat_started" | "voice_started" | "audit_requested") => void }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("AI receptionist");
   const [tradeKey, setTradeKey] = useState(TRADES[0].key);
   const [voiceOn, setVoiceOn] = useState(false);
@@ -96,14 +96,40 @@ export default function DemoStage({ showTrades = true, fixedTrade, demo, onEvent
           <p className="text-center text-[13px] mt-3" style={{ color: "var(--mk-muted)" }}>You are about to try the demo for <strong style={{ color: "var(--mk-text)" }}>{trade.biz}</strong>, a fictional business invented for this demo.</p>
         </div>
       )}
+      {sideBySide && (
+        <div className="mt-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
+          <section className="mk-card min-w-0 p-5 md:p-7">
+            <h3>Call the {trade.label.toLowerCase()} receptionist</h3>
+            {voiceOn ? (
+              <VoiceCall key={trade.key} trade={trade.key} label="Ask about pricing, hours, or availability" />
+            ) : (
+              <Chat key={trade.key} script={rec} label="Try a simulated receptionist call" />
+            )}
+            {voiceOn && (
+              <div className="mt-5 rounded-xl border border-[var(--mk-border)] p-4">
+                <p className="sfb-launch-label">Try asking</p>
+                <ul className="mt-2 space-y-2 text-sm text-[var(--mk-muted)]">
+                  {trade.asks.map((question) => <li key={question}>{question}</li>)}
+                </ul>
+              </div>
+            )}
+            <p className="mt-5 text-sm text-[var(--mk-muted)]">Demo for {trade.biz}. No real appointment is booked.</p>
+          </section>
+          <section className="mk-card min-w-0 p-5 md:p-7">
+            <h3>Chat with the agent</h3>
+            <Chat key={trade.key} script={bot} label={`Try the ${trade.label.toLowerCase()} website chat`} />
+            <p className="mt-5 text-sm text-[var(--mk-muted)]">Simulated chat. No messages are sent.</p>
+          </section>
+        </div>
+      )}
       <div className="mk-card p-5 md:p-9 mt-6" style={{ borderRadius: 32 }}>
         <div className="flex flex-wrap gap-2 mb-7" role="tablist" aria-label="Demo modules">
-          {TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 40, fontSize: 14, ...(tab === t ? { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } : { background: "var(--mk-white)", border: "1px solid var(--mk-border)", color: "var(--mk-text)" }) }}>{t}</button>)}
+          {(sideBySide ? TABS.slice(2) : TABS).map((t) => <button key={t} role="tab" aria-selected={tab === t || (sideBySide && tab === TABS[0] && t === TABS[2])} type="button" onClick={() => setTab(t)} className="mk-btn" style={{ height: 40, fontSize: 14, ...(tab === t || (sideBySide && tab === TABS[0] && t === TABS[2]) ? { background: "var(--mk-blue)", color: "var(--mk-on-blue)" } : { background: "var(--mk-white)", border: "1px solid var(--mk-border)", color: "var(--mk-text)" }) }}>{t}</button>)}
         </div>
-        {tab === "AI receptionist" && voiceOn && <VoiceCall key={trade.key} trade={demo ? undefined : trade.key} demo={demo} onStart={() => onEvent?.("voice_started")} label={`A real call to the ${trade.label.toLowerCase()} receptionist`} />}
-        {tab === "AI receptionist" && !voiceOn && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
-        {tab === "Website chatbot" && <Chat script={bot} onChat={() => onEvent?.("chat_started")} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
-        {tab === "Website audit" && <AuditPanel onRun={() => onEvent?.("audit_requested")} />}
+        {!sideBySide && tab === "AI receptionist" && voiceOn && <VoiceCall key={trade.key} trade={demo ? undefined : trade.key} demo={demo} onStart={() => onEvent?.("voice_started")} label={`A real call to the ${trade.label.toLowerCase()} receptionist`} />}
+        {!sideBySide && tab === "AI receptionist" && !voiceOn && <Chat script={rec} label={`A caller talks to the ${trade.label.toLowerCase()} receptionist`} />}
+        {!sideBySide && tab === "Website chatbot" && <Chat script={bot} onChat={() => onEvent?.("chat_started")} label={`A visitor chats with the ${trade.label.toLowerCase()} site assistant`} />}
+        {(tab === "Website audit" || (sideBySide && tab === TABS[0])) && <AuditPanel onRun={() => onEvent?.("audit_requested")} />}
         {tab === "Missed-call text-back" && (
           <div>
             <div className="flex items-center gap-3 mb-4 flex-wrap"><Sim /><span className="text-[13.5px]" style={{ color: "var(--mk-muted)" }}>Simulated phone events. No real call or text is sent.</span></div>
