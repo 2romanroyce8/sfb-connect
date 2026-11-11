@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import DemoStage from "@/components/mk/DemoStage";
 import { HOME_FAQ, PORTAL, SERVICES, WORKSPACE } from "@/components/mk/content";
-import { LOGO_MARK } from "@/lib/brand";
+import HandsHero from "@/components/mk/HandsHero";
 import "@/components/mk/mk.css";
 import "./home-redesign.css";
 
@@ -12,41 +12,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const navigation = [
-  ["Home", "#hero"],
-  ["About", "#about"],
-  ["Features", "#features"],
-  ["Platform", "#platform"],
-  ["Get started", "#start"],
-];
-
 export default function HomePage() {
   return (
     <div className="sfb-launch">
-      <header className="sfb-launch-nav">
-        <Link href="/" aria-label="SFB Connect home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO_MARK} alt="" width={48} height={48} />
-        </Link>
-        <nav aria-label="Homepage">{navigation.map(([label, href]) => <a key={href} href={href}>{label}</a>)}</nav>
-        <Link className="sfb-launch-login" href="/login">Sign in</Link>
-      </header>
-
       <main>
-        <section id="hero" className="sfb-launch-hero">
-          <div className="sfb-launch-title">
-            <h1>SFB Connect</h1>
-            <div className="sfb-launch-console" aria-hidden="true">
-              <div className="sfb-launch-screen">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={LOGO_MARK} alt="" width={42} height={42} />
-              </div>
-              <span />
-            </div>
-          </div>
-          <p>Your agency. Your brand. Your clients. One operating system.</p>
-          <a className="sfb-launch-button" href="#about">Explore SFB Connect <span aria-hidden="true">↘</span></a>
-        </section>
+        <HandsHero />
 
         <section id="about" className="sfb-launch-section sfb-launch-about">
           <p className="sfb-launch-label">About the platform</p>
