@@ -27,7 +27,7 @@ export default function Page() {
       </div>
       <div className="mx-auto grid max-w-md items-center gap-5 lg:max-w-none lg:grid-cols-[1fr_1.15fr_1fr]">
         <article className="mk-card p-6 md:p-7 lg:order-2" style={{ borderColor: "var(--mk-blue)" }}>
-          <div className="rounded-2xl border border-[var(--mk-border)] bg-gradient-to-br from-[#233e2a] via-[#181818] to-[#181818] p-6">
+          <div className="rounded-2xl border border-[var(--mk-border)] bg-[var(--mk-bg2)] p-6">
             <h2 className="text-2xl">Agency plan</h2>
             <p className="mt-4"><strong className="text-5xl tracking-tight">$49</strong><span className="ml-1 text-sm text-[var(--mk-muted)]">/ month</span></p>
             <p className="mt-4 text-sm leading-relaxed text-[var(--mk-muted)]">Billing is off for now. Creating a workspace is free.</p>
