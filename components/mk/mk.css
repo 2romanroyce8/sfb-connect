@@ -73,3 +73,36 @@
 .mk:has(> .mk-pill-nav) .mk-pill-nav img { mix-blend-mode: multiply; }
 .mk:has(> .mk-pill-nav) .mk-frame { background: var(--mk-bg2); box-shadow: none; }
 .mk:has(> .mk-pill-nav) .mk-plan { background: var(--mk-ink2); }
+
+/* Echo the hero button’s spectrum in small accents on public content. */
+.sfb-launch,
+.mk:has(> .mk-pill-nav) {
+  --sfb-spectrum: #ffcf5a, #7dffa8, #5ad7ff, #9b7bff, #ff6fd8, #ffb36b;
+}
+.sfb-launch-section > .sfb-launch-label::after,
+.mk:has(> .mk-pill-nav) main .mk-chip::after {
+  content: "";
+  display: block;
+  width: 2.75rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sfb-spectrum));
+  opacity: .62;
+}
+.sfb-launch-section > .sfb-launch-label::after { margin-top: .65rem; }
+.sfb-launch-start > .sfb-launch-label::after { margin-inline: auto; }
+.mk:has(> .mk-pill-nav) main .mk-chip::after { width: 1.25rem; }
+.sfb-launch-start,
+.mk:has(> .mk-pill-nav) main .mk-btn-primary { position: relative; isolation: isolate; }
+.sfb-launch-start .sfb-launch-button { position: relative; isolation: isolate; }
+:is(.sfb-launch-start .sfb-launch-button, .mk:has(> .mk-pill-nav) main .mk-btn-primary)::after {
+  content: "";
+  position: absolute;
+  inset: auto 18% -5px;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sfb-spectrum));
+  filter: blur(5px);
+  opacity: .48;
+  pointer-events: none;
+}
