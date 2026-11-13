@@ -1,0 +1,42 @@
+.sfb-hq.sfb-staff .appearance-toggle {
+  flex: none;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.sfb-hq.sfb-staff .orb {
+  object-fit: cover;
+  background: #000;
+}
+
+.sfb-hq.sfb-staff .banner-art img {
+  mix-blend-mode: screen;
+}
+
+.sfb-hq.sfb-staff:has(.shell[data-appearance="light"]) .shell {
+  --orange-ink: #963d10;
+  color-scheme: light;
+}
+
+.sfb-hq.sfb-staff:has(.shell[data-appearance="light"]) .shell {
+  --orange: #242424;
+  --orange-2: #373737;
+  --orange-ink: #333;
+}
+
+.sfb-hq.sfb-staff:has(.shell[data-appearance="light"]) .shell .orb,
+.sfb-hq.sfb-staff:has(.shell[data-appearance="light"]) .shell .banner-art img {
+  filter: invert(1) contrast(1.12);
+  mix-blend-mode: multiply;
+}
+
+.sfb-hq.sfb-staff:has(.shell[data-appearance="light"]) .shell .btn.btn--primary,
+.sfb-hq.sfb-staff:has(.shell[data-appearance="light"]) .shell .nav .nav-link[aria-current="page"] {
+  background: #242424;
+  border-color: #242424;
+  color: #fff;
+}
+
+.sfb-hq.sfb-staff:has(.shell[data-appearance="light"]) .shell .nav-active-dot {
+  background: #fff;
+}
